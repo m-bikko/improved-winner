@@ -36,9 +36,23 @@ function required(vars: Record<string, string>, name: string): string {
   return value
 }
 
-/** Все переменные из .env как есть — для тех, что нужны не всем скриптам. */
+/**
+ * Какой файл читать. По умолчанию `.env`, то есть живой проект.
+ *
+ * Переопределяется через TANDEM_ENV_FILE — так те же скрипты наводятся
+ * на локальный стек Supabase, не подменяя `.env` живого проекта. Подмена
+ * файла на время была бы худшим вариантом: забыть вернуть его обратно
+ * ничто не мешает, а следующая миграция ушла бы не туда.
+ *
+ * Имя согласовано с `vite --mode demo`, который берёт `.env.demo` сам.
+ */
+function envFile(): string {
+  return join(ROOT, process.env.TANDEM_ENV_FILE ?? '.env')
+}
+
+/** Все переменные из файла окружения как есть — нужны не всем скриптам. */
 export function readVars(): Record<string, string> {
-  return parseEnvFile(join(ROOT, '.env'))
+  return parseEnvFile(envFile())
 }
 
 export function loadEnv() {
@@ -63,12 +77,25 @@ export function loadEnv() {
  * rejectUnauthorized: false возвращает семантику libpq: соединение шифруется,
  * но сертификат не проверяется. Для локальных админских скриптов это приемлемо;
  * в клиентском коде такого нет — там всё идёт через HTTPS supabase-js.
+ *
+ * Локальный стек Supabase TLS не отдаёт вовсе, и попытка договориться о нём
+ * падает с «The server does not support SSL connections». Поэтому для
+ * localhost ssl выключается — иначе все проверочные скрипты работают только
+ * против живого проекта, а именно на локальном их и хочется прогонять.
  */
-export function pgConfig(): { connectionString: string; ssl: { rejectUnauthorized: false } } {
+export function pgConfig(): {
+  connectionString: string
+  ssl: { rejectUnauthorized: false } | false
+} {
   // sslmode из строки подключения перекрывает опцию ssl объекта, поэтому его
   // нужно именно вырезать, а не просто передать ssl рядом.
   const url = new URL(loadEnv().databaseUrl)
   url.searchParams.delete('sslmode')
+
+  if (['localhost', '127.0.0.1', '::1'].includes(url.hostname)) {
+    return { connectionString: url.toString(), ssl: false }
+  }
+
   return {
     connectionString: url.toString(),
     ssl: { rejectUnauthorized: false },
