@@ -14,6 +14,8 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   CircleQuestionMark,
   CloudOff,
   CopyPlus,
@@ -22,6 +24,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { formatDayLabel, shiftDays, todayLocal } from '@/lib/date'
+import { useLocalFlag } from '@/lib/localFlag'
 import { queueSize } from '@/lib/outbox'
 import type { GoalDirection, Macros } from '@/lib/nutrition'
 import { useAuth } from '@/auth/AuthProvider'
@@ -42,7 +45,7 @@ import {
   useReorderEntries,
   useUpdateEntry,
 } from './api'
-import { CalorieRing } from './CalorieRing'
+import { CalorieRing, CalorieRingMini } from './CalorieRing'
 import { DraggableEntry, MealDropZone } from './DraggableEntry'
 import { MacroInfoSheet, type Nutrient } from './MacroInfo'
 import { diffOrder, moveEntry } from './reorder'
@@ -411,13 +414,51 @@ function Progress({
     )
   }
 
+  // Свёрнут по умолчанию: развёрнутый блок занимал треть экрана, а списка еды
+  // из-за него не было видно вовсе. Выбор запоминается — на телефоне и на
+  // ноутбуке удобно по-разному.
+  const [expanded, setExpanded] = useLocalFlag('diary-progress-expanded', false)
+
+  if (!expanded) {
+    return (
+      <div className="mt-3 rounded-xl bg-raised px-4 py-3">
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          aria-expanded={false}
+          className="flex w-full items-center gap-3 text-left"
+        >
+          <span className="min-w-0 flex-1">
+            <CalorieRingMini totals={totals} goals={goals} goalDirection={goalDirection} />
+          </span>
+          <ChevronDown size={18} className="shrink-0 text-muted" aria-hidden />
+        </button>
+
+        <div className="mt-2.5 grid grid-cols-3 gap-2">
+          <MiniMacro label="Б" value={totals.protein} goal={goals.protein} color="bg-protein" text="text-protein" />
+          <MiniMacro label="Ж" value={totals.fat} goal={goals.fat} color="bg-fat" text="text-fat" />
+          <MiniMacro label="У" value={totals.carbs} goal={goals.carbs} color="bg-carbs" text="text-carbs" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="relative mt-3 rounded-xl bg-raised px-4 py-5">
       <HelpButton
         label="Что такое калории"
         onClick={() => onExplain('kcal')}
-        className="absolute top-2 right-2"
+        className="absolute top-2 left-2"
       />
+      <button
+        type="button"
+        onClick={() => setExpanded(false)}
+        aria-expanded
+        aria-label="Свернуть"
+        className="absolute top-2 right-2 p-2 text-muted"
+      >
+        <ChevronUp size={18} aria-hidden />
+      </button>
 
       <CalorieRing totals={totals} goals={goals} goalDirection={goalDirection} />
 
@@ -447,6 +488,38 @@ function Progress({
           onExplain={() => onExplain('carbs')}
         />
       </div>
+    </div>
+  )
+}
+
+/**
+ * Макрос в свёрнутом виде: подпись, числа и полоска в одну строку.
+ *
+ * Кнопки «?» тут нет намеренно — в свёрнутом блоке для неё нет места, а тап
+ * по нему и так раскрывает подробности, где справка на месте.
+ */
+function MiniMacro({
+  label,
+  value,
+  goal,
+  color,
+  text,
+}: {
+  label: string
+  value: number
+  goal: number
+  color: string
+  text: string
+}) {
+  return (
+    <div>
+      <p className="mb-1 truncate text-[11px] leading-none">
+        <span className={text}>{label}</span>{' '}
+        <span className="text-muted">
+          {Math.round(value)}/{Math.round(goal)}
+        </span>
+      </p>
+      <Bar value={value} goal={goal} className="h-1" color={color} />
     </div>
   )
 }
@@ -492,10 +565,12 @@ function MacroBar({
   return (
     <div>
       <div className="mb-1 flex items-center gap-0.5">
-        <p className="text-xs">
+        {/* nowrap и округление: «196.8 / 177» не влезало в треть ширины
+            и разрывалось на две строки прямо по дроби */}
+        <p className="truncate text-xs whitespace-nowrap">
           <span className={text}>{label}</span>{' '}
           <span className="text-muted">
-            {trim(value)} / {Math.round(goal)}
+            {Math.round(value)} / {Math.round(goal)}
           </span>
         </p>
         <HelpButton label={`Что такое ${label}`} onClick={onExplain} className="-my-2 -mr-1" />

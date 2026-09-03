@@ -1,10 +1,6 @@
-import type { Macros } from '@/lib/nutrition'
-import type { GoalDirection } from '@/lib/nutrition'
+import type { GoalDirection, Macros } from '@/lib/nutrition'
 
-const SIZE = 180
-const STROKE = 14
-const RADIUS = (SIZE - STROKE) / 2
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS
+const STROKE_RATIO = 0.078
 
 /** Насколько можно перебрать норму, прежде чем это перестанет быть «чуть-чуть». */
 const OVER_TOLERANCE = 1.05
@@ -15,13 +11,61 @@ type Props = {
   goalDirection: GoalDirection
 }
 
+export function ratioOf(totals: Macros, goals: Macros): number {
+  return goals.kcal > 0 ? totals.kcal / goals.kcal : 0
+}
+
+export function isOver(ratio: number): boolean {
+  return ratio > OVER_TOLERANCE
+}
+
 /**
- * Кольцо дневной нормы.
+ * Дуга-мера.
  *
- * Форма выбрана по задаче «одно отношение к пределу» — это мера, а не диаграмма
- * из двух долей. Отсюда и оформление: незаполненная часть кольца это светлая
- * ступень той же гаммы, что и заливка, а не нейтральный серый, поэтому состояние
- * читается по кольцу целиком, а не только по закрашенной дуге.
+ * Вынесена отдельно, потому что кольцо рисуется в двух размерах — крупным
+ * в раскрытом виде и мелким в свёрнутом, — а правила у него одни: незаполненная
+ * часть это светлая ступень той же гаммы, что и заливка, и дуга упирается
+ * в полный круг. Второй виток поверх первого читался бы как «меньше».
+ */
+export function RingArc({ size, ratio }: { size: number; ratio: number }) {
+  const stroke = Math.max(3, size * STROKE_RATIO)
+  const radius = (size - stroke) / 2
+  const circumference = 2 * Math.PI * radius
+  const filled = Math.min(ratio, 1)
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
+      {/* −90°, чтобы отсчёт шёл от двенадцати часов, а не от трёх */}
+      <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="var(--color-track)"
+          strokeWidth={stroke}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={isOver(ratio) ? 'var(--color-danger)' : 'var(--color-accent)'}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - filled)}
+          className="transition-[stroke-dashoffset] duration-500"
+        />
+      </g>
+    </svg>
+  )
+}
+
+const FULL_SIZE = 180
+
+/**
+ * Кольцо дневной нормы в раскрытом виде.
  *
  * В центре ровно одно крупное число — процент. Калории и остаток идут ниже
  * мелким: два больших числа рядом соревнуются за внимание и оба проигрывают.
@@ -30,50 +74,20 @@ type Props = {
  * при похудении перебор. Поэтому подпись под кольцом разная.
  */
 export function CalorieRing({ totals, goals, goalDirection }: Props) {
-  const ratio = goals.kcal > 0 ? totals.kcal / goals.kcal : 0
+  const ratio = ratioOf(totals, goals)
   const percent = Math.round(ratio * 100)
   const left = goals.kcal - totals.kcal
-  const over = ratio > OVER_TOLERANCE
-
-  // Дуга упирается в полный круг: за 100% кольцо больше не растёт, о переборе
-  // говорят цвет и число. Второй виток поверх первого читался бы как «меньше».
-  const filled = Math.min(ratio, 1)
-  const stroke = over ? 'var(--color-danger)' : 'var(--color-accent)'
+  const over = isOver(ratio)
 
   return (
     <div className="flex flex-col items-center">
-      <div className="relative" style={{ width: SIZE, height: SIZE }}>
-        <svg
-          width={SIZE}
-          height={SIZE}
-          viewBox={`0 0 ${SIZE} ${SIZE}`}
+      <div className="relative" style={{ width: FULL_SIZE, height: FULL_SIZE }}>
+        <div
           role="img"
           aria-label={`Съедено ${Math.round(totals.kcal)} из ${goals.kcal} ккал, ${percent} процентов нормы`}
         >
-          {/* −90° — чтобы отсчёт шёл от двенадцати часов, а не от трёх */}
-          <g transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}>
-            <circle
-              cx={SIZE / 2}
-              cy={SIZE / 2}
-              r={RADIUS}
-              fill="none"
-              stroke="var(--color-track)"
-              strokeWidth={STROKE}
-            />
-            <circle
-              cx={SIZE / 2}
-              cy={SIZE / 2}
-              r={RADIUS}
-              fill="none"
-              stroke={stroke}
-              strokeWidth={STROKE}
-              strokeLinecap="round"
-              strokeDasharray={CIRCUMFERENCE}
-              strokeDashoffset={CIRCUMFERENCE * (1 - filled)}
-              className="transition-[stroke-dashoffset] duration-500"
-            />
-          </g>
-        </svg>
+          <RingArc size={FULL_SIZE} ratio={ratio} />
+        </div>
 
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className={`text-5xl font-semibold ${over ? 'text-danger' : 'text-ink'}`}>
@@ -89,6 +103,47 @@ export function CalorieRing({ totals, goals, goalDirection }: Props) {
       <p className={`mt-1 text-sm ${over ? 'text-danger' : 'text-muted'}`}>
         {hint(left, ratio, goalDirection)}
       </p>
+    </div>
+  )
+}
+
+const MINI_SIZE = 52
+
+/**
+ * Свёрнутый вид: то же кольцо, но мелкое и с числами сбоку.
+ *
+ * Процент вынесен наружу, а не внутрь: в круге на пятьдесят пикселей он был бы
+ * нечитаемым, а сам круг всё равно показывает заполненность формой.
+ */
+export function CalorieRingMini({ totals, goals, goalDirection }: Props) {
+  const ratio = ratioOf(totals, goals)
+  const percent = Math.round(ratio * 100)
+  const left = goals.kcal - totals.kcal
+  const over = isOver(ratio)
+
+  return (
+    <div className="flex items-center gap-3">
+      <div
+        className="shrink-0"
+        role="img"
+        aria-label={`${percent} процентов дневной нормы`}
+      >
+        <RingArc size={MINI_SIZE} ratio={ratio} />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <p className="flex items-baseline gap-2">
+          <span className={`text-2xl font-semibold ${over ? 'text-danger' : 'text-ink'}`}>
+            {percent}%
+          </span>
+          <span className="truncate text-sm text-muted">
+            {Math.round(totals.kcal)} / {goals.kcal} ккал
+          </span>
+        </p>
+        <p className={`truncate text-xs ${over ? 'text-danger' : 'text-muted'}`}>
+          {hint(left, ratio, goalDirection)}
+        </p>
+      </div>
     </div>
   )
 }
