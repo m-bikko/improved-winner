@@ -6,6 +6,7 @@ import { LoginScreen } from '@/auth/LoginScreen'
 import { CACHE_BUSTER, persister, queryClient } from '@/lib/queryClient'
 import { AppShell } from '@/shell/AppShell'
 import { ErrorBoundary } from '@/shell/ErrorBoundary'
+import { UpdatePrompt } from '@/shell/UpdatePrompt'
 import { FoodsPage } from '@/features/foods/FoodsPage'
 import { FoodEditPage } from '@/features/foods/FoodEditPage'
 import { DiaryPage } from '@/features/diary/DiaryPage'
@@ -25,6 +26,9 @@ export default function App() {
             <Gate />
           </BrowserRouter>
         </AuthProvider>
+        {/* Вне ErrorBoundary'шного контента, но внутри него самого: уведомление
+            об обновлении должно быть доступно и на экране «что-то сломалось» */}
+        <UpdatePrompt />
       </ErrorBoundary>
     </PersistQueryClientProvider>
   )
