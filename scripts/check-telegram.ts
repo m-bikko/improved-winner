@@ -46,7 +46,11 @@ async function main(): Promise<void> {
       partner.user_id,
     ])
 
-    const before = await client.query<{ n: string }>('select count(*)::text as n from net._http_response')
+    // Отсчёт по времени, а не по количеству строк: net._http_response это
+    // кольцевой буфер, и чистка старых записей посреди проверки уводила
+    // разницу в минус — проверка падала на ровном месте
+    const mark = await client.query<{ t: string }>('select now()::text as t')
+    const since = mark.rows[0]?.t ?? ''
 
     const inserted = await client.query<{ id: string }>(
       `insert into topics (title, body, created_by)
@@ -61,10 +65,11 @@ async function main(): Promise<void> {
     for (let i = 0; i < 20; i++) {
       await new Promise((r) => setTimeout(r, 500))
       const { rows } = await client.query<{ status_code: number | null; content: string | null }>(
-        `select status_code, content from net._http_response order by created desc limit 1`,
+        `select status_code, content from net._http_response
+          where created >= $1::timestamptz order by created desc limit 1`,
+        [since],
       )
-      const after = await client.query<{ n: string }>('select count(*)::text as n from net._http_response')
-      if (Number(after.rows[0]?.n) > Number(before.rows[0]?.n)) {
+      if (rows[0]) {
         response = rows[0]
         break
       }
@@ -108,9 +113,10 @@ async function main(): Promise<void> {
     for (let i = 0; i < 20; i++) {
       await new Promise((r) => setTimeout(r, 500))
       const { rows } = await client.query<{ n: string }>(
-        'select count(*)::text as n from net._http_response',
+        'select count(*)::text as n from net._http_response where created >= $1::timestamptz',
+        [since],
       )
-      sent = Number(rows[0]?.n) - Number(before.rows[0]?.n)
+      sent = Number(rows[0]?.n)
       if (sent >= 3) break
     }
     check(

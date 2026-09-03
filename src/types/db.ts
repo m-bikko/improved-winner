@@ -410,6 +410,45 @@ export type Database = {
         }
         Relationships: []
       }
+      tasks: {
+        Row: {
+          created_at: string
+          created_by: string
+          done_at: string | null
+          done_by: string | null
+          due_at: string | null
+          id: string
+          notes: string | null
+          notified_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          done_at?: string | null
+          done_by?: string | null
+          due_at?: string | null
+          id?: string
+          notes?: string | null
+          notified_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          done_at?: string | null
+          done_by?: string | null
+          due_at?: string | null
+          id?: string
+          notes?: string | null
+          notified_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       topic_comments: {
         Row: {
           author_id: string
@@ -542,6 +581,7 @@ export type Database = {
         }[]
       }
       is_member: { Args: never; Returns: boolean }
+      notify_due_tasks: { Args: never; Returns: number }
       push_notify: {
         Args: { body: string; target_id: string; title: string }
         Returns: undefined
