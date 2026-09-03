@@ -59,6 +59,7 @@ npx tsx scripts/check-telegram.ts  # триггер → Vault → pg_net → Tel
 npx tsx scripts/check-reminders.ts # напоминания: время профиля, дубли, заполненный приём
 npx tsx scripts/check-push.ts      # функция отправки push без деплоя
 npx tsx scripts/check-tasks.ts     # дедлайны: уведомление обоим, без дублей
+npx tsx scripts/check-recurrence.ts # SQL и TS считают повторение одинаково
 npx tsx scripts/make-icons.ts      # перегенерировать иконки после правки SVG
 ```
 

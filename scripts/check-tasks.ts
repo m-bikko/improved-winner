@@ -94,10 +94,12 @@ async function main(): Promise<void> {
       `отправлено: ${second.rows[0]?.n} — задача идёт каждые 5 минут, дубли недопустимы`,
     )
 
-    // Сдвинули срок — отметка должна сброситься, иначе задача больше никогда
-    // о себе не напомнит
+    // Сдвинули срок — отметки должны сброситься, иначе задача больше никогда
+    // о себе не напомнит. Дедупликация живёт в reminded_offsets: колонка
+    // notified_at снята как мёртвая.
     await client.query(
-      `update tasks set due_at = now() - interval '1 minute', notified_at = null where id = $1`,
+      `update tasks set due_at = now() - interval '1 minute', reminded_offsets = '{}'
+        where id = $1`,
       [taskId],
     )
     const rescheduled = await client.query<{ n: string }>('select notify_due_tasks()::text as n')
@@ -109,12 +111,77 @@ async function main(): Promise<void> {
 
     // Выполненная задача молчит
     await client.query(
-      `update tasks set done_at = now(), done_by = $2, notified_at = null,
+      `update tasks set done_at = now(), done_by = $2, reminded_offsets = '{}',
               due_at = now() - interval '1 minute' where id = $1`,
       [taskId, author],
     )
     const done = await client.query<{ n: string }>('select notify_due_tasks()::text as n')
     check(done.rows[0]?.n === '0', 'Выполненная задача не уведомляет', `отправлено: ${done.rows[0]?.n}`)
+
+    // --- Настраиваемые напоминания ------------------------------------------
+    // Срок через час, напоминания за сутки, за час и в момент. Сейчас должны
+    // сработать ровно два первых: «в момент» ещё не пришло.
+    const multi = await client.query<{ id: string }>(
+      `insert into tasks (title, due_at, reminders, created_by)
+       values ('ТЕСТ напоминания', now() + interval '55 minutes', array[1440, 60, 0], $1)
+       returning id`,
+      [author],
+    )
+    const multiId = multi.rows[0]?.id
+
+    const firstPass = await client.query<{ n: string }>('select notify_due_tasks()::text as n')
+    check(
+      firstPass.rows[0]?.n === '2',
+      'Срабатывают только те напоминания, чьё время пришло',
+      `за сутки и за час — да, в момент — нет: отправлено ${firstPass.rows[0]?.n}`,
+    )
+
+    const repeatPass = await client.query<{ n: string }>('select notify_due_tasks()::text as n')
+    check(repeatPass.rows[0]?.n === '0', 'Те же напоминания не повторяются', `отправлено: ${repeatPass.rows[0]?.n}`)
+
+    // Срок наступил — доезжает «в момент»
+    await client.query(`update tasks set due_at = now() where id = $1`, [multiId])
+    const atDue = await client.query<{ n: string }>('select notify_due_tasks()::text as n')
+    check(atDue.rows[0]?.n === '1', 'Напоминание «в момент» приходит по сроку', `отправлено: ${atDue.rows[0]?.n}`)
+
+    // --- Повторение ---------------------------------------------------------
+    const recurring = await client.query<{ id: string }>(
+      `insert into tasks (title, due_at, reminders, recurrence, created_by)
+       values ('ТЕСТ повтор', now() - interval '1 minute', array[0],
+               '{"freq":"daily","interval":1}'::jsonb, $1)
+       returning id`,
+      [author],
+    )
+    const recurringId = recurring.rows[0]?.id
+
+    await client.query('select notify_due_tasks()')
+    const moved = await client.query<{ shifted: boolean; offsets: string }>(
+      `select due_at > now() as shifted, reminded_offsets::text as offsets
+         from tasks where id = $1`,
+      [recurringId],
+    )
+    check(
+      moved.rows[0]?.shifted === true && moved.rows[0]?.offsets === '{}',
+      'Повторяющаяся задача сдвигается вперёд и обнуляет отметки',
+      `срок в будущем: ${moved.rows[0]?.shifted}, отметки: ${moved.rows[0]?.offsets}`,
+    )
+
+    // Повторение с истёкшим сроком окончания снимается, а не сдвигается вечно
+    await client.query(
+      `update tasks set due_at = now() - interval '1 minute', reminded_offsets = '{}',
+              recurrence_until = current_date - 1 where id = $1`,
+      [recurringId],
+    )
+    await client.query('select notify_due_tasks()')
+    const ended = await client.query<{ recurrence: string | null }>(
+      'select recurrence::text as recurrence from tasks where id = $1',
+      [recurringId],
+    )
+    check(
+      ended.rows[0]?.recurrence === null,
+      'После даты окончания повторение снимается',
+      `правило: ${ended.rows[0]?.recurrence ?? 'null'}`,
+    )
   } finally {
     await client.query('rollback')
     await client.end()

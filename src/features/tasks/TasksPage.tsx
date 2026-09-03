@@ -1,13 +1,23 @@
 import { useMemo, useState } from 'react'
-import { CalendarClock, Check, Plus, Trash2, TriangleAlert } from 'lucide-react'
-import { formatDueAt, fromDateTimeInput, toDateTimeInput } from '@/lib/date'
+import {
+  Bell,
+  CalendarClock,
+  CalendarDays,
+  Check,
+  List,
+  Plus,
+  Repeat,
+  TriangleAlert,
+} from 'lucide-react'
+import { formatDueAt, todayLocal } from '@/lib/date'
+import { useLocalFlag } from '@/lib/localFlag'
 import { useAuth } from '@/auth/AuthProvider'
-import { Button } from '@/ui/Button'
-import { Field } from '@/ui/Field'
-import { Sheet } from '@/ui/Sheet'
 import { EmptyState, ErrorState, Loading } from '@/ui/States'
 import { useProfiles } from '@/features/profile/api'
-import { useDeleteTask, useSaveTask, useTasks, useToggleTask, type Task } from './api'
+import { useTasks, useToggleTask, type Task } from './api'
+import { TaskEditor } from './TaskEditor'
+import { TasksCalendar, occurrencesOn } from './TasksCalendar'
+import { describeRecurrence } from './recurrence'
 
 export function TasksPage() {
   const { user } = useAuth()
@@ -16,6 +26,9 @@ export function TasksPage() {
   const tasks = useTasks()
   const profiles = useProfiles()
   const toggle = useToggleTask()
+
+  const [asCalendar, setAsCalendar] = useLocalFlag('tasks-calendar-view', true)
+  const [selected, setSelected] = useState(todayLocal)
   const [editing, setEditing] = useState<Task | 'new' | null>(null)
 
   const nicknames = useMemo(
@@ -23,58 +36,124 @@ export function TasksPage() {
     [profiles.data],
   )
 
-  const { open, done } = useMemo(() => {
-    const all = tasks.data ?? []
-    return {
-      open: all.filter((t) => t.doneAt === null),
-      // Свежевыполненные сверху: к ним чаще возвращаются, чем к прошлогодним
-      done: all.filter((t) => t.doneAt !== null).sort((a, b) => (b.doneAt ?? '').localeCompare(a.doneAt ?? '')),
-    }
-  }, [tasks.data])
+  const all = tasks.data ?? []
+  const dayItems = useMemo(() => occurrencesOn(all, selected), [all, selected])
+
+  const { open, done, undated } = useMemo(
+    () => ({
+      open: all.filter((t) => t.doneAt === null && t.dueAt !== null),
+      undated: all.filter((t) => t.doneAt === null && t.dueAt === null),
+      done: all
+        .filter((t) => t.doneAt !== null)
+        .sort((a, b) => (b.doneAt ?? '').localeCompare(a.doneAt ?? '')),
+    }),
+    [all],
+  )
 
   if (tasks.isError) return <ErrorState error={tasks.error} onRetry={() => void tasks.refetch()} />
 
+  const markDone = (task: Task, done: boolean) =>
+    void toggle.mutateAsync({ task, done, userId })
+
   return (
     <div className="mx-auto max-w-2xl px-4 pt-3 pb-28">
+      <div className="mb-3 flex gap-1 rounded-xl bg-raised p-1">
+        <ViewTab active={asCalendar} onClick={() => setAsCalendar(true)}>
+          <CalendarDays size={15} aria-hidden />
+          Календарь
+        </ViewTab>
+        <ViewTab active={!asCalendar} onClick={() => setAsCalendar(false)}>
+          <List size={15} aria-hidden />
+          Список
+        </ViewTab>
+      </div>
+
       {tasks.isPending && <Loading />}
 
-      {tasks.isSuccess && open.length === 0 && done.length === 0 && (
-        <EmptyState
-          title="Задач нет"
-          hint="Заведи задачу со сроком — при наступлении дедлайна уведомление придёт вам обоим."
-        />
-      )}
-
-      {open.length > 0 && (
-        <ul className="flex flex-col gap-2">
-          {open.map((task) => (
-            <li key={task.id}>
-              <TaskRow
-                task={task}
-                nicknames={nicknames}
-                onToggle={() => void toggle.mutateAsync({ id: task.id, done: true, userId })}
-                onOpen={() => setEditing(task)}
-              />
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {done.length > 0 && (
+      {asCalendar ? (
         <>
-          <p className="mt-6 mb-2 text-sm text-muted">Выполнено</p>
-          <ul className="flex flex-col gap-2">
-            {done.map((task) => (
-              <li key={task.id}>
-                <TaskRow
-                  task={task}
-                  nicknames={nicknames}
-                  onToggle={() => void toggle.mutateAsync({ id: task.id, done: false, userId })}
-                  onOpen={() => setEditing(task)}
-                />
-              </li>
-            ))}
-          </ul>
+          <TasksCalendar tasks={all} selected={selected} onSelect={setSelected} />
+
+          <p className="mt-5 mb-2 text-sm text-muted">{formatDayHeading(selected)}</p>
+
+          {dayItems.length === 0 ? (
+            <p className="rounded-xl bg-surface px-4 py-6 text-center text-sm text-muted ring-1 ring-line">
+              На этот день ничего не запланировано
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {dayItems.map((item) => (
+                <li key={`${item.task.id}-${item.at.toISOString()}`}>
+                  <TaskRow
+                    occurrence={item}
+                    nicknames={nicknames}
+                    onToggle={() => markDone(item.task, true)}
+                    onOpen={() => setEditing(item.task)}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {undated.length > 0 && (
+            <>
+              <p className="mt-6 mb-2 text-sm text-muted">Без срока</p>
+              <ul className="flex flex-col gap-2">
+                {undated.map((task) => (
+                  <li key={task.id}>
+                    <TaskRow
+                      occurrence={{ task, at: null }}
+                      nicknames={nicknames}
+                      onToggle={() => markDone(task, true)}
+                      onOpen={() => setEditing(task)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </>
+      ) : (
+        <>
+          {tasks.isSuccess && all.length === 0 && (
+            <EmptyState
+              title="Задач нет"
+              hint="Заведи задачу со сроком — напоминания придут вам обоим."
+            />
+          )}
+
+          {[...open, ...undated].length > 0 && (
+            <ul className="flex flex-col gap-2">
+              {[...open, ...undated].map((task) => (
+                <li key={task.id}>
+                  <TaskRow
+                    occurrence={{ task, at: task.dueAt ? new Date(task.dueAt) : null }}
+                    nicknames={nicknames}
+                    onToggle={() => markDone(task, true)}
+                    onOpen={() => setEditing(task)}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {done.length > 0 && (
+            <>
+              <p className="mt-6 mb-2 text-sm text-muted">Выполнено</p>
+              <ul className="flex flex-col gap-2">
+                {done.map((task) => (
+                  <li key={task.id}>
+                    <TaskRow
+                      occurrence={{ task, at: task.dueAt ? new Date(task.dueAt) : null }}
+                      nicknames={nicknames}
+                      onToggle={() => markDone(task, false)}
+                      onOpen={() => setEditing(task)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </>
       )}
 
@@ -94,6 +173,8 @@ export function TasksPage() {
         <TaskEditor
           task={editing === 'new' ? null : editing}
           canDelete={editing !== 'new' && editing.createdBy === userId}
+          // Новая задача из календаря попадает на выбранный день, а не на сегодня
+          {...(editing === 'new' && asCalendar ? { defaultDue: `${selected}T09:00` } : {})}
           onClose={() => setEditing(null)}
         />
       )}
@@ -101,21 +182,29 @@ export function TasksPage() {
   )
 }
 
+function formatDayHeading(iso: string): string {
+  const today = todayLocal()
+  if (iso === today) return 'Сегодня'
+  const date = new Date(`${iso}T12:00:00`)
+  return date.toLocaleDateString('ru', { day: 'numeric', month: 'long', weekday: 'long' })
+}
+
 function TaskRow({
-  task,
+  occurrence,
   nicknames,
   onToggle,
   onOpen,
 }: {
-  task: Task
+  occurrence: { task: Task; at: Date | null }
   nicknames: Map<string, string>
   onToggle: () => void
   onOpen: () => void
 }) {
+  const { task, at } = occurrence
   const isDone = task.doneAt !== null
   // Просрочка считается только у невыполненных: закрытая вчера задача
   // не должна светиться красным вечно
-  const overdue = !isDone && task.dueAt !== null && new Date(task.dueAt) <= new Date()
+  const overdue = !isDone && at !== null && at <= new Date()
 
   return (
     <div
@@ -141,13 +230,27 @@ function TaskRow({
           <span className="mt-0.5 line-clamp-2 block text-sm text-muted">{task.notes}</span>
         )}
 
-        {task.dueAt && !isDone && (
-          <span
-            className={`mt-1 flex items-center gap-1 text-xs ${overdue ? 'text-danger' : 'text-muted'}`}
-          >
-            {overdue ? <TriangleAlert size={12} aria-hidden /> : <CalendarClock size={12} aria-hidden />}
-            {overdue ? 'Срок вышел: ' : 'Срок: '}
-            {formatDueAt(task.dueAt)}
+        {!isDone && (
+          <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
+            {at && (
+              <span className={`flex items-center gap-1 ${overdue ? 'text-danger' : 'text-muted'}`}>
+                {overdue ? <TriangleAlert size={12} aria-hidden /> : <CalendarClock size={12} aria-hidden />}
+                {overdue ? 'Срок вышел: ' : ''}
+                {formatDueAt(at.toISOString())}
+              </span>
+            )}
+            {task.recurrence && (
+              <span className="flex items-center gap-1 text-muted">
+                <Repeat size={12} aria-hidden />
+                {describeRecurrence(task.recurrence)}
+              </span>
+            )}
+            {task.reminders.length > 0 && at && (
+              <span className="flex items-center gap-1 text-muted">
+                <Bell size={12} aria-hidden />
+                {task.reminders.length}
+              </span>
+            )}
           </span>
         )}
 
@@ -161,102 +264,25 @@ function TaskRow({
   )
 }
 
-function TaskEditor({
-  task,
-  canDelete,
-  onClose,
+function ViewTab({
+  active,
+  onClick,
+  children,
 }: {
-  task: Task | null
-  canDelete: boolean
-  onClose: () => void
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
 }) {
-  const save = useSaveTask()
-  const remove = useDeleteTask()
-
-  const [title, setTitle] = useState(task?.title ?? '')
-  const [notes, setNotes] = useState(task?.notes ?? '')
-  const [due, setDue] = useState(task?.dueAt ? toDateTimeInput(task.dueAt) : '')
-  const [error, setError] = useState<string | null>(null)
-
-  const submit = async () => {
-    setError(null)
-    try {
-      await save.mutateAsync({
-        ...(task ? { id: task.id } : {}),
-        title,
-        notes,
-        dueAt: fromDateTimeInput(due),
-      })
-      onClose()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
-    }
-  }
-
   return (
-    <Sheet open onClose={onClose} title={task ? 'Задача' : 'Новая задача'}>
-      <div className="flex flex-col gap-4 px-4 py-4">
-        <Field
-          label="Что сделать"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Записаться к врачу"
-          autoFocus={!task}
-        />
-
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-muted">Заметка</span>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={3}
-            placeholder="необязательно"
-            className="w-full resize-none rounded-xl bg-surface px-4 py-3 ring-1 ring-line
-                       outline-none focus:ring-2 focus:ring-accent placeholder:text-muted"
-          />
-        </label>
-
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-muted">Срок</span>
-          {/* Системный datetime-local: на телефоне он даёт родной выбор даты
-              и времени, который своим компонентом не переплюнуть */}
-          <input
-            type="datetime-local"
-            value={due}
-            onChange={(e) => setDue(e.target.value)}
-            className="w-full rounded-xl bg-surface px-4 py-3 ring-1 ring-line outline-none
-                       focus:ring-2 focus:ring-accent"
-          />
-          <span className="text-xs text-muted">
-            {due
-              ? 'Когда срок наступит, уведомление придёт вам обоим — на устройство и в Telegram.'
-              : 'Без срока уведомлений не будет.'}
-          </span>
-        </label>
-
-        {due && (
-          <button type="button" onClick={() => setDue('')} className="self-start text-sm text-muted underline">
-            Убрать срок
-          </button>
-        )}
-
-        {error && <p className="text-sm text-danger">{error}</p>}
-
-        <Button onClick={() => void submit()} disabled={!title.trim()} loading={save.isPending}>
-          Сохранить
-        </Button>
-
-        {canDelete && task && (
-          <Button
-            variant="danger"
-            loading={remove.isPending}
-            onClick={() => void remove.mutateAsync(task.id).then(onClose)}
-          >
-            <Trash2 size={18} aria-hidden />
-            Удалить
-          </Button>
-        )}
-      </div>
-    </Sheet>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition-colors ${
+        active ? 'bg-surface text-ink shadow-sm' : 'text-muted'
+      }`}
+    >
+      {children}
+    </button>
   )
 }

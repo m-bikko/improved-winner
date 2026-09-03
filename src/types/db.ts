@@ -419,7 +419,10 @@ export type Database = {
           due_at: string | null
           id: string
           notes: string | null
-          notified_at: string | null
+          recurrence: Json | null
+          recurrence_until: string | null
+          reminded_offsets: number[]
+          reminders: number[]
           title: string
           updated_at: string
         }
@@ -431,7 +434,10 @@ export type Database = {
           due_at?: string | null
           id?: string
           notes?: string | null
-          notified_at?: string | null
+          recurrence?: Json | null
+          recurrence_until?: string | null
+          reminded_offsets?: number[]
+          reminders?: number[]
           title: string
           updated_at?: string
         }
@@ -443,7 +449,10 @@ export type Database = {
           due_at?: string | null
           id?: string
           notes?: string | null
-          notified_at?: string | null
+          recurrence?: Json | null
+          recurrence_until?: string | null
+          reminded_offsets?: number[]
+          reminders?: number[]
           title?: string
           updated_at?: string
         }
@@ -581,6 +590,10 @@ export type Database = {
         }[]
       }
       is_member: { Args: never; Returns: boolean }
+      next_occurrence: {
+        Args: { from_ts: string; rule: Json }
+        Returns: string
+      }
       notify_due_tasks: { Args: never; Returns: number }
       push_notify: {
         Args: { body: string; target_id: string; title: string }
