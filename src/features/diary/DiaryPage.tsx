@@ -1,4 +1,15 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import {
+  DndContext,
+  PointerSensor,
+  closestCorners,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragOverEvent,
+} from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CalendarDays, ChevronLeft, ChevronRight, CloudOff, CopyPlus, Plus, Target } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { formatDayLabel, shiftDays, todayLocal } from '@/lib/date'
@@ -19,9 +30,12 @@ import {
   useDiaryDay,
   useFreezeDayGoal,
   useOutboxFlush,
+  useReorderEntries,
   useUpdateEntry,
 } from './api'
 import { CalorieRing } from './CalorieRing'
+import { DraggableEntry, MealDropZone } from './DraggableEntry'
+import { diffOrder, moveEntry } from './reorder'
 import { MonthCalendar } from './MonthCalendar'
 import { FoodPicker } from './FoodPicker'
 import { PortionSheet } from './PortionSheet'
@@ -109,6 +123,40 @@ export function DiaryPage() {
 
   const byMeal = (source: DiaryEntry[], meal: Meal) => source.filter((e) => e.meal === meal)
 
+  // --- Перетаскивание --------------------------------------------------------
+  const qc = useQueryClient()
+  const reorder = useReorderEntries()
+  const beforeDrag = useRef<DiaryEntry[] | null>(null)
+
+  // Ручка отдельная, поэтому порога в несколько пикселей достаточно: жест
+  // не конкурирует с тапом по строке и не требует удержания
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
+
+  const dayKey = ['diary', userId, date]
+
+  // Пишем порядок прямо в кэш запроса, а не во второе состояние: иначе список
+  // имел бы два источника правды, и они разъезжались бы при любом обновлении
+  const applyOrder = (next: DiaryEntry[]) => qc.setQueryData(dayKey, next)
+
+  const onDragOver = (event: DragOverEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    applyOrder(moveEntry(entries, String(active.id), String(over.id)))
+  }
+
+  const onDragEnd = (event: DragEndEvent) => {
+    const original = beforeDrag.current
+    beforeDrag.current = null
+    if (!original) return
+
+    const { active, over } = event
+    const final = over ? moveEntry(entries, String(active.id), String(over.id)) : entries
+    applyOrder(final)
+
+    const updates = diffOrder(original, final)
+    if (updates.length > 0) void reorder.mutateAsync(updates)
+  }
+
   const openEntry = (entry: DiaryEntry) => {
     const food = foods.data?.find((f) => f.id === entry.foodId)
     setPortion({
@@ -186,28 +234,42 @@ export function DiaryPage() {
           loading={partnerDay.isPending}
         />
       ) : (
-        <div className="mt-4 flex flex-col gap-3">
-          {MEALS.map((meal) => {
-            const mealEntries = byMeal(entries, meal)
-            const yesterdayMeal = byMeal(yesterday.data ?? [], meal)
-            return (
-              <MealSection
-                key={meal}
-                meal={meal}
-                entries={mealEntries}
-                onAdd={() => setPicking(meal)}
-                onOpen={openEntry}
-                repeatable={mealEntries.length === 0 ? yesterdayMeal : []}
-                onRepeat={() =>
-                  void copyEntries
-                    .mutateAsync({ entries: yesterdayMeal, toDate: date, userId })
-                    .then(freezeTodayGoal)
-                }
-                repeating={copyEntries.isPending}
-              />
-            )
-          })}
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={() => {
+            beforeDrag.current = entries
+          }}
+          onDragOver={onDragOver}
+          onDragEnd={onDragEnd}
+          onDragCancel={() => {
+            if (beforeDrag.current) applyOrder(beforeDrag.current)
+            beforeDrag.current = null
+          }}
+        >
+          <div className="mt-4 flex flex-col gap-3">
+            {MEALS.map((meal) => {
+              const mealEntries = byMeal(entries, meal)
+              const yesterdayMeal = byMeal(yesterday.data ?? [], meal)
+              return (
+                <MealSection
+                  key={meal}
+                  meal={meal}
+                  entries={mealEntries}
+                  onAdd={() => setPicking(meal)}
+                  onOpen={openEntry}
+                  repeatable={mealEntries.length === 0 ? yesterdayMeal : []}
+                  onRepeat={() =>
+                    void copyEntries
+                      .mutateAsync({ entries: yesterdayMeal, toDate: date, userId })
+                      .then(freezeTodayGoal)
+                  }
+                  repeating={copyEntries.isPending}
+                />
+              )
+            })}
+          </div>
+        </DndContext>
       )}
 
       <MonthCalendar
@@ -415,23 +477,16 @@ function MealSection({
         )}
       </div>
 
-      {entries.map((entry) => (
-        <button
-          key={entry.id}
-          type="button"
-          onClick={() => onOpen(entry)}
-          className="flex w-full items-center gap-3 border-t border-line px-4 py-2.5 text-left active:bg-raised"
+      <MealDropZone meal={meal} isEmpty={entries.length === 0}>
+        <SortableContext
+          items={entries.map((e) => e.id)}
+          strategy={verticalListSortingStrategy}
         >
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm">{entry.name}</span>
-            <span className="text-xs text-muted">
-              {entry.servingLabel ? `${entry.servingLabel} · ` : ''}
-              {trim(entry.grams)} г
-            </span>
-          </span>
-          <span className="shrink-0 text-sm text-muted">{Math.round(entry.kcal)} ккал</span>
-        </button>
-      ))}
+          {entries.map((entry) => (
+            <DraggableEntry key={entry.id} entry={entry} onOpen={() => onOpen(entry)} />
+          ))}
+        </SortableContext>
+      </MealDropZone>
 
       {repeatable.length > 0 && (
         <button

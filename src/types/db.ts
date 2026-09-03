@@ -494,6 +494,7 @@ export type Database = {
         }[]
       }
       is_member: { Args: never; Returns: boolean }
+      reorder_diary: { Args: { p_items: Json }; Returns: undefined }
       search_topics: {
         Args: { q: string }
         Returns: {

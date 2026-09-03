@@ -215,6 +215,29 @@ export function useDeleteEntry() {
   })
 }
 
+/**
+ * Сохраняет новый порядок и приёмы пищи после перетаскивания.
+ *
+ * Одним вызовом на все затронутые строки: серия отдельных запросов оставила бы
+ * дневник в промежуточном состоянии, если часть дойдёт, а часть нет.
+ *
+ * Инвалидацию делаем только при ошибке. При успехе список уже показывает нужный
+ * порядок — обновлять его повторно значит моргнуть на ровном месте.
+ */
+export function useReorderEntries() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (items: { id: string; meal: Meal; sortOrder: number }[]) => {
+      if (items.length === 0) return
+      const { error } = await supabase.rpc('reorder_diary', {
+        p_items: items.map((i) => ({ id: i.id, meal: i.meal, sort_order: i.sortOrder })),
+      })
+      if (error) throw error
+    },
+    onError: () => void qc.invalidateQueries({ queryKey: ['diary'] }),
+  })
+}
+
 /** Перенос записей другого дня в текущий — «скопировать вчера». */
 export function useCopyEntries() {
   const qc = useQueryClient()
