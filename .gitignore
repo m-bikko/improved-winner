@@ -1,0 +1,34 @@
+# Секреты — .env содержит POSTGRES_PASSWORD, SUPABASE_SECRET_KEY и SERVICE_ROLE_KEY
+.env
+.env.*
+!.env.example
+
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Vite / PWA генерируемые файлы
+dev-dist/
+public/sw.js
+public/workbox-*.js
+
+# Supabase CLI
+supabase/.temp/
+supabase/.branches/
+
+# Локальные настройки Claude Code (содержат пути к домашней папке, машинно-специфичны)
+.claude/
+
+# Редакторы и ОС
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.swp
+
+# Логи
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

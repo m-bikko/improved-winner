@@ -1,0 +1,109 @@
+@import 'tailwindcss';
+
+/* Токены темы. Значения живут в :root и переключаются по prefers-color-scheme,
+   а @theme только связывает их с утилитами Tailwind (bg-surface, text-muted и т.д.). */
+@theme {
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-raised: var(--c-raised);
+  --color-line: var(--c-line);
+  --color-ink: var(--c-ink);
+  --color-muted: var(--c-muted);
+  --color-accent: var(--c-accent);
+  --color-accent-ink: var(--c-accent-ink);
+  --color-danger: var(--c-danger);
+  --color-protein: var(--c-protein);
+  --color-fat: var(--c-fat);
+  --color-carbs: var(--c-carbs);
+
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+:root {
+  --c-bg: #faf9f7;
+  --c-surface: #ffffff;
+  --c-raised: #f2f0ec;
+  --c-line: #e6e2dc;
+  --c-ink: #1c1a17;
+  --c-muted: #6f6a63;
+  --c-accent: #b4485f;
+  --c-accent-ink: #ffffff;
+  --c-danger: #c2410c;
+  --c-protein: #4a7fb5;
+  --c-fat: #c08a3e;
+  --c-carbs: #5a9367;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-bg: #141312;
+    --c-surface: #1e1c1a;
+    --c-raised: #2a2724;
+    --c-line: #322f2b;
+    --c-ink: #f2efea;
+    --c-muted: #9c958c;
+    --c-accent: #e5768c;
+    --c-accent-ink: #1c1a17;
+    --c-danger: #f07a4a;
+    --c-protein: #7aa9d8;
+    --c-fat: #dbab68;
+    --c-carbs: #83b98d;
+  }
+}
+
+html {
+  background: var(--c-bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--c-bg);
+  color: var(--c-ink);
+  font-family: var(--font-sans);
+  /* Убирает залипание подсветки при тапе на мобильном Safari */
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+/* iOS зумит страницу при фокусе на инпуте с font-size < 16px.
+   Ставим здесь один раз, чтобы не помнить об этом в каждом компоненте. */
+input,
+textarea,
+select,
+button {
+  font: inherit;
+  font-size: max(16px, 1em);
+  color: inherit;
+}
+
+button {
+  -webkit-appearance: none;
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* Числовые поля без спиннеров — граммы вводят с цифровой клавиатуры */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
