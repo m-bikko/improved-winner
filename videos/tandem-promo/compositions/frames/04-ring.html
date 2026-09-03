@@ -1,0 +1,561 @@
+<template>
+  <style>
+    /* ── 04-ring — «Кольцо нормы» ───────────────────────────────────────────
+       The diary screenshot (assets/diary-19-ring.png, 1170×2532) is the plate.
+       The ring, the percent lockup, the kcal line, the «Осталось …» line and
+       the three macro rows are COVERED and rebuilt as live elements, because
+       you cannot tween between two bitmaps.
+
+       All overlay coordinates below are authored in SCREENSHOT pixels inside
+       .f04-plate (1170×2532) and scaled once by k = 530/1170 = 0.45299145.
+       Measured from the PNG:
+         ring outer box      x 315 → 855, y 422.5 → 962.5  (540×540, centre 585/692.5)
+         ring stroke width   42px = 14.04 × 3   → the shot is a 3× capture
+         «19»                cap 610 → 715 (106px), lockup centred on x 585
+         «504 / 2674 ккал»   y 754 → 793, centred on x 585
+         «Осталось …»        y 989 → 1020, centred on x 585
+         macro label row     y 1100 → 1140, «?» chip Ø43 stroke 4
+         macro tracks        y 1155 → 1173 (h 18, r 9)
+                             col x/width: 96/303 · 435/300 · 771/303
+         card ground         #2a2724 · track #322f2b · muted #9c958c · text #f2efea
+    ─────────────────────────────────────────────────────────────────────── */
+
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden; /* REQUIRED — the camera scales past the frame */
+      font-family: -apple-system, system-ui, sans-serif;
+      color: #f2efea;
+    }
+
+    .f04-clip {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* ── ground ─────────────────────────────────────────────────────────── */
+    #f04-ring-bg {
+      background: #141312;
+    }
+    #f04-ring-bloom {
+      position: absolute;
+      left: 40px;
+      top: 210px;
+      width: 1000px;
+      height: 1160px;
+      border-radius: 50%;
+      background: radial-gradient(
+        closest-side,
+        rgba(229, 118, 140, 0.1) 0%,
+        rgba(229, 118, 140, 0.05) 52%,
+        rgba(229, 118, 140, 0) 100%
+      );
+    }
+
+    /* ── camera (coordinate-target-zoom: outer scales, inner translates) ─── */
+    #f04-ring-cam-outer {
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    #f04-ring-cam-inner {
+      position: absolute;
+      inset: 0;
+      will-change: transform;
+    }
+
+    /* ── phone ──────────────────────────────────────────────────────────── */
+    #f04-ring-phone {
+      position: absolute;
+      left: 266px;
+      top: 427.51px;
+      width: 548px;
+      height: 1164.98px;
+      padding: 9px;
+      background: #000;
+      border: 1.5px solid #322f2b;
+      border-radius: 54px;
+    }
+    #f04-ring-screen {
+      position: relative;
+      width: 530px;
+      height: 1146.98px;
+      overflow: hidden;
+      border-radius: 46px;
+      background: #141312;
+    }
+    .f04-plate {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1170px;
+      height: 2532px;
+      transform: scale(0.45299145);
+      transform-origin: 0 0;
+    }
+    .f04-plate img {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1170px;
+      height: 2532px;
+      display: block;
+    }
+
+    /* ── covers: hide the baked-in ring / numbers / bars ─────────────────── */
+    .f04-cover {
+      position: absolute;
+      background: #2a2724;
+    }
+    #f04-ring-cover-a {
+      left: 300px;
+      top: 410px;
+      width: 570px;
+      height: 634px;
+    }
+    #f04-ring-cover-b {
+      left: 86px;
+      top: 1086px;
+      width: 996px;
+      height: 100px;
+    }
+
+    /* ── live ring ──────────────────────────────────────────────────────── */
+    #f04-ring-svg {
+      position: absolute;
+      left: 315px;
+      top: 422.5px;
+      width: 540px;
+      height: 540px;
+      overflow: visible;
+    }
+
+    /* ── live percent lockup ────────────────────────────────────────────── */
+    #f04-ring-numwrap {
+      position: absolute;
+      left: 0;
+      top: 589.8px;
+      width: 1170px;
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      line-height: 1;
+      transform-origin: center center;
+    }
+    #f04-ring-num {
+      font-size: 148px;
+      font-weight: 700;
+      color: #f2efea;
+      letter-spacing: -0.01em;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+      min-width: 176px;
+      text-align: center;
+    }
+    #f04-ring-pct {
+      font-size: 74px;
+      font-weight: 600;
+      color: #9c958c;
+    }
+
+    .f04-subline {
+      position: absolute;
+      left: 0;
+      width: 1170px;
+      text-align: center;
+      line-height: 1;
+      font-size: 42px;
+      font-weight: 400;
+      color: #9c958c;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+    }
+    #f04-ring-kcal {
+      top: 749.5px;
+    }
+    #f04-ring-rest {
+      top: 984.5px;
+    }
+
+    /* ── live macro rows ────────────────────────────────────────────────── */
+    .f04-mrow {
+      position: absolute;
+      top: 1097px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      line-height: 42px;
+      font-size: 36px;
+      font-weight: 400;
+      white-space: nowrap;
+    }
+    .f04-mlet {
+      font-weight: 600;
+      margin-right: 14px;
+    }
+    .f04-mval {
+      color: #9c958c;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+    }
+    .f04-mq {
+      box-sizing: border-box;
+      margin-left: 34px;
+      width: 43px;
+      height: 43px;
+      border: 4px solid #9c958c;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 27px;
+      line-height: 1;
+      font-weight: 500;
+      color: #9c958c;
+    }
+    .f04-track {
+      position: absolute;
+      top: 1155px;
+      height: 18px;
+      border-radius: 9px;
+      background: #322f2b;
+      overflow: hidden;
+    }
+    .f04-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%; /* REQUIRED — a zero-width fill stays invisible under scaleX */
+      height: 100%;
+      border-radius: 9px;
+      transform: scaleX(0);
+      transform-origin: left center;
+    }
+
+    .f04-c1 {
+      left: 96px;
+      width: 303px;
+    }
+    .f04-c2 {
+      left: 435px;
+      width: 300px;
+    }
+    .f04-c3 {
+      left: 771px;
+      width: 303px;
+    }
+
+    /* ── title band ─────────────────────────────────────────────────────── */
+    #f04-ring-scrim {
+      position: absolute;
+      left: 0;
+      top: 1596px;
+      width: 1080px;
+      height: 324px;
+      background: linear-gradient(
+        to bottom,
+        rgba(20, 19, 18, 0) 0px,
+        rgba(20, 19, 18, 1) 44px,
+        rgba(20, 19, 18, 1) 100%
+      );
+      opacity: 0;
+    }
+    #f04-ring-titlebox {
+      position: absolute;
+      left: 70px;
+      top: 1648px;
+      width: 940px;
+      text-align: center;
+    }
+    #f04-ring-accentline {
+      width: 64px;
+      height: 4px;
+      border-radius: 2px;
+      background: #e5768c;
+      margin: 0 auto 30px;
+      transform: scaleX(0);
+      transform-origin: center center;
+    }
+    .f04-tline {
+      font-size: 48px;
+      font-weight: 600;
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      color: #f2efea;
+      opacity: 0;
+    }
+    .f04-acc {
+      color: #e5768c;
+    }
+  </style>
+
+  <div
+    id="root"
+    data-composition-id="04-ring"
+    data-start="0"
+    data-duration="10.35"
+    data-width="1080"
+    data-height="1920"
+  >
+    <!-- full-bleed ground (never on #root) -->
+    <div
+      id="f04-ring-bg"
+      class="clip f04-clip"
+      data-start="0"
+      data-duration="10.35"
+      data-track-index="0"
+    >
+      <div id="f04-ring-bloom"></div>
+    </div>
+
+    <!-- camera -->
+    <div
+      id="f04-ring-cam-outer"
+      class="clip f04-clip"
+      data-start="0"
+      data-duration="10.35"
+      data-track-index="1"
+    >
+      <div id="f04-ring-cam-inner">
+        <div id="f04-ring-phone">
+          <div id="f04-ring-screen">
+            <div class="f04-plate">
+              <img src="assets/diary-19-ring.png" alt="" width="1170" height="2532" />
+
+              <div id="f04-ring-cover-a" class="f04-cover"></div>
+              <div id="f04-ring-cover-b" class="f04-cover"></div>
+
+              <svg id="f04-ring-svg" viewBox="0 0 180 180" fill="none">
+                <circle cx="90" cy="90" r="82.98" stroke="#3d2329" stroke-width="14.04" />
+                <g transform="rotate(-90 90 90)">
+                  <circle
+                    id="f04-ring-arc"
+                    cx="90"
+                    cy="90"
+                    r="82.98"
+                    stroke="#e5768c"
+                    stroke-width="14.04"
+                    stroke-linecap="round"
+                  />
+                </g>
+              </svg>
+
+              <div id="f04-ring-numwrap">
+                <span id="f04-ring-num">19</span><span id="f04-ring-pct">%</span>
+              </div>
+              <div id="f04-ring-kcal" class="f04-subline"><span id="f04-ring-kcalnum">504</span> / 2674 ккал</div>
+              <div id="f04-ring-rest" class="f04-subline">Осталось <span id="f04-ring-restnum">2170</span> ккал</div>
+
+              <div class="f04-mrow f04-c1">
+                <span class="f04-mlet" style="color: #2f7fd0">Б</span
+                ><span class="f04-mval"><span id="f04-ring-mv1n">17</span> / 133</span
+                ><span class="f04-mq">?</span>
+              </div>
+              <div class="f04-mrow f04-c2">
+                <span class="f04-mlet" style="color: #c08000">Ж</span
+                ><span class="f04-mval"><span id="f04-ring-mv2n">11</span> / 67</span
+                ><span class="f04-mq">?</span>
+              </div>
+              <div class="f04-mrow f04-c3">
+                <span class="f04-mlet" style="color: #009c65">У</span
+                ><span class="f04-mval"><span id="f04-ring-mv3n">87</span> / 385</span
+                ><span class="f04-mq">?</span>
+              </div>
+
+              <div class="f04-track f04-c1">
+                <div class="f04-fill" id="f04-ring-bar1" style="background: #2f7fd0"></div>
+              </div>
+              <div class="f04-track f04-c2">
+                <div class="f04-fill" id="f04-ring-bar2" style="background: #c08000"></div>
+              </div>
+              <div class="f04-track f04-c3">
+                <div class="f04-fill" id="f04-ring-bar3" style="background: #009c65"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- title band -->
+    <div
+      id="f04-ring-title"
+      class="clip f04-clip"
+      data-start="0"
+      data-duration="10.35"
+      data-track-index="2"
+    >
+      <div id="f04-ring-scrim"></div>
+      <div id="f04-ring-titlebox">
+        <div id="f04-ring-accentline"></div>
+        <div class="f04-tline" id="f04-ring-tl1">
+          Норма — <span class="f04-acc">из твоего веса и цели</span>,
+        </div>
+        <div class="f04-tline" id="f04-ring-tl2">а не из чужой таблицы</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+
+      var byId = function (id) {
+        return document.getElementById(id);
+      };
+
+      /* ── geometry shared with the CSS above ───────────────────────────── */
+      var K = 0.45299145; /* screenshot px → canvas px */
+      var SCREEN_LEFT = 266 + 9;
+      var SCREEN_TOP = 427.51 + 9;
+      var CANVAS_W = 1080;
+      var CANVAS_H = 1920;
+
+      /* the norm block inside the plate, in screenshot px */
+      var BLOCK_TOP_SS = 422.5; /* ring outer top */
+      var BLOCK_BOT_SS = 1173; /* macro track bottom */
+      var RING_CX_SS = 585;
+
+      /* the same block in canvas px at scale 1 */
+      var blockCx = SCREEN_LEFT + RING_CX_SS * K; /* ≈ 540 — already centred */
+      var blockCy = SCREEN_TOP + ((BLOCK_TOP_SS + BLOCK_BOT_SS) / 2) * K; /* ≈ 798 */
+
+      /* coordinate-target-zoom, nested-wrapper form: T = -offset.
+         The vertical counter-translate is biased 62px past the exact
+         block-centring value so the phone's top edge clears the frame at
+         peak zoom (a 2.4× close-up of a plate that tall would otherwise
+         leave a black band above it). */
+      var ZOOM = 2.4;
+      var TX = -(blockCx - CANVAS_W / 2); /* ≈ 0 */
+      var TY = -(blockCy - CANVAS_H / 2) - 62; /* ≈ 100 */
+
+      /* ── ring ─────────────────────────────────────────────────────────── */
+      var arc = byId("f04-ring-arc");
+      var LEN = (arc.getTotalLength && arc.getTotalLength()) || 521.36;
+      arc.style.strokeDasharray = LEN;
+      arc.style.strokeDashoffset = LEN * (1 - 0.19);
+
+      /* Counters are DIRECT innerText tweens (counting-dynamic-scale,
+         "no proxy" variation) rather than onUpdate proxies: GSAP writes the
+         property on every render, so the digits are correct on any seek path,
+         including the ones that seek with suppressEvents. Each counted number
+         lives in its own span so the surrounding copy stays verbatim. */
+      var COUNT_AT = 2.2;
+      var COUNT_DUR = 3.0;
+      var COUNT_EASE = "power1.inOut";
+      var SNAP = { innerText: 1 };
+
+      /* percent 19 → 89 */
+      tl.to(
+        "#f04-ring-num",
+        { innerText: 89, snap: SNAP, duration: COUNT_DUR, ease: COUNT_EASE },
+        COUNT_AT
+      );
+      /* «504 / 2674 ккал» → «2368 / 2674 ккал» */
+      tl.to(
+        "#f04-ring-kcalnum",
+        { innerText: 2368, snap: SNAP, duration: COUNT_DUR, ease: COUNT_EASE },
+        COUNT_AT
+      );
+      /* «Осталось 2170 ккал» → «Осталось 306 ккал» (2674 − eaten) */
+      tl.to(
+        "#f04-ring-restnum",
+        { innerText: 306, snap: SNAP, duration: COUNT_DUR, ease: COUNT_EASE },
+        COUNT_AT
+      );
+
+      /* ── Scene 1 (0.0–1.4) — the screen is read. Nothing moves. ───────── */
+
+      /* ── Scene 2 (1.4–2.2) — framing rises to the norm block ──────────── */
+      tl.to("#f04-ring-cam-outer", { scale: ZOOM, duration: 0.9, ease: "power3.inOut" }, 1.35);
+      tl.to("#f04-ring-cam-inner", { x: TX, y: TY, duration: 0.9, ease: "power3.inOut" }, 1.35);
+
+      /* ── Scene 3 (2.2–5.2) — the signature beat.
+         Arc, percent, kcal and the remainder move as ONE: same position,
+         same duration, same ease, so number and arc land as one beat. */
+      tl.to(
+        arc,
+        { strokeDashoffset: LEN * (1 - 0.89), duration: COUNT_DUR, ease: COUNT_EASE },
+        COUNT_AT
+      );
+      /* counting-dynamic-scale: the lockup gains weight on the same ease and
+         lands at the screen's true type size (scale 1). */
+      tl.fromTo(
+        "#f04-ring-numwrap",
+        { scale: 0.88 },
+        { scale: 1, duration: COUNT_DUR, ease: COUNT_EASE },
+        COUNT_AT
+      );
+
+      /* ── Scene 4 — the macro bars, riding WITH the ring ────────────────
+         Originally these ran as a separate beat at 5.3s, after the ring had
+         finished. The contact sheet killed that: at t=25s the screen read
+         "2351 / 2674 ккал" beside "Б 17 / 133" — 2351 kcal with 17 g of
+         protein is not a thing, and this video is aimed at people who read
+         macros. A number that stays visibly stale while its own total climbs
+         reads as a bug in the app, not as pacing.
+
+         So the bars now start just after the ring (2.6s) and land with it
+         (~5.0–5.36s vs the ring's 5.2s). The stagger survives as texture;
+         the day fills up as ONE event, which is also what actually happens.
+
+         They also start from the 19% state, not from zero: the screenshot
+         underneath shows breakfast already logged, and a bar collapsing to
+         zero contradicts the plate it sits on. */
+      var macros = [
+        { bar: "#f04-ring-bar1", val: "#f04-ring-mv1n", from: 17, to: 132, goal: 133 },
+        { bar: "#f04-ring-bar2", val: "#f04-ring-mv2n", from: 11, to: 54, goal: 67 },
+        { bar: "#f04-ring-bar3", val: "#f04-ring-mv3n", from: 87, to: 339, goal: 385 },
+      ];
+      var BAR_AT = 2.6;
+      var BAR_DUR = 2.4;
+      var BAR_STAGGER = 0.18;
+      var BAR_EASE = "power1.inOut";
+
+      macros.forEach(function (m, i) {
+        var at = BAR_AT + i * BAR_STAGGER;
+        tl.fromTo(
+          m.bar,
+          { scaleX: m.from / m.goal },
+          { scaleX: m.to / m.goal, duration: BAR_DUR, ease: BAR_EASE },
+          at
+        );
+        tl.to(
+          m.val,
+          { innerText: m.to, snap: SNAP, duration: BAR_DUR, ease: BAR_EASE },
+          at
+        );
+      });
+
+      /* ── Scene 5 (6.6–8.0) — the title stands up in the bottom band ───── */
+      tl.to("#f04-ring-scrim", { opacity: 1, duration: 0.55, ease: "power2.out" }, 6.6);
+      tl.fromTo(
+        "#f04-ring-accentline",
+        { scaleX: 0 },
+        { scaleX: 1, duration: 0.5, ease: "power3.out" },
+        6.72
+      );
+      tl.fromTo(
+        "#f04-ring-tl1",
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" },
+        6.86
+      );
+      tl.fromTo(
+        "#f04-ring-tl2",
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" },
+        7.04
+      );
+
+      /* ── Scene 6 (8.0–10.0) — framing releases back to the wide pose.
+         Handoff to frame 05: plate centred at x 540 / y 1010, scale 1. */
+      tl.to("#f04-ring-cam-outer", { scale: 1, duration: 1.3, ease: "power2.inOut" }, 8.0);
+      tl.to("#f04-ring-cam-inner", { x: 0, y: 0, duration: 1.3, ease: "power2.inOut" }, 8.0);
+
+      window.__timelines["04-ring"] = tl;
+    })();
+  </script>
+</template>

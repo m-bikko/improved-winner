@@ -1,0 +1,343 @@
+<template>
+  <style>
+    /* ============================================================
+       03-topic-closed — «Как решили» выезжает, шапка меняется
+       Кадр держащий: после выезда блока и подмены шапки НИЧЕГО
+       не движется. Плита принята срезкой от кадра 02 и стоит:
+       центр x 540 / y 1010, scale 1.0, opacity 1 — без тваинов.
+       ============================================================ */
+
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: -apple-system, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .clip {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* — фон кадра: полноэкранная подложка на нижней дорожке — */
+    .tc3-ground {
+      background: #141312;
+    }
+
+    /* — плита телефона: снимок в тёмной скруглённой рамке — */
+    .tc3-plate {
+      position: absolute;
+      left: 297px;
+      top: 498px;
+      width: 486px;
+      height: 1024px;
+      box-sizing: border-box;
+      background: #1e1c1a;
+      border: 1.5px solid #322f2b;
+      border-radius: 34px;
+    }
+
+    .tc3-screen {
+      position: absolute;
+      left: 10.5px;
+      top: 10.5px;
+      width: 462px;
+      height: 1000px;
+      overflow: hidden;
+      border-radius: 24px;
+      background: #141312;
+    }
+
+    /* Экран собран в родных пикселях снимка (1170×2532) и ужат
+       одним статичным масштабом. GSAP этот слой не трогает. */
+    .tc3-inner {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1170px;
+      height: 2532px;
+      transform: scale(0.39487179);
+      transform-origin: 0 0;
+      background: #141312;
+    }
+
+    .tc3-slice {
+      position: absolute;
+      left: 0;
+      width: 1170px;
+      background-repeat: no-repeat;
+      background-size: 1170px 2532px;
+    }
+
+    /* Шапка + заголовок темы + описание + автор. Закреплена,
+       из-под неё выезжает лист. Два состояния друг над другом. */
+    .tc3-head {
+      top: 0;
+      height: 690px;
+      z-index: 3;
+    }
+    .tc3-head-closed {
+      background-image: url(assets/topic-closed.png);
+      background-position: 0 0;
+    }
+    .tc3-head-open {
+      background-image: url(assets/topic-open.png);
+      background-position: 0 0;
+    }
+
+    /* Окно роста: высота = финальная (414px), НИКОГДА не тваинится. */
+    .tc3-mask {
+      position: absolute;
+      left: 0;
+      top: 690px;
+      width: 1170px;
+      height: 414px;
+      overflow: hidden;
+      background: #141312;
+      z-index: 1;
+    }
+
+    .tc3-sheet {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1170px;
+      height: 414px;
+      background-image: url(assets/topic-closed.png);
+      background-repeat: no-repeat;
+      background-size: 1170px 2532px;
+      background-position: 0 -690px;
+    }
+
+    /* Текст решения приходит отдельным тактом: заливка цветом
+       карточки прячет вшитый в снимок текст, поверх проявляются
+       настоящие строки из того же снимка. */
+    .tc3-res-cover {
+      position: absolute;
+      left: 48px;
+      top: 125px;
+      width: 1073px;
+      height: 230px;
+      background: #2a2724;
+    }
+
+    .tc3-res-win {
+      position: absolute;
+      left: 48px;
+      width: 1073px;
+      overflow: hidden;
+    }
+    .tc3-res-lines {
+      top: 130px;
+      height: 155px;
+    }
+    .tc3-res-meta {
+      top: 290px;
+      height: 65px;
+    }
+
+    .tc3-res-ink {
+      position: absolute;
+      inset: 0;
+      background-image: url(assets/topic-closed.png);
+      background-repeat: no-repeat;
+      background-size: 1170px 2532px;
+    }
+    .tc3-res-lines .tc3-res-ink {
+      background-position: -48px -820px;
+    }
+    .tc3-res-meta .tc3-res-ink {
+      background-position: -48px -980px;
+    }
+
+    /* Лента ниже блока — едет одним тваином вместе с листом. */
+    .tc3-below {
+      top: 1104px;
+      height: 1428px;
+      background-image: url(assets/topic-closed.png);
+      background-position: 0 -1104px;
+      z-index: 2;
+    }
+
+    /* Нижняя кнопка живёт в ленте и меняет подпись вместе
+       со статусом: «Закрыть тему» → «Открыть заново». */
+    .tc3-btn-open {
+      position: absolute;
+      left: 0;
+      top: 886px;
+      width: 1170px;
+      height: 210px;
+      background-image: url(assets/topic-open.png);
+      background-repeat: no-repeat;
+      background-size: 1170px 2532px;
+      background-position: 0 -1576px;
+    }
+
+    /* — титр в нижней полосе — */
+    .tc3-rule {
+      position: absolute;
+      left: 510px;
+      top: 1700px;
+      width: 60px;
+      height: 4px;
+      border-radius: 2px;
+      background: #e5768c;
+    }
+
+    .tc3-title {
+      position: absolute;
+      left: 54px;
+      top: 1732px;
+      width: 972px;
+      text-align: center;
+      font-size: 46px;
+      line-height: 62px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: #f2efea;
+    }
+  </style>
+
+  <div
+    id="root"
+    data-composition-id="03-topic-closed"
+    data-width="1080"
+    data-height="1920"
+    data-duration="6.4"
+  >
+    <!-- дорожка 0 — полноэкранный холст -->
+    <div id="tc3-ground" class="clip tc3-ground" data-start="0" data-duration="6.4" data-track-index="0"></div>
+
+    <!-- дорожка 1 — плита телефона (неподвижна весь кадр) -->
+    <div id="tc3-phone" class="clip" data-start="0" data-duration="6.4" data-track-index="1">
+      <div class="tc3-plate">
+        <div class="tc3-screen">
+          <div class="tc3-inner" data-layout-allow-overflow>
+            <!-- окно роста + лист -->
+            <div class="tc3-mask" data-layout-allow-overflow>
+              <div class="tc3-sheet" id="tc3-sheet">
+                <div class="tc3-res-cover"></div>
+                <div class="tc3-res-win tc3-res-lines">
+                  <div class="tc3-res-ink" id="tc3-res-lines"></div>
+                </div>
+                <div class="tc3-res-win tc3-res-meta">
+                  <div class="tc3-res-ink" id="tc3-res-meta"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- всё, что блок отодвигает вниз -->
+            <div class="tc3-slice tc3-below" id="tc3-below">
+              <div class="tc3-btn-open" id="tc3-btn-open"></div>
+            </div>
+
+            <!-- закреплённая шапка: «Закрыто» под «Обсуждением» -->
+            <div class="tc3-slice tc3-head tc3-head-closed"></div>
+            <div class="tc3-slice tc3-head tc3-head-open" id="tc3-head-open"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- дорожка 2 — титр -->
+    <div id="tc3-caption" class="clip" data-start="0" data-duration="6.4" data-track-index="2">
+      <div class="tc3-rule" id="tc3-rule"></div>
+      <div class="tc3-title" id="tc3-title">Обсудили — записали, к чему пришли</div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var byId = function (id) {
+        return document.getElementById("tc3-" + id);
+      };
+
+      var sheet = byId("sheet");
+      var below = byId("below");
+      var resLines = byId("res-lines");
+      var resMeta = byId("res-meta");
+      var headOpen = byId("head-open");
+      var btnOpen = byId("btn-open");
+      var rule = byId("rule");
+      var title = byId("title");
+
+      // Высота тела блока в пикселях снимка — совпадает с CSS-высотой
+      // окна роста. Расхождение = щель или нахлёст на полном открытии.
+      var BODY_H = 414;
+      var TOTAL = 6;
+
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+
+      // ——— Scene 2 (0.9–2.4s) — anchored-layout-expand ———————————
+      // ОДИН fromTo ведёт лист И ленту: нижняя кромка блока и лента
+      // остаются в точном контакте по построению.
+      tl.fromTo(
+        [sheet, below],
+        { y: -BODY_H },
+        { y: 0, duration: 0.55, ease: "power3.out" },
+        0.95
+      );
+
+      // ——— Scene 3 (2.4–3.6s) — текст решения отдельным тактом ———
+      tl.fromTo(
+        resLines,
+        { opacity: 0, y: 14 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+        2.45
+      );
+      tl.fromTo(
+        resMeta,
+        { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
+        2.8
+      );
+
+      // ——— Scene 4 (3.6–4.4s) — discrete-text-sequence ——————————
+      // «Обсуждение» → «Закрыто» резкой подменой состояния, без
+      // растворения. Вместе со статусом меняется нижняя кнопка.
+      var STATES = [
+        { t: 0.0, open: 1 },
+        { t: 3.75, open: 0 }
+      ];
+      function stateAt(time) {
+        for (var i = STATES.length - 1; i >= 0; i--) {
+          if (time >= STATES[i].t) return STATES[i].open;
+        }
+        return 1;
+      }
+      var driver = { t: 0 };
+      tl.to(
+        driver,
+        {
+          t: TOTAL,
+          duration: TOTAL,
+          ease: "none",
+          onUpdate: function () {
+            var o = stateAt(driver.t) ? "1" : "0";
+            headOpen.style.opacity = o;
+            btnOpen.style.opacity = o;
+          }
+        },
+        0
+      );
+
+      // ——— Scene 5 (4.4–6.0s) — титр встаёт и кадр держится ————
+      tl.fromTo(
+        rule,
+        { scaleX: 0, opacity: 0 },
+        { scaleX: 1, opacity: 1, duration: 0.45, ease: "power3.out", transformOrigin: "50% 50%" },
+        4.45
+      );
+      tl.fromTo(
+        title,
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" },
+        4.55
+      );
+
+      window.__timelines["03-topic-closed"] = tl;
+    })();
+  </script>
+</template>

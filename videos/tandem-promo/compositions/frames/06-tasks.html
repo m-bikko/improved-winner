@@ -1,0 +1,328 @@
+<template>
+  <style>
+    /* ---- 06-tasks — «Задачи с дедлайнами» ---------------------------------
+       Tokens from frame.md: ground #141312, one accent #e5768c, text ladder
+       #f2efea / #9c958c / #7d766d, opaque surfaces with a #322f2b hairline,
+       no shadows.
+       Geometry: the phone plate is 750x1370 at canvas centre (540, 1010) —
+       the exact state frame 07 cuts into. Both screenshots are 1170x2532, so
+       every in-plate coordinate below is a measured source pixel x 0.641026.
+       The month's dots are painted out of the screenshot and rebuilt live,
+       because the cascade is the shot and a baked dot cannot cascade.      */
+
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      color: #f2efea;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .clip { position: absolute; inset: 0; }
+
+    /* ---- ground ---- */
+    .f06-tasks-ground { background: #141312; }
+    .f06-tasks-bloom {
+      position: absolute;
+      left: -140px; top: 40px; width: 1360px; height: 1620px;
+      background: radial-gradient(56% 44% at 50% 44%, rgba(229,118,140,0.10) 0%, rgba(229,118,140,0.035) 45%, rgba(229,118,140,0) 72%);
+    }
+
+    /* ---- the phone plate ---- */
+    .f06-tasks-plate {
+      position: absolute;
+      left: 165px; top: 325px; width: 750px; height: 1370px;
+      border-radius: 34px;
+      overflow: hidden;
+      background: #141312;
+    }
+    .f06-tasks-shot {
+      position: absolute; left: 0; top: 0;
+      width: 750px; height: 1623.08px;
+      display: block;
+      z-index: 1;
+    }
+    .f06-tasks-edge {
+      position: absolute; inset: 0;
+      border: 2px solid #322f2b;
+      border-radius: 34px;
+      z-index: 7;
+    }
+
+    /* ---- baked dots painted out; live dots take their exact places ---- */
+    .f06-tasks-cover {
+      position: absolute; width: 18px; height: 18px;
+      background: #141312;
+      z-index: 2;
+    }
+    .f06-tasks-cover--today { background: #e5768c; }
+
+    .f06-tasks-dot { position: absolute; width: 0; height: 0; z-index: 3; opacity: 0; }
+    .f06-tasks-core {
+      position: absolute; left: -5.77px; top: -5.77px;
+      width: 11.54px; height: 11.54px;
+      border-radius: 50%;
+      background: #e5768c;
+    }
+    /* the 3rd sits inside the accent-filled "today" cell — dark on accent */
+    .f06-tasks-dot--today .f06-tasks-core { background: #58353a; }
+    .f06-tasks-halo {
+      position: absolute; left: -19px; top: -19px; width: 38px; height: 38px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(229,118,140,0.6) 0%, rgba(229,118,140,0.2) 40%, rgba(229,118,140,0) 70%);
+      opacity: 0;
+    }
+
+    /* ---- the dim the sheet casts on the month ---- */
+    .f06-tasks-scrim {
+      position: absolute; inset: 0;
+      background: #0b0a09;
+      opacity: 0;
+      z-index: 4;
+    }
+
+    /* ---- the task sheet ---- */
+    .f06-tasks-sheet {
+      position: absolute; left: 0; top: 600.13px;
+      width: 750px; height: 769.87px;
+      border-radius: 20px 20px 0 0;
+      overflow: hidden;
+      background: #141312;
+      z-index: 5;
+    }
+    .f06-tasks-piece { position: relative; width: 750px; overflow: hidden; }
+    .f06-tasks-piece img { position: absolute; left: 0; width: 750px; height: 1623.08px; display: block; }
+    .f06-tasks-piece-a { height: 314.74px; }
+    .f06-tasks-piece-a img { top: -194.23px; }
+    /* piece B carries the same screenshot as a background layer, not a second
+       <img>, so the source is discovered exactly once at compile time */
+    .f06-tasks-piece-b {
+      height: 455.13px;
+      background-image: url("assets/task-editor.png");
+      background-repeat: no-repeat;
+      background-size: 750px 1623.08px;
+      background-position: 0 -735.9px;
+    }
+
+    /* the reminder row is painted out of the sheet and rebuilt live */
+    .f06-tasks-chipbed {
+      position: absolute; left: 0; top: 601.92px;
+      width: 750px; height: 71.79px;
+      background: #141312;
+      z-index: 2;
+    }
+    .f06-tasks-chip {
+      position: absolute; top: 603.84px; height: 67.31px;
+      display: flex; align-items: center; justify-content: flex-start;
+      gap: 10px;
+      padding: 0 18px 0 26px;
+      border-radius: 100px;
+      background: #2a2724;
+      font-size: 25px; font-weight: 400; line-height: 1;
+      color: #f2efea;
+      white-space: nowrap; overflow: hidden;
+      transform-origin: 0% 50%;
+      z-index: 3;
+      opacity: 0;
+    }
+    .f06-tasks-chip-x { width: 18px; height: 18px; flex: 0 0 18px; }
+    .f06-tasks-chip-x path { stroke: #9c958c; stroke-width: 2.2; stroke-linecap: round; fill: none; }
+
+    /* ---- the title band ---- */
+    .f06-tasks-rule {
+      position: absolute; left: 510px; top: 1745px;
+      width: 60px; height: 4px; border-radius: 2px;
+      background: #e5768c;
+      transform-origin: 0% 50%;
+    }
+    .f06-tasks-title {
+      position: absolute; left: 60px; right: 60px; top: 1782px;
+      text-align: center;
+      font-size: 60px; font-weight: 600; line-height: 1.06;
+      letter-spacing: -0.02em;
+      color: #f2efea;
+    }
+    .f06-tasks-word { display: inline-block; opacity: 0; }
+  </style>
+
+  <div
+    id="root"
+    data-composition-id="06-tasks"
+    data-start="0"
+    data-duration="7.35"
+    data-width="1080"
+    data-height="1920"
+  >
+    <!-- track 0 — the ground -->
+    <div class="clip f06-tasks-ground" id="f06-tasks-ground" data-start="0" data-duration="7.35" data-track-index="0">
+      <div class="f06-tasks-bloom" id="f06-tasks-bloom"></div>
+    </div>
+
+    <!-- track 1 — the plate: month, live dots, the task sheet -->
+    <div class="clip" id="f06-tasks-stage" data-start="0" data-duration="7.35" data-track-index="1">
+      <div class="f06-tasks-plate" id="f06-tasks-plate" data-layout-allow-overflow>
+        <img class="f06-tasks-shot" src="assets/tasks-calendar.png" alt="" />
+
+        <div class="f06-tasks-cover f06-tasks-cover--today" style="left:365.68px;top:446.45px"></div>
+        <div class="f06-tasks-cover" style="left:457.99px;top:446.45px"></div>
+        <div class="f06-tasks-cover" style="left:473.37px;top:446.45px"></div>
+        <div class="f06-tasks-cover" style="left:663.76px;top:446.45px"></div>
+        <div class="f06-tasks-cover" style="left:67.6px;top:546.45px"></div>
+        <div class="f06-tasks-cover" style="left:167.6px;top:546.45px"></div>
+        <div class="f06-tasks-cover" style="left:265.68px;top:546.45px"></div>
+        <div class="f06-tasks-cover" style="left:457.99px;top:546.45px"></div>
+        <div class="f06-tasks-cover" style="left:473.37px;top:546.45px"></div>
+        <div class="f06-tasks-cover" style="left:67.6px;top:644.53px"></div>
+        <div class="f06-tasks-cover" style="left:265.68px;top:644.53px"></div>
+        <div class="f06-tasks-cover" style="left:465.68px;top:644.53px"></div>
+        <div class="f06-tasks-cover" style="left:67.6px;top:744.53px"></div>
+        <div class="f06-tasks-cover" style="left:265.68px;top:744.53px"></div>
+        <div class="f06-tasks-cover" style="left:465.68px;top:744.53px"></div>
+        <div class="f06-tasks-cover" style="left:67.6px;top:844.53px"></div>
+        <div class="f06-tasks-cover" style="left:265.68px;top:844.53px"></div>
+
+        <div class="f06-tasks-dot f06-tasks-dot--today" id="f06-tasks-dot-0" style="left:374.68px;top:455.45px"><i class="f06-tasks-core"></i></div>
+        <div class="f06-tasks-dot" id="f06-tasks-dot-1" style="left:466.99px;top:455.45px"><i class="f06-tasks-halo"></i><i class="f06-tasks-core"></i></div>
+        <div class="f06-tasks-dot" id="f06-tasks-dot-2" style="left:482.37px;top:455.45px"><i class="f06-tasks-halo"></i><i class="f06-tasks-core"></i></div>
+        <div class="f06-tasks-dot" id="f06-tasks-dot-3" style="left:672.76px;top:455.45px"><i class="f06-tasks-halo"></i><i class="f06-tasks-core"></i></div>
+        <div class="f06-tasks-dot" id="f06-tasks-dot-4" style="left:76.6px;top:555.45px"><i class="f06-tasks-halo"></i><i class="f06-tasks-core"></i></div>
+        <div class="f06-tasks-dot" id="f06-tasks-dot-5" style="left:176.6px;top:555.45px"><i class="f06-tasks-halo"></i><i class="f06-tasks-core"></i></div>
+        <div class="f06-tasks-dot" id="f06-tasks-dot-6" style="left:274.68px;top:555.45px"><i class="f06-tasks-halo"></i><i class="f06-tasks-core"></i></div>
+        <div class="f06-tasks-dot" id="f06-tasks-dot-7" style="left:466.99px;top:555.45px"><i class="f06-tasks-halo"></i><i class="f06-tasks-core"></i></div>
+        <div class="f06-tasks-dot" id="f06-tasks-dot-8" style="left:482.37px;top:555.45px"><i class="f06-tasks-halo"></i><i class="f06-tasks-core"></i></div>
+        <div class="f06-tasks-dot" id="f06-tasks-dot-9" style="left:76.6px;top:653.53px"><i class="f06-tasks-halo"></i><i class="f06-tasks-core"></i></div>
+        <div class="f06-tasks-dot" id="f06-tasks-dot-10" style="left:274.68px;top:653.53px"><i class="f06-tasks-halo"></i><i class="f06-tasks-core"></i></div>
+        <div class="f06-tasks-dot" id="f06-tasks-dot-11" style="left:474.68px;top:653.53px"><i class="f06-tasks-halo"></i><i class="f06-tasks-core"></i></div>
+        <div class="f06-tasks-dot" id="f06-tasks-dot-12" style="left:76.6px;top:753.53px"><i class="f06-tasks-halo"></i><i class="f06-tasks-core"></i></div>
+        <div class="f06-tasks-dot" id="f06-tasks-dot-13" style="left:274.68px;top:753.53px"><i class="f06-tasks-halo"></i><i class="f06-tasks-core"></i></div>
+        <div class="f06-tasks-dot" id="f06-tasks-dot-14" style="left:474.68px;top:753.53px"><i class="f06-tasks-halo"></i><i class="f06-tasks-core"></i></div>
+        <div class="f06-tasks-dot" id="f06-tasks-dot-15" style="left:76.6px;top:853.53px"><i class="f06-tasks-halo"></i><i class="f06-tasks-core"></i></div>
+        <div class="f06-tasks-dot" id="f06-tasks-dot-16" style="left:274.68px;top:853.53px"><i class="f06-tasks-halo"></i><i class="f06-tasks-core"></i></div>
+
+        <div class="f06-tasks-scrim" id="f06-tasks-scrim"></div>
+
+        <div class="f06-tasks-sheet" id="f06-tasks-sheet">
+          <div class="f06-tasks-piece f06-tasks-piece-a"><img src="assets/task-editor.png" alt="" /></div>
+          <div class="f06-tasks-piece f06-tasks-piece-b"></div>
+          <div class="f06-tasks-chipbed"></div>
+        <div class="f06-tasks-chip" id="f06-tasks-chip-0" style="left:28.85px;width:166.67px">
+          <span class="f06-tasks-chip-label">1 день</span>
+          <svg class="f06-tasks-chip-x" viewBox="0 0 22 22" aria-hidden="true"><path d="M6 6 L16 16 M16 6 L6 16"/></svg>
+        </div>
+        <div class="f06-tasks-chip" id="f06-tasks-chip-1" style="left:207.69px;width:149.36px">
+          <span class="f06-tasks-chip-label">1 час</span>
+          <svg class="f06-tasks-chip-x" viewBox="0 0 22 22" aria-hidden="true"><path d="M6 6 L16 16 M16 6 L6 16"/></svg>
+        </div>
+        <div class="f06-tasks-chip" id="f06-tasks-chip-2" style="left:369.23px;width:210.9px">
+          <span class="f06-tasks-chip-label">В момент</span>
+          <svg class="f06-tasks-chip-x" viewBox="0 0 22 22" aria-hidden="true"><path d="M6 6 L16 16 M16 6 L6 16"/></svg>
+        </div>
+        </div>
+
+        <div class="f06-tasks-edge"></div>
+      </div>
+    </div>
+
+    <!-- track 2 — the title line -->
+    <div class="clip" id="f06-tasks-titleband" data-start="0" data-duration="7.35" data-track-index="2">
+      <div class="f06-tasks-rule" id="f06-tasks-rule"></div>
+      <div class="f06-tasks-title">
+        <span class="f06-tasks-word" id="f06-tasks-w1">Задачи</span>
+        <span class="f06-tasks-word" id="f06-tasks-w2">с</span>
+        <span class="f06-tasks-word" id="f06-tasks-w3">дедлайнами</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+      var F = 1 / 60;
+
+      /* Scene 1 (0.0-1.2s) — the crossfade has already landed the phone whole
+         in frame at 540 / 1010. The month is bare: no dots yet. Only the
+         ground bloom comes up, so the open breathes without wobbling. */
+      tl.fromTo("#f06-tasks-bloom", { opacity: 0 }, { opacity: 1, duration: 0.9, ease: "power2.out" }, 0);
+
+      /* Scene 2 (1.2-3.0s) — waterfall-entry. The dots surface week row by
+         week row, left to right: short gap inside a row, longer between rows,
+         so it reads as the month being marked out, not as flicker. Opacity is
+         BINARY (tl.set), the whip is y + scale on power4.out. No overshoot. */
+      tl.set(".f06-tasks-dot", { opacity: 0 }, 0);
+      tl.set(".f06-tasks-halo", { opacity: 0 }, 0);
+
+      var DOTS = [];
+      DOTS.push(["#f06-tasks-dot-0", 1.22, true]);
+      DOTS.push(["#f06-tasks-dot-1", 1.285, false]);
+      DOTS.push(["#f06-tasks-dot-2", 1.325, false]);
+      DOTS.push(["#f06-tasks-dot-3", 1.39, false]);
+      DOTS.push(["#f06-tasks-dot-4", 1.54, false]);
+      DOTS.push(["#f06-tasks-dot-5", 1.605, false]);
+      DOTS.push(["#f06-tasks-dot-6", 1.67, false]);
+      DOTS.push(["#f06-tasks-dot-7", 1.735, false]);
+      DOTS.push(["#f06-tasks-dot-8", 1.775, false]);
+      DOTS.push(["#f06-tasks-dot-9", 1.925, false]);
+      DOTS.push(["#f06-tasks-dot-10", 1.99, false]);
+      DOTS.push(["#f06-tasks-dot-11", 2.055, false]);
+      DOTS.push(["#f06-tasks-dot-12", 2.205, false]);
+      DOTS.push(["#f06-tasks-dot-13", 2.27, false]);
+      DOTS.push(["#f06-tasks-dot-14", 2.335, false]);
+      DOTS.push(["#f06-tasks-dot-15", 2.485, false]);
+      DOTS.push(["#f06-tasks-dot-16", 2.55, false]);
+
+      DOTS.forEach(function (d) {
+        var sel = d[0], at = d[1], today = d[2];
+        tl.set(sel, { opacity: 1 }, at);
+        tl.fromTo(sel, { y: 18, scale: 0.35 }, { y: 0, scale: 1, duration: 0.3, ease: "power4.out" }, at);
+        if (!today) {
+          tl.fromTo(
+            sel + " .f06-tasks-halo",
+            { opacity: 0.85, scale: 0.35 },
+            { opacity: 0, scale: 1.3, duration: 0.5, ease: "power2.out" },
+            at
+          );
+        }
+      });
+
+      /* Scene 3 (3.0-4.2s) — anchored-layout-expand, pinned to the bottom
+         edge: the sheet is authored at its final height and parked one body
+         height below the plate's clipping edge. Transform only; the plate is
+         the mask. The dim on the month rides the same beat. */
+      var SHEET_H = 769.87;
+      tl.fromTo("#f06-tasks-sheet", { y: SHEET_H }, { y: 0, duration: 0.52, ease: "power3.out" }, 3.0);
+      tl.fromTo("#f06-tasks-scrim", { opacity: 0 }, { opacity: 0.46, duration: 0.5, ease: "power2.out" }, 3.02);
+
+      /* Scene 4 (4.2-5.4s) — spring-pop-entrance in its playful register:
+         the three reminder chips stand up one after another out of their own
+         left edge, three separate decisions. The only punctuation in the shot. */
+      [4.25, 4.55, 4.85].forEach(function (at, i) {
+        tl.fromTo(
+          "#f06-tasks-chip-" + i,
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.48, ease: "back.out(1.6)" },
+          at
+        );
+      });
+
+      /* Scene 5 (5.4-7.0s) — the title stands up in the bottom band and the
+         frame stops: plate at 540 / 1010, scale 1, opacity 1, handed to 07. */
+      tl.fromTo("#f06-tasks-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.34, ease: "power3.out" }, 5.4);
+
+      var t1 = 5.48;
+      tl.set("#f06-tasks-w1", { opacity: 1, y: 62 }, t1);
+      tl.to("#f06-tasks-w1", { y: 0, duration: 0.18, ease: "power4.out" }, t1);
+      var t2 = t1 + 0.18 - 2 * F;
+      tl.set("#f06-tasks-w2", { opacity: 1, y: 34 }, t2);
+      tl.to("#f06-tasks-w2", { y: 0, duration: 0.13, ease: "power4.out" }, t2);
+      var t3 = t2 + 0.13 - F;
+      tl.set("#f06-tasks-w3", { opacity: 1, y: 55 }, t3);
+      tl.to("#f06-tasks-w3", { y: 0, duration: 0.16, ease: "power4.out" }, t3);
+
+      window.__timelines["06-tasks"] = tl;
+    })();
+  </script>
+</template>

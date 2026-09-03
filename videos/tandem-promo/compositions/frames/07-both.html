@@ -1,0 +1,353 @@
+<template>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    /* ── 07-both — «Напоминание приходит вам обоим» ─────────────────────────
+       Ground / palette / type ladder come from frame.md:
+       bg #141312 · primary #e5768c · text #f2efea · muted #9c958c
+       card #1e1c1a · border #322f2b · no shadows on content.
+       Canvas 1080×1920. All geometry in px against that fixed canvas.       */
+
+    #root {
+      position: relative;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      color: #f2efea;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .clip {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* ── ground ─────────────────────────────────────────────────────────── */
+
+    .f07-both-ground {
+      background: #141312;
+    }
+
+    /* two faint side blooms — one per half of the symmetry axis, the same
+       single accent, so each phone owns a side without a second colour. */
+    .f07-both-bloom {
+      position: absolute;
+      width: 860px;
+      height: 860px;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba(229, 118, 140, 0.13) 0%,
+        rgba(229, 118, 140, 0.055) 42%,
+        rgba(229, 118, 140, 0) 70%
+      );
+    }
+    .f07-both-bloom-a {
+      left: -130px;
+      top: 350px;
+    }
+    .f07-both-bloom-b {
+      left: 350px;
+      top: 350px;
+    }
+
+    /* ── stage: the ONLY 3D in the film ─────────────────────────────────── */
+
+    .f07-both-stage {
+      perspective: 1800px;
+      perspective-origin: 50% 45%;
+      transform-style: preserve-3d;
+    }
+
+    /* Both plates sit at the exact handoff position from frame 06 —
+       centre 540 × 1010, 536×1160 (the screenshot's own 1170:2532 ratio),
+       stacked pixel-for-pixel so scene 1 reads as ONE phone. */
+    .f07-both-phone {
+      position: absolute;
+      left: 272px;
+      top: 430px;
+      width: 536px;
+      height: 1160px;
+      transform-style: preserve-3d;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+
+    .f07-both-plate {
+      position: absolute;
+      inset: 0;
+      border-radius: 44px;
+      border: 1.5px solid #322f2b;
+      background: #141312;
+      overflow: hidden;
+    }
+
+    .f07-both-shot {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+    }
+
+    /* ── notification banner (lives inside the screen, so it is clipped by
+          the plate exactly the way a real banner is) ───────────────────── */
+
+    .f07-both-notif {
+      position: absolute;
+      left: 15px;
+      right: 15px;
+      top: 42px;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      padding: 24px 26px;
+      background: #1e1c1a;
+      border: 1.5px solid #322f2b;
+      border-radius: 28px;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    .f07-both-notif-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      object-fit: cover;
+      display: block;
+      flex: 0 0 auto;
+    }
+    .f07-both-notif-text {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .f07-both-notif-title {
+      font-size: 34px;
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      color: #f2efea;
+      white-space: nowrap;
+    }
+    .f07-both-notif-body {
+      margin-top: 6px;
+      font-size: 30px;
+      font-weight: 400;
+      line-height: 1.25;
+      color: #9c958c;
+      white-space: nowrap;
+    }
+
+    /* ── title band ─────────────────────────────────────────────────────── */
+
+    .f07-both-titleband {
+      position: absolute;
+      left: 54px;
+      right: 54px;
+      top: 1296px;
+      text-align: center;
+    }
+    .f07-both-rule {
+      width: 72px;
+      height: 4px;
+      margin: 0 auto 30px;
+      border-radius: 2px;
+      background: #e5768c;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    .f07-both-title {
+      font-size: 70px;
+      font-weight: 600;
+      line-height: 1.18;
+      letter-spacing: -0.02em;
+      color: #f2efea;
+      will-change: transform;
+    }
+    .f07-both-accent {
+      color: #e5768c;
+    }
+  </style>
+
+  <div
+    id="root"
+    data-composition-id="07-both"
+    data-start="0"
+    data-duration="5.5"
+    data-width="1080"
+    data-height="1920"
+  >
+    <!-- ground + ambient blooms -->
+    <div id="f07-both-ground" class="clip f07-both-ground" data-start="0" data-duration="5.5" data-track-index="0">
+      <div class="f07-both-bloom f07-both-bloom-a"></div>
+      <div class="f07-both-bloom f07-both-bloom-b"></div>
+    </div>
+
+    <!-- the pair (one plate until 0.6s) -->
+    <div id="f07-both-stage" class="clip f07-both-stage" data-start="0" data-duration="5.5" data-track-index="1">
+      <div class="f07-both-phone" id="f07-both-phone-left">
+        <div class="f07-both-plate">
+          <img id="f07-both-shot-left" class="f07-both-shot" src="assets/tasks-calendar.png" alt="" />
+          <div id="f07-both-notif-left" class="f07-both-notif">
+            <img id="f07-both-icon-left" class="f07-both-notif-icon" src="assets/app-icon-512.png" alt="" />
+            <div class="f07-both-notif-text">
+              <div class="f07-both-notif-title">Срок задачи</div>
+              <div class="f07-both-notif-body">Записаться к врачу</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="f07-both-phone" id="f07-both-phone-right">
+        <div class="f07-both-plate">
+          <img id="f07-both-shot-right" class="f07-both-shot" src="assets/tasks-calendar.png" alt="" />
+          <div id="f07-both-notif-right" class="f07-both-notif">
+            <img id="f07-both-icon-right" class="f07-both-notif-icon" src="assets/app-icon-512.png" alt="" />
+            <div class="f07-both-notif-text">
+              <div class="f07-both-notif-title">Срок задачи</div>
+              <div class="f07-both-notif-body">Записаться к врачу</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- title -->
+    <div id="f07-both-titleband" class="clip f07-both-titleband" data-start="0" data-duration="5.5" data-track-index="2">
+      <div class="f07-both-rule" id="f07-both-rule"></div>
+      <div class="f07-both-title" id="f07-both-title">
+        Напоминание приходит<br />вам <span class="f07-both-accent">обоим</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+
+      var phoneL = document.getElementById("f07-both-phone-left");
+      var phoneR = document.getElementById("f07-both-phone-right");
+      var phones = [phoneL, phoneR];
+      // DOM order is left, then right — one nodelist, so the pair can never
+      // drift apart in time.
+      var notifs = Array.prototype.slice.call(
+        document.querySelectorAll(".f07-both-notif")
+      );
+
+      var SPREAD = 190; // half the distance between the settled centres
+      var RISE = -220; // keeps the pair's top edge on the single plate's top
+      var SETTLE = 0.62; // the landed scale
+      var TILT = 14; // book-open angle
+      var TILT_OVER = 18; // pivot-into-place overshoot
+
+      // Scene 5 — the whole reason this frame exists. ONE start time,
+      // ONE tween, both plates. Zero delay, by construction.
+      var NOTIF_AT = 3.0;
+
+      /* Scene 1 (0.0–0.6s) — the cut handed us a single plate at
+         x 540 / y 1010, scale 1, opacity 1. Nothing is scheduled here:
+         the frame is deliberately motionless. */
+
+      /* Scene 2 (0.6–1.8s) — signature move: split-tilt-cards.
+         One plate becomes two; mirrored rotateY opens them like a book. */
+      tl.fromTo(
+        phones,
+        { x: 0, y: 0, scale: 1 },
+        {
+          x: function (i) {
+            return i === 0 ? -SPREAD : SPREAD;
+          },
+          y: RISE,
+          scale: SETTLE,
+          duration: 1.05,
+          ease: "power3.out",
+        },
+        0.6
+      );
+
+      // mirrored tilt — opposite signs, or the symmetry collapses
+      tl.fromTo(
+        phones,
+        { rotationY: 0 },
+        {
+          rotationY: function (i) {
+            return i === 0 ? TILT_OVER : -TILT_OVER;
+          },
+          duration: 0.85,
+          ease: "power2.out",
+        },
+        0.6
+      );
+      tl.fromTo(
+        phones,
+        {
+          rotationY: function (i) {
+            return i === 0 ? TILT_OVER : -TILT_OVER;
+          },
+        },
+        {
+          rotationY: function (i) {
+            return i === 0 ? TILT : -TILT;
+          },
+          duration: 0.35,
+          ease: "power2.inOut",
+          immediateRender: false,
+        },
+        1.45
+      );
+
+      /* Scene 3 (1.8–2.4s) — the title stands up in the bottom band,
+         early and on its own, so the key moment isn't shared with reading. */
+      tl.fromTo(
+        "#f07-both-rule",
+        { scaleX: 0, opacity: 0 },
+        { scaleX: 1, opacity: 1, duration: 0.5, ease: "power3.out" },
+        1.8
+      );
+      tl.fromTo(
+        "#f07-both-title",
+        { y: 30, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.55, ease: "power3.out" },
+        1.86
+      );
+
+      /* Scene 4 (2.4–3.0s) — the tilt flattens to zero. The 3D served the
+         split; by the notification both plates are frontal. */
+      tl.fromTo(
+        phones,
+        {
+          rotationY: function (i) {
+            return i === 0 ? TILT : -TILT;
+          },
+        },
+        { rotationY: 0, duration: 0.6, ease: "power2.inOut", immediateRender: false },
+        2.4
+      );
+
+      /* Scene 5 (3.0–3.6s) — THE key moment. Both banners drop in from the
+         top of their screen with one short spring overshoot. Same tween,
+         same start, same duration, same ease, no stagger. */
+      tl.fromTo(
+        notifs,
+        { y: -190, scale: 0.94 },
+        { y: 0, scale: 1, duration: 0.62, ease: "back.out(1.2)" },
+        NOTIF_AT
+      );
+      tl.fromTo(
+        notifs,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.3, ease: "power1.out" },
+        NOTIF_AT
+      );
+
+      /* Scene 6 (3.6–5.0s) — held. Two phones, two identical banners,
+         the title. Nothing moves. */
+
+      window.__timelines["07-both"] = tl;
+    })();
+  </script>
+</template>

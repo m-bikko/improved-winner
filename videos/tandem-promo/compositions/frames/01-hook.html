@@ -1,0 +1,706 @@
+<template>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+
+  <style>
+    /* ── 01-hook — «Крючок» ────────────────────────────────────────────────
+       Blue Professional / Тандем: тёмный холст #141312, единственный акцент
+       #e5768c, непрозрачные карточки #1e1c1a с границей #322f2b, без теней.
+       Кадр 1080×1920. Всё нарисовано — ни одного снятого ассета, ни эмодзи. */
+
+    #root {
+      position: relative;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      container-type: size;
+      font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .clip {
+      position: absolute;
+      inset: 0;
+      width: 1080px;
+      height: 1920px;
+    }
+
+    /* ── ground ─────────────────────────────────────────────────────────── */
+    #f01hook-bg {
+      background: #141312;
+    }
+    .f01hook-wash {
+      position: absolute;
+      left: 60px;
+      top: 200px;
+      width: 960px;
+      height: 1000px;
+      border-radius: 50%;
+      background: radial-gradient(
+        closest-side,
+        rgba(229, 118, 140, 0.1) 0%,
+        rgba(229, 118, 140, 0.04) 46%,
+        rgba(229, 118, 140, 0) 100%
+      );
+      will-change: opacity;
+    }
+    .f01hook-vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        130% 78% at 50% 46%,
+        rgba(20, 19, 18, 0) 42%,
+        rgba(20, 19, 18, 0.55) 100%
+      );
+    }
+
+    /* ── phones (silhouettes) ───────────────────────────────────────────── */
+    .f01hook-slot {
+      position: absolute;
+    }
+    .f01hook-float {
+      position: absolute;
+      inset: 0;
+      will-change: transform;
+    }
+    .f01hook-phone {
+      position: absolute;
+      inset: 0;
+      border-radius: 44px;
+      background: #232120;
+      border: 1.5px solid #3b3733;
+      will-change: transform, opacity;
+    }
+    .f01hook-screen {
+      position: absolute;
+      inset: 13px;
+      border-radius: 33px;
+      background: #171614;
+      overflow: hidden;
+    }
+    .f01hook-screen::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 62%;
+      width: 460px;
+      height: 460px;
+      margin-left: -230px;
+      margin-top: -230px;
+      border-radius: 50%;
+      background: radial-gradient(
+        closest-side,
+        rgba(229, 118, 140, 0.09) 0%,
+        rgba(229, 118, 140, 0) 100%
+      );
+    }
+    .f01hook-speaker {
+      position: absolute;
+      left: 50%;
+      top: 26px;
+      width: 78px;
+      height: 9px;
+      margin-left: -39px;
+      border-radius: 100px;
+      background: #3b3733;
+    }
+    .f01hook-homebar {
+      position: absolute;
+      left: 50%;
+      bottom: 26px;
+      width: 108px;
+      height: 6px;
+      margin-left: -54px;
+      border-radius: 100px;
+      background: #2e2b27;
+    }
+
+    /* ── traces ─────────────────────────────────────────────────────────── */
+    .f01hook-trace {
+      position: absolute;
+      will-change: transform;
+    }
+    .f01hook-trace-float {
+      position: absolute;
+      inset: 0;
+      will-change: transform;
+    }
+    .f01hook-trace-body {
+      position: absolute;
+      inset: 0;
+      border-radius: 14px;
+      background: #1e1c1a;
+      border: 1.5px solid #322f2b;
+      overflow: hidden;
+      will-change: transform, opacity;
+    }
+    .f01hook-bar {
+      position: absolute;
+      border-radius: 100px;
+      background: #322f2b;
+    }
+    .f01hook-rule {
+      position: absolute;
+      height: 2px;
+      border-radius: 100px;
+      background: #2a2724;
+    }
+
+    /* note */
+    .f01hook-margin {
+      position: absolute;
+      left: 54px;
+      top: 26px;
+      bottom: 26px;
+      width: 2px;
+      border-radius: 100px;
+      background: rgba(229, 118, 140, 0.2);
+    }
+    .f01hook-holes {
+      position: absolute;
+      left: 22px;
+      top: 44px;
+      width: 12px;
+      height: 112px;
+    }
+    .f01hook-hole {
+      position: absolute;
+      left: 0;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #322f2b;
+    }
+
+    /* chat */
+    .f01hook-bubble {
+      position: absolute;
+      border-radius: 18px;
+    }
+    .f01hook-bubble-in {
+      background: #262320;
+      border-bottom-left-radius: 5px;
+    }
+    .f01hook-bubble-out {
+      background: rgba(229, 118, 140, 0.2);
+      border: 1.5px solid rgba(229, 118, 140, 0.35);
+      border-bottom-right-radius: 5px;
+    }
+    .f01hook-tick {
+      position: absolute;
+      border-radius: 100px;
+      background: rgba(229, 118, 140, 0.55);
+    }
+
+    /* voice */
+    .f01hook-play {
+      position: absolute;
+      left: 26px;
+      top: 42px;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: #e5768c;
+    }
+    .f01hook-wave {
+      position: absolute;
+      left: 104px;
+      top: 44px;
+      width: 258px;
+      height: 54px;
+    }
+    .f01hook-tip {
+      position: absolute;
+      border-radius: 1.5px;
+    }
+
+    /* list */
+    .f01hook-box {
+      position: absolute;
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      border: 2px solid #322f2b;
+    }
+    .f01hook-box-done {
+      background: #e5768c;
+      border-color: #e5768c;
+    }
+    .f01hook-strike {
+      position: absolute;
+      height: 2px;
+      border-radius: 100px;
+      background: #7d766d;
+    }
+
+    /* ── title ──────────────────────────────────────────────────────────── */
+    #f01hook-accent {
+      position: absolute;
+      left: 506px;
+      top: 1284px;
+      width: 68px;
+      height: 4px;
+      border-radius: 2px;
+      background: #e5768c;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    #f01hook-title {
+      position: absolute;
+      left: 80px;
+      top: 1340px;
+      width: 920px;
+      text-align: center;
+      font-size: 62px;
+      font-weight: 600;
+      line-height: 1.24;
+      letter-spacing: -0.02em;
+      color: #f2efea;
+      white-space: nowrap;
+    }
+    #f01hook-title .f01hook-line {
+      display: block;
+    }
+    .f01hook-word {
+      display: inline-block;
+      will-change: transform, opacity;
+    }
+    .f01hook-hl {
+      color: #e5768c;
+    }
+  </style>
+
+  <div
+    id="root"
+    data-composition-id="01-hook"
+    data-start="0"
+    data-duration="7.4"
+    data-width="1080"
+    data-height="1920"
+  >
+    <!-- ground: full-bleed clip, lowest track -->
+    <div
+      id="f01hook-bg"
+      class="clip"
+      data-start="0"
+      data-duration="7.4"
+      data-track-index="0"
+    >
+      <div class="f01hook-wash"></div>
+      <div class="f01hook-vignette"></div>
+    </div>
+
+    <!-- content -->
+    <div
+      id="f01hook-layer"
+      class="clip"
+      data-start="0"
+      data-duration="7.4"
+      data-track-index="1"
+    >
+      <!-- ── два тёмных силуэта телефонов ── -->
+      <div class="f01hook-slot" style="left: 172px; top: 396px; width: 344px; height: 700px">
+        <div class="f01hook-float" id="f01hook-float-a">
+          <div class="f01hook-phone" id="f01hook-phone-a">
+            <div class="f01hook-screen"></div>
+            <div class="f01hook-speaker"></div>
+            <div class="f01hook-homebar"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="f01hook-slot" style="left: 566px; top: 352px; width: 330px; height: 672px">
+        <div class="f01hook-float" id="f01hook-float-b">
+          <div class="f01hook-phone" id="f01hook-phone-b">
+            <div class="f01hook-screen"></div>
+            <div class="f01hook-speaker"></div>
+            <div class="f01hook-homebar"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── след 1 · строчка в блокноте (слева вверху) ── -->
+      <div
+        class="f01hook-trace"
+        id="f01hook-trace-note"
+        data-close-x="224"
+        data-close-y="363"
+        data-close-rot="-5"
+        style="left: 60px; top: 146px; width: 400px; height: 200px"
+      >
+        <div class="f01hook-trace-float">
+          <div class="f01hook-trace-body">
+            <div class="f01hook-holes">
+              <div class="f01hook-hole" style="top: 0"></div>
+              <div class="f01hook-hole" style="top: 50px"></div>
+              <div class="f01hook-hole" style="top: 100px"></div>
+            </div>
+            <div class="f01hook-margin"></div>
+            <div class="f01hook-rule" style="left: 76px; right: 30px; top: 74px"></div>
+            <div class="f01hook-rule" style="left: 76px; right: 30px; top: 122px"></div>
+            <div class="f01hook-rule" style="left: 76px; right: 30px; top: 170px"></div>
+            <svg
+              width="400"
+              height="200"
+              viewBox="0 0 400 200"
+              fill="none"
+              style="position: absolute; left: 0; top: 0"
+            >
+              <path
+                d="M80 66 C96 50, 110 78, 126 62 C142 46, 156 74, 174 58 C192 42, 206 72, 224 56 C240 42, 254 68, 272 54"
+                stroke="#9c958c"
+                stroke-width="5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M80 114 C98 100, 112 126, 132 110 C150 96, 166 122, 186 108 C202 96, 216 118, 232 106"
+                stroke="#7d766d"
+                stroke-width="5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M80 162 C94 150, 108 172, 124 158 C138 146, 152 166, 168 155"
+                stroke="#4a4640"
+                stroke-width="5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── след 2 · обрывок переписки (справа) ── -->
+      <div
+        class="f01hook-trace"
+        id="f01hook-trace-chat"
+        data-close-x="-223"
+        data-close-y="398"
+        data-close-rot="4"
+        style="left: 618px; top: 92px; width: 402px; height: 222px"
+      >
+        <div class="f01hook-trace-float">
+          <div class="f01hook-trace-body">
+            <div
+              class="f01hook-bubble f01hook-bubble-in"
+              style="left: 26px; top: 26px; width: 236px; height: 80px"
+            >
+              <div class="f01hook-bar" style="left: 20px; top: 22px; width: 178px; height: 10px"></div>
+              <div class="f01hook-bar" style="left: 20px; top: 48px; width: 122px; height: 10px"></div>
+            </div>
+            <div
+              class="f01hook-bubble f01hook-bubble-out"
+              style="left: 148px; top: 122px; width: 228px; height: 74px"
+            >
+              <div
+                class="f01hook-bar"
+                style="
+                  left: 20px;
+                  top: 22px;
+                  width: 150px;
+                  height: 10px;
+                  background: rgba(229, 118, 140, 0.55);
+                "
+              ></div>
+              <div
+                class="f01hook-bar"
+                style="
+                  left: 20px;
+                  top: 44px;
+                  width: 92px;
+                  height: 10px;
+                  background: rgba(229, 118, 140, 0.32);
+                "
+              ></div>
+              <div class="f01hook-tick" style="right: 18px; bottom: 14px; width: 20px; height: 3px"></div>
+              <div class="f01hook-tick" style="right: 18px; bottom: 22px; width: 20px; height: 3px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── след 3 · кружок голосового (слева внизу) ── -->
+      <div
+        class="f01hook-trace"
+        id="f01hook-trace-voice"
+        data-close-x="222"
+        data-close-y="-342"
+        data-close-rot="3"
+        style="left: 64px; top: 1058px; width: 396px; height: 140px"
+      >
+        <div class="f01hook-trace-float">
+          <div class="f01hook-trace-body">
+            <div class="f01hook-play">
+              <svg
+                width="58"
+                height="58"
+                viewBox="0 0 58 58"
+                fill="none"
+                style="position: absolute; left: 0; top: 0"
+              >
+                <path d="M23 19 L40 29 L23 39 Z" fill="#141312" />
+              </svg>
+            </div>
+            <svg
+              class="f01hook-wave"
+              width="258"
+              height="54"
+              viewBox="0 0 258 54"
+              fill="none"
+              preserveAspectRatio="none"
+            >
+              <g stroke-linecap="round" stroke-width="6">
+                <path d="M3 21 V33" stroke="#e5768c" />
+                <path d="M17 13 V41" stroke="#e5768c" />
+                <path d="M31 5 V49" stroke="#e5768c" />
+                <path d="M45 17 V37" stroke="#e5768c" />
+                <path d="M59 9 V45" stroke="#e5768c" />
+                <path d="M73 19 V35" stroke="#7d766d" />
+                <path d="M87 7 V47" stroke="#7d766d" />
+                <path d="M101 15 V39" stroke="#7d766d" />
+                <path d="M115 3 V51" stroke="#7d766d" />
+                <path d="M129 19 V35" stroke="#7d766d" />
+                <path d="M143 11 V43" stroke="#7d766d" />
+                <path d="M157 21 V33" stroke="#5c5750" />
+                <path d="M171 9 V45" stroke="#5c5750" />
+                <path d="M185 17 V37" stroke="#5c5750" />
+                <path d="M199 5 V49" stroke="#5c5750" />
+                <path d="M213 19 V35" stroke="#4a4640" />
+                <path d="M227 13 V41" stroke="#4a4640" />
+                <path d="M241 21 V33" stroke="#4a4640" />
+              </g>
+            </svg>
+            <div class="f01hook-bar" style="left: 104px; bottom: 20px; width: 74px; height: 8px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── след 4 · зачёркнутый список (справа внизу) ── -->
+      <div
+        class="f01hook-trace"
+        id="f01hook-trace-list"
+        data-close-x="-221"
+        data-close-y="-329"
+        data-close-rot="-4"
+        style="left: 614px; top: 998px; width: 404px; height: 226px"
+      >
+        <div class="f01hook-trace-float">
+          <div class="f01hook-trace-body">
+            <!-- row 1 — done -->
+            <div class="f01hook-box f01hook-box-done" style="left: 28px; top: 34px">
+              <svg
+                width="26"
+                height="26"
+                viewBox="0 0 26 26"
+                fill="none"
+                style="position: absolute; left: -2px; top: -2px"
+              >
+                <path
+                  d="M7 13.5 L11 17.5 L19 8.5"
+                  stroke="#141312"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+            <div class="f01hook-bar" style="left: 76px; top: 42px; width: 244px; height: 11px; background: #4a4640"></div>
+            <div class="f01hook-strike" style="left: 72px; top: 47px; width: 252px"></div>
+
+            <!-- row 2 — done -->
+            <div class="f01hook-box f01hook-box-done" style="left: 28px; top: 100px">
+              <svg
+                width="26"
+                height="26"
+                viewBox="0 0 26 26"
+                fill="none"
+                style="position: absolute; left: -2px; top: -2px"
+              >
+                <path
+                  d="M7 13.5 L11 17.5 L19 8.5"
+                  stroke="#141312"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+            <div class="f01hook-bar" style="left: 76px; top: 108px; width: 186px; height: 11px; background: #4a4640"></div>
+            <div class="f01hook-strike" style="left: 72px; top: 113px; width: 194px"></div>
+
+            <!-- row 3 — open -->
+            <div class="f01hook-box" style="left: 28px; top: 166px"></div>
+            <div class="f01hook-bar" style="left: 76px; top: 174px; width: 218px; height: 11px; background: #7d766d"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── титр ── -->
+      <div id="f01hook-accent"></div>
+      <div id="f01hook-title">
+        <span class="f01hook-line"
+          ><span class="f01hook-word">Вы</span> <span class="f01hook-word">договорились.</span></span
+        >
+        <span class="f01hook-line"
+          ><span class="f01hook-word">Через</span> <span class="f01hook-word">месяц</span>
+          <span class="f01hook-word f01hook-hl">никто</span></span
+        >
+        <span class="f01hook-line"
+          ><span class="f01hook-word f01hook-hl">не</span>
+          <span class="f01hook-word"><span class="f01hook-hl">помнит</span>,</span>
+          <span class="f01hook-word">о</span> <span class="f01hook-word">чём</span></span
+        >
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+      var F = 1 / 60;
+
+      /* ─────────────────────────────────────────────────────────────────────
+         Низкоамплитудный дрейф (sine-wave-loop, тихий регистр).
+         Собран явными fromTo-сегментами: без repeat/yoyo, полностью seek-safe.
+      ───────────────────────────────────────────────────────────────────── */
+      function addFloat(sel, amp, period, phase, tStart, tEnd) {
+        var vals = [0, amp, 0, -amp];
+        var q = period / 4;
+        var i = phase;
+        var t = tStart;
+        while (t < tEnd) {
+          tl.fromTo(
+            sel,
+            { y: vals[i % 4] },
+            { y: vals[(i + 1) % 4], duration: q, ease: "sine.inOut" },
+            t
+          );
+          t += q;
+          i += 1;
+        }
+      }
+
+      /* ── Scene 1 (0.0–1.6s) — два силуэта встают снизу на длинном затухании ── */
+      /* Начальные состояния ставим немедленно (gsap.set вне таймлайна):
+         нулевой set на позиции 0 не отрисовался бы на самом первом кадре. */
+      gsap.set(".f01hook-trace-body", { opacity: 0 });
+      gsap.set(".f01hook-word", { opacity: 0 });
+      gsap.set("#f01hook-accent", { scaleX: 0 });
+
+      tl.fromTo(
+        ".f01hook-wash",
+        { opacity: 0 },
+        { opacity: 1, duration: 1.6, ease: "power2.out" },
+        0
+      );
+      tl.fromTo(
+        "#f01hook-phone-a",
+        { y: 215, opacity: 0, scale: 0.95, rotation: -9 },
+        { y: 0, opacity: 1, scale: 1, rotation: -4, duration: 1.3, ease: "power3.out" },
+        0.04
+      );
+      tl.fromTo(
+        "#f01hook-phone-b",
+        { y: 235, opacity: 0, scale: 0.95, rotation: 9 },
+        { y: 0, opacity: 1, scale: 1, rotation: 4, duration: 1.36, ease: "power3.out" },
+        0.16
+      );
+
+      addFloat("#f01hook-float-a", 8, 3.4, 0, 1.3, 6.2);
+      addFloat("#f01hook-float-b", 7, 3.8, 2, 1.4, 6.2);
+
+      /* ── Scene 2 (1.6–3.4s) — четыре следа набегают вразнобой (waterfall-entry).
+            Опасность binary: opacity ставится tl.set, не тушуется. Каждый след
+            приходит со своей стороны, тяжёлые едут дальше и дольше. ── */
+      var traces = [
+        // sel, x-offset, y-offset, duration, start
+        ["#f01hook-trace-note .f01hook-trace-body", -168, 76, 0.2, 1.62],
+        ["#f01hook-trace-chat .f01hook-trace-body", 162, 66, 0.18, 2.1],
+        ["#f01hook-trace-voice .f01hook-trace-body", -146, 62, 0.17, 2.56],
+        ["#f01hook-trace-list .f01hook-trace-body", 156, 74, 0.19, 3.02]
+      ];
+      traces.forEach(function (t) {
+        tl.set(t[0], { opacity: 1, x: t[1], y: t[2], scale: 0.94 }, t[4]);
+        tl.to(
+          t[0],
+          { x: 0, y: 0, scale: 1, duration: t[3], ease: "power4.out" },
+          t[4]
+        );
+      });
+
+      addFloat("#f01hook-trace-note .f01hook-trace-float", 9, 3.0, 0, 1.9, 6.2);
+      addFloat("#f01hook-trace-chat .f01hook-trace-float", 8, 3.3, 1, 2.34, 6.2);
+      addFloat("#f01hook-trace-voice .f01hook-trace-float", 8, 2.9, 2, 2.78, 6.2);
+      addFloat("#f01hook-trace-list .f01hook-trace-float", 9, 3.6, 3, 3.26, 6.2);
+
+      /* ── Scene 3 (3.4–4.6s) — титр проступает, следы приглушаются ── */
+      tl.fromTo(
+        "#f01hook-accent",
+        { scaleX: 0, opacity: 1 },
+        { scaleX: 1, duration: 0.55, ease: "power3.out" },
+        3.42
+      );
+      tl.fromTo(
+        ".f01hook-word",
+        { y: 34, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.34, ease: "power3.out", stagger: 0.07 },
+        3.56
+      );
+      tl.to(
+        ".f01hook-trace-body",
+        { opacity: 0.5, duration: 0.6, ease: "power2.out" },
+        3.62
+      );
+
+      /* ── Scene 4 (4.6–6.2s) — следы одновременно смыкаются к центру
+            (center-outward-expansion в обратную сторону, синхронный аккорд:
+            один общий ease и duration, цели пре-запечены в data-close-*).
+            Камера стоит: тесно от того, что элементов больше, чем места. ── */
+      tl.to(
+        ".f01hook-trace",
+        {
+          x: function (i, el) {
+            return Number(el.dataset.closeX);
+          },
+          y: function (i, el) {
+            return Number(el.dataset.closeY);
+          },
+          rotation: function (i, el) {
+            return Number(el.dataset.closeRot);
+          },
+          scale: 0.9,
+          duration: 1.36,
+          ease: "power2.inOut"
+        },
+        4.66
+      );
+      tl.to(
+        ".f01hook-trace-body",
+        { opacity: 0.94, duration: 0.8, ease: "power2.out" },
+        4.66
+      );
+      tl.to(
+        ".f01hook-phone",
+        { opacity: 0.68, duration: 1.0, ease: "power2.inOut" },
+        4.8
+      );
+      tl.to(
+        ".f01hook-wash",
+        { opacity: 0.45, duration: 1.0, ease: "power2.inOut" },
+        4.8
+      );
+
+      /* ── Scene 5 (6.2–7.0s) — всё гаснет; кадр отдаёт пустой холст
+            следующему (Adapt: финал переписан под crossfade). ── */
+      tl.to(
+        ["#f01hook-bg", "#f01hook-layer"],
+        { opacity: 0, duration: 0.72, ease: "power2.inOut" },
+        6.22 - F
+      );
+
+      window.__timelines["01-hook"] = tl;
+    })();
+  </script>
+</template>

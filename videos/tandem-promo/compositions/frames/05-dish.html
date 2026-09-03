@@ -1,0 +1,652 @@
+<template>
+  <style>
+    #root {
+      position: relative;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      font-family: -apple-system, system-ui, sans-serif;
+      color: #f2efea;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---------- ground ---------- */
+    #root .d05-dish-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(118% 52% at 50% 38%, rgba(229, 118, 140, 0.11), rgba(229, 118, 140, 0) 62%),
+        #141312;
+    }
+
+    /* ---------- camera ---------- */
+    #root .d05-dish-stage {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+    #root .d05-dish-cam-outer,
+    #root .d05-dish-cam-inner {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* ---------- phone plate — handoff: centre x 540 y 1010, scale 1.0 ---------- */
+    #root .d05-dish-plate {
+      position: absolute;
+      left: 280px;
+      top: 447.33px;
+      width: 520px;
+      height: 1125.33px;
+      overflow: hidden;
+      border-radius: 22px;
+      background: #141312;
+    }
+    #root .d05-dish-plate-edge {
+      position: absolute;
+      inset: 0;
+      border: 2px solid #322f2b;
+      border-radius: 22px;
+    }
+    /* the captured screen, authored in native screenshot pixels (1170x2532) */
+    #root .d05-dish-screen {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1170px;
+      height: 2532px;
+      transform: scale(0.4444444);
+      transform-origin: 0 0;
+    }
+    #root .d05-dish-shot {
+      display: block;
+      width: 1170px;
+      height: 2532px;
+    }
+    /* opaque covers over the baked-in rows / value / totals — no double image */
+    #root .d05-dish-cover {
+      position: absolute;
+    }
+
+    /* ---------- live ingredient rows ---------- */
+    #root .d05-dish-ing {
+      position: absolute;
+      left: 45px;
+      width: 1080px;
+      height: 183px;
+      box-sizing: border-box;
+      background: #1e1c1a;
+      border: 3px solid #322f2b;
+      border-radius: 36px;
+    }
+    #root .d05-dish-ing-name {
+      position: absolute;
+      left: 36px;
+      top: 26px;
+      font-size: 51px;
+      font-weight: 500;
+      line-height: 1;
+      letter-spacing: -0.01em;
+      color: #f2efea;
+      white-space: nowrap;
+    }
+    #root .d05-dish-ing-kcal {
+      position: absolute;
+      left: 36px;
+      top: 102px;
+      font-size: 38px;
+      font-weight: 400;
+      line-height: 1;
+      color: #9c958c;
+      white-space: nowrap;
+    }
+    #root .d05-dish-ing-box {
+      position: absolute;
+      left: 627px;
+      top: 16px;
+      width: 293px;
+      height: 146px;
+      box-sizing: border-box;
+      border: 3px solid #322f2b;
+      border-radius: 30px;
+    }
+    #root .d05-dish-ing-val {
+      position: absolute;
+      left: 616px;
+      top: 60px;
+      width: 215px;
+      text-align: center;
+      font-size: 48px;
+      font-weight: 500;
+      line-height: 1;
+      color: #f2efea;
+      font-variant-numeric: tabular-nums;
+    }
+    #root .d05-dish-ing-unit {
+      position: absolute;
+      left: 854px;
+      top: 72px;
+      font-size: 38px;
+      font-weight: 400;
+      line-height: 1;
+      color: #9c958c;
+    }
+    #root .d05-dish-ing-trash {
+      position: absolute;
+      left: 970px;
+      top: 67px;
+    }
+
+    /* ---------- live «Готовый вес» value ---------- */
+    #root .d05-dish-fieldval {
+      position: absolute;
+      left: 93px;
+      top: 1432px;
+      font-size: 48px;
+      font-weight: 500;
+      line-height: 48px;
+      color: #f2efea;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    #root .d05-dish-caret {
+      display: inline-block;
+      width: 4px;
+      height: 38px;
+      margin-left: 6px;
+      margin-bottom: -4px;
+      border-radius: 2px;
+      background: #f2efea;
+    }
+
+    /* ---------- live totals ---------- */
+    #root .d05-dish-kcalline {
+      position: absolute;
+      left: 93px;
+      top: 1857px;
+      display: flex;
+      align-items: baseline;
+      font-size: 72px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.01em;
+      color: #f2efea;
+    }
+    #root .d05-dish-kcalnum {
+      display: inline-block;
+      width: 132px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      transform-origin: 100% 100%;
+    }
+    #root .d05-dish-kcalunit {
+      margin-left: 22px;
+    }
+    #root .d05-dish-macros {
+      position: absolute;
+      left: 93px;
+      top: 1964px;
+      display: flex;
+      gap: 26px;
+      font-size: 42px;
+      font-weight: 500;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    #root .d05-dish-macro {
+      display: flex;
+      gap: 12px;
+    }
+    #root .d05-dish-macro-num {
+      display: inline-block;
+      text-align: left;
+    }
+    #root .d05-dish-m-b { color: #2f7fd0; }
+    #root .d05-dish-m-f { color: #c08000; }
+    #root .d05-dish-m-c { color: #009c65; }
+
+    /* ---------- the bound couple: control ring · target ring · link ---------- */
+    #root .d05-dish-ring {
+      position: absolute;
+      box-sizing: border-box;
+      border: 5px solid #e5768c;
+      border-radius: 38px;
+      opacity: 0;
+    }
+    #root .d05-dish-link {
+      position: absolute;
+      left: 20px;
+      top: 1531px;
+      width: 5px;
+      height: 217px;
+      border-radius: 3px;
+      background: #e5768c;
+      transform-origin: 50% 0%;
+      opacity: 0;
+    }
+
+    /* ---------- title ---------- */
+    #root .d05-dish-titleclip {
+      position: absolute;
+      inset: 0;
+    }
+    #root .d05-dish-title {
+      position: absolute;
+      left: 60px;
+      top: 1686px;
+      width: 960px;
+      text-align: center;
+    }
+    #root .d05-dish-rule {
+      width: 60px;
+      height: 4px;
+      margin: 0 auto 26px;
+      border-radius: 2px;
+      background: #e5768c;
+      transform-origin: 50% 50%;
+    }
+    #root .d05-dish-line {
+      font-size: 52px;
+      font-weight: 600;
+      line-height: 1.24;
+      letter-spacing: -0.02em;
+      color: #f2efea;
+    }
+    #root .d05-dish-w {
+      display: inline-block;
+    }
+    #root .d05-dish-ac {
+      color: #e5768c;
+    }
+  </style>
+
+  <div
+    id="root"
+    data-composition-id="05-dish"
+    data-start="0"
+    data-duration="8.4"
+    data-width="1080"
+    data-height="1920"
+  >
+    <!-- full-bleed ground on its own clip layer -->
+    <div
+      class="clip d05-dish-bg"
+      id="f05-dish-bg"
+      data-start="0"
+      data-duration="8.4"
+      data-track-index="0"
+    ></div>
+
+    <!-- the phone plate + live overlays -->
+    <div
+      class="clip d05-dish-stage"
+      id="f05-dish-stage"
+      data-start="0"
+      data-duration="8.4"
+      data-track-index="1"
+    >
+      <div class="d05-dish-cam-outer" id="f05-dish-cam-outer">
+        <div class="d05-dish-cam-inner" id="f05-dish-cam-inner">
+          <div class="d05-dish-plate">
+            <div class="d05-dish-screen">
+              <img class="d05-dish-shot" src="assets/dish-editor.png" alt="" />
+
+              <!-- covers: the baked-in состав block, the baked-in готовый вес value,
+                   and the baked-in totals numbers -->
+              <div
+                class="d05-dish-cover"
+                style="left: 30px; top: 683px; width: 1110px; height: 415px; background: #141312"
+              ></div>
+              <div
+                class="d05-dish-cover"
+                style="left: 60px; top: 1412px; width: 960px; height: 100px; background: #1e1c1a"
+              ></div>
+              <div
+                class="d05-dish-cover"
+                style="left: 60px; top: 1850px; width: 1050px; height: 180px; background: #2a2724"
+              ></div>
+
+              <!-- live ingredient rows are built here -->
+              <div id="f05-dish-rows"></div>
+
+              <!-- live «Готовый вес» value -->
+              <div class="d05-dish-fieldval">
+                <span id="f05-dish-typed"></span
+                ><span class="d05-dish-caret" id="f05-dish-caret"></span>
+              </div>
+
+              <!-- live totals -->
+              <div class="d05-dish-kcalline">
+                <span class="d05-dish-kcalnum" id="f05-dish-kcal">0</span
+                ><span class="d05-dish-kcalunit">ккал</span>
+              </div>
+              <div class="d05-dish-macros">
+                <div class="d05-dish-macro d05-dish-m-b">
+                  <span>Б</span
+                  ><span class="d05-dish-macro-num" id="f05-dish-mb" style="width: 100px">0</span>
+                </div>
+                <div class="d05-dish-macro d05-dish-m-f">
+                  <span>Ж</span
+                  ><span class="d05-dish-macro-num" id="f05-dish-mf" style="width: 78px">0</span>
+                </div>
+                <div class="d05-dish-macro d05-dish-m-c">
+                  <span>У</span
+                  ><span class="d05-dish-macro-num" id="f05-dish-mc" style="width: 58px">0</span>
+                </div>
+              </div>
+
+              <!-- the couple: control ring, target ring, the link between them -->
+              <div
+                class="d05-dish-ring"
+                id="f05-dish-field-ring"
+                style="left: 42px; top: 1390px; width: 1086px; height: 141px"
+              ></div>
+              <div
+                class="d05-dish-ring"
+                id="f05-dish-panel-ring"
+                style="left: 42px; top: 1748px; width: 1086px; height: 301px"
+              ></div>
+              <div class="d05-dish-link" id="f05-dish-link"></div>
+            </div>
+            <div class="d05-dish-plate-edge"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- title -->
+    <div
+      class="clip d05-dish-titleclip"
+      id="f05-dish-titleclip"
+      data-start="0"
+      data-duration="8.4"
+      data-track-index="2"
+    >
+      <div class="d05-dish-title" id="f05-dish-title">
+        <div class="d05-dish-rule" id="f05-dish-rule"></div>
+        <div class="d05-dish-line">
+          <span class="d05-dish-w">Блюдо</span> <span class="d05-dish-w">—</span>
+          <span class="d05-dish-w d05-dish-ac">по</span>
+          <span class="d05-dish-w d05-dish-ac">готовому</span>
+          <span class="d05-dish-w"><span class="d05-dish-ac">весу</span>,</span>
+        </div>
+        <div class="d05-dish-line">
+          <span class="d05-dish-w">а</span> <span class="d05-dish-w">не</span>
+          <span class="d05-dish-w">на</span> <span class="d05-dish-w">глаз</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var el = function (id) {
+        return document.getElementById(id);
+      };
+
+      /* ============================================================
+         camera — panel-edit-live-sync law: the couple stays co-visible.
+         A: handoff framing (plate centre 540/1010, scale 1.0)
+         B: push-in on the состав block, totals still in frame
+         C: «Готовый вес» + «На 100 г готового блюда» framed together
+            and never separated again.
+         ============================================================ */
+      var camOuter = el("f05-dish-cam-outer");
+      var camInner = el("f05-dish-cam-inner");
+      var PH_A = { s: 1, y: 0 };
+      var PH_B = { s: 1.4, y: -173.05 };
+      var PH_C = { s: 1.9, y: -288.99 };
+
+      /* ============================================================
+         content — the two ingredient rows, rebuilt live over the shot
+         ============================================================ */
+      var ITEMS = [
+        { name: "Куриная грудка", kcal: "113 ккал на 100 г", value: "500", unit: "г", top: 691 },
+        { name: "Рис белый сухой", kcal: "344 ккал на 100 г", value: "200", unit: "г", top: 907 },
+      ];
+
+      var TRASH =
+        '<svg class="d05-dish-ing-trash" width="40" height="44" viewBox="0 0 40 44" fill="none" ' +
+        'stroke="#88827a" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M4 9 H36"/><path d="M15 9 V4.5 H25 V9"/>' +
+        '<path d="M8 9 L10 39 Q10.4 41.5 13 41.5 H27 Q29.6 41.5 30 39 L32 9"/>' +
+        '<path d="M17 17 V33 M23 17 V33"/></svg>';
+
+      /* dynamic-content-sequencing — start times reduced once, at build time,
+         from each row's own content length. Never recomputed per frame. */
+      var SEQ_START = 1.25;
+      var ITEM_BASE = 0.42;
+      var SEC_PER_CHAR = 0.014;
+      var REVEAL_DUR = 0.62;
+
+      var cumulative = SEQ_START;
+      var ROWS = ITEMS.map(function (it) {
+        var start = cumulative;
+        cumulative += ITEM_BASE + it.name.length * SEC_PER_CHAR;
+        return { item: it, start: start };
+      });
+
+      var rowsHost = el("f05-dish-rows");
+      var rowEls = ROWS.map(function (r) {
+        var d = document.createElement("div");
+        d.className = "d05-dish-ing";
+        d.style.top = r.item.top + "px";
+        d.innerHTML =
+          '<div class="d05-dish-ing-name">' +
+          r.item.name +
+          "</div>" +
+          '<div class="d05-dish-ing-kcal">' +
+          r.item.kcal +
+          "</div>" +
+          '<div class="d05-dish-ing-box"></div>' +
+          '<div class="d05-dish-ing-val">' +
+          r.item.value +
+          "</div>" +
+          '<div class="d05-dish-ing-unit">' +
+          r.item.unit +
+          "</div>" +
+          TRASH;
+        rowsHost.appendChild(d);
+        return d;
+      });
+
+      /* ============================================================
+         the signature beat — discrete-text-sequence on the control,
+         counting-dynamic-scale on the bound surface, ONE shared cue.
+         ============================================================ */
+      var SYNC_AT = 3.4;
+
+      var TYPE_DUR = 1.0;
+      var SEQUENCE = [
+        { t: 0.0, text: "" },
+        { t: 0.12, text: "1" },
+        { t: 0.28, text: "10" },
+        { t: 0.43, text: "100" },
+        { t: 0.6, text: "1000" },
+      ];
+      function textAt(time) {
+        for (var i = SEQUENCE.length - 1; i >= 0; i--) {
+          if (time >= SEQUENCE[i].t) return SEQUENCE[i].text;
+        }
+        return "";
+      }
+      var typedEl = el("f05-dish-typed");
+      var caretEl = el("f05-dish-caret");
+
+      var kcalEl = el("f05-dish-kcal");
+      var mbEl = el("f05-dish-mb");
+      var mfEl = el("f05-dish-mf");
+      var mcEl = el("f05-dish-mc");
+
+      var COUNT_DUR = 1.55;
+      var COUNT_EASE = "power3.out";
+      function one(v) {
+        return v < 0.05 ? "0" : v.toFixed(1);
+      }
+
+      var sKcal = { v: 0 };
+      var sB = { v: 0 };
+      var sF = { v: 0 };
+      var sC = { v: 0 };
+
+      /* ============================================================
+         timeline
+         ============================================================ */
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+
+      /* Scene 1 (0.0–1.2s) — the cut lands the plate exactly where frame 04
+         left it; состав is empty, the totals read zero. */
+
+      /* Scene 2 (1.2–2.6s) — the rows arrive, one at a time, top to bottom,
+         while the camera eases into the состав block. */
+      tl.fromTo(
+        camOuter,
+        { scale: PH_A.s },
+        { scale: PH_B.s, duration: 0.9, ease: "power2.inOut" },
+        1.15,
+      );
+      tl.fromTo(camInner, { y: PH_A.y }, { y: PH_B.y, duration: 0.9, ease: "power2.inOut" }, 1.15);
+
+      rowEls.forEach(function (node, i) {
+        tl.fromTo(
+          node,
+          { opacity: 0, y: 34, scale: 0.97 },
+          { opacity: 1, y: 0, scale: 1, duration: REVEAL_DUR, ease: "power3.out" },
+          ROWS[i].start,
+        );
+      });
+
+      /* Scene 3 (2.6–3.4s) — reframe so the control and its bound surface
+         share the frame for the rest of the shot; the binding is declared. */
+      tl.to(camOuter, { scale: PH_C.s, duration: 0.85, ease: "power2.inOut" }, 2.6);
+      tl.to(camInner, { y: PH_C.y, duration: 0.85, ease: "power2.inOut" }, 2.6);
+
+      tl.fromTo(
+        el("f05-dish-field-ring"),
+        { opacity: 0, scale: 1.04 },
+        { opacity: 1, scale: 1, duration: 0.4, ease: "power2.out" },
+        3.0,
+      );
+      tl.fromTo(
+        el("f05-dish-link"),
+        { opacity: 0, scaleY: 0 },
+        { opacity: 1, scaleY: 1, duration: 0.45, ease: "power2.out" },
+        3.05,
+      );
+      tl.fromTo(
+        el("f05-dish-panel-ring"),
+        { opacity: 0, scale: 1.04 },
+        { opacity: 1, scale: 1, duration: 0.4, ease: "power2.out" },
+        3.15,
+      );
+
+      /* Scene 4 (3.4–5.4s) — THE BEAT. Both tweens open at SYNC_AT: the field
+         types to 1000 and the panel recomputes in the same take, no pause. */
+      var driver = { t: 0 };
+      tl.to(
+        driver,
+        {
+          t: TYPE_DUR,
+          duration: TYPE_DUR,
+          ease: "none",
+          onUpdate: function () {
+            typedEl.textContent = textAt(driver.t);
+          },
+        },
+        SYNC_AT,
+      );
+
+      var blink = { p: 0 };
+      tl.to(
+        blink,
+        {
+          p: Math.PI * 2 * 1.75,
+          duration: TYPE_DUR,
+          ease: "none",
+          onUpdate: function () {
+            caretEl.style.opacity = Math.sin(blink.p) > 0 ? "1" : "0";
+          },
+        },
+        SYNC_AT,
+      );
+      tl.to(caretEl, { opacity: 1, duration: 0.01 }, SYNC_AT + TYPE_DUR + 0.02);
+
+      tl.to(
+        sKcal,
+        {
+          v: 125,
+          duration: COUNT_DUR,
+          ease: COUNT_EASE,
+          onUpdate: function () {
+            kcalEl.textContent = String(Math.round(sKcal.v));
+          },
+        },
+        SYNC_AT,
+      );
+      tl.fromTo(
+        kcalEl,
+        { scale: 0.72 },
+        { scale: 1, duration: COUNT_DUR, ease: COUNT_EASE },
+        SYNC_AT,
+      );
+      tl.to(
+        sB,
+        {
+          v: 13.1,
+          duration: COUNT_DUR,
+          ease: COUNT_EASE,
+          onUpdate: function () {
+            mbEl.textContent = one(sB.v);
+          },
+        },
+        SYNC_AT,
+      );
+      tl.to(
+        sF,
+        {
+          v: 1.1,
+          duration: COUNT_DUR,
+          ease: COUNT_EASE,
+          onUpdate: function () {
+            mfEl.textContent = one(sF.v);
+          },
+        },
+        SYNC_AT,
+      );
+      tl.to(
+        sC,
+        {
+          v: 16,
+          duration: COUNT_DUR,
+          ease: COUNT_EASE,
+          onUpdate: function () {
+            mcEl.textContent = String(Math.round(sC.v));
+          },
+        },
+        SYNC_AT,
+      );
+
+      /* Scene 5 (5.4–6.6s) — the title lands in the reserved bottom band. */
+      tl.fromTo(
+        el("f05-dish-rule"),
+        { opacity: 0, scaleX: 0 },
+        { opacity: 1, scaleX: 1, duration: 0.5, ease: "power3.out" },
+        5.4,
+      );
+      var words = Array.prototype.slice.call(
+        el("f05-dish-title").getElementsByClassName("d05-dish-w"),
+      );
+      tl.fromTo(
+        words,
+        { opacity: 0, y: 26 },
+        { opacity: 1, y: 0, duration: 0.55, stagger: 0.045, ease: "power3.out" },
+        5.5,
+      );
+
+      /* Scene 6 (6.6–8.0s) — held. Nothing moves. */
+
+      window.__timelines["05-dish"] = tl;
+    })();
+  </script>
+</template>
