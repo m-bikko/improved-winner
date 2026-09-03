@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "preferences": {
+    "language": {
+      "value": "ru",
+      "confirmed_in": [
+        "tandem-promo"
+      ],
+      "updated_at": "2026-09-03T15:48:11.133Z"
+    },
+    "aspect": {
+      "value": "9:16",
+      "confirmed_in": [
+        "tandem-promo"
+      ],
+      "updated_at": "2026-09-03T15:48:15.916Z"
+    },
+    "destination": {
+      "value": "shorts",
+      "confirmed_in": [
+        "tandem-promo"
+      ],
+      "updated_at": "2026-09-03T15:48:15.953Z"
+    },
+    "flow": {
+      "value": "full",
+      "confirmed_in": [
+        "tandem-promo"
+      ],
+      "updated_at": "2026-09-03T15:48:15.990Z"
+    },
+    "storyboard": {
+      "value": "true",
+      "confirmed_in": [
+        "tandem-promo"
+      ],
+      "updated_at": "2026-09-03T15:48:16.029Z"
+    },
+    "style_preset.product-launch-video": {
+      "value": "blue-professional",
+      "confirmed_in": [
+        "tandem-promo"
+      ],
+      "updated_at": "2026-09-03T15:51:19.244Z"
+    }
+  },
+  "sightings": {}
+}

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Знак приложения">
+  <rect width="64" height="64" rx="14" fill="#b4485f"/>
+  <g fill="none" stroke="#fff" stroke-width="5.5">
+    <defs><clipPath id="favicon-link"><circle cx="22" cy="32" r="12"/></clipPath></defs>
+    <circle cx="42" cy="32" r="12" fill="#fff" stroke="none" clip-path="url(#favicon-link)"/>
+    <circle cx="22" cy="32" r="12"/>
+    <circle cx="42" cy="32" r="12"/>
+  </g>
+</svg>
