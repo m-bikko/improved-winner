@@ -1,24 +1,56 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
-import { CircleAlert } from 'lucide-react'
+import { CircleAlert, LoaderCircle } from 'lucide-react'
 
 type Props = { children: ReactNode }
-type State = { error: Error | null }
+type State = { error: Error | null; resetting: boolean }
+
+/**
+ * Полный сброс клиентского состояния.
+ *
+ * Раньше кнопка чистила только IndexedDB — и против главной причины поломки
+ * не помогала вовсе. Service Worker продолжал отдавать старую сборку, приложение
+ * падало снова, а нажатие «сбросить кэш» выглядело как насмешка.
+ *
+ * localStorage НЕ трогаем намеренно: там лежит сессия и очередь неотправленных
+ * записей дневника. Разлогинить человека и потерять внесённую еду ради починки
+ * рендера — плохой размен.
+ */
+async function hardReset(): Promise<void> {
+  try {
+    const registrations = (await navigator.serviceWorker?.getRegistrations?.()) ?? []
+    await Promise.all(registrations.map((r) => r.unregister()))
+  } catch {
+    /* приватный режим, отключённые SW — не повод останавливаться */
+  }
+
+  try {
+    const keys = await caches.keys()
+    await Promise.all(keys.map((k) => caches.delete(k)))
+  } catch {
+    /* см. выше */
+  }
+
+  try {
+    indexedDB.deleteDatabase('keyval-store')
+  } catch {
+    /* см. выше */
+  }
+
+  // reload(true) давно не работает, но снятый SW уже не сможет перехватить
+  // запрос, поэтому обычной перезагрузки достаточно
+  window.location.reload()
+}
 
 /**
  * Ловит падения рендера, чтобы вместо белого экрана был текст ошибки.
  *
- * В PWA это не мелочь: приложение живёт на домашнем экране, и белый экран без
- * единой подсказки не даёт ни пользователю, ни мне ни малейшей зацепки —
- * консоли под рукой на телефоне нет.
- *
- * Кнопка «Сбросить кэш» здесь по делу: самая вероятная причина падения —
- * данные в IndexedDB, сохранённые прошлой версией и уже несовместимые
- * с текущей формой.
+ * В PWA это не мелочь: приложение живёт на домашнем экране, консоли под рукой
+ * нет, и белый экран не даёт ни пользователю, ни мне ни малейшей зацепки.
  */
 export class ErrorBoundary extends Component<Props, State> {
-  override state: State = { error: null }
+  override state: State = { error: null, resetting: false }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { error }
   }
 
@@ -27,7 +59,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   override render(): ReactNode {
-    const { error } = this.state
+    const { error, resetting } = this.state
     if (!error) return this.props.children
 
     return (
@@ -35,25 +67,34 @@ export class ErrorBoundary extends Component<Props, State> {
         <CircleAlert size={28} className="text-danger" aria-hidden />
         <p className="text-base">Что-то сломалось</p>
         <p className="text-sm break-words text-muted">{error.message}</p>
-        <div className="mt-2 flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="rounded-xl bg-accent px-5 py-3 text-accent-ink"
-          >
-            Перезагрузить
-          </button>
+
+        <div className="mt-2 flex w-full max-w-xs flex-col gap-2">
           <button
             type="button"
             onClick={() => {
-              void indexedDB.deleteDatabase('keyval-store')
-              window.location.reload()
+              this.setState({ resetting: true })
+              void hardReset()
             }}
+            disabled={resetting}
+            className="flex items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3
+                       text-accent-ink disabled:opacity-60"
+          >
+            {resetting && <LoaderCircle size={16} className="animate-spin" aria-hidden />}
+            Обновить до последней версии
+          </button>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
             className="px-5 py-3 text-sm text-muted underline"
           >
-            Сбросить кэш и перезагрузить
+            Просто перезагрузить
           </button>
         </div>
+
+        <p className="mt-2 max-w-xs text-xs text-muted">
+          Первая кнопка снимает Service Worker и чистит кэш. Записи дневника
+          и вход при этом сохраняются.
+        </p>
       </div>
     )
   }

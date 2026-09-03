@@ -12,10 +12,14 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      // 'prompt', а не 'autoUpdate': приложение живёт на домашнем экране неделями,
-      // подмена ассетов под работающей сессией ломает ленивые чанки
-      // (Failed to fetch dynamically imported module).
-      registerType: 'prompt',
+      // 'autoUpdate', а не 'prompt'.
+      //
+      // Сначала стояло 'prompt' из опасения, что подмена ассетов под работающей
+      // сессией сломает ленивые чанки. Но ленивых импортов в приложении нет —
+      // сборка одним куском, — а цена 'prompt' проявилась на живом телефоне:
+      // Service Worker продолжал отдавать сломанную версию, и выйти из неё было
+      // нечем. Сломанная версия обязана уметь чиниться сама.
+      registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'robots.txt'],
       manifest: {
         name: 'Love promises',
