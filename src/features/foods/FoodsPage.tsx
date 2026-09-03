@@ -4,7 +4,8 @@ import { ChevronRight, Plus } from 'lucide-react'
 import { searchItems } from '@/lib/search'
 import { SearchInput } from '@/ui/SearchInput'
 import { EmptyState, ErrorState, Loading } from '@/ui/States'
-import { useFoods } from './api'
+import { useFoodPhotoUrls, useFoods } from './api'
+import { FoodThumb } from './FoodPhoto'
 import type { Food, FoodKind } from './types'
 
 export function FoodsPage() {
@@ -21,6 +22,14 @@ export function FoodsPage() {
       { limit: 300 },
     )
   }, [foods.data, tab, query])
+
+  // Ссылки берём на всё, что есть в базе, а не на текущую выборку: иначе каждый
+  // символ в поиске менял бы список путей и дёргал новый запрос за подписями
+  const photoPaths = useMemo(
+    () => (foods.data ?? []).map((f) => f.imagePath).filter((p): p is string => p !== null),
+    [foods.data],
+  )
+  const photos = useFoodPhotoUrls(photoPaths)
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-3 pb-28">
@@ -55,7 +64,11 @@ export function FoodsPage() {
         <ul className="mt-3 overflow-hidden rounded-xl ring-1 ring-line">
           {visible.map((food, i) => (
             <li key={food.id} className={i > 0 ? 'border-t border-line' : undefined}>
-              <FoodRow food={food} to={`/foods/${food.id}`} />
+              <FoodRow
+                food={food}
+                to={`/foods/${food.id}`}
+                photoUrl={food.imagePath ? photos.data?.[food.imagePath] : undefined}
+              />
             </li>
           ))}
         </ul>
@@ -100,9 +113,18 @@ function Tab({
 }
 
 /** Строка продукта. Используется и здесь, и в шторке выбора из дневника. */
-export function FoodRow({ food, to }: { food: Food; to: string }) {
+export function FoodRow({
+  food,
+  to,
+  photoUrl,
+}: {
+  food: Food
+  to: string
+  photoUrl?: string | undefined
+}) {
   return (
     <Link to={to} className="flex items-center gap-3 bg-surface px-4 py-3 active:bg-raised">
+      <FoodThumb url={photoUrl} />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-base">
           {food.name}

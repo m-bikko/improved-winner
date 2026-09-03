@@ -24,6 +24,8 @@ export type Food = {
   yieldGrams: number | null
   ingredientsCount: number
   ingredientsGrams: number
+  /** Путь в бакете food-photos. null — фотографии нет. */
+  imagePath: string | null
 }
 
 export type Serving = {
@@ -54,6 +56,7 @@ export function foodFromRow(row: FoodRow): Food {
     yieldGrams: row.yield_grams,
     ingredientsCount: row.ingredients_count ?? 0,
     ingredientsGrams: row.ingredients_grams ?? 0,
+    imagePath: row.image_path,
   }
 }
 

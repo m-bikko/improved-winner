@@ -288,6 +288,9 @@ function entryAsFood(entry: DiaryEntry): Food {
     yieldGrams: null,
     ingredientsCount: 0,
     ingredientsGrams: 0,
+    // Снимок записи фотографию не хранит: она живёт в справочнике, а запись
+    // должна оставаться читаемой и без него
+    imagePath: null,
   }
 }
 

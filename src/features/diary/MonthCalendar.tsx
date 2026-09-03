@@ -22,7 +22,9 @@ function useMonth(userId: string, year: number, month: number) {
 
   return useQuery({
     queryKey: ['diary-month', userId, from],
-    queryFn: async (): Promise<Map<string, DaySummary>> => {
+    // Обычный объект, а не Map: кэш сериализуется в IndexedDB, и Map после
+    // восстановления превращается в {} без методов. Здесь это уже ломалось.
+    queryFn: async (): Promise<Record<string, DaySummary>> => {
       const { data, error } = await supabase.rpc('diary_month', {
         p_user: userId,
         p_from: from,
@@ -30,18 +32,18 @@ function useMonth(userId: string, year: number, month: number) {
       })
       if (error) throw error
 
-      const map = new Map<string, DaySummary>()
+      const byDay: Record<string, DaySummary> = {}
       for (const row of data ?? []) {
         // PostgREST отдаёт date строкой YYYY-MM-DD; обрезаем на случай,
         // если когда-нибудь приедет с временем
-        map.set(String(row.day).slice(0, 10), {
+        byDay[String(row.day).slice(0, 10)] = {
           kcal: Number(row.kcal ?? 0),
           protein: Number(row.protein ?? 0),
           goalKcal: row.goal_kcal === null ? null : Number(row.goal_kcal),
           goalProtein: row.goal_protein === null ? null : Number(row.goal_protein),
-        })
+        }
       }
-      return map
+      return byDay
     },
     enabled: userId !== '',
   })
@@ -128,7 +130,7 @@ export function MonthCalendar({
             {cells.map((day, i) => {
               if (day === null) return <span key={`gap-${i}`} />
               const iso = toLocalISO(new Date(cursor.year, cursor.month, day))
-              const data = month.data?.get(iso)
+              const data = month.data?.[iso]
               return (
                 <DayCell
                   key={iso}

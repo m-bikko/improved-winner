@@ -257,6 +257,7 @@ export type Database = {
           created_by: string | null
           fat_100: number
           id: string
+          image_path: string | null
           kcal_100: number
           kind: string
           name: string
@@ -273,6 +274,7 @@ export type Database = {
           created_by?: string | null
           fat_100?: number
           id?: string
+          image_path?: string | null
           kcal_100?: number
           kind: string
           name: string
@@ -289,6 +291,7 @@ export type Database = {
           created_by?: string | null
           fat_100?: number
           id?: string
+          image_path?: string | null
           kcal_100?: number
           kind?: string
           name?: string
@@ -465,6 +468,7 @@ export type Database = {
           created_by: string | null
           fat_100: number | null
           id: string | null
+          image_path: string | null
           ingredients_count: number | null
           ingredients_grams: number | null
           kcal_100: number | null

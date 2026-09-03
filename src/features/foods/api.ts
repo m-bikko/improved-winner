@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { prepareImage } from '@/lib/image'
 import { foodFromRow, servingFromRow, type Food, type Serving } from './types'
 
 /**
@@ -61,6 +62,106 @@ export function useServingsByFood() {
   }, [query.data])
 
   return { ...query, byFood }
+}
+
+export const PHOTO_BUCKET = 'food-photos'
+
+/** Час с запасом: ссылки кэшируются на 50 минут, см. useFoodPhotoUrls. */
+const SIGNED_URL_TTL = 3600
+
+/**
+ * Подписанные ссылки на фотографии — пачкой на весь список.
+ *
+ * Бакет приватный, поэтому прямых URL нет. Просить ссылку на каждую картинку
+ * отдельно означало бы сотню запросов при открытии списка продуктов, поэтому
+ * берём все разом и держим в кэше.
+ */
+export function useFoodPhotoUrls(paths: readonly string[]) {
+  const key = [...paths].sort().join(',')
+  return useQuery({
+    queryKey: ['photo-urls', key],
+    queryFn: async (): Promise<Record<string, string>> => {
+      if (paths.length === 0) return {}
+      const { data, error } = await supabase.storage
+        .from(PHOTO_BUCKET)
+        .createSignedUrls([...paths], SIGNED_URL_TTL)
+      if (error) throw error
+
+      const urls: Record<string, string> = {}
+      for (const item of data ?? []) {
+        if (item.signedUrl && item.path) urls[item.path] = item.signedUrl
+      }
+      return urls
+    },
+    enabled: paths.length > 0,
+    // Меньше срока жизни ссылки, чтобы не отдать компоненту протухшую
+    staleTime: 50 * 60_000,
+    gcTime: 50 * 60_000,
+  })
+}
+
+/**
+ * Загружает фотографию и привязывает её к продукту.
+ *
+ * Имя объекта случайное, а старый файл удаляется: если писать по одному и тому
+ * же пути, браузер и CDN продолжат отдавать прежнюю картинку, и замена
+ * выглядела бы как «ничего не произошло».
+ */
+export function useUploadFoodPhoto() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      foodId,
+      file,
+      previousPath,
+    }: {
+      foodId: string
+      file: File
+      previousPath: string | null
+    }): Promise<{ path: string; bytes: number }> => {
+      const prepared = await prepareImage(file)
+      const path = `${foodId}/${crypto.randomUUID()}.${prepared.extension}`
+
+      const { error: uploadError } = await supabase.storage
+        .from(PHOTO_BUCKET)
+        .upload(path, prepared.blob, {
+          contentType: prepared.blob.type,
+          cacheControl: '31536000',
+        })
+      if (uploadError) throw uploadError
+
+      const { error } = await supabase.from('foods').update({ image_path: path }).eq('id', foodId)
+      if (error) throw error
+
+      // Старый файл убираем после того, как новый уже привязан: обратный
+      // порядок оставил бы продукт со ссылкой в никуда, если удаление прошло,
+      // а загрузка нет
+      if (previousPath) {
+        await supabase.storage.from(PHOTO_BUCKET).remove([previousPath])
+      }
+
+      return { path, bytes: prepared.blob.size }
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['foods'] })
+      void qc.invalidateQueries({ queryKey: ['photo-urls'] })
+    },
+  })
+}
+
+export function useRemoveFoodPhoto() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ foodId, path }: { foodId: string; path: string }) => {
+      const { error } = await supabase.from('foods').update({ image_path: null }).eq('id', foodId)
+      if (error) throw error
+      await supabase.storage.from(PHOTO_BUCKET).remove([path])
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['foods'] })
+      void qc.invalidateQueries({ queryKey: ['photo-urls'] })
+    },
+  })
 }
 
 export type DishItem = { id: string; foodId: string; grams: number }

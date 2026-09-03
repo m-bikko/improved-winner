@@ -14,6 +14,7 @@ import {
   useServingsByFood,
 } from './api'
 import { DishForm } from './DishForm'
+import { FoodPhotoEditor } from './FoodPhoto'
 import type { Food, Serving } from './types'
 
 /**
@@ -227,6 +228,8 @@ function FoodForm({
           </div>
           <AtwaterHint {...form} />
         </div>
+
+        <FoodPhotoEditor foodId={existing?.id} imagePath={existing?.imagePath ?? null} />
 
         <ServingsEditor value={servingDrafts} onChange={setServingDrafts} />
 

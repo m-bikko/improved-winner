@@ -4,6 +4,7 @@ import { Archive, ChevronLeft, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/ui/Button'
 import { Field, NumberField } from '@/ui/Field'
 import { useArchiveFood, useFoods, useSaveDish, useSaveServings, type DishItem } from './api'
+import { FoodPhotoEditor } from './FoodPhoto'
 import { ProductPicker } from './ProductPicker'
 import { trim } from './FoodsPage'
 import type { Food, Serving } from './types'
@@ -193,6 +194,8 @@ export function DishForm({
             </p>
           </div>
         )}
+
+        <FoodPhotoEditor foodId={existing?.id} imagePath={existing?.imagePath ?? null} />
 
         <div className="flex flex-col gap-2">
           <div>

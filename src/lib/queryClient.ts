@@ -35,6 +35,32 @@ export const queryClient = new QueryClient({
   },
 })
 
+/**
+ * Ловит данные, которые не переживут сериализацию кэша.
+ *
+ * Map и Set после JSON.parse становятся пустыми объектами, Date — строкой,
+ * и ломается это не сразу, а только после перезагрузки с восстановленным
+ * кэшем. То есть в разработке всё работает, а у пользователя белый экран.
+ *
+ * На этих граблях я стоял дважды, поэтому проверка живёт в коде, а не
+ * в документации.
+ */
+if (import.meta.env.DEV) {
+  queryClient.getQueryCache().subscribe((event) => {
+    if (event.type !== 'updated' || event.query.state.status !== 'success') return
+    const data: unknown = event.query.state.data
+    const bad =
+      data instanceof Map ? 'Map' : data instanceof Set ? 'Set' : data instanceof Date ? 'Date' : null
+    if (bad) {
+      console.error(
+        `Запрос ${JSON.stringify(event.query.queryKey)} вернул ${bad}. ` +
+          'Кэш сериализуется в IndexedDB, и после перезагрузки это придёт битым. ' +
+          'Верни массив или обычный объект, а структуру собирай в useMemo.',
+      )
+    }
+  })
+}
+
 export const persister = createAsyncStoragePersister({
   storage: {
     getItem: (key) => get<string>(key).then((v) => v ?? null),

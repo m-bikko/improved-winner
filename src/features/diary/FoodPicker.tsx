@@ -6,7 +6,8 @@ import { SearchInput } from '@/ui/SearchInput'
 import { Sheet } from '@/ui/Sheet'
 import { EmptyState, Loading } from '@/ui/States'
 import { trim } from '@/features/foods/FoodsPage'
-import { useFoods } from '@/features/foods/api'
+import { useFoodPhotoUrls, useFoods } from '@/features/foods/api'
+import { FoodThumb } from '@/features/foods/FoodPhoto'
 import type { Food } from '@/features/foods/types'
 import { useRecentFoodIds } from './api'
 import { MEAL_LABELS, type Meal } from './types'
@@ -30,6 +31,14 @@ export function FoodPicker({ open, meal, userId, onClose, onPick }: Props) {
   const [query, setQuery] = useState('')
   const foods = useFoods()
   const recent = useRecentFoodIds(userId)
+
+  // Один запрос за подписями на всю базу: он кэшируется и переиспользуется
+  // разделом продуктов, потому что ключ у запроса тот же
+  const photoPaths = useMemo(
+    () => (foods.data ?? []).map((f) => f.imagePath).filter((p): p is string => p !== null),
+    [foods.data],
+  )
+  const photos = useFoodPhotoUrls(photoPaths)
 
   const { results, mode } = useMemo(() => {
     const all = foods.data ?? []
@@ -89,6 +98,7 @@ export function FoodPicker({ open, meal, userId, onClose, onPick }: Props) {
               onClick={() => onPick(food)}
               className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left active:bg-raised"
             >
+              <FoodThumb url={food.imagePath ? photos.data?.[food.imagePath] : undefined} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate">
                   {food.name}
