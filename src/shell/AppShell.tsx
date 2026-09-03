@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Menu } from 'lucide-react'
+import { APP_NAME } from '@/lib/appName'
 import { BurgerMenu, NAV } from './BurgerMenu'
 import { HeaderActionProvider, useHeaderActionSlot } from './HeaderAction'
 
@@ -22,7 +23,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 function Chrome({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const { pathname } = useLocation()
-  const title = NAV.find((n) => pathname.startsWith(n.to))?.label ?? 'Love promises'
+  const title = NAV.find((n) => pathname.startsWith(n.to))?.label ?? APP_NAME
   const action = useHeaderActionSlot()
 
   return (

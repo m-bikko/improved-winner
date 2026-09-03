@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
 import { Apple, ListChecks, LogOut, NotebookPen, MessagesSquare, User, X } from 'lucide-react'
 import { useAuth } from '@/auth/AuthProvider'
+import { APP_NAME } from '@/lib/appName'
 
 export const NAV = [
   { to: '/topics', label: 'Темы', icon: MessagesSquare },
@@ -52,7 +53,7 @@ export function BurgerMenu({ open, onClose }: { open: boolean; onClose: () => vo
                     ${open ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="flex items-center justify-between px-5 py-4">
-          <span className="text-lg font-semibold">{account?.nickname ?? 'Love promises'}</span>
+          <span className="text-lg font-semibold">{account?.nickname ?? APP_NAME}</span>
           <button type="button" onClick={onClose} aria-label="Закрыть меню" className="p-2 text-muted">
             <X size={22} aria-hidden />
           </button>

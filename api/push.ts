@@ -78,7 +78,10 @@ export default async function handler(req: Request, res: Response): Promise<void
   }
 
   const notification = JSON.stringify({
-    title: payload.title ?? 'Love promises',
+    // Запасной заголовок, а не название приложения: имя PWA систему и так
+    // подписывает сама, а сюда мы попадаем только если вызывающий заголовок
+    // не передал — то есть когда сказать «о чём» уже нечего
+    title: payload.title ?? 'Напоминание',
     body: payload.body,
     url: payload.url ?? '/diary',
   })

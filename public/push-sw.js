@@ -11,21 +11,26 @@ self.addEventListener('push', (event) => {
   if (!event.data) return
 
   let payload
+  // Название приложения сюда не подставить: файл лежит в public/ и копируется
+  // как есть, переменные сборки до него не доходят. Поэтому запасной заголовок
+  // нейтральный — тем более что имя PWA систему подписывает сама.
   try {
     payload = event.data.json()
   } catch {
-    payload = { title: 'Love promises', body: event.data.text() }
+    payload = { title: 'Напоминание', body: event.data.text() }
   }
 
   event.waitUntil(
-    self.registration.showNotification(payload.title || 'Love promises', {
+    self.registration.showNotification(payload.title || 'Напоминание', {
       body: payload.body,
       icon: '/icon-192.png',
       badge: '/icon-192.png',
-      // Тег заменяет предыдущее уведомление вместо того, чтобы копить их
-      // стопкой: три висящих «Позавтракал?» подряд — это раздражение,
-      // а не напоминание
-      tag: 'meal-reminder',
+      // Тег заменяет предыдущее уведомление с тем же тегом. Раньше тег был
+      // один на всё («meal-reminder»), и это была поломка: наступивший срок
+      // задачи молча стирал непрочитанное напоминание о еде — виды рассылок
+      // разные и адресаты у них разные. Теперь тег берётся из заголовка,
+      // то есть из вида события, и разные виды друг друга не затирают.
+      tag: payload.tag || payload.title || 'push',
       renotify: true,
       data: { url: payload.url || '/diary' },
     }),
