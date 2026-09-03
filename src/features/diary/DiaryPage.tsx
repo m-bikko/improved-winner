@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, CloudOff, CopyPlus, Plus, Target } from 'lucide-react'
+import { CalendarDays, ChevronLeft, ChevronRight, CloudOff, CopyPlus, Plus, Target } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { formatDayLabel, shiftDays, todayLocal } from '@/lib/date'
 import { queueSize } from '@/lib/outbox'
 import type { GoalDirection, Macros } from '@/lib/nutrition'
 import { useAuth } from '@/auth/AuthProvider'
+import { useHeaderAction } from '@/shell/HeaderAction'
 import { ErrorState, Loading } from '@/ui/States'
 import { useFoods, useServingsByFood } from '@/features/foods/api'
 import { trim } from '@/features/foods/FoodsPage'
@@ -21,6 +22,7 @@ import {
   useUpdateEntry,
 } from './api'
 import { CalorieRing } from './CalorieRing'
+import { MonthCalendar } from './MonthCalendar'
 import { FoodPicker } from './FoodPicker'
 import { PortionSheet } from './PortionSheet'
 import { MEALS, MEAL_LABELS, sumEntries, type DiaryEntry, type Meal } from './types'
@@ -31,6 +33,25 @@ export function DiaryPage() {
 
   const [date, setDate] = useState(todayLocal)
   const [compare, setCompare] = useState(false)
+  const [calendarOpen, setCalendarOpen] = useState(false)
+
+  // useMemo обязателен: useHeaderAction ставит слот в эффекте, и новый узел
+  // на каждом рендере переустанавливал бы его без остановки
+  useHeaderAction(
+    useMemo(
+      () => (
+        <button
+          type="button"
+          onClick={() => setCalendarOpen(true)}
+          aria-label="Календарь"
+          className="p-3 text-ink"
+        >
+          <CalendarDays size={21} aria-hidden />
+        </button>
+      ),
+      [],
+    ),
+  )
 
   useOutboxFlush()
 
@@ -188,6 +209,15 @@ export function DiaryPage() {
           })}
         </div>
       )}
+
+      <MonthCalendar
+        open={calendarOpen}
+        onClose={() => setCalendarOpen(false)}
+        userId={userId}
+        currentDate={date}
+        liveGoal={liveGoal}
+        onPickDate={setDate}
+      />
 
       {picking && (
         <FoodPicker

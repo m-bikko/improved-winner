@@ -1,0 +1,249 @@
+import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import { fromLocalISO, toLocalISO, todayLocal } from '@/lib/date'
+import type { Macros } from '@/lib/nutrition'
+import { Sheet } from '@/ui/Sheet'
+import { Loading } from '@/ui/States'
+
+type DaySummary = { kcal: number; protein: number; goalKcal: number | null; goalProtein: number | null }
+
+const MONTH_NAMES = [
+  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+  'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
+] as const
+
+const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] as const
+
+function useMonth(userId: string, year: number, month: number) {
+  const from = toLocalISO(new Date(year, month, 1))
+  const to = toLocalISO(new Date(year, month + 1, 0))
+
+  return useQuery({
+    queryKey: ['diary-month', userId, from],
+    queryFn: async (): Promise<Map<string, DaySummary>> => {
+      const { data, error } = await supabase.rpc('diary_month', {
+        p_user: userId,
+        p_from: from,
+        p_to: to,
+      })
+      if (error) throw error
+
+      const map = new Map<string, DaySummary>()
+      for (const row of data ?? []) {
+        // PostgREST отдаёт date строкой YYYY-MM-DD; обрезаем на случай,
+        // если когда-нибудь приедет с временем
+        map.set(String(row.day).slice(0, 10), {
+          kcal: Number(row.kcal ?? 0),
+          protein: Number(row.protein ?? 0),
+          goalKcal: row.goal_kcal === null ? null : Number(row.goal_kcal),
+          goalProtein: row.goal_protein === null ? null : Number(row.goal_protein),
+        })
+      }
+      return map
+    },
+    enabled: userId !== '',
+  })
+}
+
+/**
+ * Месяц кольцами.
+ *
+ * Каждый день — два вложенных кольца: внешнее калории, внутреннее белок.
+ * Это малые множители одной и той же меры, поэтому и оформление то же, что
+ * у большого кольца на экране дня: незаполненная часть — та же гамма, что
+ * и заливка, только светлее.
+ *
+ * Норма берётся из снимка дня, а где его нет — текущая: ровно то же правило,
+ * что и на экране дня, иначе календарь и день расходились бы в цифрах.
+ */
+export function MonthCalendar({
+  open,
+  onClose,
+  userId,
+  currentDate,
+  liveGoal,
+  onPickDate,
+}: {
+  open: boolean
+  onClose: () => void
+  userId: string
+  currentDate: string
+  liveGoal: Macros | null
+  onPickDate: (date: string) => void
+}) {
+  const anchor = fromLocalISO(currentDate)
+  const [cursor, setCursor] = useState(() => ({
+    year: anchor.getFullYear(),
+    month: anchor.getMonth(),
+  }))
+
+  const month = useMonth(userId, cursor.year, cursor.month)
+  const today = todayLocal()
+
+  const cells = useMemo(() => {
+    const first = new Date(cursor.year, cursor.month, 1)
+    const daysInMonth = new Date(cursor.year, cursor.month + 1, 0).getDate()
+    // getDay(): воскресенье это 0, а неделя у нас начинается с понедельника
+    const lead = (first.getDay() + 6) % 7
+    return [
+      ...Array.from({ length: lead }, () => null),
+      ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+    ]
+  }, [cursor])
+
+  const shift = (delta: number) => {
+    const next = new Date(cursor.year, cursor.month + delta, 1)
+    setCursor({ year: next.getFullYear(), month: next.getMonth() })
+  }
+
+  return (
+    <Sheet open={open} onClose={onClose} title="Календарь">
+      <div className="px-4 pb-6">
+        <div className="flex items-center justify-between py-2">
+          <button type="button" onClick={() => shift(-1)} aria-label="Предыдущий месяц" className="p-3 text-muted">
+            <ChevronLeft size={20} aria-hidden />
+          </button>
+          <span className="text-base font-medium">
+            {MONTH_NAMES[cursor.month]} {cursor.year}
+          </span>
+          <button type="button" onClick={() => shift(1)} aria-label="Следующий месяц" className="p-3 text-muted">
+            <ChevronRight size={20} aria-hidden />
+          </button>
+        </div>
+
+        <div className="mb-1 grid grid-cols-7 gap-1">
+          {WEEKDAYS.map((w) => (
+            <span key={w} className="py-1 text-center text-xs text-muted">
+              {w}
+            </span>
+          ))}
+        </div>
+
+        {month.isPending ? (
+          <Loading />
+        ) : (
+          <div className="grid grid-cols-7 gap-1">
+            {cells.map((day, i) => {
+              if (day === null) return <span key={`gap-${i}`} />
+              const iso = toLocalISO(new Date(cursor.year, cursor.month, day))
+              const data = month.data?.get(iso)
+              return (
+                <DayCell
+                  key={iso}
+                  day={day}
+                  kcalRatio={ratio(data?.kcal, data?.goalKcal ?? liveGoal?.kcal)}
+                  proteinRatio={ratio(data?.protein, data?.goalProtein ?? liveGoal?.protein)}
+                  isToday={iso === today}
+                  isSelected={iso === currentDate}
+                  onClick={() => {
+                    onPickDate(iso)
+                    onClose()
+                  }}
+                />
+              )
+            })}
+          </div>
+        )}
+
+        <div className="mt-5 flex flex-col gap-1.5 text-xs text-muted">
+          <span className="flex items-center gap-2">
+            <span className="size-2.5 rounded-full bg-accent" aria-hidden />
+            внешнее кольцо — калории
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="size-2.5 rounded-full bg-protein" aria-hidden />
+            внутреннее — белок
+          </span>
+        </div>
+      </div>
+    </Sheet>
+  )
+}
+
+function ratio(value: number | undefined, goal: number | null | undefined): number {
+  if (!value || !goal || goal <= 0) return 0
+  return value / goal
+}
+
+const SIZE = 40
+const OUTER_R = 17
+const INNER_R = 12.5
+const STROKE = 3
+
+function DayCell({
+  day,
+  kcalRatio,
+  proteinRatio,
+  isToday,
+  isSelected,
+  onClick,
+}: {
+  day: number
+  kcalRatio: number
+  proteinRatio: number
+  isToday: boolean
+  isSelected: boolean
+  onClick: () => void
+}) {
+  const empty = kcalRatio === 0 && proteinRatio === 0
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`${day} число, калории ${Math.round(kcalRatio * 100)}%, белок ${Math.round(proteinRatio * 100)}%`}
+      className={`relative flex aspect-square items-center justify-center rounded-xl
+                  transition-colors active:bg-raised ${isSelected ? 'bg-raised' : ''}`}
+    >
+      <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="absolute inset-0 size-full" aria-hidden>
+        <g transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}>
+          <Arc r={OUTER_R} ratio={kcalRatio} color="var(--color-accent)" dim={empty} />
+          <Arc r={INNER_R} ratio={proteinRatio} color="var(--color-protein)" dim={empty} />
+        </g>
+      </svg>
+      <span
+        className={`relative text-xs ${
+          isToday ? 'font-semibold text-accent' : empty ? 'text-muted' : 'text-ink'
+        }`}
+      >
+        {day}
+      </span>
+    </button>
+  )
+}
+
+function Arc({ r, ratio, color, dim }: { r: number; ratio: number; color: string; dim: boolean }) {
+  const circumference = 2 * Math.PI * r
+  const filled = Math.min(ratio, 1)
+  return (
+    <>
+      <circle
+        cx={SIZE / 2}
+        cy={SIZE / 2}
+        r={r}
+        fill="none"
+        stroke={color}
+        // Трек — та же гамма, что и заливка, только светлее. В днях без записей
+        // ещё бледнее: календарь нужен, чтобы с одного взгляда видеть, какие
+        // дни отмечены, а одинаковые кольца везде это скрывали бы
+        strokeOpacity={dim ? 0.06 : 0.18}
+        strokeWidth={STROKE}
+      />
+      {filled > 0 && (
+        <circle
+          cx={SIZE / 2}
+          cy={SIZE / 2}
+          r={r}
+          fill="none"
+          stroke={ratio > 1.05 ? 'var(--color-danger)' : color}
+          strokeWidth={STROKE}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - filled)}
+        />
+      )}
+    </>
+  )
+}

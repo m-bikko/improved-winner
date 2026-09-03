@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { BurgerMenu, NAV } from './BurgerMenu'
+import { HeaderActionProvider, useHeaderActionSlot } from './HeaderAction'
 
 /**
  * Оболочка приложения: шапка с бургером и область контента.
@@ -11,9 +12,18 @@ import { BurgerMenu, NAV } from './BurgerMenu'
  * как список тем или продуктов уехал вниз на пару экранов.
  */
 export function AppShell({ children }: { children: ReactNode }) {
+  return (
+    <HeaderActionProvider>
+      <Chrome>{children}</Chrome>
+    </HeaderActionProvider>
+  )
+}
+
+function Chrome({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const { pathname } = useLocation()
   const title = NAV.find((n) => pathname.startsWith(n.to))?.label ?? 'Love promises'
+  const action = useHeaderActionSlot()
 
   return (
     <div className="min-h-dvh">
@@ -27,7 +37,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           >
             <Menu size={22} aria-hidden />
           </button>
-          <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
+          <h1 className="flex-1 text-lg font-semibold tracking-tight">{title}</h1>
+          {action}
         </div>
       </header>
 

@@ -479,6 +479,16 @@ export type Database = {
       }
     }
     Functions: {
+      diary_month: {
+        Args: { p_from: string; p_to: string; p_user: string }
+        Returns: {
+          day: string
+          goal_kcal: number
+          goal_protein: number
+          kcal: number
+          protein: number
+        }[]
+      }
       is_member: { Args: never; Returns: boolean }
       search_topics: {
         Args: { q: string }
@@ -506,6 +516,10 @@ export type Database = {
       tg_notify_partner: {
         Args: { author_id: string; message: string }
         Returns: undefined
+      }
+      tg_send_raw: {
+        Args: { chat_id: string; message: string }
+        Returns: number
       }
     }
     Enums: {

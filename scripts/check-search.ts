@@ -11,7 +11,7 @@ import { Client } from 'pg'
 import { normalize, searchItems } from '../src/lib/search.ts'
 import { pgConfig } from './env.ts'
 
-type Row = { name: string; nameNorm: string }
+type Row = { name: string; brand: string | null; nameNorm: string }
 
 const cases: { query: string; expectFirst?: string; expectAmong?: string; expectNone?: boolean }[] = [
   { query: 'мол', expectFirst: 'Молоко 1.5%' },
@@ -31,7 +31,7 @@ async function main(): Promise<void> {
   const client = new Client(pgConfig())
   await client.connect()
   const { rows } = await client.query<Row>(
-    'select name, name_norm as "nameNorm" from foods where archived_at is null',
+    'select name, brand, name_norm as "nameNorm" from foods where archived_at is null',
   )
   await client.end()
 
@@ -40,8 +40,14 @@ async function main(): Promise<void> {
   let failed = 0
 
   // Нормализация в TS обязана совпадать с generated-колонкой в Postgres,
-  // иначе поиск будет промахиваться именно на словах с «ё»
-  const mismatched = rows.filter((r) => normalize(r.name) !== r.nameNorm.trim())
+  // иначе поиск будет промахиваться именно на словах с «ё».
+  //
+  // Колонка считается по названию И бренду — поиск по бренду это фича,
+  // а не побочный эффект. Сравнивать только с названием было ошибкой самой
+  // проверки: она проходила лишь потому, что в сиде брендов нет.
+  const mismatched = rows.filter(
+    (r) => normalize(`${r.name} ${r.brand ?? ''}`) !== r.nameNorm.trim(),
+  )
   if (mismatched.length > 0) {
     failed++
     console.log(` ПРОВАЛ  Нормализация TS и Postgres расходятся`)
