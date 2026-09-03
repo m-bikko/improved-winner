@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import type { Database } from '@/types/db'
 import { env } from './env'
 
 /**
@@ -11,7 +12,7 @@ import { env } from './env'
  * `detectSessionInUrl: false` — вход только по PIN, magic-link и OAuth-редиректов нет,
  * так что парсить хеш при каждой загрузке незачем.
  */
-export const supabase = createClient(env.supabaseUrl, env.supabaseKey, {
+export const supabase = createClient<Database>(env.supabaseUrl, env.supabaseKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,

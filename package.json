@@ -15,8 +15,9 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "bootstrap": "tsx scripts/bootstrap-users.ts",
-    "db:push": "supabase db push",
-    "db:types": "supabase gen types typescript --linked > src/types/db.ts"
+    "sql": "tsx scripts/sql.ts",
+    "db:push": "tsx scripts/db.ts push",
+    "db:types": "tsx scripts/db.ts types"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.114.0",
@@ -32,9 +33,12 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.4.1",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.1.1",
+    "pg": "^8.23.0",
+    "supabase": "^2.116.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2",
