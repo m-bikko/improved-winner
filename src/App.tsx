@@ -6,11 +6,12 @@ import { LoginScreen } from '@/auth/LoginScreen'
 import { CACHE_BUSTER, persister, queryClient } from '@/lib/queryClient'
 import { AppShell } from '@/shell/AppShell'
 import { ErrorBoundary } from '@/shell/ErrorBoundary'
-import { Placeholder } from '@/shell/Placeholder'
 import { FoodsPage } from '@/features/foods/FoodsPage'
 import { FoodEditPage } from '@/features/foods/FoodEditPage'
 import { DiaryPage } from '@/features/diary/DiaryPage'
 import { ProfilePage } from '@/features/profile/ProfilePage'
+import { TopicsPage } from '@/features/topics/TopicsPage'
+import { TopicPage } from '@/features/topics/TopicPage'
 
 export default function App() {
   return (
@@ -52,7 +53,8 @@ function Gate() {
   return (
     <AppShell>
       <Routes>
-        <Route path="/topics" element={<Placeholder stage="Темы — этап 7" />} />
+        <Route path="/topics" element={<TopicsPage />} />
+        <Route path="/topics/:id" element={<TopicPage />} />
         <Route path="/diary" element={<DiaryPage />} />
         <Route path="/foods" element={<FoodsPage />} />
         <Route path="/foods/new" element={<FoodEditPage />} />
