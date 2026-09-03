@@ -9,6 +9,7 @@ import { ErrorBoundary } from '@/shell/ErrorBoundary'
 import { Placeholder } from '@/shell/Placeholder'
 import { FoodsPage } from '@/features/foods/FoodsPage'
 import { FoodEditPage } from '@/features/foods/FoodEditPage'
+import { DiaryPage } from '@/features/diary/DiaryPage'
 
 export default function App() {
   return (
@@ -51,7 +52,7 @@ function Gate() {
     <AppShell>
       <Routes>
         <Route path="/topics" element={<Placeholder stage="Темы — этап 7" />} />
-        <Route path="/diary" element={<Placeholder stage="Дневник — этап 4" />} />
+        <Route path="/diary" element={<DiaryPage />} />
         <Route path="/foods" element={<FoodsPage />} />
         <Route path="/foods/new" element={<FoodEditPage />} />
         <Route path="/foods/:id" element={<FoodEditPage />} />

@@ -1,0 +1,106 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { supabase } from '@/lib/supabase'
+import { computeGoals, type ActivityLevel, type GoalDirection, type Macros, type Sex } from '@/lib/nutrition'
+
+export type Profile = {
+  userId: string
+  nickname: string
+  birthYear: number | null
+  sex: Sex | null
+  heightCm: number | null
+  weightKg: number | null
+  activityLevel: ActivityLevel
+  goalDirection: GoalDirection
+  goalsMode: 'auto' | 'manual'
+  goalKcal: number | null
+  goalProtein: number | null
+  goalFat: number | null
+  goalCarbs: number | null
+}
+
+/**
+ * Оба профиля сразу: ник партнёра нужен для подписей в темах и для режима
+ * сравнения в дневнике, а строк всего две.
+ */
+export function useProfiles() {
+  return useQuery({
+    queryKey: ['profiles'],
+    queryFn: async (): Promise<Profile[]> => {
+      const { data, error } = await supabase.from('profiles').select('*')
+      if (error) throw error
+      return data.map((row) => ({
+        userId: row.user_id,
+        nickname: row.nickname,
+        birthYear: row.birth_year,
+        sex: row.sex as Sex | null,
+        heightCm: row.height_cm,
+        weightKg: row.weight_kg,
+        activityLevel: row.activity_level as ActivityLevel,
+        goalDirection: row.goal_direction as GoalDirection,
+        goalsMode: row.goals_mode as 'auto' | 'manual',
+        goalKcal: row.goal_kcal,
+        goalProtein: row.goal_protein,
+        goalFat: row.goal_fat,
+        goalCarbs: row.goal_carbs,
+      }))
+    },
+    staleTime: 5 * 60_000,
+  })
+}
+
+/**
+ * Цели профиля. При goals_mode='auto' считаются на лету из веса и роста,
+ * при 'manual' берутся как есть.
+ *
+ * Разделение принципиально: без него человек переопределил бы цель руками,
+ * потом изменил вес — и значение либо молча затёрлось бы, либо навсегда застыло.
+ */
+export function goalsFor(profile: Profile | undefined): Macros | null {
+  if (!profile) return null
+
+  if (profile.goalsMode === 'manual' && profile.goalKcal) {
+    return {
+      kcal: profile.goalKcal,
+      protein: profile.goalProtein ?? 0,
+      fat: profile.goalFat ?? 0,
+      carbs: profile.goalCarbs ?? 0,
+    }
+  }
+
+  return computeGoals({
+    birthYear: profile.birthYear,
+    sex: profile.sex,
+    heightCm: profile.heightCm,
+    weightKg: profile.weightKg,
+    activityLevel: profile.activityLevel,
+    goalDirection: profile.goalDirection,
+  })
+}
+
+export function useSaveProfile() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { userId: string; patch: Partial<Profile> }) => {
+      const p = input.patch
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          ...(p.nickname !== undefined && { nickname: p.nickname }),
+          ...(p.birthYear !== undefined && { birth_year: p.birthYear }),
+          ...(p.sex !== undefined && { sex: p.sex }),
+          ...(p.heightCm !== undefined && { height_cm: p.heightCm }),
+          ...(p.weightKg !== undefined && { weight_kg: p.weightKg }),
+          ...(p.activityLevel !== undefined && { activity_level: p.activityLevel }),
+          ...(p.goalDirection !== undefined && { goal_direction: p.goalDirection }),
+          ...(p.goalsMode !== undefined && { goals_mode: p.goalsMode }),
+          ...(p.goalKcal !== undefined && { goal_kcal: p.goalKcal }),
+          ...(p.goalProtein !== undefined && { goal_protein: p.goalProtein }),
+          ...(p.goalFat !== undefined && { goal_fat: p.goalFat }),
+          ...(p.goalCarbs !== undefined && { goal_carbs: p.goalCarbs }),
+        })
+        .eq('user_id', input.userId)
+      if (error) throw error
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['profiles'] }),
+  })
+}
