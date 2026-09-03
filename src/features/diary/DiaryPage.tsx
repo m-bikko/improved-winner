@@ -10,7 +10,16 @@ import {
   type DragOverEvent,
 } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { CalendarDays, ChevronLeft, ChevronRight, CloudOff, CopyPlus, Plus, Target } from 'lucide-react'
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  CircleQuestionMark,
+  CloudOff,
+  CopyPlus,
+  Plus,
+  Target,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { formatDayLabel, shiftDays, todayLocal } from '@/lib/date'
 import { queueSize } from '@/lib/outbox'
@@ -35,6 +44,7 @@ import {
 } from './api'
 import { CalorieRing } from './CalorieRing'
 import { DraggableEntry, MealDropZone } from './DraggableEntry'
+import { MacroInfoSheet, type Nutrient } from './MacroInfo'
 import { diffOrder, moveEntry } from './reorder'
 import { MonthCalendar } from './MonthCalendar'
 import { FoodPicker } from './FoodPicker'
@@ -48,6 +58,7 @@ export function DiaryPage() {
   const [date, setDate] = useState(todayLocal)
   const [compare, setCompare] = useState(false)
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const [explaining, setExplaining] = useState<Nutrient | null>(null)
 
   // useMemo обязателен: useHeaderAction ставит слот в эффекте, и новый узел
   // на каждом рендере переустанавливал бы его без остановки
@@ -210,7 +221,12 @@ export function DiaryPage() {
       {day.isPending ? (
         <Loading />
       ) : (
-        <Progress totals={totals} goals={goals} goalDirection={goalDirection} />
+        <Progress
+          totals={totals}
+          goals={goals}
+          goalDirection={goalDirection}
+          onExplain={setExplaining}
+        />
       )}
 
       {partner && (
@@ -271,6 +287,12 @@ export function DiaryPage() {
           </div>
         </DndContext>
       )}
+
+      <MacroInfoSheet
+        nutrient={explaining}
+        goalDirection={goalDirection}
+        onClose={() => setExplaining(null)}
+      />
 
       <MonthCalendar
         open={calendarOpen}
@@ -360,10 +382,12 @@ function Progress({
   totals,
   goals,
   goalDirection,
+  onExplain,
 }: {
   totals: Macros
   goals: Macros | null
   goalDirection: GoalDirection
+  onExplain: (nutrient: Nutrient) => void
 }) {
   // Без роста и веса норму не посчитать, и выдумывать её нельзя: человек будет
   // ориентироваться на неё каждый день. Поэтому вместо числа — прямое указание,
@@ -388,15 +412,65 @@ function Progress({
   }
 
   return (
-    <div className="mt-3 rounded-xl bg-raised px-4 py-5">
+    <div className="relative mt-3 rounded-xl bg-raised px-4 py-5">
+      <HelpButton
+        label="Что такое калории"
+        onClick={() => onExplain('kcal')}
+        className="absolute top-2 right-2"
+      />
+
       <CalorieRing totals={totals} goals={goals} goalDirection={goalDirection} />
 
       <div className="mt-5 grid grid-cols-3 gap-3">
-        <MacroBar label="Б" value={totals.protein} goal={goals.protein} color="bg-protein" text="text-protein" />
-        <MacroBar label="Ж" value={totals.fat} goal={goals.fat} color="bg-fat" text="text-fat" />
-        <MacroBar label="У" value={totals.carbs} goal={goals.carbs} color="bg-carbs" text="text-carbs" />
+        <MacroBar
+          label="Б"
+          value={totals.protein}
+          goal={goals.protein}
+          color="bg-protein"
+          text="text-protein"
+          onExplain={() => onExplain('protein')}
+        />
+        <MacroBar
+          label="Ж"
+          value={totals.fat}
+          goal={goals.fat}
+          color="bg-fat"
+          text="text-fat"
+          onExplain={() => onExplain('fat')}
+        />
+        <MacroBar
+          label="У"
+          value={totals.carbs}
+          goal={goals.carbs}
+          color="bg-carbs"
+          text="text-carbs"
+          onExplain={() => onExplain('carbs')}
+        />
       </div>
     </div>
+  )
+}
+
+function HelpButton({
+  label,
+  onClick,
+  className = '',
+}: {
+  label: string
+  onClick: () => void
+  className?: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      // Крупная область нажатия вокруг мелкой иконки: 14 пикселей значка
+      // пальцем не попасть
+      className={`p-2 text-muted ${className}`}
+    >
+      <CircleQuestionMark size={15} aria-hidden />
+    </button>
   )
 }
 
@@ -406,21 +480,26 @@ function MacroBar({
   goal,
   color,
   text,
+  onExplain,
 }: {
   label: string
   value: number
   goal: number
   color: string
   text: string
+  onExplain: () => void
 }) {
   return (
     <div>
-      <p className="mb-1 text-xs">
-        <span className={text}>{label}</span>{' '}
-        <span className="text-muted">
-          {trim(value)} / {Math.round(goal)}
-        </span>
-      </p>
+      <div className="mb-1 flex items-center gap-0.5">
+        <p className="text-xs">
+          <span className={text}>{label}</span>{' '}
+          <span className="text-muted">
+            {trim(value)} / {Math.round(goal)}
+          </span>
+        </p>
+        <HelpButton label={`Что такое ${label}`} onClick={onExplain} className="-my-2 -mr-1" />
+      </div>
       <Bar value={value} goal={goal} className="h-1.5" color={color} />
     </div>
   )
