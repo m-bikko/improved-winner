@@ -621,28 +621,54 @@ function MealSection({
   repeating: boolean
 }) {
   const totals = sumEntries(entries)
+  const [collapsed, setCollapsed] = useLocalFlag(`diary-meal-${meal}-collapsed`, false)
 
   return (
     <section className="overflow-hidden rounded-xl bg-surface ring-1 ring-line">
-      <div className="flex items-center justify-between px-4 py-2.5">
-        <span className="font-medium">{MEAL_LABELS[meal]}</span>
-        {entries.length > 0 && (
-          <span className="text-sm text-muted">{Math.round(totals.kcal)} ккал</span>
-        )}
-      </div>
-
-      <MealDropZone meal={meal} isEmpty={entries.length === 0}>
-        <SortableContext
-          items={entries.map((e) => e.id)}
-          strategy={verticalListSortingStrategy}
+      {/* Зона сброса охватывает всю секцию, включая заголовок. Иначе в свёрнутый
+          приём нельзя было бы перетащить еду: ронять было бы не на что,
+          и перетаскивание отваливалось бы ровно там, где секцию убрали с глаз. */}
+      <MealDropZone meal={meal} isEmpty={entries.length === 0 && !collapsed}>
+        <button
+          type="button"
+          onClick={() => setCollapsed(!collapsed)}
+          aria-expanded={!collapsed}
+          className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-raised"
         >
-          {entries.map((entry) => (
-            <DraggableEntry key={entry.id} entry={entry} onOpen={() => onOpen(entry)} />
-          ))}
-        </SortableContext>
+          <span className="min-w-0 flex-1">
+            <span className="block font-medium">{MEAL_LABELS[meal]}</span>
+            {collapsed && entries.length > 0 && (
+              <span className="mt-0.5 block truncate text-xs">
+                <span className="text-protein">Б {Math.round(totals.protein)}</span>{' '}
+                <span className="text-fat">Ж {Math.round(totals.fat)}</span>{' '}
+                <span className="text-carbs">У {Math.round(totals.carbs)}</span>
+              </span>
+            )}
+            {collapsed && entries.length === 0 && (
+              <span className="mt-0.5 block text-xs text-muted">пусто</span>
+            )}
+          </span>
+
+          {entries.length > 0 && (
+            <span className="shrink-0 text-sm text-muted">{Math.round(totals.kcal)} ккал</span>
+          )}
+          {collapsed ? (
+            <ChevronDown size={16} className="shrink-0 text-muted" aria-hidden />
+          ) : (
+            <ChevronUp size={16} className="shrink-0 text-muted" aria-hidden />
+          )}
+        </button>
+
+        {!collapsed && (
+          <SortableContext items={entries.map((e) => e.id)} strategy={verticalListSortingStrategy}>
+            {entries.map((entry) => (
+              <DraggableEntry key={entry.id} entry={entry} onOpen={() => onOpen(entry)} />
+            ))}
+          </SortableContext>
+        )}
       </MealDropZone>
 
-      {repeatable.length > 0 && (
+      {!collapsed && repeatable.length > 0 && (
         <button
           type="button"
           onClick={onRepeat}
@@ -654,14 +680,16 @@ function MealSection({
         </button>
       )}
 
-      <button
-        type="button"
-        onClick={onAdd}
-        className="flex w-full items-center gap-2 border-t border-line px-4 py-3 text-sm text-accent active:bg-raised"
-      >
-        <Plus size={16} aria-hidden />
-        Добавить
-      </button>
+      {!collapsed && (
+        <button
+          type="button"
+          onClick={onAdd}
+          className="flex w-full items-center gap-2 border-t border-line px-4 py-3 text-sm text-accent active:bg-raised"
+        >
+          <Plus size={16} aria-hidden />
+          Добавить
+        </button>
+      )}
     </section>
   )
 }
