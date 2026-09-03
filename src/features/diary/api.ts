@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { enqueue, flushOutbox } from '@/lib/outbox'
+import type { GoalDirection, Macros } from '@/lib/nutrition'
 import type { Food } from '@/features/foods/types'
 import { entryFromRow, type DiaryEntry, type Meal } from './types'
 
@@ -51,6 +52,72 @@ export function useRecentFoodIds(userId: string) {
     },
     enabled: userId !== '',
     staleTime: 5 * 60_000,
+  })
+}
+
+/**
+ * Норма дня.
+ *
+ * Сегодня считается живьём из текущего профиля, прошлые дни читаются из снимка.
+ * Без этого сброшенный вес переписывал бы историю: норма падает с 2635 до 2400,
+ * и день, закрытый на 95%, задним числом становится перебором.
+ *
+ * Если снимка на прошлый день нет (день прожит до появления таблицы или в нём
+ * ничего не записано), берём текущую норму — другой информации всё равно нет.
+ */
+export function useDayGoal(userId: string, date: string) {
+  return useQuery({
+    queryKey: ['daily-goal', userId, date],
+    queryFn: async (): Promise<{ goal: Macros; goalDirection: GoalDirection } | null> => {
+      const { data, error } = await supabase
+        .from('daily_goals')
+        .select('kcal, protein, fat, carbs, goal_direction')
+        .eq('user_id', userId)
+        .eq('date', date)
+        .maybeSingle()
+      if (error) throw error
+      if (!data) return null
+      return {
+        goal: { kcal: data.kcal, protein: data.protein, fat: data.fat, carbs: data.carbs },
+        goalDirection: data.goal_direction as GoalDirection,
+      }
+    },
+    enabled: userId !== '',
+  })
+}
+
+/**
+ * Замораживает норму дня.
+ *
+ * Перезаписывать снимок можно только у сегодняшнего дня: пока день идёт,
+ * норма отражает текущий профиль. Прошлый день трогать нельзя — в этом весь
+ * смысл снимка.
+ */
+export function useFreezeDayGoal() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: {
+      userId: string
+      date: string
+      goal: Macros
+      goalDirection: GoalDirection
+    }) => {
+      const { error } = await supabase.from('daily_goals').upsert(
+        {
+          user_id: input.userId,
+          date: input.date,
+          kcal: input.goal.kcal,
+          protein: input.goal.protein,
+          fat: input.goal.fat,
+          carbs: input.goal.carbs,
+          goal_direction: input.goalDirection,
+        },
+        { onConflict: 'user_id,date' },
+      )
+      if (error) throw error
+    },
+    onSuccess: (_r, input) =>
+      void qc.invalidateQueries({ queryKey: ['daily-goal', input.userId, input.date] }),
   })
 }
 

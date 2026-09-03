@@ -136,6 +136,7 @@ async function main(): Promise<void> {
       'food_servings',
       'dish_items',
       'diary_entries',
+      'daily_goals',
       'weight_log',
       'profiles',
       'topics',

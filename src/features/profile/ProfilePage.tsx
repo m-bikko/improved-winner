@@ -13,6 +13,7 @@ import {
 import { PIN_LENGTH } from '@/lib/accounts'
 import { useAuth } from '@/auth/AuthProvider'
 import { PinPad } from '@/auth/PinPad'
+import { useFreezeDayGoal } from '@/features/diary/api'
 import { Button } from '@/ui/Button'
 import { NumberField } from '@/ui/Field'
 import { Sheet } from '@/ui/Sheet'
@@ -47,6 +48,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
   const save = useSaveProfile()
   const weights = useWeightLog(profile.userId)
   const logWeight = useLogWeight()
+  const freezeGoal = useFreezeDayGoal()
 
   const [birthYear, setBirthYear] = useState<number | ''>(profile.birthYear ?? '')
   const [heightCm, setHeightCm] = useState<number | ''>(profile.heightCm ?? '')
@@ -100,6 +102,19 @@ function ProfileForm({ profile }: { profile: Profile }) {
           userId: profile.userId,
           date: todayLocal(),
           weightKg,
+        })
+      }
+
+      // Пересчитанная норма должна попасть в снимок сегодняшнего дня, иначе
+      // завтра он замёрзнет со старым значением
+      if (preview) {
+        // Ручная норма перебивает только калории — Б/Ж/У остаются расчётными
+        const kcal = manual && manualKcal !== '' ? manualKcal : preview.kcal
+        await freezeGoal.mutateAsync({
+          userId: profile.userId,
+          date: todayLocal(),
+          goal: { kcal, protein: preview.protein, fat: preview.fat, carbs: preview.carbs },
+          goalDirection: goal,
         })
       }
       setSaved(true)

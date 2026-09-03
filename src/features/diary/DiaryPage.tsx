@@ -10,7 +10,16 @@ import { useFoods, useServingsByFood } from '@/features/foods/api'
 import { trim } from '@/features/foods/FoodsPage'
 import type { Food } from '@/features/foods/types'
 import { goalsFor, useProfiles } from '@/features/profile/api'
-import { useAddEntry, useCopyEntries, useDeleteEntry, useDiaryDay, useOutboxFlush, useUpdateEntry } from './api'
+import {
+  useAddEntry,
+  useCopyEntries,
+  useDayGoal,
+  useDeleteEntry,
+  useDiaryDay,
+  useFreezeDayGoal,
+  useOutboxFlush,
+  useUpdateEntry,
+} from './api'
 import { CalorieRing } from './CalorieRing'
 import { FoodPicker } from './FoodPicker'
 import { PortionSheet } from './PortionSheet'
@@ -36,7 +45,16 @@ export function DiaryPage() {
   const partnerDay = useDiaryDay(date, compare && partner ? partner.userId : '')
 
   const me = profiles.data?.find((p) => p.userId === userId)
-  const goals = goalsFor(me)
+  const liveGoal = goalsFor(me)
+  const frozen = useDayGoal(userId, date)
+
+  // Сегодня норма живая — она отражает текущий вес и цель. Прошлые дни читаются
+  // из снимка, иначе сброшенный вес переписал бы уже закрытые кольца.
+  const isToday = date === todayLocal()
+  const goals = isToday ? liveGoal : (frozen.data?.goal ?? liveGoal)
+  const goalDirection = isToday
+    ? (me?.goalDirection ?? 'maintain')
+    : (frozen.data?.goalDirection ?? me?.goalDirection ?? 'maintain')
 
   // Выбор продукта и ввод количества — два шага одного действия, поэтому
   // состояние общее: picker отдаёт продукт, portion его принимает
@@ -49,6 +67,20 @@ export function DiaryPage() {
   const updateEntry = useUpdateEntry()
   const deleteEntry = useDeleteEntry()
   const copyEntries = useCopyEntries()
+  const freezeGoal = useFreezeDayGoal()
+
+  // Норма дня замораживается при записи еды, а не при открытии экрана: побочный
+  // эффект от простого просмотра — плохая идея, а день без единой записи
+  // сохранять незачем.
+  const freezeTodayGoal = () => {
+    if (!isToday || !liveGoal) return
+    void freezeGoal.mutateAsync({
+      userId,
+      date,
+      goal: liveGoal,
+      goalDirection: me?.goalDirection ?? 'maintain',
+    })
+  }
 
   const entries = day.data ?? []
   const totals = useMemo(() => sumEntries(entries), [entries])
@@ -109,7 +141,7 @@ export function DiaryPage() {
       {day.isPending ? (
         <Loading />
       ) : (
-        <Progress totals={totals} goals={goals} goalDirection={me?.goalDirection ?? 'maintain'} />
+        <Progress totals={totals} goals={goals} goalDirection={goalDirection} />
       )}
 
       {partner && (
@@ -146,11 +178,9 @@ export function DiaryPage() {
                 onOpen={openEntry}
                 repeatable={mealEntries.length === 0 ? yesterdayMeal : []}
                 onRepeat={() =>
-                  void copyEntries.mutateAsync({
-                    entries: yesterdayMeal,
-                    toDate: date,
-                    userId,
-                  })
+                  void copyEntries
+                    .mutateAsync({ entries: yesterdayMeal, toDate: date, userId })
+                    .then(freezeTodayGoal)
                 }
                 repeating={copyEntries.isPending}
               />
@@ -203,6 +233,7 @@ export function DiaryPage() {
                 grams,
                 servingLabel,
               })
+              freezeTodayGoal()
             }
             setPortion(null)
           }}

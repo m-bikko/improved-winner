@@ -24,6 +24,42 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_goals: {
+        Row: {
+          carbs: number
+          created_at: string
+          date: string
+          fat: number
+          goal_direction: string
+          kcal: number
+          protein: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          carbs: number
+          created_at?: string
+          date: string
+          fat: number
+          goal_direction: string
+          kcal: number
+          protein: number
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          carbs?: number
+          created_at?: string
+          date?: string
+          fat?: number
+          goal_direction?: string
+          kcal?: number
+          protein?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       diary_entries: {
         Row: {
           brand_snapshot: string | null
