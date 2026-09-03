@@ -45,6 +45,7 @@ PIN можно сменить и из приложения — «Профиль 
 | `pnpm db:types` | Перегенерировать `src/types/db.ts` из схемы |
 | `pnpm bootstrap` | Создать или починить аккаунты |
 | `pnpm sql "<SQL>"` | Выполнить SQL от имени postgres (в обход RLS) |
+| `pnpm tg:secret` | Положить токен Telegram-бота из `.env` в Vault |
 
 Проверки:
 
@@ -54,6 +55,7 @@ npx tsx scripts/check-rls.ts       # политики глазами реаль�
 npx tsx scripts/check-history.ts   # снимок КБЖУ не переписывается задним числом
 npx tsx scripts/check-search.ts    # клиентский поиск по продуктам
 npx tsx scripts/check-goal-history.ts  # снижение веса не двигает закрытые кольца
+npx tsx scripts/check-telegram.ts  # триггер → Vault → pg_net → Telegram
 npx tsx scripts/make-icons.ts      # перегенерировать иконки после правки SVG
 ```
 
@@ -113,6 +115,24 @@ UTC.
 **Базовые CSS-сбросы лежат в `@layer base`.** Неслоёные правила в каскаде
 побеждают любой `@layer`, поэтому `button { background: none }` на верхнем
 уровне перебивал бы утилиты Tailwind.
+
+## Уведомления в Telegram
+
+Приходят партнёру при создании темы, ответе и закрытии. Отправляет сама база
+через триггеры и `pg_net`: токен бота нельзя отдавать в браузер, а Edge Function
+для этого проекта задеплоить нечем.
+
+Настройка на новом окружении:
+
+```bash
+pnpm tg:secret          # токен из .env в Vault, с проверкой через getMe
+```
+
+Получателю: написать `@userinfobot` за своим id, открыть бота и нажать «Старт»
+(без этого Telegram не даёт боту писать первым), вставить id в профиль.
+
+Уведомление никогда не роняет запись: отправка обёрнута в обработчик исключений
+и работает асинхронно. Подробности — `wiki/pages/concepts/telegram-notifications.md`.
 
 ## Миграции идут через CLI, не через MCP
 

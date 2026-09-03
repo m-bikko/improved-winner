@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, KeyRound, Scale, Target } from 'lucide-react'
+import { Check, KeyRound, Scale, Send, Target } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { todayLocal } from '@/lib/date'
 import {
@@ -15,7 +15,10 @@ import { useAuth } from '@/auth/AuthProvider'
 import { PinPad } from '@/auth/PinPad'
 import { useFreezeDayGoal } from '@/features/diary/api'
 import { Button } from '@/ui/Button'
-import { NumberField } from '@/ui/Field'
+import { Field, NumberField } from '@/ui/Field'
+
+/** Бот, от имени которого приходят уведомления. */
+const BOT_LINK = '@improved_winner_nine_bot'
 import { Sheet } from '@/ui/Sheet'
 import { ErrorState, Loading } from '@/ui/States'
 import {
@@ -58,6 +61,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
   const [goal, setGoal] = useState<GoalDirection>(profile.goalDirection)
   const [manualKcal, setManualKcal] = useState<number | ''>(profile.goalKcal ?? '')
   const [manual, setManual] = useState(profile.goalsMode === 'manual')
+  const [chatId, setChatId] = useState(profile.telegramChatId ?? '')
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pinOpen, setPinOpen] = useState(false)
@@ -87,6 +91,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
           activityLevel: activity,
           goalDirection: goal,
           goalsMode: manual ? 'manual' : 'auto',
+          telegramChatId: chatId.trim() || null,
           // При автоматическом режиме ручные цели обнуляем: иначе они останутся
           // лежать в базе и однажды всплывут при переключении обратно
           goalKcal: manual && manualKcal !== '' ? manualKcal : null,
@@ -122,6 +127,23 @@ function ProfileForm({ profile }: { profile: Profile }) {
       setError(e instanceof Error ? e.message : String(e))
     }
   }
+
+  // Нижние границы проверяются здесь, а не при вводе: блокировать символы
+  // по минимуму — значит запретить ввод вовсе, потому что первая набранная
+  // цифра года заведомо меньше 1900. Границы совпадают с CHECK в схеме.
+  const outOfRange = (v: number | '', lo: number, hi: number, unit: string) =>
+    v !== '' && (v < lo || v > hi) ? `Ожидается от ${lo} до ${hi} ${unit}` : null
+
+  const range = {
+    birthYear: outOfRange(birthYear, 1900, 2100, 'года'),
+    heightCm: outOfRange(heightCm, 100, 250, 'см'),
+    weightKg: outOfRange(weightKg, 20, 400, 'кг'),
+  }
+  const hasRangeError = Object.values(range).some((r) => r !== null)
+
+  // Тот же формат, что и в CHECK на колонке: пустое или цифры, возможно
+  // со знаком минус — у групповых чатов id отрицательный
+  const chatIdInvalid = chatId.trim() !== '' && !/^-?\d{1,20}$/.test(chatId.trim())
 
   // Чего именно не хватает для расчёта нормы. Показываем списком, а не общим
   // «заполните профиль»: человек должен видеть, какие два поля осталось ввести,
@@ -172,25 +194,28 @@ function ProfileForm({ profile }: { profile: Profile }) {
           label="Год рождения"
           value={birthYear}
           onValueChange={setBirthYear}
-          min={1900}
           max={2100}
           placeholder="2004"
+          invalid={range.birthYear !== null}
+          hint={range.birthYear ?? undefined}
         />
         <NumberField
           label="Рост"
           suffix="см"
           value={heightCm}
           onValueChange={setHeightCm}
-          min={100}
           max={250}
+          invalid={range.heightCm !== null}
+          hint={range.heightCm ?? undefined}
         />
         <NumberField
           label="Вес"
           suffix="кг"
           value={weightKg}
           onValueChange={setWeightKg}
-          min={20}
           max={400}
+          invalid={range.weightKg !== null}
+          hint={range.weightKg ?? undefined}
         />
       </div>
 
@@ -255,7 +280,6 @@ function ProfileForm({ profile }: { profile: Profile }) {
               suffix="ккал"
               value={manualKcal}
               onValueChange={setManualKcal}
-              min={500}
               max={10000}
               hint="Белки, жиры и углеводы остаются расчётными."
             />
@@ -263,9 +287,33 @@ function ProfileForm({ profile }: { profile: Profile }) {
         )}
       </div>
 
+      <div className="rounded-xl bg-raised px-4 py-4">
+        <p className="flex items-center gap-2 text-sm font-medium">
+          <Send size={15} aria-hidden />
+          Уведомления в Telegram
+        </p>
+        <p className="mt-1 mb-3 text-xs text-muted">
+          Приходят партнёру, когда ты заводишь тему, отвечаешь в ней или закрываешь её.
+          Пусто — уведомления не шлём.
+        </p>
+        <Field
+          label="Chat ID"
+          value={chatId}
+          onChange={(e) => setChatId(e.target.value.replace(/[^\d-]/g, ''))}
+          placeholder="123456789"
+          inputMode="numeric"
+          hint={`Узнать: напиши @userinfobot в Telegram, он ответит твоим id. Затем открой ${BOT_LINK} и нажми «Старт» — без этого бот не сможет тебе написать.`}
+        />
+        {chatIdInvalid && <p className="mt-1 text-xs text-danger">Chat ID — это только цифры.</p>}
+      </div>
+
       {error && <p className="text-sm text-danger">{error}</p>}
 
-      <Button onClick={() => void submit()} loading={save.isPending}>
+      <Button
+        onClick={() => void submit()}
+        loading={save.isPending}
+        disabled={hasRangeError || chatIdInvalid}
+      >
         {saved ? <Check size={18} aria-hidden /> : null}
         {saved ? 'Сохранено' : 'Сохранить'}
       </Button>

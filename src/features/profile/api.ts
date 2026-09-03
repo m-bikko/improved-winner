@@ -16,6 +16,8 @@ export type Profile = {
   goalProtein: number | null
   goalFat: number | null
   goalCarbs: number | null
+  /** Пусто — уведомления в Telegram не приходят. */
+  telegramChatId: string | null
 }
 
 /**
@@ -42,6 +44,7 @@ export function useProfiles() {
         goalProtein: row.goal_protein,
         goalFat: row.goal_fat,
         goalCarbs: row.goal_carbs,
+        telegramChatId: row.telegram_chat_id,
       }))
     },
     staleTime: 5 * 60_000,
@@ -147,6 +150,7 @@ export function useSaveProfile() {
           ...(p.goalProtein !== undefined && { goal_protein: p.goalProtein }),
           ...(p.goalFat !== undefined && { goal_fat: p.goalFat }),
           ...(p.goalCarbs !== undefined && { goal_carbs: p.goalCarbs }),
+          ...(p.telegramChatId !== undefined && { telegram_chat_id: p.telegramChatId }),
         })
         .eq('user_id', input.userId)
       if (error) throw error

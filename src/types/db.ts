@@ -313,6 +313,7 @@ export type Database = {
           height_cm: number | null
           nickname: string
           sex: string | null
+          telegram_chat_id: string | null
           timezone: string
           updated_at: string
           user_id: string
@@ -331,6 +332,7 @@ export type Database = {
           height_cm?: number | null
           nickname: string
           sex?: string | null
+          telegram_chat_id?: string | null
           timezone?: string
           updated_at?: string
           user_id: string
@@ -349,6 +351,7 @@ export type Database = {
           height_cm?: number | null
           nickname?: string
           sex?: string | null
+          telegram_chat_id?: string | null
           timezone?: string
           updated_at?: string
           user_id?: string
@@ -498,6 +501,11 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      tg_escape: { Args: { input: string }; Returns: string }
+      tg_notify_partner: {
+        Args: { author_id: string; message: string }
+        Returns: undefined
       }
     }
     Enums: {

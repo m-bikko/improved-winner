@@ -1,4 +1,4 @@
-import { useId, type InputHTMLAttributes } from 'react'
+import { useEffect, useId, useState, type InputHTMLAttributes } from 'react'
 
 type BaseProps = {
   label: string
@@ -35,9 +35,17 @@ export function Field({
 type NumberProps = BaseProps & {
   value: number | ''
   onValueChange: (value: number | '') => void
-  min?: number
-  max?: number
-  placeholder?: string
+  /**
+   * Верхняя граница. Проверяется прямо при вводе — набрать её «по пути» нельзя,
+   * потому что число растёт слева направо.
+   *
+   * Нижней границы здесь намеренно нет: проверять её при вводе — значит
+   * запретить ввод вовсе. У года рождения минимум 1900, и первая же набранная
+   * цифра «2» его не проходит. Диапазон снизу проверяет форма перед сохранением.
+   */
+  max?: number | undefined
+  placeholder?: string | undefined
+  invalid?: boolean | undefined
 }
 
 /**
@@ -56,11 +64,27 @@ export function NumberField({
   hideLabel,
   value,
   onValueChange,
-  min = 0,
   max,
   placeholder,
+  invalid,
 }: NumberProps) {
   const id = useId()
+
+  // Набранный текст живёт отдельно от числа. Иначе промежуточные состояния
+  // теряются: «98.» это Number 98, поле перерисовалось бы как «98», и точку
+  // было бы не набрать — то есть дробный вес ввести нельзя.
+  const [text, setText] = useState(() => (value === '' ? '' : String(value)))
+
+  // Синхронизация, когда значение меняют снаружи (пришли данные, сбросили
+  // форму). Сравниваем по числу, а не по строке, чтобы не затирать «98.»
+  // на «98», пока человек печатает.
+  useEffect(() => {
+    const parsed = text === '' ? '' : Number(text)
+    if (parsed !== value) setText(value === '' ? '' : String(value))
+    // text намеренно вне зависимостей: эффект реагирует на внешнее значение
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value])
+
   return (
     <label htmlFor={id} className="flex flex-col gap-1.5">
       <span className={hideLabel ? 'sr-only' : 'text-sm text-muted'}>{label}</span>
@@ -68,23 +92,23 @@ export function NumberField({
         <input
           id={id}
           inputMode="decimal"
-          value={value === '' ? '' : String(value)}
+          value={text}
           placeholder={placeholder}
           onChange={(e) => {
+            // Запятая наравне с точкой: на русской раскладке её набирают чаще
             const raw = e.target.value.replace(',', '.').trim()
-            if (raw === '') return onValueChange('')
-            if (!/^\d*\.?\d*$/.test(raw)) return
-            const parsed = Number(raw)
-            if (Number.isNaN(parsed)) return
-            if (max !== undefined && parsed > max) return
-            if (parsed < min) return
-            onValueChange(parsed)
+            if (raw !== '' && !/^\d*\.?\d*$/.test(raw)) return
+            if (raw !== '' && max !== undefined && Number(raw) > max) return
+            setText(raw)
+            onValueChange(raw === '' || raw === '.' ? '' : Number(raw))
           }}
-          className={`${INPUT_CLASS} ${suffix ? 'pr-12' : ''}`}
+          className={`${INPUT_CLASS} ${suffix ? 'pr-12' : ''} ${
+            invalid ? 'ring-2 ring-danger' : ''
+          }`}
         />
         {suffix && <span className="absolute right-4 text-sm text-muted">{suffix}</span>}
       </span>
-      {hint && <span className="text-xs text-muted">{hint}</span>}
+      {hint && <span className={`text-xs ${invalid ? 'text-danger' : 'text-muted'}`}>{hint}</span>}
     </label>
   )
 }

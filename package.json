@@ -17,7 +17,8 @@
     "bootstrap": "tsx scripts/bootstrap-users.ts",
     "sql": "tsx scripts/sql.ts",
     "db:push": "tsx scripts/db.ts push",
-    "db:types": "tsx scripts/db.ts types"
+    "db:types": "tsx scripts/db.ts types",
+    "tg:secret": "tsx scripts/set-telegram-secret.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.114.0",
