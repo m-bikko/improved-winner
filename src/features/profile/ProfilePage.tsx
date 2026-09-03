@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, KeyRound, Scale } from 'lucide-react'
+import { Check, KeyRound, Scale, Target } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { todayLocal } from '@/lib/date'
 import {
@@ -108,8 +108,28 @@ function ProfileForm({ profile }: { profile: Profile }) {
     }
   }
 
+  // Чего именно не хватает для расчёта нормы. Показываем списком, а не общим
+  // «заполните профиль»: человек должен видеть, какие два поля осталось ввести,
+  // а не искать пустое среди семи.
+  const missing = [
+    birthYear === '' && 'год рождения',
+    sex === null && 'пол',
+    heightCm === '' && 'рост',
+    weightKg === '' && 'вес',
+  ].filter((x): x is string => typeof x === 'string')
+
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-5 px-4 pt-3 pb-16">
+      {missing.length > 0 && (
+        <p className="flex items-start gap-2 rounded-xl bg-raised px-4 py-3 text-sm">
+          <Target size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
+          <span>
+            Чтобы появилась дневная норма, не хватает: <b>{missing.join(', ')}</b>. По этим
+            данным считается норма под твою цель.
+          </span>
+        </p>
+      )}
+
       <div className="rounded-xl bg-surface px-4 py-4 ring-1 ring-line">
         <p className="mb-3 flex items-center gap-2 text-sm font-medium">
           <Scale size={16} aria-hidden />

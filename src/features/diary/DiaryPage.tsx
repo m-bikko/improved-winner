@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, CloudOff, CopyPlus, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CloudOff, CopyPlus, Plus, Target } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { formatDayLabel, shiftDays, todayLocal } from '@/lib/date'
 import { queueSize } from '@/lib/outbox'
-import type { Macros } from '@/lib/nutrition'
+import type { GoalDirection, Macros } from '@/lib/nutrition'
 import { useAuth } from '@/auth/AuthProvider'
 import { ErrorState, Loading } from '@/ui/States'
 import { useFoods, useServingsByFood } from '@/features/foods/api'
@@ -11,6 +11,7 @@ import { trim } from '@/features/foods/FoodsPage'
 import type { Food } from '@/features/foods/types'
 import { goalsFor, useProfiles } from '@/features/profile/api'
 import { useAddEntry, useCopyEntries, useDeleteEntry, useDiaryDay, useOutboxFlush, useUpdateEntry } from './api'
+import { CalorieRing } from './CalorieRing'
 import { FoodPicker } from './FoodPicker'
 import { PortionSheet } from './PortionSheet'
 import { MEALS, MEAL_LABELS, sumEntries, type DiaryEntry, type Meal } from './types'
@@ -105,7 +106,11 @@ export function DiaryPage() {
         </p>
       )}
 
-      {day.isPending ? <Loading /> : <Progress totals={totals} goals={goals} />}
+      {day.isPending ? (
+        <Loading />
+      ) : (
+        <Progress totals={totals} goals={goals} goalDirection={me?.goalDirection ?? 'maintain'} />
+      )}
 
       {partner && (
         <div className="mt-3 flex gap-1 rounded-xl bg-raised p-1">
@@ -225,40 +230,42 @@ function entryAsFood(entry: DiaryEntry): Food {
   }
 }
 
-function Progress({ totals, goals }: { totals: Macros; goals: Macros | null }) {
+function Progress({
+  totals,
+  goals,
+  goalDirection,
+}: {
+  totals: Macros
+  goals: Macros | null
+  goalDirection: GoalDirection
+}) {
+  // Без роста и веса норму не посчитать, и выдумывать её нельзя: человек будет
+  // ориентироваться на неё каждый день. Поэтому вместо числа — прямое указание,
+  // чего не хватает, и кнопка туда, где это заполняется.
   if (!goals) {
     return (
-      <div className="mt-3 rounded-xl bg-raised px-4 py-4 text-center">
+      <div className="mt-3 flex flex-col items-center gap-3 rounded-xl bg-raised px-5 py-6 text-center">
+        <Target size={26} className="text-muted" aria-hidden />
         <p className="text-2xl font-semibold">{Math.round(totals.kcal)} ккал</p>
-        <p className="mt-2 text-sm text-muted">
-          Чтобы видеть цель, заполни{' '}
-          <Link to="/profile" className="text-accent underline">
-            профиль
-          </Link>{' '}
-          — рост, вес, год рождения.
+        <p className="text-sm text-muted">
+          Чтобы появилась норма, укажи рост, вес, год рождения и пол. По ним считается
+          суточная норма под твою цель.
         </p>
+        <Link
+          to="/profile"
+          className="rounded-xl bg-accent px-5 py-3 text-sm font-medium text-accent-ink"
+        >
+          Заполнить профиль
+        </Link>
       </div>
     )
   }
 
-  const left = goals.kcal - totals.kcal
-  const over = left < 0
-
   return (
-    <div className="mt-3 rounded-xl bg-raised px-4 py-4">
-      <div className="flex items-baseline justify-between">
-        <span className="text-2xl font-semibold">
-          {Math.round(totals.kcal)}
-          <span className="text-base font-normal text-muted"> / {goals.kcal} ккал</span>
-        </span>
-        <span className={`text-sm ${over ? 'text-danger' : 'text-muted'}`}>
-          {over ? `+${Math.round(-left)} сверх` : `осталось ${Math.round(left)}`}
-        </span>
-      </div>
+    <div className="mt-3 rounded-xl bg-raised px-4 py-5">
+      <CalorieRing totals={totals} goals={goals} goalDirection={goalDirection} />
 
-      <Bar value={totals.kcal} goal={goals.kcal} className="mt-2 h-2" color="bg-accent" />
-
-      <div className="mt-3 grid grid-cols-3 gap-3">
+      <div className="mt-5 grid grid-cols-3 gap-3">
         <MacroBar label="Б" value={totals.protein} goal={goals.protein} color="bg-protein" text="text-protein" />
         <MacroBar label="Ж" value={totals.fat} goal={goals.fat} color="bg-fat" text="text-fat" />
         <MacroBar label="У" value={totals.carbs} goal={goals.carbs} color="bg-carbs" text="text-carbs" />
