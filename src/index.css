@@ -15,6 +15,7 @@
   --color-protein: var(--c-protein);
   --color-fat: var(--c-fat);
   --color-carbs: var(--c-carbs);
+  --color-chart: var(--c-chart);
 
   --font-sans:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -55,6 +56,10 @@
   --c-protein: #4a7fb5;
   --c-fat: #c08a3e;
   --c-carbs: #5a9367;
+  /* Отдельно от --c-accent: у метки на графике и у текста кнопки разные
+     требования. Оба значения прогнаны через валидатор палитры — светлое
+     проходит все проверки на своей подложке, тёмное на своей. */
+  --c-chart: #b4485f;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -71,6 +76,8 @@
     --c-protein: #7aa9d8;
     --c-fat: #dbab68;
     --c-carbs: #83b98d;
+    /* Не #e5768c: у него OKLCH L 0.698, а тёмная полоса валидатора 0.48–0.67 */
+    --c-chart: #d96a80;
   }
 }
 

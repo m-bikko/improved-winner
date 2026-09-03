@@ -10,6 +10,7 @@ import { Placeholder } from '@/shell/Placeholder'
 import { FoodsPage } from '@/features/foods/FoodsPage'
 import { FoodEditPage } from '@/features/foods/FoodEditPage'
 import { DiaryPage } from '@/features/diary/DiaryPage'
+import { ProfilePage } from '@/features/profile/ProfilePage'
 
 export default function App() {
   return (
@@ -56,7 +57,7 @@ function Gate() {
         <Route path="/foods" element={<FoodsPage />} />
         <Route path="/foods/new" element={<FoodEditPage />} />
         <Route path="/foods/:id" element={<FoodEditPage />} />
-        <Route path="/profile" element={<Placeholder stage="Профиль — этап 6" />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="*" element={<Navigate to="/diary" replace />} />
       </Routes>
     </AppShell>

@@ -77,6 +77,56 @@ export function goalsFor(profile: Profile | undefined): Macros | null {
   })
 }
 
+export type WeightPoint = { date: string; weightKg: number }
+
+export function useWeightLog(userId: string) {
+  return useQuery({
+    queryKey: ['weight', userId],
+    queryFn: async (): Promise<WeightPoint[]> => {
+      const { data, error } = await supabase
+        .from('weight_log')
+        .select('date, weight_kg')
+        .eq('user_id', userId)
+        .order('date')
+      if (error) throw error
+      return data.map((r) => ({ date: r.date, weightKg: r.weight_kg }))
+    },
+    enabled: userId !== '',
+  })
+}
+
+/**
+ * Запись веса за день.
+ *
+ * upsert по (user_id, date): взвесился дважды за день — остаётся последнее
+ * значение, а не два конфликтующих. Заодно обновляет profiles.weight_kg,
+ * от которого зависит расчёт целей.
+ */
+export function useLogWeight() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { userId: string; date: string; weightKg: number }) => {
+      const { error } = await supabase
+        .from('weight_log')
+        .upsert(
+          { user_id: input.userId, date: input.date, weight_kg: input.weightKg },
+          { onConflict: 'user_id,date' },
+        )
+      if (error) throw error
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ weight_kg: input.weightKg })
+        .eq('user_id', input.userId)
+      if (profileError) throw profileError
+    },
+    onSuccess: (_r, input) => {
+      void qc.invalidateQueries({ queryKey: ['weight', input.userId] })
+      void qc.invalidateQueries({ queryKey: ['profiles'] })
+    },
+  })
+}
+
 export function useSaveProfile() {
   const qc = useQueryClient()
   return useMutation({
