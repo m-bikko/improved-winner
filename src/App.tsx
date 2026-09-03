@@ -1,64 +1,56 @@
-import { useEffect, useState } from 'react'
-import { CircleAlert, CircleCheck, LoaderCircle } from 'lucide-react'
-import { supabase } from './lib/supabase'
-import { env } from './lib/env'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { LoaderCircle } from 'lucide-react'
+import { AuthProvider, useAuth } from '@/auth/AuthProvider'
+import { LoginScreen } from '@/auth/LoginScreen'
+import { CACHE_BUSTER, persister, queryClient } from '@/lib/queryClient'
+import { AppShell } from '@/shell/AppShell'
+import { Placeholder } from '@/shell/Placeholder'
 
-const projectRef = new URL(env.supabaseUrl).hostname.split('.')[0] ?? '—'
-
-type Status = { state: 'checking' } | { state: 'ok'; detail: string } | { state: 'fail'; detail: string }
+export default function App() {
+  return (
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister, buster: CACHE_BUSTER }}
+    >
+      <AuthProvider>
+        <BrowserRouter>
+          <Gate />
+        </BrowserRouter>
+      </AuthProvider>
+    </PersistQueryClientProvider>
+  )
+}
 
 /**
- * Временный экран этапа 0: подтверждает, что сборка, переменные окружения и
- * подключение к Supabase живы на реальном деплое. Заменяется на роутинг и
- * экран входа на этапе 2.
+ * Разделяет приложение на «до входа» и «после».
+ *
+ * На состояние loading отдельный экран нужен обязательно: getSession читает
+ * localStorage асинхронно, и без него при каждом запуске PWA на долю секунды
+ * мелькал бы PIN-пад у уже авторизованного человека.
  */
-export default function App() {
-  const [status, setStatus] = useState<Status>({ state: 'checking' })
+function Gate() {
+  const { status } = useAuth()
 
-  useEffect(() => {
-    let cancelled = false
-    supabase.auth
-      .getSession()
-      .then(({ error }) => {
-        if (cancelled) return
-        setStatus(
-          error ? { state: 'fail', detail: error.message } : { state: 'ok', detail: projectRef },
-        )
-      })
-      .catch((e: unknown) => {
-        if (!cancelled) setStatus({ state: 'fail', detail: String(e) })
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  if (status === 'loading') {
+    return (
+      <div className="flex min-h-dvh items-center justify-center text-muted">
+        <LoaderCircle size={22} className="animate-spin" aria-label="Загрузка" />
+      </div>
+    )
+  }
+
+  if (status === 'anonymous') return <LoginScreen />
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
-      <h1 className="text-2xl font-semibold tracking-tight">Love promises</h1>
-
-      {status.state === 'checking' && (
-        <p className="flex items-center gap-2 text-muted">
-          <LoaderCircle size={18} className="animate-spin" aria-hidden />
-          Проверяю подключение
-        </p>
-      )}
-
-      {status.state === 'ok' && (
-        <p className="flex items-center gap-2 text-carbs">
-          <CircleCheck size={18} aria-hidden />
-          Supabase отвечает · проект {status.detail}
-        </p>
-      )}
-
-      {status.state === 'fail' && (
-        <p className="flex items-center gap-2 text-danger">
-          <CircleAlert size={18} aria-hidden />
-          {status.detail}
-        </p>
-      )}
-
-      <p className="text-sm text-muted">Этап 0 — каркас</p>
-    </main>
+    <AppShell>
+      <Routes>
+        <Route path="/topics" element={<Placeholder stage="Темы — этап 7" />} />
+        <Route path="/diary" element={<Placeholder stage="Дневник — этап 4" />} />
+        <Route path="/foods" element={<Placeholder stage="Продукты — этап 3" />} />
+        <Route path="/profile" element={<Placeholder stage="Профиль — этап 6" />} />
+        <Route path="*" element={<Navigate to="/diary" replace />} />
+      </Routes>
+    </AppShell>
   )
 }

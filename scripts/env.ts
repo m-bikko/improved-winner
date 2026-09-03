@@ -36,8 +36,13 @@ function required(vars: Record<string, string>, name: string): string {
   return value
 }
 
+/** Все переменные из .env как есть — для тех, что нужны не всем скриптам. */
+export function readVars(): Record<string, string> {
+  return parseEnvFile(join(ROOT, '.env'))
+}
+
 export function loadEnv() {
-  const vars = parseEnvFile(join(ROOT, '.env'))
+  const vars = readVars()
   return {
     supabaseUrl: required(vars, 'SUPABASE_URL'),
     /** Секретный ключ: только для Admin API. Никогда не попадает в клиентский бандл. */

@@ -18,13 +18,35 @@
 
   --font-sans:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  --animate-shake: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+
+  @keyframes shake {
+    10%,
+    90% {
+      transform: translateX(-2px);
+    }
+    20%,
+    80% {
+      transform: translateX(4px);
+    }
+    30%,
+    50%,
+    70% {
+      transform: translateX(-6px);
+    }
+    40%,
+    60% {
+      transform: translateX(6px);
+    }
+  }
 }
 
 :root {
   --c-bg: #faf9f7;
   --c-surface: #ffffff;
-  --c-raised: #f2f0ec;
-  --c-line: #e6e2dc;
+  --c-raised: #efece6;
+  --c-line: #ddd8d0;
   --c-ink: #1c1a17;
   --c-muted: #6f6a63;
   --c-accent: #b4485f;
@@ -50,6 +72,18 @@
     --c-fat: #dbab68;
     --c-carbs: #83b98d;
   }
+}
+
+/* Вырезы и «челюсти» в standalone-режиме. Без viewport-fit=cover в index.html
+   эти значения равны нулю. */
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@utility mt-safe {
+  margin-top: env(safe-area-inset-top);
 }
 
 html {
