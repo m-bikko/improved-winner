@@ -2,8 +2,10 @@ import { useId, type InputHTMLAttributes } from 'react'
 
 type BaseProps = {
   label: string
-  hint?: string
-  suffix?: string
+  hint?: string | undefined
+  suffix?: string | undefined
+  /** Подпись остаётся для скринридера, но не занимает места в макете. */
+  hideLabel?: boolean | undefined
 }
 
 const INPUT_CLASS =
@@ -14,12 +16,13 @@ export function Field({
   label,
   hint,
   suffix,
+  hideLabel,
   ...rest
 }: BaseProps & InputHTMLAttributes<HTMLInputElement>) {
   const id = useId()
   return (
     <label htmlFor={id} className="flex flex-col gap-1.5">
-      <span className="text-sm text-muted">{label}</span>
+      <span className={hideLabel ? 'sr-only' : 'text-sm text-muted'}>{label}</span>
       <span className="relative flex items-center">
         <input id={id} className={`${INPUT_CLASS} ${suffix ? 'pr-12' : ''}`} {...rest} />
         {suffix && <span className="absolute right-4 text-sm text-muted">{suffix}</span>}
@@ -50,6 +53,7 @@ export function NumberField({
   label,
   hint,
   suffix,
+  hideLabel,
   value,
   onValueChange,
   min = 0,
@@ -59,7 +63,7 @@ export function NumberField({
   const id = useId()
   return (
     <label htmlFor={id} className="flex flex-col gap-1.5">
-      <span className="text-sm text-muted">{label}</span>
+      <span className={hideLabel ? 'sr-only' : 'text-sm text-muted'}>{label}</span>
       <span className="relative flex items-center">
         <input
           id={id}

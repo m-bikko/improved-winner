@@ -63,6 +63,87 @@ export function useServingsByFood() {
   return { ...query, byFood }
 }
 
+export type DishItem = { id: string; foodId: string; grams: number }
+
+export function useDishItems(dishId: string | undefined) {
+  return useQuery({
+    queryKey: ['dish-items', dishId],
+    queryFn: async (): Promise<DishItem[]> => {
+      const { data, error } = await supabase
+        .from('dish_items')
+        .select('id, food_id, grams')
+        .eq('dish_id', dishId ?? '')
+        .order('sort_order')
+      if (error) throw error
+      return data.map((r) => ({ id: r.id, foodId: r.food_id, grams: r.grams }))
+    },
+    enabled: dishId !== undefined,
+  })
+}
+
+export type DishDraft = {
+  name: string
+  brand: string | null
+  yieldGrams: number | null
+  items: { foodId: string; grams: number }[]
+}
+
+/**
+ * Сохранение блюда.
+ *
+ * КБЖУ блюда здесь не пишется вовсе — его считает вью foods_v из состава.
+ * Поэтому и нет риска, что сохранённые цифры разойдутся с ингредиентами.
+ *
+ * Состав переписывается целиком: ингредиентов единицы, а разбор diff'а
+ * ничего бы не дал, кроме сложности.
+ */
+export function useSaveDish() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, draft }: { id?: string; draft: DishDraft }): Promise<string> => {
+      const payload = {
+        kind: 'dish' as const,
+        name: draft.name.trim(),
+        brand: draft.brand?.trim() || null,
+        yield_grams: draft.yieldGrams,
+      }
+
+      let dishId: string
+      if (id) {
+        const { error } = await supabase.from('foods').update(payload).eq('id', id)
+        if (error) throw error
+        dishId = id
+      } else {
+        const { data, error } = await supabase.from('foods').insert(payload).select('id').single()
+        if (error) throw error
+        dishId = data.id
+      }
+
+      const { error: clearError } = await supabase.from('dish_items').delete().eq('dish_id', dishId)
+      if (clearError) throw clearError
+
+      const rows = draft.items
+        .filter((i) => i.foodId && i.grams > 0)
+        .map((i, index) => ({
+          dish_id: dishId,
+          food_id: i.foodId,
+          grams: i.grams,
+          sort_order: index,
+        }))
+
+      if (rows.length > 0) {
+        const { error } = await supabase.from('dish_items').insert(rows)
+        if (error) throw error
+      }
+      return dishId
+    },
+    onSuccess: (dishId) => {
+      void qc.invalidateQueries({ queryKey: ['foods'] })
+      void qc.invalidateQueries({ queryKey: ['dish-items', dishId] })
+    },
+  })
+}
+
 export type FoodDraft = {
   name: string
   brand: string | null

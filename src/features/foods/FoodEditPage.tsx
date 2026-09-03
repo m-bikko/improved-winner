@@ -5,7 +5,15 @@ import { normalize } from '@/lib/search'
 import { Button } from '@/ui/Button'
 import { Field, NumberField } from '@/ui/Field'
 import { ErrorState, Loading } from '@/ui/States'
-import { useArchiveFood, useFoods, useSaveFood, useSaveServings, useServingsByFood } from './api'
+import {
+  useArchiveFood,
+  useDishItems,
+  useFoods,
+  useSaveFood,
+  useSaveServings,
+  useServingsByFood,
+} from './api'
+import { DishForm } from './DishForm'
 import type { Food, Serving } from './types'
 
 /**
@@ -18,9 +26,9 @@ export function FoodEditPage() {
   const [params] = useSearchParams()
   const foods = useFoods()
   const servings = useServingsByFood()
+  const dishItems = useDishItems(id)
 
   const isNew = id === undefined
-  const isDish = params.get('kind') === 'dish'
 
   if (foods.isError) return <ErrorState error={foods.error} onRetry={() => void foods.refetch()} />
   if (!foods.isSuccess || !servings.isSuccess) return <Loading />
@@ -28,15 +36,26 @@ export function FoodEditPage() {
   const existing = isNew ? undefined : foods.data.find((f) => f.id === id)
   if (!isNew && !existing) return <ErrorState error={new Error('Продукт не найден')} />
 
+  // Для существующей записи тип берём из неё самой, для новой — из ссылки
+  const isDish = existing ? existing.kind === 'dish' : params.get('kind') === 'dish'
+  const ownServings = id ? (servings.byFood.get(id) ?? []) : []
+
+  if (isDish) {
+    if (existing && !dishItems.isSuccess) return <Loading />
+    return (
+      <DishForm
+        key={id ?? 'new-dish'}
+        existing={existing}
+        existingItems={dishItems.data ?? []}
+        existingServings={ownServings}
+      />
+    )
+  }
+
   return (
-    <FoodForm
-      // Пересоздаём форму при смене продукта, иначе черновик перетечёт
-      // с одной карточки на другую
-      key={id ?? 'new'}
-      existing={existing}
-      existingServings={id ? (servings.byFood.get(id) ?? []) : []}
-      isDish={isDish}
-    />
+    // Пересоздаём форму при смене продукта, иначе черновик перетечёт
+    // с одной карточки на другую
+    <FoodForm key={id ?? 'new'} existing={existing} existingServings={ownServings} isDish={false} />
   )
 }
 
