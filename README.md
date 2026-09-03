@@ -45,7 +45,7 @@ PIN можно сменить и из приложения — «Профиль 
 | `pnpm db:types` | Перегенерировать `src/types/db.ts` из схемы |
 | `pnpm bootstrap` | Создать или починить аккаунты |
 | `pnpm sql "<SQL>"` | Выполнить SQL от имени postgres (в обход RLS) |
-| `pnpm tg:secret` | Положить токен Telegram-бота из `.env` в Vault |
+| `pnpm secrets` | Положить серверные секреты из `.env` в Vault |
 
 Проверки:
 
@@ -56,6 +56,8 @@ npx tsx scripts/check-history.ts   # снимок КБЖУ не переписы
 npx tsx scripts/check-search.ts    # клиентский поиск по продуктам
 npx tsx scripts/check-goal-history.ts  # снижение веса не двигает закрытые кольца
 npx tsx scripts/check-telegram.ts  # триггер → Vault → pg_net → Telegram
+npx tsx scripts/check-reminders.ts # напоминания: время профиля, дубли, заполненный приём
+npx tsx scripts/check-push.ts      # функция отправки push без деплоя
 npx tsx scripts/make-icons.ts      # перегенерировать иконки после правки SVG
 ```
 
@@ -131,7 +133,7 @@ UTC.
 Настройка на новом окружении:
 
 ```bash
-pnpm tg:secret          # токен из .env в Vault, с проверкой через getMe
+pnpm secrets            # секреты из .env в Vault, с проверкой токена через getMe
 ```
 
 Получателю: написать `@userinfobot` за своим id, открыть бота и нажать «Старт»
@@ -139,6 +141,26 @@ pnpm tg:secret          # токен из .env в Vault, с проверкой �
 
 Уведомление никогда не роняет запись: отправка обёрнута в обработчик исключений
 и работает асинхронно. Подробности — `wiki/pages/concepts/telegram-notifications.md`.
+
+## Напоминания о приёмах пищи
+
+В 11:00, 14:00 и 21:00 по местному времени профиля, если приём пищи пуст,
+приходит напоминание — push на устройство и сообщение в Telegram.
+
+Расписание в базе через `pg_cron`: у Vercel Cron на Hobby лимит в один запуск
+в сутки, а нужно три. Задача идёт каждый час и сверяет время по часовому поясу
+каждого профиля, поэтому одно расписание покрывает любые пояса.
+
+Push требует серверного кода — `api/push.ts` на Vercel. Подписать VAPID
+и зашифровать нагрузку из plpgsql нельзя. База решает «кому и что», функция —
+«как».
+
+Переменные окружения Vercel: `VITE_PUBLIC_VAPID_KEY`, `VAPID_PRIVATE_KEY`,
+`VAPID_SUBJECT`, `PUSH_SHARED_SECRET`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`.
+Значения — в локальном `.env`.
+
+На iOS push работает **только** у приложения, добавленного на экран «Домой».
+В обычной вкладке Safari его нет. Подробности — `wiki/pages/concepts/meal-reminders.md`.
 
 ## Миграции идут через CLI, не через MCP
 

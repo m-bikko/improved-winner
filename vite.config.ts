@@ -39,6 +39,9 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Свои обработчики push дописываются только так: generateSW собирает
+        // воркер сам и вклиниться в него иначе нельзя
+        importScripts: ['/push-sw.js'],
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
         // Service Worker занимается ТОЛЬКО оболочкой приложения.
         // Данные Supabase кэширует персистер TanStack Query в IndexedDB —

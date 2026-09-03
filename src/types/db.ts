@@ -302,6 +302,27 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_reminders: {
+        Row: {
+          date: string
+          meal: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          date: string
+          meal: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          date?: string
+          meal?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           activity_level: string
@@ -359,6 +380,33 @@ export type Database = {
           updated_at?: string
           user_id?: string
           weight_kg?: number | null
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth_key: string
+          created_at: string
+          endpoint: string
+          last_seen_at: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth_key: string
+          created_at?: string
+          endpoint: string
+          last_seen_at?: string
+          p256dh: string
+          user_id?: string
+        }
+        Update: {
+          auth_key?: string
+          created_at?: string
+          endpoint?: string
+          last_seen_at?: string
+          p256dh?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -494,6 +542,10 @@ export type Database = {
         }[]
       }
       is_member: { Args: never; Returns: boolean }
+      push_notify: {
+        Args: { body: string; target_id: string; title: string }
+        Returns: undefined
+      }
       reorder_diary: { Args: { p_items: Json }; Returns: undefined }
       search_topics: {
         Args: { q: string }
@@ -517,9 +569,14 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      send_meal_reminders: { Args: never; Returns: number }
       tg_escape: { Args: { input: string }; Returns: string }
       tg_notify_partner: {
         Args: { author_id: string; message: string }
+        Returns: undefined
+      }
+      tg_notify_self: {
+        Args: { message: string; target_id: string }
         Returns: undefined
       }
       tg_send_raw: {

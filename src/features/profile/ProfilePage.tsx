@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Check, KeyRound, Scale, Send, Target } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { BellRing, Check, KeyRound, Scale, Send, Target } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { todayLocal } from '@/lib/date'
 import {
@@ -14,11 +14,15 @@ import { PIN_LENGTH } from '@/lib/accounts'
 import { useAuth } from '@/auth/AuthProvider'
 import { PinPad } from '@/auth/PinPad'
 import { useFreezeDayGoal } from '@/features/diary/api'
+import {
+  getPushState,
+  subscribeToPush,
+  unsubscribeFromPush,
+  type PushState,
+} from '@/lib/push'
 import { Button } from '@/ui/Button'
 import { Field, NumberField } from '@/ui/Field'
 
-/** Бот, от имени которого приходят уведомления. */
-const BOT_LINK = '@improved_winner_nine_bot'
 import { Sheet } from '@/ui/Sheet'
 import { ErrorState, Loading } from '@/ui/States'
 import {
@@ -30,6 +34,9 @@ import {
   type Profile,
 } from './api'
 import { WeightChart } from './WeightChart'
+
+/** Бот, от имени которого приходят уведомления. */
+const BOT_LINK = '@improved_winner_nine_bot'
 
 export function ProfilePage() {
   const { user } = useAuth()
@@ -287,6 +294,8 @@ function ProfileForm({ profile }: { profile: Profile }) {
         )}
       </div>
 
+      <PushToggle userId={profile.userId} />
+
       <div className="rounded-xl bg-raised px-4 py-4">
         <p className="flex items-center gap-2 text-sm font-medium">
           <Send size={15} aria-hidden />
@@ -414,6 +423,65 @@ function ChangePinSheet({ open, onClose }: { open: boolean; onClose: () => void 
         )}
       </div>
     </Sheet>
+  )
+}
+
+/**
+ * Переключатель push-уведомлений.
+ *
+ * Состояний больше двух, и каждое требует своего объяснения: на iOS Push
+ * работает только у приложения с домашнего экрана, отклонённое разрешение
+ * из приложения не переспросить, а без ключа VAPID подписка невозможна
+ * в принципе. Показывать во всех этих случаях одну неработающую кнопку
+ * значит оставить человека гадать.
+ */
+function PushToggle({ userId }: { userId: string }) {
+  const [state, setState] = useState<PushState | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    void getPushState().then(setState)
+  }, [])
+
+  const toggle = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      setState(state === 'on' ? await unsubscribeFromPush() : await subscribeToPush(userId))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const hint: Record<PushState, string> = {
+    unsupported: 'Этот браузер не умеет push-уведомления.',
+    'not-installed':
+      'Добавь приложение на экран «Домой» и открой уже оттуда — в обычной вкладке уведомления недоступны.',
+    unconfigured: 'Push не настроен на сервере.',
+    denied: 'Уведомления запрещены в настройках браузера. Включить можно только там.',
+    off: 'Напоминания о завтраке, обеде и ужине, если приём пищи остался пустым.',
+    on: 'Включены. Напоминания приходят в 11:00, 14:00 и 21:00, если приём пищи пуст.',
+  }
+
+  return (
+    <div className="rounded-xl bg-raised px-4 py-4">
+      <p className="flex items-center gap-2 text-sm font-medium">
+        <BellRing size={15} aria-hidden />
+        Уведомления на устройстве
+      </p>
+      <p className="mt-1 mb-3 text-xs text-muted">{state ? hint[state] : 'Проверяю…'}</p>
+
+      {(state === 'off' || state === 'on') && (
+        <Button variant={state === 'on' ? 'secondary' : 'primary'} onClick={() => void toggle()} loading={busy}>
+          {state === 'on' ? 'Отключить' : 'Включить уведомления'}
+        </Button>
+      )}
+
+      {error && <p className="mt-2 text-xs text-danger">{error}</p>}
+    </div>
   )
 }
 
