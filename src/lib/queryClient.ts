@@ -49,5 +49,8 @@ export const persister = createAsyncStoragePersister({
  * Версия кэша. Меняется, когда форма данных в кэше несовместима с новой сборкой:
  * так persistQueryClient выбросит старое вместо того, чтобы отдать компоненту
  * объект неожиданной формы.
+ *
+ * v2: useServings отдавал Map, а он не переживает JSON-сериализацию в IndexedDB
+ * и восстанавливался пустым объектом. Теперь список, но кэш от v1 надо выбросить.
  */
-export const CACHE_BUSTER = 'v1'
+export const CACHE_BUSTER = 'v2'

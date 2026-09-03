@@ -5,7 +5,10 @@ import { AuthProvider, useAuth } from '@/auth/AuthProvider'
 import { LoginScreen } from '@/auth/LoginScreen'
 import { CACHE_BUSTER, persister, queryClient } from '@/lib/queryClient'
 import { AppShell } from '@/shell/AppShell'
+import { ErrorBoundary } from '@/shell/ErrorBoundary'
 import { Placeholder } from '@/shell/Placeholder'
+import { FoodsPage } from '@/features/foods/FoodsPage'
+import { FoodEditPage } from '@/features/foods/FoodEditPage'
 
 export default function App() {
   return (
@@ -13,11 +16,13 @@ export default function App() {
       client={queryClient}
       persistOptions={{ persister, buster: CACHE_BUSTER }}
     >
-      <AuthProvider>
-        <BrowserRouter>
-          <Gate />
-        </BrowserRouter>
-      </AuthProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <BrowserRouter>
+            <Gate />
+          </BrowserRouter>
+        </AuthProvider>
+      </ErrorBoundary>
     </PersistQueryClientProvider>
   )
 }
@@ -47,7 +52,9 @@ function Gate() {
       <Routes>
         <Route path="/topics" element={<Placeholder stage="Темы — этап 7" />} />
         <Route path="/diary" element={<Placeholder stage="Дневник — этап 4" />} />
-        <Route path="/foods" element={<Placeholder stage="Продукты — этап 3" />} />
+        <Route path="/foods" element={<FoodsPage />} />
+        <Route path="/foods/new" element={<FoodEditPage />} />
+        <Route path="/foods/:id" element={<FoodEditPage />} />
         <Route path="/profile" element={<Placeholder stage="Профиль — этап 6" />} />
         <Route path="*" element={<Navigate to="/diary" replace />} />
       </Routes>
