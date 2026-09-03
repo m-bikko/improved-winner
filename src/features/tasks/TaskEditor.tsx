@@ -117,7 +117,7 @@ export function TaskEditor({
 
   return (
     <Sheet open onClose={onClose} title={task ? 'Задача' : 'Новая задача'}>
-      <div className="flex flex-col gap-5 px-4 py-4">
+      <div className="flex min-w-0 flex-col gap-5 px-4 py-4">
         <Field
           label="Что сделать"
           value={title}
@@ -133,8 +133,9 @@ export function TaskEditor({
             onChange={(e) => setNotes(e.target.value)}
             rows={2}
             placeholder="необязательно"
-            className="w-full resize-none rounded-xl bg-surface px-4 py-3 ring-1 ring-line
-                       outline-none focus:ring-2 focus:ring-accent placeholder:text-muted"
+            className="w-full min-w-0 resize-none rounded-xl bg-surface px-4 py-3 ring-1
+                       ring-line outline-none focus:ring-2 focus:ring-accent
+                       placeholder:text-muted"
           />
         </label>
 
@@ -146,8 +147,8 @@ export function TaskEditor({
             type="datetime-local"
             value={due}
             onChange={(e) => setDue(e.target.value)}
-            className="w-full rounded-xl bg-surface px-4 py-3 ring-1 ring-line outline-none
-                       focus:ring-2 focus:ring-accent"
+            className="w-full min-w-0 rounded-xl bg-surface px-4 py-3 ring-1 ring-line
+                       outline-none focus:ring-2 focus:ring-accent"
           />
           {hasDue ? (
             <button
@@ -299,7 +300,7 @@ export function TaskEditor({
                       type="date"
                       value={until}
                       onChange={(e) => setUntil(e.target.value)}
-                      className="w-full rounded-xl bg-surface px-4 py-3 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
+                      className="w-full min-w-0 rounded-xl bg-surface px-4 py-3 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
                     />
                     <span className="text-xs text-muted">
                       {until ? describeRecurrence(recurrence) : `${describeRecurrence(recurrence)}, без конца`}

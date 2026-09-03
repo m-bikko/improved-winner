@@ -51,7 +51,13 @@ export function Sheet({ open, onClose, title, children }: Props) {
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
+        {/* overflow-x-hidden — страховка: один широкий нативный элемент внутри
+            раздувал контейнер, и за экран уезжало всё содержимое шторки.
+            Причину лечим в самих элементах, но пусть шторка не зависит
+            от того, вспомню ли я об этом в следующий раз. */}
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
+          {children}
+        </div>
       </div>
     </div>
   )

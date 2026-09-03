@@ -153,6 +153,32 @@
     -moz-appearance: textfield;
   }
 
+  /* Поля даты и времени.
+     На iOS у них собственная внутренняя ширина по содержимому, и width:100%
+     они не слушают. Из-за этого раздувался весь контейнер шторки, а соседние
+     w-full элементы подстраивались под раздутую ширину — за экран уезжали
+     и они, хотя виноваты были не они.
+     appearance:none снимает нативную оболочку, min-width:0 разрешает сжатие. */
+  input[type='date'],
+  input[type='datetime-local'],
+  input[type='time'],
+  input[type='month'] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    text-align: left;
+  }
+
+  /* Без нативной оболочки iOS перестаёт растягивать внутренний блок, поэтому
+     высоту задаём сами — иначе поле схлопывается в полоску */
+  input[type='date']::-webkit-date-and-time-value,
+  input[type='datetime-local']::-webkit-date-and-time-value {
+    text-align: left;
+    min-height: 1.5em;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
