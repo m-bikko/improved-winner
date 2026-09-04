@@ -20,7 +20,7 @@ import { loadEnv, readVars } from './env.ts'
 
 type Db = SupabaseClient<Database>
 
-const OUTSIDER = { email: 'outsider@lovepromises.test', password: 'zx8Qv2Lm41pT' }
+const OUTSIDER = { email: 'outsider@tandem.test', password: 'zx8Qv2Lm41pT' }
 
 let failed = 0
 

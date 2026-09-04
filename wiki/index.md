@@ -1,12 +1,12 @@
 ---
-title: База знаний Love promises
+title: База знаний «Тандема»
 type: concept
 tags: [index]
 created: 2026-09-03
 updated: 2026-09-03
 ---
 
-# База знаний Love promises
+# База знаний «Тандема»
 
 Приватное PWA на двоих: [[topics|темы для обсуждения]],
 [[diary-entries|трекер калорий]] и [[foods|база продуктов]].
