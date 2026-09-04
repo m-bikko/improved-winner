@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { Database } from '@/types/db'
 import type { Period } from './cycle'
+import { type DayLog, type Flow, type Mood, type Symptom } from './dayLog'
 
 type Row = Database['public']['Views']['periods_v']['Row']
 type SettingsRow = Database['public']['Tables']['cycle_settings']['Row']
@@ -142,5 +143,76 @@ export function useDeletePeriod() {
       if (error) throw error
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['periods'] }),
+  })
+}
+
+type DayRow = Database['public']['Tables']['cycle_days']['Row']
+
+function dayFromRow(row: DayRow): DayLog {
+  return {
+    date: row.date,
+    flow: row.flow as Flow | null,
+    pain: row.pain,
+    mood: row.mood as Mood | null,
+    symptoms: (row.symptoms ?? []) as Symptom[],
+    note: row.note,
+  }
+}
+
+/**
+ * Отметки по дням одного человека.
+ *
+ * Тянутся все сразу, а не помесячно: строк тут единицы в месяц, и один запрос
+ * при открытии раздела дешевле, чем запрос на каждое перелистывание календаря.
+ * Плюс так они переживают офлайн вместе с остальным кэшем.
+ */
+export function useCycleDays(userId: string) {
+  return useQuery({
+    queryKey: ['cycle-days', userId],
+    enabled: userId !== '',
+    queryFn: async (): Promise<DayLog[]> => {
+      const { data, error } = await supabase
+        .from('cycle_days')
+        .select('*')
+        .eq('user_id', userId)
+        .order('date', { ascending: false })
+      if (error) throw error
+      return data.map(dayFromRow)
+    },
+  })
+}
+
+export function useSaveCycleDay() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (log: DayLog): Promise<void> => {
+      const { data: session } = await supabase.auth.getUser()
+      const userId = session.user?.id
+      if (!userId) throw new Error('Нет сессии')
+      const { error } = await supabase.from('cycle_days').upsert({
+        user_id: userId,
+        date: log.date,
+        flow: log.flow,
+        pain: log.pain,
+        mood: log.mood,
+        symptoms: log.symptoms,
+        note: log.note?.trim() || null,
+        updated_at: new Date().toISOString(),
+      })
+      if (error) throw error
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['cycle-days'] }),
+  })
+}
+
+/** Пустая отметка в базе запрещена, поэтому «стереть всё» — это удалить строку. */
+export function useDeleteCycleDay() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (date: string): Promise<void> => {
+      const { error } = await supabase.from('cycle_days').delete().eq('date', date)
+      if (error) throw error
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['cycle-days'] }),
   })
 }

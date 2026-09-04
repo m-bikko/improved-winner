@@ -286,3 +286,49 @@ export function warnings(periods: Period[], today: string): Warning[] {
 
   return out
 }
+
+/** Один предсказанный цикл: где будет менструация и где фертильное окно. */
+export type Forecast = {
+  start: string
+  end: string
+  fertileFrom: string
+  fertileTo: string
+  ovulation: string
+}
+
+/**
+ * Прогноз на несколько циклов вперёд.
+ *
+ * Календарю мало «следующей»: открыв октябрь в сентябре, человек должен
+ * увидеть, что там ожидается, а не пустую сетку. Дальше третьего-четвёртого
+ * цикла прогноз всё равно расходится с жизнью, поэтому счётчик ограничен
+ * вызывающим, а не растёт сам.
+ */
+export function forecast(
+  periods: Period[],
+  lutealDays: number,
+  count: number,
+): Forecast[] {
+  const sorted = [...periods].sort((a, b) => (a.startedOn < b.startedOn ? -1 : 1))
+  const last = sorted[sorted.length - 1]
+  if (!last) return []
+
+  const stats = cycleStats(periods)
+  const cycleLength = Math.round(stats.avgCycle ?? DEFAULT_CYCLE_DAYS)
+  const periodLength = Math.round(stats.avgPeriod ?? DEFAULT_PERIOD_DAYS)
+
+  const out: Forecast[] = []
+  for (let i = 1; i <= count; i++) {
+    const start = shiftDays(last.startedOn, cycleLength * i)
+    const nextStart = shiftDays(start, cycleLength)
+    const ovulation = shiftDays(nextStart, -lutealDays)
+    out.push({
+      start,
+      end: shiftDays(start, periodLength - 1),
+      ovulation,
+      fertileFrom: shiftDays(ovulation, -5),
+      fertileTo: shiftDays(ovulation, 1),
+    })
+  }
+  return out
+}

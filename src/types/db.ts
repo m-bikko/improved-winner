@@ -24,6 +24,42 @@ export type Database = {
         }
         Relationships: []
       }
+      cycle_days: {
+        Row: {
+          created_at: string
+          date: string
+          flow: string | null
+          mood: string | null
+          note: string | null
+          pain: number | null
+          symptoms: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          flow?: string | null
+          mood?: string | null
+          note?: string | null
+          pain?: number | null
+          symptoms?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          flow?: string | null
+          mood?: string | null
+          note?: string | null
+          pain?: number | null
+          symptoms?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cycle_settings: {
         Row: {
           luteal_days: number

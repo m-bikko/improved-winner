@@ -7,6 +7,7 @@ import { Button } from '@/ui/Button'
 import { Sheet } from '@/ui/Sheet'
 import {
   DEFAULT_SETTINGS,
+  useCycleDays,
   useCycleSettings,
   useDeletePeriod,
   usePeriods,
@@ -14,10 +15,14 @@ import {
   useSavePeriod,
   useStartPeriod,
 } from './api'
+import { CycleCalendar } from './CycleCalendar'
+import { DaySheet } from './DaySheet'
+import { emptyLog, type DayLog } from './dayLog'
 import {
   PHASE_LABELS,
   cycleDay,
   cycleStats,
+  forecast,
   warnings,
   type CycleDay,
   type Period,
@@ -46,6 +51,8 @@ export function CyclePage() {
   const mine = usePeriods(userId)
   // Партнёрский запрос вернёт пусто, если раздел не открыт: так решает RLS.
   const theirs = usePeriods(partner?.userId ?? '')
+  const myDays = useCycleDays(userId)
+  const theirDays = useCycleDays(partner?.userId ?? '')
 
   const [tab, setTab] = useState<'mine' | 'theirs'>('mine')
   const [editing, setEditing] = useState<Period | null>(null)
@@ -65,6 +72,7 @@ export function CyclePage() {
   const showTabs = tracking && theirsShared
   const active = showTabs ? tab : tracking ? 'mine' : 'theirs'
   const periods = active === 'mine' ? (mine.data ?? []) : (theirs.data ?? [])
+  const logs = active === 'mine' ? (myDays.data ?? []) : (theirDays.data ?? [])
   const owned = active === 'mine'
 
   return (
@@ -82,6 +90,7 @@ export function CyclePage() {
 
       <CycleBody
         periods={periods}
+        logs={logs}
         lutealDays={settings.data?.lutealDays ?? DEFAULT_SETTINGS.lutealDays}
         owned={owned}
         onEdit={setEditing}
@@ -96,12 +105,14 @@ export function CyclePage() {
 
 function CycleBody({
   periods,
+  logs,
   lutealDays,
   owned,
   onEdit,
   onSettings,
 }: {
   periods: Period[]
+  logs: DayLog[]
   lutealDays: number
   owned: boolean
   onEdit: (p: Period) => void
@@ -110,6 +121,14 @@ function CycleBody({
   const today = todayLocal()
   const start = useStartPeriod()
   const save = useSavePeriod()
+  const [pickedDay, setPickedDay] = useState<string | null>(null)
+
+  // Три цикла вперёд, не больше: дальше прогноз всё равно расходится
+  // с жизнью, и рисовать его значило бы выдавать догадку за расписание.
+  const forecasts = useMemo(
+    () => forecast(periods, lutealDays, 3),
+    [periods, lutealDays],
+  )
 
   const state = useMemo(() => cycleDay(periods, today, lutealDays), [periods, today, lutealDays])
   const stats = useMemo(() => cycleStats(periods), [periods])
@@ -154,6 +173,23 @@ function CycleBody({
       <Today state={state} stats={stats} />
 
       <PhaseStrip state={state} />
+
+      <CycleCalendar
+        periods={periods}
+        current={state}
+        forecasts={forecasts}
+        logs={logs}
+        selected={pickedDay ?? today}
+        onSelect={setPickedDay}
+      />
+
+      {pickedDay && (
+        <DaySheet
+          log={logs.find((l) => l.date === pickedDay) ?? emptyLog(pickedDay)}
+          readOnly={!owned}
+          onClose={() => setPickedDay(null)}
+        />
+      )}
 
       {owned && (
         <div className="flex flex-col gap-2">

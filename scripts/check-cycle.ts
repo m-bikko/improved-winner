@@ -19,6 +19,7 @@ import { Client } from 'pg'
 import {
   cycleDay,
   cycleStats,
+  forecast,
   warnings,
   type Period,
 } from '../src/features/cycle/cycle.ts'
@@ -99,6 +100,31 @@ async function schemaChecks(client: Client): Promise<void> {
   // Одна незакрытая — можно, вторая — нельзя
   await client.query(ins, [uid, '2026-02-01', null])
   await mustFail(client, 'Две идущие одновременно отвергаются', ins, [uid, '2026-04-01', null])
+
+  // --- отметки по дням ---
+  const insDay = `insert into public.cycle_days (user_id, date, flow, pain, mood, symptoms, note)
+                  values ($1, $2, $3, $4, $5, $6, $7)`
+
+  await client.query(insDay, [uid, '2026-01-02', 'medium', 2, 'low', ['cramps'], null])
+
+  await mustFail(client, 'Пустая отметка отвергается', insDay, [
+    uid, '2026-01-03', null, null, null, [], null,
+  ])
+  await mustFail(client, 'Неизвестный симптом отвергается', insDay, [
+    uid, '2026-01-04', null, null, null, ['телепатия'], null,
+  ])
+  await mustFail(client, 'Обильность вне словаря отвергается', insDay, [
+    uid, '2026-01-05', 'ужасно', null, null, [], null,
+  ])
+  await mustFail(client, 'Боль вне шкалы отвергается', insDay, [
+    uid, '2026-01-06', null, 7, null, [], null,
+  ])
+  await mustFail(client, 'Две отметки на один день отвергаются', insDay, [
+    uid, '2026-01-02', 'light', null, null, [], null,
+  ])
+  await mustFail(client, 'Отметка из пробелов отвергается', insDay, [
+    uid, '2026-01-07', null, null, null, [], '   ',
+  ])
 
   // Вью считает длины
   const { rows: hist } = await client.query<{ period_days: number; cycle_days: number }>(
@@ -219,6 +245,20 @@ function logicChecks(): void {
 
   // Пустая история не должна ронять расчёт
   check(cycleDay([], '2026-07-01', 14) === null, 'Без записей расчёта нет, а не падение', 'вернулся null')
+
+  // Прогноз на несколько циклов вперёд
+  const f = forecast(even, 14, 3)
+  check(
+    f.length === 3 && f[0]?.start === '2026-08-24' && f[2]?.start === '2026-10-19',
+    'Прогноз считает три цикла вперёд',
+    `${f.map((x) => x.start).join(', ') || 'пусто'}`,
+  )
+  check(
+    f[0]?.end === '2026-08-28',
+    'Длина ожидаемой менструации — по средней, а не по константе',
+    `${f[0]?.start} — ${f[0]?.end} (среднее 5 дн.)`,
+  )
+  check(forecast([], 14, 3).length === 0, 'Без истории прогноза нет', 'вернулся пустой список')
 }
 
 async function main(): Promise<void> {
