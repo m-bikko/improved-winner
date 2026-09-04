@@ -25,7 +25,12 @@ import {
   warnings,
   type Period,
 } from '../src/features/cycle/cycle.ts'
-import { TIP_CATEGORIES, tipsByCategory, tipsFor } from '../src/features/cycle/tips.ts'
+import {
+  TIP_CATEGORIES,
+  tipsByCategory,
+  tipsFor,
+  tipsForPartner,
+} from '../src/features/cycle/tips.ts'
 import { pgConfig } from './env.ts'
 
 let failed = 0
@@ -287,6 +292,25 @@ function logicChecks(): void {
     `выдано: ${warnings(oneDay, '2026-09-04').map((w) => w.id).join(', ') || 'ничего'}`,
   )
 
+  // Запись с началом в будущем не должна давать «День 0»
+  const future: Period[] = [
+    withPeriodDays(period('2026-08-01', '2026-08-05', 35), 5),
+    withPeriodDays(period('2026-09-05', null, null), 5),
+  ]
+  const beforeStart = cycleDay(future, '2026-09-04', 16)
+  check(
+    beforeStart !== null && beforeStart.day >= 1,
+    'Запись с началом завтра не даёт «День 0»',
+    `день ${beforeStart?.day} (считается от предыдущей начавшейся, а не от будущей)`,
+  )
+  check(
+    beforeStart?.day === 35,
+    'Считается от последней НАЧАВШЕЙСЯ записи',
+    `день ${beforeStart?.day}, ждали 35 (01.08 -> 04.09)`,
+  )
+  const onlyFuture = cycleDay([withPeriodDays(period('2026-12-01', null, null), 5)], '2026-09-04', 14)
+  check(onlyFuture === null, 'Если все записи в будущем, расчёта нет', 'вернулся null')
+
   // Две однодневные подряд не должны дать «средний цикл 1 день»
   const twoShort: Period[] = [
     withPeriodDays(period('2026-09-04', '2026-09-04', 1), 1),
@@ -327,6 +351,33 @@ function logicChecks(): void {
     { iso: '2026-08-09', name: 'овуляция' },
     { iso: '2026-08-17', name: 'лютеиновая' },
   ]
+  // Наблюдателю показывают ДРУГОЙ набор.
+  //
+  // Владельцу говорят «уменьши объём тренировки» - партнёру это сказать
+  // нельзя, это не его тело. Пересечение этих двух наборов должно быть
+  // только по общим темам, и если однажды сюда просочится подсказка
+  // из личных, заметить это по экрану будет нечем.
+  for (const { iso, name } of phaseDays) {
+    const st = cycleDay(even, iso, 14)
+    if (!st) continue
+    const ownerIds = new Set(tipsFor(st).map((t) => t.id))
+    const partnerTips = tipsForPartner(st)
+    const leaked = partnerTips.filter(
+      (t) => ownerIds.has(t.id) && !['intimacy', 'benefits'].includes(t.category),
+    )
+    check(
+      partnerTips.length >= 8 && leaked.length === 0,
+      `Наблюдателю в фазе «${name}» показывают свой набор`,
+      `${partnerTips.length} шт., чужих личных подсказок: ${leaked.map((t) => t.id).join(', ') || 'нет'}`,
+    )
+    const grouped = tipsByCategory(st, 'partner').flatMap((g) => g.tips)
+    check(
+      grouped.length === partnerTips.length,
+      `Группировка для наблюдателя в фазе «${name}» ничего не теряет`,
+      `${grouped.length} из ${partnerTips.length}`,
+    )
+  }
+
   for (const { iso, name } of phaseDays) {
     const st = cycleDay(even, iso, 14)
     if (!st) {

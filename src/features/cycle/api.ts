@@ -216,3 +216,28 @@ export function useDeleteCycleDay() {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['cycle-days'] }),
   })
 }
+
+/**
+ * Открыл ли партнёр мне свой цикл.
+ *
+ * Через RPC, а не через чтение его настроек: настройки партнёру не видны
+ * намеренно, иначе по самому их наличию можно было бы понять, что раздел
+ * включён, даже когда доступ закрыт.
+ *
+ * Отдельный запрос понадобился из-за настоящей поломки. Раньше факт доступа
+ * определялся по тому, вернулись ли записи, - и ноль записей был неотличим
+ * от «не поделились». Человек открыл партнёру цикл, ещё ничего не отметив,
+ * а тот видел ровно то же, что и до открытия. Функция возвращает true только
+ * когда владелец сам включил показ, так что лишнего она не раскрывает.
+ */
+export function useCycleShared(partnerId: string) {
+  return useQuery({
+    queryKey: ['cycle-shared', partnerId],
+    enabled: partnerId !== '',
+    queryFn: async (): Promise<boolean> => {
+      const { data, error } = await supabase.rpc('cycle_shared_with_me', { owner: partnerId })
+      if (error) throw error
+      return data === true
+    },
+  })
+}

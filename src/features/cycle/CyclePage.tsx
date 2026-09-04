@@ -9,6 +9,7 @@ import {
   DEFAULT_SETTINGS,
   useCycleDays,
   useCycleSettings,
+  useCycleShared,
   useDeletePeriod,
   usePeriods,
   useSaveCycleSettings,
@@ -53,24 +54,42 @@ export function CyclePage() {
   const theirs = usePeriods(partner?.userId ?? '')
   const myDays = useCycleDays(userId)
   const theirDays = useCycleDays(partner?.userId ?? '')
+  // Спрашиваем прямо, а не гадаем по наличию записей: партнёр мог открыть
+  // доступ, ещё ничего не отметив, - и раньше это было неотличимо от «закрыто».
+  const shared = useCycleShared(partner?.userId ?? '')
 
-  const [tab, setTab] = useState<'mine' | 'theirs'>('mine')
+  const [tab, setTab] = useState<'mine' | 'theirs' | null>(null)
   const [editing, setEditing] = useState<Period | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   const tracking = settings.data?.trackingEnabled ?? false
-  const theirsShared = (theirs.data?.length ?? 0) > 0
+  const theirsShared = shared.data === true
 
-  if (settings.isPending || profiles.isPending) {
+  if (settings.isPending || profiles.isPending || shared.isPending) {
     return <p className="px-4 py-10 text-center text-muted">Загрузка…</p>
   }
 
   if (!tracking && !theirsShared) {
-    return <Intro onEnable={() => setSettingsOpen(true)} open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+    return (
+      <Intro
+        partnerName={partner?.nickname ?? 'Партнёр'}
+        onEnable={() => setSettingsOpen(true)}
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+      />
+    )
   }
 
   const showTabs = tracking && theirsShared
-  const active = showTabs ? tab : tracking ? 'mine' : 'theirs'
+  // Если свой цикл включён, но пуст, а партнёрский открыт - показываем
+  // партнёрский. Человек, у которого нет своих записей, почти наверняка
+  // зашёл смотреть чужие.
+  const preferTheirs = theirsShared && (mine.data?.length ?? 0) === 0
+  const active = showTabs
+    ? (tab ?? (preferTheirs ? 'theirs' : 'mine'))
+    : tracking
+      ? 'mine'
+      : 'theirs'
   const periods = active === 'mine' ? (mine.data ?? []) : (theirs.data ?? [])
   const logs = active === 'mine' ? (myDays.data ?? []) : (theirDays.data ?? [])
   const owned = active === 'mine'
@@ -79,10 +98,10 @@ export function CyclePage() {
     <div className="px-4 py-4">
       {showTabs && (
         <div className="mb-4 flex gap-1 rounded-xl bg-raised p-1">
-          <Tab active={tab === 'mine'} onClick={() => setTab('mine')}>
+          <Tab active={active === 'mine'} onClick={() => setTab('mine')}>
             Мой
           </Tab>
-          <Tab active={tab === 'theirs'} onClick={() => setTab('theirs')}>
+          <Tab active={active === 'theirs'} onClick={() => setTab('theirs')}>
             {partner?.nickname ?? 'Партнёр'}
           </Tab>
         </div>
@@ -150,19 +169,34 @@ function CycleBody({
 
   if (!state || !last) {
     return (
-      <div className="rounded-2xl bg-surface p-5 ring-1 ring-line">
-        <p className="text-sm text-muted">
-          {owned
-            ? 'Записей пока нет. Отметьте день, когда началась менструация, - от него считается всё остальное.'
-            : 'Записей пока нет.'}
-        </p>
+      <div className="flex flex-col gap-3">
+        <div className="rounded-2xl bg-surface p-5 ring-1 ring-line">
+          <p className="text-sm text-muted">
+            {owned
+              ? 'Записей пока нет. Отметьте день, когда началась менструация, - от него считается всё остальное.'
+              : 'Партнёр открыл вам раздел, но пока ничего не отметил. Как только появится первая запись, здесь будут фаза, прогноз и подсказки.'}
+          </p>
+          {owned && (
+            <div className="mt-4">
+              <Button onClick={() => void start.mutateAsync(today)} loading={start.isPending}>
+                <Droplet size={18} aria-hidden />
+                Началась сегодня
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Ссылка нужна именно здесь. Без неё человек, случайно включивший
+            ведение своего цикла, попадал в тупик: на пустом экране нет
+            ни одной кнопки, ведущей к тумблеру «Вести цикл». */}
         {owned && (
-          <div className="mt-4">
-            <Button onClick={() => void start.mutateAsync(today)} loading={start.isPending}>
-              <Droplet size={18} aria-hidden />
-              Началась сегодня
-            </Button>
-          </div>
+          <button
+            type="button"
+            onClick={onSettings}
+            className="self-start px-1 text-sm text-accent underline"
+          >
+            Настройки раздела
+          </button>
         )}
       </div>
     )
@@ -247,7 +281,7 @@ function CycleBody({
         </section>
       )}
 
-      <Tips state={state} />
+      <Tips state={state} owned={owned} />
 
       <History periods={periods} owned={owned} onEdit={onEdit} />
 
@@ -274,8 +308,8 @@ function CycleBody({
  * Порядок тем не случаен: сначала то, что чувствуешь прямо сейчас, потом
  * то, на что это влияет, и в конце то, что касается двоих.
  */
-function Tips({ state }: { state: CycleDay }) {
-  const groups = tipsByCategory(state)
+function Tips({ state, owned }: { state: CycleDay; owned: boolean }) {
+  const groups = tipsByCategory(state, owned ? 'owner' : 'partner')
   // Открыта только первая тема про сегодня. Справочные - «Близость»
   // и «Что даёт близость» - свёрнуты всегда: их читают по желанию,
   // а не каждый раз, когда открыли раздел.
@@ -654,11 +688,25 @@ function LutealField({
   )
 }
 
+/**
+ * Вход в раздел, когда показывать ещё нечего.
+ *
+ * Переписан после того, как автор нажал «Включить» и получил предложение
+ * отметить СВОЮ менструацию. Кнопка была одна, и она включала ведение
+ * собственного цикла - для человека, который зашёл смотреть партнёрский,
+ * это бессмыслица, а выйти обратно с того экрана было нечем.
+ *
+ * Теперь роли названы вслух и разведены: вести свой - действие, доступное
+ * прямо здесь; смотреть чужой - не действие, а следствие чужого решения,
+ * и попросить об этом можно только словами.
+ */
 function Intro({
+  partnerName,
   onEnable,
   open,
   onClose,
 }: {
+  partnerName: string
   onEnable: () => void
   open: boolean
   onClose: () => void
@@ -666,31 +714,28 @@ function Intro({
   const settings = useCycleSettings()
   const save = useSaveCycleSettings()
 
-  // Кнопка обязана делать то, что на ней написано. Раньше «Включить» только
-  // открывало настройки, а раздел оставался выключенным, пока человек
-  // не найдёт там тумблер, - то есть кнопка обещала одно, а делала другое.
-  // Теперь она включает ведение и открывает настройки следом: доступ
-  // партнёру по-прежнему остаётся отдельным осознанным решением.
+  // Кнопка обязана делать то, что на ней написано. Раньше она только
+  // открывала настройки, а раздел оставался выключенным, пока человек
+  // не найдёт там тумблер.
   const enable = async () => {
     await save.mutateAsync({ ...(settings.data ?? DEFAULT_SETTINGS), trackingEnabled: true })
     onEnable()
   }
 
   return (
-    <div className="px-4 py-6">
-      <div className="rounded-2xl bg-surface p-5 ring-1 ring-line">
+    <div className="flex flex-col gap-4 px-4 py-6">
+      <section className="rounded-2xl bg-surface p-5 ring-1 ring-line">
         <p className="flex items-center gap-2 text-base font-medium">
-          <ShieldCheck size={18} className="text-accent" aria-hidden />
-          Раздел выключен
+          <Droplet size={18} className="text-accent" aria-hidden />
+          Вести свой цикл
         </p>
         <p className="mt-2 text-sm text-muted">
-          Здесь отмечаются даты менструаций. Из них считаются фаза, средняя длина цикла,
-          прогноз следующей и предупреждения, если числа выходят за общепринятые границы.
+          Отмечаете даты менструаций - приложение считает фазу, среднюю длину цикла,
+          прогноз следующей и предупреждает, если числа выходят за общепринятые границы.
         </p>
         <p className="mt-3 text-sm text-muted">
-          Во всём остальном приложении вы двое видите данные друг друга. Здесь - нет:
-          пока вы сами не откроете раздел партнёру, он не увидит ничего, даже что раздел
-          включён.
+          Раздел появится только у вас. {partnerName} не увидит ничего, даже того,
+          что он включён, пока вы сами не откроете доступ.
         </p>
         <div className="mt-4">
           <Button onClick={() => void enable()} loading={save.isPending}>
@@ -698,7 +743,25 @@ function Intro({
             Включить
           </Button>
         </div>
-      </div>
+      </section>
+
+      <section className="rounded-2xl bg-surface p-5 ring-1 ring-line">
+        <p className="flex items-center gap-2 text-base font-medium">
+          <ShieldCheck size={18} className="text-muted" aria-hidden />
+          Смотреть цикл партнёра
+        </p>
+        <p className="mt-2 text-sm text-muted">
+          Это единственное место в приложении, где данные не общие. Включить показ
+          за {partnerName} нельзя - ни кнопкой, ни настройкой: решение принимает тот,
+          чьё это тело.
+        </p>
+        <p className="mt-3 text-sm text-muted">
+          Если {partnerName} откроет доступ у себя, её цикл появится здесь сам -
+          с фазой, прогнозом и подсказками о том, что сейчас происходит и что
+          с этим делать вам.
+        </p>
+      </section>
+
       {open && <SettingsSheet onClose={onClose} />}
     </div>
   )
