@@ -84,10 +84,10 @@ async function main(): Promise<void> {
     check(
       second.rows[0]?.n === '0',
       'Повторный запуск в тот же час НЕ шлёт второй раз',
-      `отправлено: ${second.rows[0]?.n} — задача идёт каждый час, дубли недопустимы`,
+      `отправлено: ${second.rows[0]?.n} - задача идёт каждый час, дубли недопустимы`,
     )
 
-    // Появилась еда — напоминания больше быть не должно
+    // Появилась еда - напоминания больше быть не должно
     await client.query('delete from public.meal_reminders where user_id = $1', [user.user_id])
     await client.query(
       `insert into public.diary_entries

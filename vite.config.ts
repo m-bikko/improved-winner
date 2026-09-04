@@ -9,7 +9,7 @@ import { VitePWA } from 'vite-plugin-pwa'
  *
  * Родная замена `%VITE_*%` в Vite не умеет значений по умолчанию: если
  * переменной нет, в заголовке останется буквальное «%VITE_PUBLIC_APP_NAME%».
- * Поэтому подставляем сами — здесь имя уже посчитано вместе с манифестом,
+ * Поэтому подставляем сами - здесь имя уже посчитано вместе с манифестом,
  * и оба берут его из одного источника.
  */
 function appNameInHtml(name: string, shortName: string): Plugin {
@@ -39,8 +39,8 @@ export default defineConfig(({ mode }) => {
         // 'autoUpdate', а не 'prompt'.
         //
         // Сначала стояло 'prompt' из опасения, что подмена ассетов под работающей
-        // сессией сломает ленивые чанки. Но ленивых импортов в приложении нет —
-        // сборка одним куском, — а цена 'prompt' проявилась на живом телефоне:
+        // сессией сломает ленивые чанки. Но ленивых импортов в приложении нет -
+        // сборка одним куском, - а цена 'prompt' проявилась на живом телефоне:
         // Service Worker продолжал отдавать сломанную версию, и выйти из неё было
         // нечем. Сломанная версия обязана уметь чиниться сама.
         registerType: 'autoUpdate',
@@ -48,7 +48,7 @@ export default defineConfig(({ mode }) => {
         manifest: {
           name: appName,
           short_name: appShortName,
-          description: 'Темы, дневник питания и задачи — на двоих',
+          description: 'Темы, дневник питания и задачи - на двоих',
           lang: 'ru',
           start_url: '/',
           scope: '/',
@@ -73,7 +73,7 @@ export default defineConfig(({ mode }) => {
           importScripts: ['/push-sw.js'],
           globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
           // Service Worker занимается ТОЛЬКО оболочкой приложения.
-          // Данные Supabase кэширует персистер TanStack Query в IndexedDB —
+          // Данные Supabase кэширует персистер TanStack Query в IndexedDB -
           // NetworkFirst на домен Supabase отдавал бы протухшие ответы и маскировал 401.
           navigateFallbackDenylist: [/^\/api/, /\/[^/?]+\.[^/]+$/],
           cleanupOutdatedCaches: true,

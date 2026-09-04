@@ -58,7 +58,7 @@ async function main(): Promise<void> {
       `200 г × 100 ккал/100 г = ${before.rows[0]?.kcal}`,
     )
 
-    // Продукт подорожал вдвое — история двигаться не должна
+    // Продукт подорожал вдвое - история двигаться не должна
     await client.query(
       'update foods set kcal_100 = 200, protein_100 = 20 where id = (select food from t)',
     )
@@ -71,7 +71,7 @@ async function main(): Promise<void> {
       `после правки продукта на 200 ккал запись всё ещё ${after.rows[0]?.kcal} ккал`,
     )
 
-    // А вот правка граммовки обязана пересчитаться — и по старому снимку
+    // А вот правка граммовки обязана пересчитаться - и по старому снимку
     await client.query('update diary_entries set grams = 300 where id = (select entry from t)')
     const regrammed = await client.query<{ kcal: string; protein: string }>(
       'select kcal::text, protein::text from diary_entries where id = (select entry from t)',

@@ -7,7 +7,7 @@
  * Это проверяет всё, кроме доставки: авторизацию, переменные окружения,
  * доступ к базе, реакцию на отсутствие подписок и на мусор во входных данных.
  *
- * Саму доставку проверить отсюда нельзя — для неё нужен настоящий endpoint
+ * Саму доставку проверить отсюда нельзя - для неё нужен настоящий endpoint
  * от браузера на телефоне.
  */
 import handler from '../api/push.ts'
@@ -64,13 +64,13 @@ async function main(): Promise<void> {
   check(wrongMethod.code === 405, 'GET отклоняется', `код ${wrongMethod.code}`)
 
   const noAuth = await call('POST', undefined, { userId: 'x', body: 'y' })
-  check(noAuth.code === 401, 'Без секрета — 401', `код ${noAuth.code}`)
+  check(noAuth.code === 401, 'Без секрета - 401', `код ${noAuth.code}`)
 
   const badAuth = await call('POST', 'Bearer неправильный', { userId: 'x', body: 'y' })
-  check(badAuth.code === 401, 'С чужим секретом — 401', `код ${badAuth.code}`)
+  check(badAuth.code === 401, 'С чужим секретом - 401', `код ${badAuth.code}`)
 
   const noBody = await call('POST', `Bearer ${secret}`, {})
-  check(noBody.code === 400, 'Без адресата и текста — 400', `код ${noBody.code}`)
+  check(noBody.code === 400, 'Без адресата и текста - 400', `код ${noBody.code}`)
 
   // Настоящий вызов: подписок ещё нет, поэтому ожидаем честный ноль,
   // а не ошибку. Это подтверждает, что ключи VAPID приняты и база доступна.

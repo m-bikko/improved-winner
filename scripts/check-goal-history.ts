@@ -4,7 +4,7 @@
  *   pnpm tsx scripts/check-goal-history.ts
  *
  * Сценарий ровно тот, о котором спрашивают в первую очередь: норма была 2000,
- * человек похудел, норма упала — что стало с прошлыми днями.
+ * человек похудел, норма упала - что стало с прошлыми днями.
  *
  * Всё внутри транзакции, откатывается.
  */
@@ -33,7 +33,7 @@ async function main(): Promise<void> {
 
     const past = '2026-01-15'
 
-    // Прошлый день: норма 2000, съедено 1900 — кольцо закрыто на 95%
+    // Прошлый день: норма 2000, съедено 1900 - кольцо закрыто на 95%
     await client.query(
       `insert into daily_goals (user_id, date, kcal, protein, fat, carbs, goal_direction)
        values ($1, $2, 2000, 140, 70, 200, 'lose')
@@ -62,7 +62,7 @@ async function main(): Promise<void> {
       `${eaten} из ${goal} ккал`,
     )
 
-    // Человек похудел — норма в профиле падает
+    // Человек похудел - норма в профиле падает
     await client.query('update profiles set weight_kg = 70 where user_id = $1', [userId])
 
     const after = await client.query<{ kcal: string; goal: string }>(
@@ -79,7 +79,7 @@ async function main(): Promise<void> {
       `осталась ${goalAfter} ккал, кольцо всё ещё ${Math.round((eaten / goalAfter) * 100)}%`,
     )
 
-    // Снимок дня уникален по (пользователь, дата) — двух норм на один день быть не может
+    // Снимок дня уникален по (пользователь, дата) - двух норм на один день быть не может
     const dup = await client
       .query(
         `insert into daily_goals (user_id, date, kcal, protein, fat, carbs, goal_direction)
@@ -91,7 +91,7 @@ async function main(): Promise<void> {
     check(
       dup !== null && dup.includes('daily_goals_pkey'),
       'Двух норм на один день быть не может',
-      dup?.split('\n')[0] ?? 'вставка ПРОШЛА — ключ не работает',
+      dup?.split('\n')[0] ?? 'вставка ПРОШЛА - ключ не работает',
     )
   } finally {
     await client.query('rollback')

@@ -33,7 +33,7 @@ const AuthContext = createContext<AuthValue | null>(null)
  *
  * Различать их важно: у GoTrue лимит порядка 30 запросов за 5 минут НА IP,
  * а оба партнёра дома сидят за одним NAT и делят этот бюджет с автообновлением
- * токена. Показать «неверный PIN» там, где на самом деле 429, — верный способ
+ * токена. Показать «неверный PIN» там, где на самом деле 429, - верный способ
  * заставить человека вводить код снова и снова и упереться в лимит ещё глубже.
  */
 function describeFailure(error: AuthError): SignInFailure {
@@ -114,7 +114,7 @@ export function useAuth(): AuthValue {
   return value
 }
 
-/** id текущего пользователя. Бросает, если сессии нет — вызывать только за guard'ом. */
+/** id текущего пользователя. Бросает, если сессии нет - вызывать только за guard'ом. */
 export function useUserId(): string {
   const { user } = useAuth()
   if (!user) throw new Error('useUserId вызван без активной сессии')

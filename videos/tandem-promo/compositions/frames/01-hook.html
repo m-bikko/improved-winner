@@ -2,10 +2,10 @@
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
 
   <style>
-    /* ── 01-hook — «Крючок» ────────────────────────────────────────────────
+    /* ── 01-hook - «Крючок» ────────────────────────────────────────────────
        Blue Professional / Тандем: тёмный холст #141312, единственный акцент
        #e5768c, непрозрачные карточки #1e1c1a с границей #322f2b, без теней.
-       Кадр 1080×1920. Всё нарисовано — ни одного снятого ассета, ни эмодзи. */
+       Кадр 1080×1920. Всё нарисовано - ни одного снятого ассета, ни эмодзи. */
 
     #root {
       position: relative;
@@ -391,7 +391,7 @@
       <div data-hf-id="hf-i02l" class="f01hook-trace" id="f01hook-trace-list" data-close-x="-221" data-close-y="-329" data-close-rot="-4" style="left: 614px; top: 998px; width: 404px; height: 226px">
         <div data-hf-id="hf-e1q1" class="f01hook-trace-float">
           <div data-hf-id="hf-j6rd" class="f01hook-trace-body">
-            <!-- row 1 — done -->
+            <!-- row 1 - done -->
             <div data-hf-id="hf-expp" class="f01hook-box f01hook-box-done" style="left: 28px; top: 34px">
               <svg data-hf-id="hf-y7ug" width="26" height="26" viewBox="0 0 26 26" fill="none" style="position: absolute; left: -2px; top: -2px">
                 <path data-hf-id="hf-i3ps" d="M7 13.5 L11 17.5 L19 8.5" stroke="#141312" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
@@ -400,7 +400,7 @@
             <div data-hf-id="hf-bips" class="f01hook-bar" style="left: 76px; top: 42px; width: 244px; height: 11px; background: #4a4640"></div>
             <div data-hf-id="hf-7jig" class="f01hook-strike" style="left: 72px; top: 47px; width: 252px"></div>
 
-            <!-- row 2 — done -->
+            <!-- row 2 - done -->
             <div data-hf-id="hf-dlwh" class="f01hook-box f01hook-box-done" style="left: 28px; top: 100px">
               <svg data-hf-id="hf-xgk0" width="26" height="26" viewBox="0 0 26 26" fill="none" style="position: absolute; left: -2px; top: -2px">
                 <path data-hf-id="hf-jzu0" d="M7 13.5 L11 17.5 L19 8.5" stroke="#141312" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
@@ -409,7 +409,7 @@
             <div data-hf-id="hf-isxu" class="f01hook-bar" style="left: 76px; top: 108px; width: 186px; height: 11px; background: #4a4640"></div>
             <div data-hf-id="hf-s9zt" class="f01hook-strike" style="left: 72px; top: 113px; width: 194px"></div>
 
-            <!-- row 3 — open -->
+            <!-- row 3 - open -->
             <div data-hf-id="hf-z1os" class="f01hook-box" style="left: 28px; top: 166px"></div>
             <div data-hf-id="hf-1crg" class="f01hook-bar" style="left: 76px; top: 174px; width: 218px; height: 11px; background: #7d766d"></div>
           </div>
@@ -456,7 +456,7 @@
         }
       }
 
-      /* ── Scene 1 (0.0–1.6s) — два силуэта встают снизу на длинном затухании ── */
+      /* ── Scene 1 (0.0–1.6s) - два силуэта встают снизу на длинном затухании ── */
       /* Начальные состояния ставим немедленно (gsap.set вне таймлайна):
          нулевой set на позиции 0 не отрисовался бы на самом первом кадре. */
       gsap.set(".f01hook-trace-body", { opacity: 0 });
@@ -485,7 +485,7 @@
       addFloat("#f01hook-float-a", 8, 3.4, 0, 1.3, 6.2);
       addFloat("#f01hook-float-b", 7, 3.8, 2, 1.4, 6.2);
 
-      /* ── Scene 2 (1.6–3.4s) — четыре следа набегают вразнобой (waterfall-entry).
+      /* ── Scene 2 (1.6–3.4s) - четыре следа набегают вразнобой (waterfall-entry).
             Опасность binary: opacity ставится tl.set, не тушуется. Каждый след
             приходит со своей стороны, тяжёлые едут дальше и дольше. ── */
       var traces = [
@@ -509,7 +509,7 @@
       addFloat("#f01hook-trace-voice .f01hook-trace-float", 8, 2.9, 2, 2.78, 6.2);
       addFloat("#f01hook-trace-list .f01hook-trace-float", 9, 3.6, 3, 3.26, 6.2);
 
-      /* ── Scene 3 (3.4–4.6s) — титр проступает, следы приглушаются ── */
+      /* ── Scene 3 (3.4–4.6s) - титр проступает, следы приглушаются ── */
       tl.fromTo(
         "#f01hook-accent",
         { scaleX: 0, opacity: 1 },
@@ -528,7 +528,7 @@
         3.62
       );
 
-      /* ── Scene 4 (4.6–6.2s) — следы одновременно смыкаются к центру
+      /* ── Scene 4 (4.6–6.2s) - следы одновременно смыкаются к центру
             (center-outward-expansion в обратную сторону, синхронный аккорд:
             один общий ease и duration, цели пре-запечены в data-close-*).
             Камера стоит: тесно от того, что элементов больше, чем места. ── */
@@ -566,7 +566,7 @@
         4.8
       );
 
-      /* ── Scene 5 (6.2–7.0s) — всё гаснет; кадр отдаёт пустой холст
+      /* ── Scene 5 (6.2–7.0s) - всё гаснет; кадр отдаёт пустой холст
             следующему (Adapt: финал переписан под crossfade). ── */
       tl.to(
         ["#f01hook-bg", "#f01hook-layer"],

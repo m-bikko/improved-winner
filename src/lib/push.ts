@@ -34,7 +34,7 @@ export async function getPushState(): Promise<PushState> {
   if (!pushSupported()) {
     // На iOS Push появляется только у приложения, добавленного на домашний
     // экран. Во вкладке Safari его нет вовсе, и это не ошибка, а ограничение
-    // платформы — о нём нужно сказать прямо, иначе кнопка выглядит сломанной.
+    // платформы - о нём нужно сказать прямо, иначе кнопка выглядит сломанной.
     return isStandalone() ? 'unsupported' : 'not-installed'
   }
   if (!VAPID_KEY) return 'unconfigured'

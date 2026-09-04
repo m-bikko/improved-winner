@@ -4,11 +4,11 @@
  *   pnpm sql "select count(*) from foods"
  *   echo "select 1" | pnpm sql
  *
- * Подключается по POSTGRES_URL_NON_POOLING из .env — это session-mode пулер на
+ * Подключается по POSTGRES_URL_NON_POOLING из .env - это session-mode пулер на
  * порту 5432. Транзакционный пулер (6543) для DDL и расширенных запросов не годится.
  *
  * Работает от имени postgres, то есть В ОБХОД RLS. Для проверки самих политик
- * нужен вход под реальным пользователем — см. scripts/check-rls.ts.
+ * нужен вход под реальным пользователем - см. scripts/check-rls.ts.
  */
 import { readFileSync } from 'node:fs'
 import { Client } from 'pg'
@@ -29,7 +29,7 @@ async function main(): Promise<void> {
     const results = Array.isArray(result) ? result : [result]
     for (const r of results) {
       if (r.rows.length > 0) console.table(r.rows)
-      else console.log(`${r.command ?? 'OK'} — строк: ${r.rowCount ?? 0}`)
+      else console.log(`${r.command ?? 'OK'} - строк: ${r.rowCount ?? 0}`)
     }
   } finally {
     await client.end()

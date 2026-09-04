@@ -55,7 +55,7 @@ async function main(): Promise<void> {
     const future = await client.query<{ n: string }>('select notify_due_tasks()::text as n')
     check(future.rows[0]?.n === '0', 'Задача с будущим сроком не уведомляет', `отправлено: ${future.rows[0]?.n}`)
 
-    // Задача без срока — тоже
+    // Задача без срока - тоже
     await client.query(`insert into tasks (title, created_by) values ('ТЕСТ без срока', $1)`, [author])
     const noDue = await client.query<{ n: string }>('select notify_due_tasks()::text as n')
     check(noDue.rows[0]?.n === '0', 'Задача без срока не уведомляет', `отправлено: ${noDue.rows[0]?.n}`)
@@ -91,10 +91,10 @@ async function main(): Promise<void> {
     check(
       second.rows[0]?.n === '0',
       'Повторный запуск НЕ уведомляет снова',
-      `отправлено: ${second.rows[0]?.n} — задача идёт каждые 5 минут, дубли недопустимы`,
+      `отправлено: ${second.rows[0]?.n} - задача идёт каждые 5 минут, дубли недопустимы`,
     )
 
-    // Сдвинули срок — отметки должны сброситься, иначе задача больше никогда
+    // Сдвинули срок - отметки должны сброситься, иначе задача больше никогда
     // о себе не напомнит. Дедупликация живёт в reminded_offsets: колонка
     // notified_at снята как мёртвая.
     await client.query(
@@ -133,13 +133,13 @@ async function main(): Promise<void> {
     check(
       firstPass.rows[0]?.n === '2',
       'Срабатывают только те напоминания, чьё время пришло',
-      `за сутки и за час — да, в момент — нет: отправлено ${firstPass.rows[0]?.n}`,
+      `за сутки и за час - да, в момент - нет: отправлено ${firstPass.rows[0]?.n}`,
     )
 
     const repeatPass = await client.query<{ n: string }>('select notify_due_tasks()::text as n')
     check(repeatPass.rows[0]?.n === '0', 'Те же напоминания не повторяются', `отправлено: ${repeatPass.rows[0]?.n}`)
 
-    // Срок наступил — доезжает «в момент»
+    // Срок наступил - доезжает «в момент»
     await client.query(`update tasks set due_at = now() where id = $1`, [multiId])
     const atDue = await client.query<{ n: string }>('select notify_due_tasks()::text as n')
     check(atDue.rows[0]?.n === '1', 'Напоминание «в момент» приходит по сроку', `отправлено: ${atDue.rows[0]?.n}`)

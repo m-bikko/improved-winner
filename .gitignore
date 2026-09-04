@@ -1,4 +1,4 @@
-# Секреты — .env содержит POSTGRES_PASSWORD, SUPABASE_SECRET_KEY и SERVICE_ROLE_KEY
+# Секреты - .env содержит POSTGRES_PASSWORD, SUPABASE_SECRET_KEY и SERVICE_ROLE_KEY
 .env
 .env.*
 !.env.example

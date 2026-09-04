@@ -1,7 +1,7 @@
 /**
  * Расчёт дневных целей.
  *
- * Формула Миффлина — Сан Жеора для базового обмена, дальше коэффициент
+ * Формула Миффлина - Сан Жеора для базового обмена, дальше коэффициент
  * активности и поправка на цель. Считается на клиенте и на лету: так изменение
  * веса сразу отражается в целях, и не нужно ни триггеров, ни фонового пересчёта.
  */
@@ -51,7 +51,7 @@ export type GoalInput = {
 }
 
 /**
- * Цели по данным профиля. null, если данных не хватает — тогда приложение
+ * Цели по данным профиля. null, если данных не хватает - тогда приложение
  * показывает не выдуманное число, а приглашение заполнить профиль.
  */
 export function computeGoals(input: GoalInput): Macros | null {
@@ -61,7 +61,7 @@ export function computeGoals(input: GoalInput): Macros | null {
   const age = new Date().getFullYear() - birthYear
   if (age < 5 || age > 120) return null
 
-  // Миффлин — Сан Жеор
+  // Миффлин - Сан Жеор
   const bmr = 10 * weightKg + 6.25 * heightCm - 5 * age + (sex === 'male' ? 5 : -161)
   const kcal = bmr * ACTIVITY_FACTORS[activityLevel] * GOAL_FACTORS[goalDirection]
 

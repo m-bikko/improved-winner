@@ -16,7 +16,7 @@ const HeaderActionContext = createContext<Slot | null>(null)
  *
  * Через контекст, а не через портал: портал требует, чтобы целевой узел уже
  * существовал на первом рендере, а шапка и содержимое рисуются в одном
- * проходе — кнопка мигала бы при каждом переходе.
+ * проходе - кнопка мигала бы при каждом переходе.
  */
 export function HeaderActionProvider({ children }: { children: ReactNode }) {
   const [action, setAction] = useState<ReactNode>(null)

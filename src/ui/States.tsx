@@ -16,7 +16,7 @@ export function EmptyState({
 }: {
   title: string
   // `| undefined` явно: под exactOptionalPropertyTypes «необязательное»
-  // и «может быть undefined» — разные вещи, а вызывающий код передаёт
+  // и «может быть undefined» - разные вещи, а вызывающий код передаёт
   // условное значение
   hint?: string | undefined
   action?: ReactNode | undefined

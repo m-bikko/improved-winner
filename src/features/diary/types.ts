@@ -20,7 +20,7 @@ export type DiaryEntry = {
   name: string
   brand: string | null
   servingLabel: string | null
-  /** Снимок на 100 г — именно на 100 г, чтобы правка граммовки не врала. */
+  /** Снимок на 100 г - именно на 100 г, чтобы правка граммовки не врала. */
   kcal100: number
   protein100: number
   fat100: number

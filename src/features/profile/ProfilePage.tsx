@@ -107,7 +107,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
             : { goalProtein: null, goalFat: null, goalCarbs: null }),
         },
       })
-      // Вес попадает и в историю: profiles.weight_kg — это «последнее значение»,
+      // Вес попадает и в историю: profiles.weight_kg - это «последнее значение»,
       // а график строится по weight_log
       if (weightKg !== '' && weightKg !== profile.weightKg) {
         await logWeight.mutateAsync({
@@ -120,7 +120,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
       // Пересчитанная норма должна попасть в снимок сегодняшнего дня, иначе
       // завтра он замёрзнет со старым значением
       if (preview) {
-        // Ручная норма перебивает только калории — Б/Ж/У остаются расчётными
+        // Ручная норма перебивает только калории - Б/Ж/У остаются расчётными
         const kcal = manual && manualKcal !== '' ? manualKcal : preview.kcal
         await freezeGoal.mutateAsync({
           userId: profile.userId,
@@ -136,7 +136,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
   }
 
   // Нижние границы проверяются здесь, а не при вводе: блокировать символы
-  // по минимуму — значит запретить ввод вовсе, потому что первая набранная
+  // по минимуму - значит запретить ввод вовсе, потому что первая набранная
   // цифра года заведомо меньше 1900. Границы совпадают с CHECK в схеме.
   const outOfRange = (v: number | '', lo: number, hi: number, unit: string) =>
     v !== '' && (v < lo || v > hi) ? `Ожидается от ${lo} до ${hi} ${unit}` : null
@@ -149,7 +149,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
   const hasRangeError = Object.values(range).some((r) => r !== null)
 
   // Тот же формат, что и в CHECK на колонке: пустое или цифры, возможно
-  // со знаком минус — у групповых чатов id отрицательный
+  // со знаком минус - у групповых чатов id отрицательный
   const chatIdInvalid = chatId.trim() !== '' && !/^-?\d{1,20}$/.test(chatId.trim())
 
   // Чего именно не хватает для расчёта нормы. Показываем списком, а не общим
@@ -266,7 +266,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
           </>
         ) : (
           <p className="mt-1 text-sm text-muted">
-            Заполни год рождения, пол, рост и вес — норма посчитается сама.
+            Заполни год рождения, пол, рост и вес - норма посчитается сама.
           </p>
         )}
 
@@ -303,7 +303,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
         </p>
         <p className="mt-1 mb-3 text-xs text-muted">
           Приходят партнёру, когда ты заводишь тему, отвечаешь в ней или закрываешь её.
-          Пусто — уведомления не шлём.
+          Пусто - уведомления не шлём.
         </p>
         <Field
           label="Chat ID"
@@ -311,9 +311,9 @@ function ProfileForm({ profile }: { profile: Profile }) {
           onChange={(e) => setChatId(e.target.value.replace(/[^\d-]/g, ''))}
           placeholder="123456789"
           inputMode="numeric"
-          hint={`Узнать: напиши @userinfobot в Telegram, он ответит твоим id. Затем открой ${BOT_LINK} и нажми «Старт» — без этого бот не сможет тебе написать.`}
+          hint={`Узнать: напиши @userinfobot в Telegram, он ответит твоим id. Затем открой ${BOT_LINK} и нажми «Старт» - без этого бот не сможет тебе написать.`}
         />
-        {chatIdInvalid && <p className="mt-1 text-xs text-danger">Chat ID — это только цифры.</p>}
+        {chatIdInvalid && <p className="mt-1 text-xs text-danger">Chat ID - это только цифры.</p>}
       </div>
 
       {error && <p className="text-sm text-danger">{error}</p>}
@@ -341,7 +341,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
  * Смена PIN.
  *
  * Экран обязателен, а не «на будущее»: у синтетических адресов нет
- * восстановления по почте, и без него единственный способ поменять код —
+ * восстановления по почте, и без него единственный способ поменять код -
  * запустить скрипт с ноутбука.
  */
 function ChangePinSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -459,7 +459,7 @@ function PushToggle({ userId }: { userId: string }) {
   const hint: Record<PushState, string> = {
     unsupported: 'Этот браузер не умеет push-уведомления.',
     'not-installed':
-      'Добавь приложение на экран «Домой» и открой уже оттуда — в обычной вкладке уведомления недоступны.',
+      'Добавь приложение на экран «Домой» и открой уже оттуда - в обычной вкладке уведомления недоступны.',
     unconfigured: 'Push не настроен на сервере.',
     denied: 'Уведомления запрещены в настройках браузера. Включить можно только там.',
     off: 'Напоминания о завтраке, обеде и ужине, если приём пищи остался пустым.',

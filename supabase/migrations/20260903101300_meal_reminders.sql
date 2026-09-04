@@ -13,7 +13,7 @@ create extension if not exists pg_cron;
 -- Подписки на push
 --
 -- Одна строка на устройство: телефон и ноутбук дают разные endpoint, и слать
--- надо на оба. Ключи хранятся как есть — это не секреты, а адрес доставки,
+-- надо на оба. Ключи хранятся как есть - это не секреты, а адрес доставки,
 -- выданный браузером конкретно нашему приложению.
 -- ---------------------------------------------------------------------------
 
@@ -68,7 +68,7 @@ create policy meal_reminders_select on public.meal_reminders
 -- Отправка
 -- ---------------------------------------------------------------------------
 
-/** Напоминание конкретному человеку — в отличие от tg_notify_partner. */
+/** Напоминание конкретному человеку - в отличие от tg_notify_partner. */
 create or replace function public.tg_notify_self(target_id uuid, message text)
 returns void
 language plpgsql
@@ -95,14 +95,14 @@ begin
   );
 exception
   when others then
-    raise warning 'Telegram: напоминание не отправлено — %', sqlerrm;
+    raise warning 'Telegram: напоминание не отправлено - %', sqlerrm;
 end;
 $$;
 
 /**
  * Отправка web-push.
  *
- * Сама база подписать VAPID и зашифровать полезную нагрузку не может — это
+ * Сама база подписать VAPID и зашифровать полезную нагрузку не может - это
  * ECDH и AES-GCM, в plpgsql такому не место. Поэтому база только решает
  * «кому и что», а отправку делает функция на Vercel, которую дёргаем через
  * pg_net с общим секретом.
@@ -138,7 +138,7 @@ begin
   );
 exception
   when others then
-    raise warning 'Push: напоминание не отправлено — %', sqlerrm;
+    raise warning 'Push: напоминание не отправлено - %', sqlerrm;
 end;
 $$;
 
@@ -184,7 +184,7 @@ begin
       continue;
     end if;
 
-    -- Уже поел — напоминать не о чем
+    -- Уже поел - напоминать не о чем
     if exists (
       select 1 from public.diary_entries e
        where e.user_id = member.user_id and e.date = local_date and e.meal = target_meal

@@ -39,7 +39,7 @@ export function LoginScreen() {
 
   const lockLeft = Math.max(0, Math.ceil((lockUntil - now) / 1000))
 
-  // Тикаем только пока идёт блокировка — незачем будить рендер просто так
+  // Тикаем только пока идёт блокировка - незачем будить рендер просто так
   useEffect(() => {
     if (lockUntil <= Date.now()) return
     const id = setInterval(() => setNow(Date.now()), 250)
@@ -47,7 +47,7 @@ export function LoginScreen() {
   }, [lockUntil])
 
   // Отправляем сами, как только набрано 6 цифр: отдельная кнопка «Войти»
-  // на PIN-экране — лишний тап без всякой пользы
+  // на PIN-экране - лишний тап без всякой пользы
   useEffect(() => {
     if (!account || pin.length !== PIN_LENGTH || submitting.current || lockLeft > 0) return
 

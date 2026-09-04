@@ -15,7 +15,7 @@ export function TopicsPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 pt-3 pb-28">
       {/* Два таба, а не горизонтальные колонки с перетаскиванием: канбан
-          на телефоне — это боль, а статусов всего два */}
+          на телефоне - это боль, а статусов всего два */}
       <div className="mb-3 flex gap-1 rounded-xl bg-raised p-1">
         <Tab active={tab === 'open'} onClick={() => setTab('open')}>
           Открыто

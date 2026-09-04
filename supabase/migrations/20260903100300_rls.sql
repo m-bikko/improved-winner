@@ -1,8 +1,8 @@
 -- Row Level Security.
 --
 -- Модель доступа:
---   общее   — foods, food_servings, dish_items, topics, topic_comments
---   личное  — diary_entries, weight_log, profiles: пишет только владелец,
+--   общее   - foods, food_servings, dish_items, topics, topic_comments
+--   личное  - diary_entries, weight_log, profiles: пишет только владелец,
 --             но ЧИТАЮТ оба (согласовано: дневники нужны для сравнения
 --             «что делает партнёр и я»)
 --
@@ -28,7 +28,7 @@ alter default privileges in schema public revoke all on tables from anon;
 alter default privileges in schema public revoke all on routines from anon;
 
 -- ---------------------------------------------------------------------------
--- app_members — только чтение, и только своим. Правится через service_role
+-- app_members - только чтение, и только своим. Правится через service_role
 -- из scripts/bootstrap-users.ts.
 -- ---------------------------------------------------------------------------
 
@@ -96,7 +96,7 @@ create policy weight_delete on public.weight_log
 
 -- ---------------------------------------------------------------------------
 -- Профиль: ник партнёра нужен для подписи автора темы, поэтому читают оба.
--- Вес и цели при этом тоже видны — решение принято осознанно.
+-- Вес и цели при этом тоже видны - решение принято осознанно.
 -- ---------------------------------------------------------------------------
 
 create policy profiles_select on public.profiles

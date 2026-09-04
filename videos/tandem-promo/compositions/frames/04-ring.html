@@ -1,6 +1,6 @@
 <template>
   <style>
-    /* ── 04-ring — «Кольцо нормы» ───────────────────────────────────────────
+    /* ── 04-ring - «Кольцо нормы» ───────────────────────────────────────────
        The diary screenshot (assets/diary-19-ring.png, 1170×2532) is the plate.
        The ring, the percent lockup, the kcal line, the «Осталось …» line and
        the three macro rows are COVERED and rebuilt as live elements, because
@@ -25,7 +25,7 @@
       inset: 0;
       width: 1080px;
       height: 1920px;
-      overflow: hidden; /* REQUIRED — the camera scales past the frame */
+      overflow: hidden; /* REQUIRED - the camera scales past the frame */
       font-family: -apple-system, system-ui, sans-serif;
       color: #f2efea;
     }
@@ -226,7 +226,7 @@
       position: absolute;
       left: 0;
       top: 0;
-      width: 100%; /* REQUIRED — a zero-width fill stays invisible under scaleX */
+      width: 100%; /* REQUIRED - a zero-width fill stays invisible under scaleX */
       height: 100%;
       border-radius: 9px;
       transform: scaleX(0);
@@ -351,7 +351,7 @@
       <div data-hf-id="hf-dsu4" id="f04-ring-titlebox">
         <div data-hf-id="hf-6atl" id="f04-ring-accentline"></div>
         <div data-hf-id="hf-0h2j" class="f04-tline" id="f04-ring-tl1">
-          Норма — <span data-hf-id="hf-99sq" class="f04-acc">из твоего веса и цели</span>,
+          Норма - <span data-hf-id="hf-99sq" class="f04-acc">из твоего веса и цели</span>,
         </div>
         <div data-hf-id="hf-fid4" class="f04-tline" id="f04-ring-tl2">а не из чужой таблицы</div>
       </div>
@@ -380,7 +380,7 @@
       var RING_CX_SS = 585;
 
       /* the same block in canvas px at scale 1 */
-      var blockCx = SCREEN_LEFT + RING_CX_SS * K; /* ≈ 540 — already centred */
+      var blockCx = SCREEN_LEFT + RING_CX_SS * K; /* ≈ 540 - already centred */
       var blockCy = SCREEN_TOP + ((BLOCK_TOP_SS + BLOCK_BOT_SS) / 2) * K; /* ≈ 798 */
 
       /* coordinate-target-zoom, nested-wrapper form: T = -offset.
@@ -427,13 +427,13 @@
         COUNT_AT
       );
 
-      /* ── Scene 1 (0.0–1.4) — the screen is read. Nothing moves. ───────── */
+      /* ── Scene 1 (0.0–1.4) - the screen is read. Nothing moves. ───────── */
 
-      /* ── Scene 2 (1.4–2.2) — framing rises to the norm block ──────────── */
+      /* ── Scene 2 (1.4–2.2) - framing rises to the norm block ──────────── */
       tl.to("#f04-ring-cam-outer", { scale: ZOOM, duration: 0.9, ease: "power3.inOut" }, 1.35);
       tl.to("#f04-ring-cam-inner", { x: TX, y: TY, duration: 0.9, ease: "power3.inOut" }, 1.35);
 
-      /* ── Scene 3 (2.2–5.2) — the signature beat.
+      /* ── Scene 3 (2.2–5.2) - the signature beat.
          Arc, percent, kcal and the remainder move as ONE: same position,
          same duration, same ease, so number and arc land as one beat. */
       tl.to(
@@ -450,10 +450,10 @@
         COUNT_AT
       );
 
-      /* ── Scene 4 — the macro bars, riding WITH the ring ────────────────
+      /* ── Scene 4 - the macro bars, riding WITH the ring ────────────────
          Originally these ran as a separate beat at 5.3s, after the ring had
          finished. The contact sheet killed that: at t=25s the screen read
-         "2351 / 2674 ккал" beside "Б 17 / 133" — 2351 kcal with 17 g of
+         "2351 / 2674 ккал" beside "Б 17 / 133" - 2351 kcal with 17 g of
          protein is not a thing, and this video is aimed at people who read
          macros. A number that stays visibly stale while its own total climbs
          reads as a bug in the app, not as pacing.
@@ -490,7 +490,7 @@
         );
       });
 
-      /* ── Scene 5 (6.6–8.0) — the title stands up in the bottom band ───── */
+      /* ── Scene 5 (6.6–8.0) - the title stands up in the bottom band ───── */
       tl.to("#f04-ring-scrim", { opacity: 1, duration: 0.55, ease: "power2.out" }, 6.6);
       tl.fromTo(
         "#f04-ring-accentline",
@@ -511,7 +511,7 @@
         7.04
       );
 
-      /* ── Scene 6 (8.0–10.0) — framing releases back to the wide pose.
+      /* ── Scene 6 (8.0–10.0) - framing releases back to the wide pose.
          Handoff to frame 05: plate centred at x 540 / y 1010, scale 1. */
       tl.to("#f04-ring-cam-outer", { scale: 1, duration: 1.3, ease: "power2.inOut" }, 8.0);
       tl.to("#f04-ring-cam-inner", { x: 0, y: 0, duration: 1.3, ease: "power2.inOut" }, 8.0);

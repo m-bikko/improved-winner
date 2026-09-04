@@ -39,7 +39,7 @@ async function main(): Promise<void> {
   const token = vars['TELEGRAM_BOT_ID']
   if (token) {
     // Проверяем токен до записи: положить нерабочий и узнать об этом через
-    // неделю по молчащим уведомлениям — худший вариант
+    // неделю по молчащим уведомлениям - худший вариант
     const info = (await (await fetch(`https://api.telegram.org/bot${token}/getMe`)).json()) as {
       ok: boolean
       description?: string
@@ -87,7 +87,7 @@ async function main(): Promise<void> {
   const missing = ['PUSH_ENDPOINT_URL', 'PUSH_SHARED_SECRET'].filter((n) => !vars[n])
   if (missing.length > 0) {
     console.log(`\nБез ${missing.join(' и ')} push-уведомления не отправляются.`)
-    console.log('Telegram при этом работает — напоминания не пропадут целиком.')
+    console.log('Telegram при этом работает - напоминания не пропадут целиком.')
   }
 }
 

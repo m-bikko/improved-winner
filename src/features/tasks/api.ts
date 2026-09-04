@@ -9,13 +9,13 @@ export type Task = {
   id: string
   title: string
   notes: string | null
-  /** ISO с зоной. null — задача без срока. */
+  /** ISO с зоной. null - задача без срока. */
   dueAt: string | null
   doneAt: string | null
   doneBy: string | null
   createdBy: string
   createdAt: string
-  /** Смещения в минутах до срока. 0 — в момент дедлайна. */
+  /** Смещения в минутах до срока. 0 - в момент дедлайна. */
   reminders: number[]
   recurrence: Recurrence | null
   /** Последний день, когда повторение уместно. */
@@ -72,13 +72,13 @@ export function useSaveTask() {
         notes: input.notes.trim() || null,
         due_at: input.dueAt,
         reminders: input.reminders,
-        // Повторение без срока нечему сдвигать — это же требует CHECK в схеме
+        // Повторение без срока нечему сдвигать - это же требует CHECK в схеме
         recurrence: input.dueAt ? input.recurrence : null,
         recurrence_until: input.dueAt ? input.recurrenceUntil : null,
       }
 
       if (input.id) {
-        // Срок или набор напоминаний изменились — значит об этом вхождении
+        // Срок или набор напоминаний изменились - значит об этом вхождении
         // ещё не сообщали. Без сброса перенесённая задача больше никогда
         // бы о себе не напомнила.
         const { error } = await supabase
@@ -101,7 +101,7 @@ export function useSaveTask() {
  * Отметка о выполнении.
  *
  * У повторяющейся задачи «выполнено» означает не конец, а переход к следующему
- * вхождению: помечать её сделанной навсегда — значит потерять расписание после
+ * вхождению: помечать её сделанной навсегда - значит потерять расписание после
  * первого же раза. Поэтому срок сдвигается, отметки об отправленных
  * напоминаниях обнуляются, а сама задача остаётся открытой.
  */
@@ -126,7 +126,7 @@ export function useToggleTask() {
           if (error) throw error
           return 'advanced' as const
         }
-        // Повторение кончилось — закрываем задачу окончательно
+        // Повторение кончилось - закрываем задачу окончательно
       }
 
       const { error } = await supabase

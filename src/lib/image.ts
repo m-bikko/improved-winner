@@ -3,7 +3,7 @@
  *
  * Фотография с телефона это 3–8 МБ. Хранить такое незачем: снимок нужен, чтобы
  * узнать банку на полке, а не рассматривать её. Поэтому картинка ужимается
- * до 512 пикселей по длинной стороне и кодируется в WebP — выходит ~40–80 КБ,
+ * до 512 пикселей по длинной стороне и кодируется в WebP - выходит ~40–80 КБ,
  * то есть в полсотни раз меньше оригинала.
  *
  * Перекодирование заодно выбрасывает EXIF. Это важнее, чем кажется: телефоны
@@ -46,7 +46,7 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
   }
 
   // imageOrientation: 'from-image' разворачивает снимок по EXIF. Без этого
-  // фотографии с телефона лежат на боку — камера пишет ориентацию в метаданные,
+  // фотографии с телефона лежат на боку - камера пишет ориентацию в метаданные,
   // а не в сами пиксели.
   const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
 
@@ -62,7 +62,7 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
 
     for (const quality of QUALITY_STEPS) {
       const blob = await encode(canvas, 'image/webp', quality)
-      // Браузер без поддержки WebP в toBlob молча отдаёт PNG — а PNG для
+      // Браузер без поддержки WebP в toBlob молча отдаёт PNG - а PNG для
       // фотографии это мегабайты. Поэтому проверяем фактический тип, а не
       // надеемся на запрошенный.
       if (blob && blob.type === 'image/webp') {
@@ -74,7 +74,7 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
       if (jpeg && jpeg.size <= MAX_BYTES) return { blob: jpeg, extension: 'jpg', ...size }
     }
 
-    // Ни одно качество не влезло — редкость, но отдать что-то надо.
+    // Ни одно качество не влезло - редкость, но отдать что-то надо.
     // Берём самое низкое: лучше зернистая картинка, чем отказ загрузить.
     const fallback =
       (await encode(canvas, 'image/webp', 0.35)) ?? (await encode(canvas, 'image/jpeg', 0.35))

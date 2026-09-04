@@ -37,7 +37,7 @@ export function FoodEditPage() {
   const existing = isNew ? undefined : foods.data.find((f) => f.id === id)
   if (!isNew && !existing) return <ErrorState error={new Error('Продукт не найден')} />
 
-  // Для существующей записи тип берём из неё самой, для новой — из ссылки
+  // Для существующей записи тип берём из неё самой, для новой - из ссылки
   const isDish = existing ? existing.kind === 'dish' : params.get('kind') === 'dish'
   const ownServings = id ? (servings.byFood.get(id) ?? []) : []
 
@@ -148,7 +148,7 @@ function FoodForm({
       await archive.mutateAsync(existing.id)
       navigate('/foods', { replace: true })
     } catch (e) {
-      // Продукт может быть ингредиентом блюда — там ON DELETE RESTRICT,
+      // Продукт может быть ингредиентом блюда - там ON DELETE RESTRICT,
       // и сообщение базы полезнее любого нашего пересказа
       setError(e instanceof Error ? e.message : String(e))
     }
@@ -182,7 +182,7 @@ function FoodForm({
         {duplicate && (
           <p className="flex items-start gap-2 rounded-xl bg-raised px-3 py-2.5 text-sm text-muted">
             <TriangleAlert size={16} className="mt-0.5 shrink-0 text-fat" aria-hidden />
-            Такое название уже есть: «{duplicate}». Если это другой продукт, добавь бренд —
+            Такое название уже есть: «{duplicate}». Если это другой продукт, добавь бренд -
             иначе в дневнике их будет не различить.
           </p>
         )}
@@ -252,7 +252,7 @@ function FoodForm({
 
 /**
  * Сверка калорий с макросами по Атуотеру: 4 ккал на грамм белка и углеводов,
- * 9 на грамм жира. Ловит потерянную цифру ещё до сохранения — иначе она потом
+ * 9 на грамм жира. Ловит потерянную цифру ещё до сохранения - иначе она потом
  * тихо врёт в каждом расчёте дня.
  *
  * Подсказка, а не блокировка: у алкоголя и продуктов с клетчаткой расхождение

@@ -7,7 +7,7 @@ export type FoodKind = 'product' | 'dish'
  *
  * Отдельно от сгенерированного типа вью, потому что Postgres не умеет выводить
  * NOT NULL через вью и помечает там nullable вообще всё. Тащить эти null через
- * все компоненты — значит писать `?? 0` в каждом расчёте КБЖУ. Инварианты
+ * все компоненты - значит писать `?? 0` в каждом расчёте КБЖУ. Инварианты
  * известны из схемы, поэтому проверяем их один раз на границе, в fromRow.
  */
 export type Food = {
@@ -24,7 +24,7 @@ export type Food = {
   yieldGrams: number | null
   ingredientsCount: number
   ingredientsGrams: number
-  /** Путь в бакете food-photos. null — фотографии нет. */
+  /** Путь в бакете food-photos. null - фотографии нет. */
   imagePath: string | null
 }
 

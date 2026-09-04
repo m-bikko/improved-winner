@@ -1,6 +1,6 @@
 <template>
   <style>
-    /* ── 05b-compare — «Дни рядом» ──────────────────────────────────────────
+    /* ── 05b-compare - «Дни рядом» ──────────────────────────────────────────
        Plate: assets/diary-compare.png (1170×2532, a 3× capture of the diary's
        «Сравнение» tab). Measured off the PNG, in SCREENSHOT pixels:
 
@@ -18,16 +18,16 @@
            «208 ккал»         right 1071, top 1628    43px  #9c958c
            «Йогурт греческий 2%» cap top 1755 · «146 ккал» 1757 · «200 г» 1830
            «Хлебцы»           cap top 1948 · «62 ккал» 1949 · «20 г» 2022
-         meal card 2          y 2133→2651  — the SAME structure +555px.
+         meal card 2          y 2133→2651  - the SAME structure +555px.
                               The capture cuts off at 2532 mid-«Гречка сухая»,
                               so both meal cards are rebuilt live on a covered
                               ground and the world runs 168px past the image.
 
-       Everything the shot animates — the two kcal numbers, the six macro
-       lines, the partner heading, both meal cards — is a live element sitting
+       Everything the shot animates - the two kcal numbers, the six macro
+       lines, the partner heading, both meal cards - is a live element sitting
        on an opaque cover, so the baked copy never double-prints.
 
-       CAMERA — the blueprint's hard rule: the ONE scale move is OUTWARD.
+       CAMERA - the blueprint's hard rule: the ONE scale move is OUTWARD.
        Scene 1 opens punched in at S0 (the two totals cards span 1040px of the
        1080 canvas); Scene 3 runs a single decelerating pull to scale 1 and the
        frame is LOCKED for the rest of the shot. No push-in anywhere.
@@ -38,7 +38,7 @@
       inset: 0;
       width: 1080px;
       height: 1920px;
-      overflow: hidden; /* REQUIRED — the camera opens scaled past the frame */
+      overflow: hidden; /* REQUIRED - the camera opens scaled past the frame */
       font-family: -apple-system, system-ui, sans-serif;
       color: #f2efea;
     }
@@ -70,7 +70,7 @@
         rgba(229, 118, 140, 0) 100%
       );
     }
-
+-
     /* ── camera (viewport-change, single-wrapper composite transform) ─────
        GSAP composes translate BEFORE scale on one element, which is exactly
        the order the rule's math assumes, so GSAP itself is the single source
@@ -104,7 +104,7 @@
       background: #141312;
     }
     #f05b-plate {
-      position: absolute;
+      position: absolute;-
       left: 0;
       top: 0;
       width: 1170px;
@@ -186,7 +186,7 @@
       font-size: 43px;
       font-weight: 400;
       font-variant-numeric: tabular-nums;
-      font-feature-settings: "tnum" 1;
+      font-feature-settings: "tnu-" 1;
       white-space: nowrap;
       opacity: 0;
     }
@@ -367,72 +367,72 @@
     }
   </style>
 
-  <div id="root" data-composition-id="05b-compare" data-start="0" data-duration="9.4" data-width="1080" data-height="1920">
+  <div data-hf-id="hf-x0g5" id="root" data-composition-id="05b-compare" data-start="0" data-duration="9.4" data-width="1080" data-height="1920">
     <!-- full-bleed ground (never on #root) -->
-    <div id="f05b-bg" class="clip f05b-clip" data-start="0" data-duration="9.4" data-track-index="0">
-      <div id="f05b-bloom"></div>
+    <div data-hf-id="hf-9rq2" id="f05b-bg" class="clip f05b-clip" data-start="0" data-duration="9.4" data-track-index="0">
+      <div data-hf-id="hf-5xho" id="f05b-bloom"></div>
     </div>
 
     <!-- the one camera wrapper -->
-    <div id="f05b-world" class="clip f05b-clip" data-start="0" data-duration="9.4" data-track-index="1">
-      <div id="f05b-phone">
-        <div id="f05b-screen">
-          <div id="f05b-plate">
-            <img id="f05b-shot" src="assets/diary-compare.png" alt="" width="1170" height="2532">
+    <div data-hf-id="hf-vcsg" id="f05b-world" class="clip f05b-clip" data-start="0" data-duration="9.4" data-track-index="1">
+      <div data-hf-id="hf-vtml" id="f05b-phone">
+        <div data-hf-id="hf-hapf" id="f05b-screen">
+          <div data-hf-id="hf-pusx" id="f05b-plate">
+            <img data-hf-id="hf-m08q" id="f05b-shot" src="assets/diary-compare.png" alt="" width="1170" height="2532">
 
-            <div id="f05b-cover-lower"></div>
-            <div id="f05b-ground-a" class="f05b-cardground"></div>
-            <div id="f05b-ground-b" class="f05b-cardground"></div>
+            <div data-hf-id="hf-s5vw" id="f05b-cover-lower"></div>
+            <div data-hf-id="hf-tzes" id="f05b-ground-a" class="f05b-cardground"></div>
+            <div data-hf-id="hf-2nan" id="f05b-ground-b" class="f05b-cardground"></div>
 
             <!-- ── left column: Алекс ───────────────────────────────────── -->
-            <div id="f05b-nick-a" class="f05b-nick f05b-colA">Алекс</div>
-            <div id="f05b-num-a" class="f05b-num f05b-colA">0</div>
-            <div id="f05b-unit-a" class="f05b-unit f05b-colA">ккал</div>
-            <div id="f05b-ma1" class="f05b-macro f05b-m1 f05b-colA">Б 131.8</div>
-            <div id="f05b-ma2" class="f05b-macro f05b-m2 f05b-colA">Ж 53.8</div>
-            <div id="f05b-ma3" class="f05b-macro f05b-m3 f05b-colA">У 338.9</div>
+            <div data-hf-id="hf-2qlc" id="f05b-nick-a" class="f05b-nick f05b-colA">Алекс</div>
+            <div data-hf-id="hf-zpuh" id="f05b-num-a" class="f05b-num f05b-colA">0</div>
+            <div data-hf-id="hf-jlxk" id="f05b-unit-a" class="f05b-unit f05b-colA">ккал</div>
+            <div data-hf-id="hf-r5ha" id="f05b-ma1" class="f05b-macro f05b-m1 f05b-colA">Б 131.8</div>
+            <div data-hf-id="hf-9jz8" id="f05b-ma2" class="f05b-macro f05b-m2 f05b-colA">Ж 53.8</div>
+            <div data-hf-id="hf-bzim" id="f05b-ma3" class="f05b-macro f05b-m3 f05b-colA">У 338.9</div>
 
             <!-- ── right column: Ким ────────────────────────────────────── -->
-            <div id="f05b-nick-b" class="f05b-nick f05b-colB">Ким</div>
-            <div id="f05b-num-b" class="f05b-num f05b-colB">0</div>
-            <div id="f05b-unit-b" class="f05b-unit f05b-colB">ккал</div>
-            <div id="f05b-mb1" class="f05b-macro f05b-m1 f05b-colB">Б 92.1</div>
-            <div id="f05b-mb2" class="f05b-macro f05b-m2 f05b-colB">Ж 18.1</div>
-            <div id="f05b-mb3" class="f05b-macro f05b-m3 f05b-colB">У 63.7</div>
+            <div data-hf-id="hf-kx8h" id="f05b-nick-b" class="f05b-nick f05b-colB">Ким</div>
+            <div data-hf-id="hf-wykl" id="f05b-num-b" class="f05b-num f05b-colB">0</div>
+            <div data-hf-id="hf-2gbq" id="f05b-unit-b" class="f05b-unit f05b-colB">ккал</div>
+            <div data-hf-id="hf-x5dx" id="f05b-mb1" class="f05b-macro f05b-m1 f05b-colB">Б 92.1</div>
+            <div data-hf-id="hf-d99k" id="f05b-mb2" class="f05b-macro f05b-m2 f05b-colB">Ж 18.1</div>
+            <div data-hf-id="hf-8do1" id="f05b-mb3" class="f05b-macro f05b-m3 f05b-colB">У 63.7</div>
 
             <!-- ── what the pull-back reveals below ─────────────────────── -->
-            <div id="f05b-heading">Что ел партнёр: Ким</div>
+            <div data-hf-id="hf-69jn" id="f05b-heading">Что ел партнёр: Ким</div>
 
-            <div id="f05b-meal1" class="f05b-meal">
-              <div class="f05b-mealname">Завтрак</div>
-              <div class="f05b-mealkcal">208 ккал</div>
-              <div class="f05b-divider"></div>
+            <div data-hf-id="hf-d3ph" id="f05b-meal1" class="f05b-meal">
+              <div data-hf-id="hf-71bf" class="f05b-mealname">Завтрак</div>
+              <div data-hf-id="hf-fq4j" class="f05b-mealkcal">208 ккал</div>
+              <div data-hf-id="hf-n22v" class="f05b-divider"></div>
             </div>
-            <div id="f05b-r1a" class="f05b-row">
-              <div class="f05b-rowname">Йогурт греческий 2%</div>
-              <div class="f05b-rowkcal">146 ккал</div>
-              <div class="f05b-rowqty">200 г</div>
+            <div data-hf-id="hf-0c4i" id="f05b-r1a" class="f05b-row">
+              <div data-hf-id="hf-0bud" class="f05b-rowname">Йогурт греческий 2%</div>
+              <div data-hf-id="hf-r5mr" class="f05b-rowkcal">146 ккал</div>
+              <div data-hf-id="hf-vf07" class="f05b-rowqty">200 г</div>
             </div>
-            <div id="f05b-r1b" class="f05b-row">
-              <div class="f05b-rowname">Хлебцы</div>
-              <div class="f05b-rowkcal">62 ккал</div>
-              <div class="f05b-rowqty">20 г</div>
+            <div data-hf-id="hf-we0h" id="f05b-r1b" class="f05b-row">
+              <div data-hf-id="hf-ozok" class="f05b-rowname">Хлебцы</div>
+              <div data-hf-id="hf-w776" class="f05b-rowkcal">62 ккал</div>
+              <div data-hf-id="hf-z8nf" class="f05b-rowqty">20 г</div>
             </div>
 
-            <div id="f05b-meal2" class="f05b-meal">
-              <div class="f05b-mealname">Обед</div>
-              <div class="f05b-mealkcal">362 ккал</div>
-              <div class="f05b-divider"></div>
+            <div data-hf-id="hf-j9fa" id="f05b-meal2" class="f05b-meal">
+              <div data-hf-id="hf-ud10" class="f05b-mealname">Обед</div>
+              <div data-hf-id="hf-t91m" class="f05b-mealkcal">362 ккал</div>
+              <div data-hf-id="hf-rhwn" class="f05b-divider"></div>
             </div>
-            <div id="f05b-r2a" class="f05b-row">
-              <div class="f05b-rowname">Индейка филе</div>
-              <div class="f05b-rowkcal">156 ккал</div>
-              <div class="f05b-rowqty">150 г</div>
+            <div data-hf-id="hf-s5en" id="f05b-r2a" class="f05b-row">
+              <div data-hf-id="hf-ebny" class="f05b-rowname">Индейка филе</div>
+              <div data-hf-id="hf-sml4" class="f05b-rowkcal">156 ккал</div>
+              <div data-hf-id="hf-8gcf" class="f05b-rowqty">150 г</div>
             </div>
-            <div id="f05b-r2b" class="f05b-row">
-              <div class="f05b-rowname">Гречка сухая</div>
-              <div class="f05b-rowkcal">206 ккал</div>
-              <div class="f05b-rowqty">60 г</div>
+            <div data-hf-id="hf-jhis" id="f05b-r2b" class="f05b-row">
+              <div data-hf-id="hf-zcsq" class="f05b-rowname">Гречка сухая</div>
+              <div data-hf-id="hf-ehek" class="f05b-rowkcal">206 ккал</div>
+              <div data-hf-id="hf-7p53" class="f05b-rowqty">60 г</div>
             </div>
           </div>
         </div>
@@ -440,19 +440,19 @@
     </div>
 
     <!-- title band -->
-    <div id="f05b-title" class="clip f05b-clip" data-start="0" data-duration="9.4" data-track-index="2">
-      <div id="f05b-scrim"></div>
-      <div id="f05b-titlebox">
-        <div id="f05b-accentline"></div>
-        <div id="f05b-tl1" class="f05b-tline">Ваши дни рядом — и видно,</div>
-        <div id="f05b-tl2" class="f05b-tline"><span class="f05b-acc">из чего собран каждый</span></div>
+    <div data-hf-id="hf-p37l" id="f05b-title" class="clip f05--clip" data-start="0" data-duration="9.4" data-track-index="2">
+      <div data-hf-id="hf-quwz" id="f05b-scrim"></div>
+      <div data-hf-id="hf-re6y" id="f05b-titlebox">
+        <div data-hf-id="hf-5uy7" id="f05b-accentline"></div>
+        <div data-hf-id="hf-5h06" id="f05b-tl1" class="f05b-tline">Ваши дни рядом — и видно,</div>
+        <div data-hf-id="hf-3cc2" id="f05b-tl2" class="f05b-tline"><span data-hf-id="hf-r6p3" class="f05b-acc">из чего собран каждый</span></div>
       </div>
     </div>
   </div>
 
   <script>
     (function () {
-      window.__timelines = window.__timelines || {};
+      window.__timelines = window.__timelines || {};-
       var tl = gsap.timeline({ paused: true });
 
       /* ══ camera geometry ══════════════════════════════════════════════
@@ -471,7 +471,7 @@
       var CARD_B = 1421;
 
       /* their box on the canvas at neutral camera */
-      var cardW = (CARD_R - CARD_L) * K;                       /* ≈ 598.0 */
+      var ca-dW = (CARD_R - CARD_L) * K;                       /* ≈ 598.0 */
       var cardCx = SCREEN_LEFT + ((CARD_L + CARD_R) / 2) * K;  /* ≈ 539.7 */
       var cardCy = SCREEN_TOP + ((CARD_T + CARD_B) / 2) * K;   /* ≈ 718.5 */
 
@@ -485,10 +485,10 @@
 
       /* viewport-change, single-wrapper composite transform: T = -offset × S.
          OPEN_BIAS_Y rides the opening pose 80px above dead centre: the pair
-         then sits high with more air beneath it, which is the honest hint
+         then sits high with m-re air beneath it, which is the honest hint
          that something lives below — and that is what the pull-back proves.
          It costs nothing at the far end, where both translates land at 0. */
-      var OPEN_BIAS_Y = 80;
+      var OPEN_BIAS_Y = 80;-
       var X0 = -(cardCx - CANVAS_W / 2) * S0;                  /* ≈ 0.5   */
       var Y0 = -(cardCy - CANVAS_H / 2) * S0 - OPEN_BIAS_Y;    /* ≈ 340.0 */
 
@@ -522,7 +522,7 @@
         "#f05b-num-b",
         { innerText: 0 },
         { innerText: 804, snap: SNAP, duration: COUNT_DUR, ease: COUNT_EASE },
-        COUNT_AT
+        COUNT_AT-
       );
       tl.fromTo(
         ".f05b-num",
@@ -530,7 +530,7 @@
         { scale: 1, duration: COUNT_DUR, ease: COUNT_EASE },
         COUNT_AT
       );
-
+-
       /* the unit is the suffix — it gets its own beat after the count lands */
       tl.fromTo(
         ".f05b-unit",
@@ -550,12 +550,12 @@
          ради которой кадр и существует, — колонки Б/Ж/У, которые надо
          сравнить глазом.
          Теперь макросы приходят, пока числа ещё досчитывают: карточка
-         собирается целиком к 2.5 с, и до отъезда в 3.45 остаётся настоящая
+         собирается целиком к -.5 с, и до отъезда в 3.45 остаётся настоящая
          держащая доля, а не ожидание. */
       var MACRO_AT = 1.1;
       var MACRO_STEP = 0.2;
-      [
-        ["#f05b-ma1", "#f05b-mb1"],
+      [-
+        ["#f05b-ma1", "#f05b-mb1"],-
         ["#f05b-ma2", "#f05b-mb2"],
         ["#f05b-ma3", "#f05b-mb3"],
       ].forEach(function (pair, i) {
@@ -582,11 +582,11 @@
         { scale: S0, x: X0, y: Y0 },
         { scale: 1, x: 0, y: 0, duration: ZOOM_DUR, ease: "expo.out" },
         ZOOM_AT
-      );
+      );-
 
       tl.fromTo(
         "#f05b-shot",
-        { opacity: 0 },
+        { opacity: 0 },-
         { opacity: 1, duration: 0.9, ease: "power2.out" },
         ZOOM_AT + 0.05
       );
@@ -601,7 +601,7 @@
 
       /* ══ Scene 4 (5.0–6.6) — waterfall-entry, camera LOCKED ═══════════
          The answer to «а из чего у неё 804». Pure element motion: opacity is
-         binary via tl.set, travel is one direction (from below), each element
+         binary via tl.set, tr-vel is one direction (from below), each element
          starts within a frame or two of the previous settling and the gaps
          shrink across the cascade. Offsets are plate px — the plate renders
          at 0.557, so 130px of travel is ~72px on the canvas. */
@@ -622,7 +622,7 @@
       tl.to("#f05b-scrim", { opacity: 1, duration: 0.55, ease: "power2.out" }, 6.6);
       tl.fromTo(
         "#f05b-accentline",
-        { scaleX: 0 },
+        { scaleX: 0 },-
         { scaleX: 1, duration: 0.5, ease: "power3.out" },
         6.72
       );

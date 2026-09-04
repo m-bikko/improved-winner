@@ -1,6 +1,6 @@
 -- Фотографии продуктов.
 --
--- Хранилище — Supabase Storage, а не колонка в базе. Base64 в таблице раздул бы
+-- Хранилище - Supabase Storage, а не колонка в базе. Base64 в таблице раздул бы
 -- её на треть сверх самого файла, убил бы кэширование и тянулся бы в каждый
 -- запрос списка продуктов, где картинка не нужна.
 --
@@ -47,4 +47,4 @@ create policy food_photos_delete on storage.objects
 alter table public.foods add column image_path text;
 
 comment on column public.foods.image_path is
-  'Путь объекта в бакете food-photos. Пусто — фотографии нет.';
+  'Путь объекта в бакете food-photos. Пусто - фотографии нет.';

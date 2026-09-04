@@ -15,7 +15,7 @@ export const NAV = [
 export function BurgerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { account, signOut } = useAuth()
 
-  // Пока меню открыто, фон скроллиться не должен — иначе на телефоне
+  // Пока меню открыто, фон скроллиться не должен - иначе на телефоне
   // страница уезжает под шторкой и возвращается не туда
   useEffect(() => {
     if (!open) return

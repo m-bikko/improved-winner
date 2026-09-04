@@ -171,7 +171,7 @@ export function TasksCalendar({
   )
 }
 
-/** Вхождения выбранного дня — для списка под сеткой. */
+/** Вхождения выбранного дня - для списка под сеткой. */
 export function occurrencesOn(tasks: Task[], iso: string): Occurrence[] {
   const from = fromLocalISO(iso)
   const to = new Date(from)

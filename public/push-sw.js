@@ -13,7 +13,7 @@ self.addEventListener('push', (event) => {
   let payload
   // Название приложения сюда не подставить: файл лежит в public/ и копируется
   // как есть, переменные сборки до него не доходят. Поэтому запасной заголовок
-  // нейтральный — тем более что имя PWA систему подписывает сама.
+  // нейтральный - тем более что имя PWA систему подписывает сама.
   try {
     payload = event.data.json()
   } catch {
@@ -27,7 +27,7 @@ self.addEventListener('push', (event) => {
       badge: '/icon-192.png',
       // Тег заменяет предыдущее уведомление с тем же тегом. Раньше тег был
       // один на всё («meal-reminder»), и это была поломка: наступивший срок
-      // задачи молча стирал непрочитанное напоминание о еде — виды рассылок
+      // задачи молча стирал непрочитанное напоминание о еде - виды рассылок
       // разные и адресаты у них разные. Теперь тег берётся из заголовка,
       // то есть из вида события, и разные виды друг друга не затирают.
       tag: payload.tag || payload.title || 'push',
@@ -44,7 +44,7 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
       // Если приложение уже открыто, переиспользуем окно: открывать вторую
-      // копию PWA поверх первой — плохой способ ответить на тап
+      // копию PWA поверх первой - плохой способ ответить на тап
       for (const client of windows) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
           client.navigate(target)

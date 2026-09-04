@@ -25,7 +25,7 @@ const CASES: { from: string; rule: Recurrence; note: string }[] = [
   {
     from: '2026-09-03T14:30:00',
     rule: { freq: 'weekly', interval: 1, weekdays: [1, 3, 5] },
-    note: 'пн, ср, пт — с четверга ближайшая пятница',
+    note: 'пн, ср, пт - с четверга ближайшая пятница',
   },
   {
     from: '2026-09-07T09:00:00',
@@ -44,7 +44,7 @@ const CASES: { from: string; rule: Recurrence; note: string }[] = [
     note: 'через год через границу года',
   },
   {
-    // 2024 — леап-год, 2026 нет: дата 2026-02-29 не существует вовсе
+    // 2024 - леап-год, 2026 нет: дата 2026-02-29 не существует вовсе
     from: '2024-02-29T12:00:00',
     rule: { freq: 'yearly', interval: 1 },
     note: '29 февраля + год: конец февраля невисокосного',
@@ -77,10 +77,10 @@ async function main(): Promise<void> {
                 ) as next`,
         [c.from, JSON.stringify(c.rule)],
       )
-      const fromSql = rows[0]?.next ?? '—'
+      const fromSql = rows[0]?.next ?? '-'
 
       const jsNext = nextOccurrence(new Date(c.from), c.rule)
-      const fromJs = jsNext ? stamp(jsNext) : '—'
+      const fromJs = jsNext ? stamp(jsNext) : '-'
 
       const ok = fromSql === fromJs
       if (!ok) failed++
@@ -95,7 +95,7 @@ async function main(): Promise<void> {
   console.log(
     failed === 0
       ? '\nОбе реализации правила согласны.'
-      : `\nРасхождений: ${failed} — календарь и уведомления покажут разные даты`,
+      : `\nРасхождений: ${failed} - календарь и уведомления покажут разные даты`,
   )
   process.exit(failed === 0 ? 0 : 1)
 }

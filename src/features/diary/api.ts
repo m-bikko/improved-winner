@@ -6,7 +6,7 @@ import type { GoalDirection, Macros } from '@/lib/nutrition'
 import type { Food } from '@/features/foods/types'
 import { entryFromRow, type DiaryEntry, type Meal } from './types'
 
-/** Записи за день. Оба видят дневники друг друга — RLS это разрешает. */
+/** Записи за день. Оба видят дневники друг друга - RLS это разрешает. */
 export function useDiaryDay(date: string, userId: string) {
   return useQuery({
     queryKey: ['diary', userId, date],
@@ -27,7 +27,7 @@ export function useDiaryDay(date: string, userId: string) {
   })
 }
 
-/** Что человек ел за последние недели — для списков «Недавние» и «Часто». */
+/** Что человек ел за последние недели - для списков «Недавние» и «Часто». */
 export function useRecentFoodIds(userId: string) {
   return useQuery({
     queryKey: ['diary-recent', userId],
@@ -63,7 +63,7 @@ export function useRecentFoodIds(userId: string) {
  * и день, закрытый на 95%, задним числом становится перебором.
  *
  * Если снимка на прошлый день нет (день прожит до появления таблицы или в нём
- * ничего не записано), берём текущую норму — другой информации всё равно нет.
+ * ничего не записано), берём текущую норму - другой информации всё равно нет.
  */
 export function useDayGoal(userId: string, date: string) {
   return useQuery({
@@ -90,7 +90,7 @@ export function useDayGoal(userId: string, date: string) {
  * Замораживает норму дня.
  *
  * Перезаписывать снимок можно только у сегодняшнего дня: пока день идёт,
- * норма отражает текущий профиль. Прошлый день трогать нельзя — в этом весь
+ * норма отражает текущий профиль. Прошлый день трогать нельзя - в этом весь
  * смысл снимка.
  */
 export function useFreezeDayGoal() {
@@ -134,7 +134,7 @@ export type AddEntryInput = {
  * Собирает снимок КБЖУ на момент добавления.
  *
  * Снимок хранится НА 100 Г, а не абсолютом за порцию: только так можно потом
- * честно поправить граммовку, не сходив в живой продукт — а он к тому времени
+ * честно поправить граммовку, не сходив в живой продукт - а он к тому времени
  * мог измениться, и история поехала бы ровно там, где мы её защищали.
  */
 function toRow(input: AddEntryInput, id: string) {
@@ -167,7 +167,7 @@ export function useAddEntry() {
       if (error) {
         // Сетевую ошибку кладём в очередь и считаем успехом: запись у человека
         // «есть», уйдёт при первой же связи. Отказ политики или битые данные
-        // очередь не спасёт — такое показываем сразу
+        // очередь не спасёт - такое показываем сразу
         const retriable = !error.code || error.code === 'PGRST000'
         if (!retriable) throw error
         enqueue(row)
@@ -222,7 +222,7 @@ export function useDeleteEntry() {
  * дневник в промежуточном состоянии, если часть дойдёт, а часть нет.
  *
  * Инвалидацию делаем только при ошибке. При успехе список уже показывает нужный
- * порядок — обновлять его повторно значит моргнуть на ровном месте.
+ * порядок - обновлять его повторно значит моргнуть на ровном месте.
  */
 export function useReorderEntries() {
   const qc = useQueryClient()
@@ -238,7 +238,7 @@ export function useReorderEntries() {
   })
 }
 
-/** Перенос записей другого дня в текущий — «скопировать вчера». */
+/** Перенос записей другого дня в текущий - «скопировать вчера». */
 export function useCopyEntries() {
   const qc = useQueryClient()
   return useMutation({

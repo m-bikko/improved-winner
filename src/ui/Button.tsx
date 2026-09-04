@@ -29,7 +29,7 @@ export function Button({
       // Явный type: без него кнопка внутри формы сабмитит её при каждом клике
       type="button"
       disabled={disabled || loading}
-      // min-h-12 — нижняя граница комфортной цели нажатия на телефоне
+      // min-h-12 - нижняя граница комфортной цели нажатия на телефоне
       className={`flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 text-base
                   font-medium transition-[transform,opacity] active:scale-[0.98]
                   disabled:opacity-40 disabled:active:scale-100 ${VARIANTS[variant]} ${className}`}

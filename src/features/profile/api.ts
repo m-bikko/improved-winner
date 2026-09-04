@@ -16,7 +16,7 @@ export type Profile = {
   goalProtein: number | null
   goalFat: number | null
   goalCarbs: number | null
-  /** Пусто — уведомления в Telegram не приходят. */
+  /** Пусто - уведомления в Telegram не приходят. */
   telegramChatId: string | null
 }
 
@@ -56,7 +56,7 @@ export function useProfiles() {
  * при 'manual' берутся как есть.
  *
  * Разделение принципиально: без него человек переопределил бы цель руками,
- * потом изменил вес — и значение либо молча затёрлось бы, либо навсегда застыло.
+ * потом изменил вес - и значение либо молча затёрлось бы, либо навсегда застыло.
  */
 export function goalsFor(profile: Profile | undefined): Macros | null {
   if (!profile) return null
@@ -101,7 +101,7 @@ export function useWeightLog(userId: string) {
 /**
  * Запись веса за день.
  *
- * upsert по (user_id, date): взвесился дважды за день — остаётся последнее
+ * upsert по (user_id, date): взвесился дважды за день - остаётся последнее
  * значение, а не два конфликтующих. Заодно обновляет profiles.weight_kg,
  * от которого зависит расчёт целей.
  */

@@ -118,7 +118,7 @@ export function TasksPage() {
           {tasks.isSuccess && all.length === 0 && (
             <EmptyState
               title="Задач нет"
-              hint="Заведи задачу со сроком — напоминания придут вам обоим."
+              hint="Заведи задачу со сроком - напоминания придут вам обоим."
             />
           )}
 

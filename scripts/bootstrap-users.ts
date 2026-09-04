@@ -5,12 +5,12 @@
  *
  * ЭТО ЕДИНСТВЕННЫЙ ПУТЬ ВОССТАНОВЛЕНИЯ ДОСТУПА. Адреса аккаунтов синтетические,
  * почты за ними нет, письмо «сбросить пароль» отправить некуда. Если PIN забыт
- * или сессия окончательно сломалась — правится только отсюда, с секретным ключом.
+ * или сессия окончательно сломалась - правится только отсюда, с секретным ключом.
  *
  * Скрипт идемпотентен: повторный запуск не создаёт дублей, а приводит уже
  * существующие аккаунты к состоянию из .env (в том числе перезаписывает PIN).
  *
- * PIN-ы читаются из .env — LOVE_PIN_BIKOSH и LOVE_PIN_AMINOSH. В репозитории
+ * PIN-ы читаются из .env - LOVE_PIN_BIKOSH и LOVE_PIN_AMINOSH. В репозитории
  * их нет намеренно.
  */
 import { createClient } from '@supabase/supabase-js'
@@ -51,16 +51,16 @@ async function main(): Promise<void> {
     let userId: string
 
     if (found) {
-      // Приводим к состоянию из .env — в том числе сбрасываем PIN, если он забыт
+      // Приводим к состоянию из .env - в том числе сбрасываем PIN, если он забыт
       const { data, error } = await admin.auth.admin.updateUserById(found.id, {
         password: pin,
         user_metadata: { nickname: account.nickname },
       })
-      if (error) throw new Error(`${account.nickname}: не удалось обновить — ${error.message}`)
+      if (error) throw new Error(`${account.nickname}: не удалось обновить - ${error.message}`)
       userId = data.user.id
       console.log(`  обновлён   ${account.nickname} <${account.email}>`)
     } else {
-      // email_confirm: true обязателен — подтверждать адрес, которого не существует,
+      // email_confirm: true обязателен - подтверждать адрес, которого не существует,
       // пользователю будет нечем, а без подтверждения вход заблокирован
       const { data, error } = await admin.auth.admin.createUser({
         email: account.email,
@@ -68,7 +68,7 @@ async function main(): Promise<void> {
         email_confirm: true,
         user_metadata: { nickname: account.nickname },
       })
-      if (error) throw new Error(`${account.nickname}: не удалось создать — ${error.message}`)
+      if (error) throw new Error(`${account.nickname}: не удалось создать - ${error.message}`)
       userId = data.user.id
       console.log(`  создан     ${account.nickname} <${account.email}>`)
     }
@@ -76,15 +76,15 @@ async function main(): Promise<void> {
     const { error: memberError } = await admin
       .from('app_members')
       .upsert({ user_id: userId }, { onConflict: 'user_id' })
-    if (memberError) throw new Error(`${account.nickname}: app_members — ${memberError.message}`)
+    if (memberError) throw new Error(`${account.nickname}: app_members - ${memberError.message}`)
 
     // Профиль создаётся здесь, а не триггером на auth.users: триггеры на этой
-    // таблице — общий ресурс проекта, и один сломанный ломает создание аккаунтов
+    // таблице - общий ресурс проекта, и один сломанный ломает создание аккаунтов
     // целиком. Остальные поля профиля пользователь заполнит сам на экране профиля.
     const { error: profileError } = await admin
       .from('profiles')
       .upsert({ user_id: userId, nickname: account.nickname }, { onConflict: 'user_id' })
-    if (profileError) throw new Error(`${account.nickname}: profiles — ${profileError.message}`)
+    if (profileError) throw new Error(`${account.nickname}: profiles - ${profileError.message}`)
   }
 
   console.log('\nГотово. Оба аккаунта на месте, членство и профили проставлены.')

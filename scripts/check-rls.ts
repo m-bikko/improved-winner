@@ -4,11 +4,11 @@
  *   pnpm tsx scripts/check-rls.ts
  *
  * В отличие от scripts/sql.ts, который ходит в базу от имени postgres и потому
- * RLS не видит вовсе, здесь всё идёт через publishable-ключ и настоящую сессию —
+ * RLS не видит вовсе, здесь всё идёт через publishable-ключ и настоящую сессию -
  * то есть ровно тем путём, которым ходит браузер.
  *
  * Ключевой сценарий: посторонний аккаунт, которого нет в app_members, не должен
- * видеть ни строки. Одной проверки «пользователь авторизован» было бы мало —
+ * видеть ни строки. Одной проверки «пользователь авторизован» было бы мало -
  * любой новый аккаунт в проекте получил бы полный доступ.
  *
  * Временный аккаунт создаётся и удаляется внутри скрипта.
@@ -104,7 +104,7 @@ async function main(): Promise<void> {
   report(
     foreign.error !== null,
     'Писать в ЧУЖОЙ дневник нельзя',
-    foreign.error?.message ?? 'запись ПРОШЛА — политика дырявая',
+    foreign.error?.message ?? 'запись ПРОШЛА - политика дырявая',
   )
 
   const seen = await asAminosh.from('diary_entries').select('id').eq('user_id', bikoshId)
@@ -154,7 +154,7 @@ async function main(): Promise<void> {
     report(
       write.error !== null,
       'Посторонний не может писать в foods',
-      write.error?.message ?? 'запись ПРОШЛА — политика дырявая',
+      write.error?.message ?? 'запись ПРОШЛА - политика дырявая',
     )
 
     const rpc = await asOutsider.rpc('search_topics', { q: 'тест' })

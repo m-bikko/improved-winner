@@ -1,10 +1,10 @@
 <template>
   <style>
-    /* ---- 06-tasks — «Задачи с дедлайнами» ---------------------------------
+    /* ---- 06-tasks - «Задачи с дедлайнами» ---------------------------------
        Tokens from frame.md: ground #141312, one accent #e5768c, text ladder
        #f2efea / #9c958c / #7d766d, opaque surfaces with a #322f2b hairline,
        no shadows.
-       Geometry: the phone plate is 750x1370 at canvas centre (540, 1010) —
+       Geometry: the phone plate is 750x1370 at canvas centre (540, 1010) -
        the exact state frame 07 cuts into. Both screenshots are 1170x2532, so
        every in-plate coordinate below is a measured source pixel x 0.641026.
        The month's dots are painted out of the screenshot and rebuilt live,
@@ -67,7 +67,7 @@
       border-radius: 50%;
       background: #e5768c;
     }
-    /* the 3rd sits inside the accent-filled "today" cell — dark on accent */
+    /* the 3rd sits inside the accent-filled "today" cell - dark on accent */
     .f06-tasks-dot--today .f06-tasks-core { background: #58353a; }
     .f06-tasks-halo {
       position: absolute; left: -19px; top: -19px; width: 38px; height: 38px;
@@ -149,12 +149,12 @@
   </style>
 
   <div data-hf-id="hf-6y9r" id="root" data-composition-id="06-tasks" data-start="0" data-duration="7.35" data-width="1080" data-height="1920">
-    <!-- track 0 — the ground -->
+    <!-- track 0 - the ground -->
     <div data-hf-id="hf-uk2t" class="clip f06-tasks-ground" id="f06-tasks-ground" data-start="0" data-duration="7.35" data-track-index="0">
       <div data-hf-id="hf-uces" class="f06-tasks-bloom" id="f06-tasks-bloom"></div>
     </div>
 
-    <!-- track 1 — the plate: month, live dots, the task sheet -->
+    <!-- track 1 - the plate: month, live dots, the task sheet -->
     <div data-hf-id="hf-2yz2" class="clip" id="f06-tasks-stage" data-start="0" data-duration="7.35" data-track-index="1">
       <div data-hf-id="hf-viot" class="f06-tasks-plate" id="f06-tasks-plate" data-layout-allow-overflow="">
         <img data-hf-id="hf-bxg3" class="f06-tasks-shot" src="assets/tasks-calendar.png" alt="">
@@ -219,7 +219,7 @@
       </div>
     </div>
 
-    <!-- track 2 — the title line -->
+    <!-- track 2 - the title line -->
     <div data-hf-id="hf-dkwu" class="clip" id="f06-tasks-titleband" data-start="0" data-duration="7.35" data-track-index="2">
       <div data-hf-id="hf-gz1q" class="f06-tasks-rule" id="f06-tasks-rule"></div>
       <div data-hf-id="hf-xq94" class="f06-tasks-title">
@@ -236,12 +236,12 @@
       var tl = gsap.timeline({ paused: true });
       var F = 1 / 60;
 
-      /* Scene 1 (0.0-1.2s) — the crossfade has already landed the phone whole
+      /* Scene 1 (0.0-1.2s) - the crossfade has already landed the phone whole
          in frame at 540 / 1010. The month is bare: no dots yet. Only the
          ground bloom comes up, so the open breathes without wobbling. */
       tl.fromTo("#f06-tasks-bloom", { opacity: 0 }, { opacity: 1, duration: 0.9, ease: "power2.out" }, 0);
 
-      /* Scene 2 (1.2-3.0s) — waterfall-entry. The dots surface week row by
+      /* Scene 2 (1.2-3.0s) - waterfall-entry. The dots surface week row by
          week row, left to right: short gap inside a row, longer between rows,
          so it reads as the month being marked out, not as flicker. Opacity is
          BINARY (tl.set), the whip is y + scale on power4.out. No overshoot. */
@@ -281,7 +281,7 @@
         }
       });
 
-      /* Scene 3 (3.0-4.2s) — anchored-layout-expand, pinned to the bottom
+      /* Scene 3 (3.0-4.2s) - anchored-layout-expand, pinned to the bottom
          edge: the sheet is authored at its final height and parked one body
          height below the plate's clipping edge. Transform only; the plate is
          the mask. The dim on the month rides the same beat. */
@@ -289,7 +289,7 @@
       tl.fromTo("#f06-tasks-sheet", { y: SHEET_H }, { y: 0, duration: 0.52, ease: "power3.out" }, 3.0);
       tl.fromTo("#f06-tasks-scrim", { opacity: 0 }, { opacity: 0.46, duration: 0.5, ease: "power2.out" }, 3.02);
 
-      /* Scene 4 (4.2-5.4s) — spring-pop-entrance in its playful register:
+      /* Scene 4 (4.2-5.4s) - spring-pop-entrance in its playful register:
          the three reminder chips stand up one after another out of their own
          left edge, three separate decisions. The only punctuation in the shot. */
       [4.25, 4.55, 4.85].forEach(function (at, i) {
@@ -301,7 +301,7 @@
         );
       });
 
-      /* Scene 5 (5.4-7.0s) — the title stands up in the bottom band and the
+      /* Scene 5 (5.4-7.0s) - the title stands up in the bottom band and the
          frame stops: plate at 540 / 1010, scale 1, opacity 1, handed to 07. */
       tl.fromTo("#f06-tasks-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.34, ease: "power3.out" }, 5.4);
 

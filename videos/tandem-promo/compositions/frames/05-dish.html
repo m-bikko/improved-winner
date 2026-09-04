@@ -31,7 +31,7 @@
       inset: 0;
     }
 
-    /* ---------- phone plate — handoff: centre x 540 y 1010, scale 1.0 ---------- */
+    /* ---------- phone plate - handoff: centre x 540 y 1010, scale 1.0 ---------- */
     #root .d05-dish-plate {
       position: absolute;
       left: 280px;
@@ -63,7 +63,7 @@
       width: 1170px;
       height: 2532px;
     }
-    /* opaque covers over the baked-in rows / value / totals — no double image */
+    /* opaque covers over the baked-in rows / value / totals - no double image */
     #root .d05-dish-cover {
       position: absolute;
     }
@@ -318,7 +318,7 @@
       <div data-hf-id="hf-luuw" class="d05-dish-title" id="f05-dish-title">
         <div data-hf-id="hf-xcom" class="d05-dish-rule" id="f05-dish-rule"></div>
         <div data-hf-id="hf-hih9" class="d05-dish-line">
-          <span data-hf-id="hf-gor9" class="d05-dish-w">Блюдо</span> <span data-hf-id="hf-0zc1" class="d05-dish-w">—</span>
+          <span data-hf-id="hf-gor9" class="d05-dish-w">Блюдо</span> <span data-hf-id="hf-0zc1" class="d05-dish-w">-</span>
           <span data-hf-id="hf-gltt" class="d05-dish-w d05-dish-ac">по</span>
           <span data-hf-id="hf-fzc0" class="d05-dish-w d05-dish-ac">готовому</span>
           <span data-hf-id="hf-lzuh" class="d05-dish-w"><span data-hf-id="hf-mtmx" class="d05-dish-ac">весу</span>,</span>
@@ -338,7 +338,7 @@
       };
 
       /* ============================================================
-         camera — panel-edit-live-sync law: the couple stays co-visible.
+         camera - panel-edit-live-sync law: the couple stays co-visible.
          A: handoff framing (plate centre 540/1010, scale 1.0)
          B: push-in on the состав block, totals still in frame
          C: «Готовый вес» + «На 100 г готового блюда» framed together
@@ -351,7 +351,7 @@
       var PH_C = { s: 1.9, y: -288.99 };
 
       /* ============================================================
-         content — the two ingredient rows, rebuilt live over the shot
+         content - the two ingredient rows, rebuilt live over the shot
          ============================================================ */
       var ITEMS = [
         { name: "Куриная грудка", kcal: "113 ккал на 100 г", value: "500", unit: "г", top: 691 },
@@ -365,7 +365,7 @@
         '<path d="M8 9 L10 39 Q10.4 41.5 13 41.5 H27 Q29.6 41.5 30 39 L32 9"/>' +
         '<path d="M17 17 V33 M23 17 V33"/></svg>';
 
-      /* dynamic-content-sequencing — start times reduced once, at build time,
+      /* dynamic-content-sequencing - start times reduced once, at build time,
          from each row's own content length. Never recomputed per frame. */
       var SEQ_START = 1.25;
       var ITEM_BASE = 0.42;
@@ -404,7 +404,7 @@
       });
 
       /* ============================================================
-         the signature beat — discrete-text-sequence on the control,
+         the signature beat - discrete-text-sequence on the control,
          counting-dynamic-scale on the bound surface, ONE shared cue.
          ============================================================ */
       var SYNC_AT = 3.4;
@@ -448,10 +448,10 @@
       window.__timelines = window.__timelines || {};
       var tl = gsap.timeline({ paused: true });
 
-      /* Scene 1 (0.0–1.2s) — the cut lands the plate exactly where frame 04
+      /* Scene 1 (0.0–1.2s) - the cut lands the plate exactly where frame 04
          left it; состав is empty, the totals read zero. */
 
-      /* Scene 2 (1.2–2.6s) — the rows arrive, one at a time, top to bottom,
+      /* Scene 2 (1.2–2.6s) - the rows arrive, one at a time, top to bottom,
          while the camera eases into the состав block. */
       tl.fromTo(
         camOuter,
@@ -470,7 +470,7 @@
         );
       });
 
-      /* Scene 3 (2.6–3.4s) — reframe so the control and its bound surface
+      /* Scene 3 (2.6–3.4s) - reframe so the control and its bound surface
          share the frame for the rest of the shot; the binding is declared. */
       tl.to(camOuter, { scale: PH_C.s, duration: 0.85, ease: "power2.inOut" }, 2.6);
       tl.to(camInner, { y: PH_C.y, duration: 0.85, ease: "power2.inOut" }, 2.6);
@@ -494,7 +494,7 @@
         3.15,
       );
 
-      /* Scene 4 (3.4–5.4s) — THE BEAT. Both tweens open at SYNC_AT: the field
+      /* Scene 4 (3.4–5.4s) - THE BEAT. Both tweens open at SYNC_AT: the field
          types to 1000 and the panel recomputes in the same take, no pause. */
       var driver = { t: 0 };
       tl.to(
@@ -580,7 +580,7 @@
         SYNC_AT,
       );
 
-      /* Scene 5 (5.4–6.6s) — the title lands in the reserved bottom band. */
+      /* Scene 5 (5.4–6.6s) - the title lands in the reserved bottom band. */
       tl.fromTo(
         el("f05-dish-rule"),
         { opacity: 0, scaleX: 0 },
@@ -597,7 +597,7 @@
         5.5,
       );
 
-      /* Scene 6 (6.6–8.0s) — held. Nothing moves. */
+      /* Scene 6 (6.6–8.0s) - held. Nothing moves. */
 
       window.__timelines["05-dish"] = tl;
     })();

@@ -21,7 +21,7 @@
       height: 1920px;
     }
 
-    /* ground — full-bleed canvas, lowest track */
+    /* ground - full-bleed canvas, lowest track */
     #f02-ground {
       background: #141312;
     }
@@ -76,7 +76,7 @@
       opacity: 0;
     }
 
-    /* patches that hide the two baked-in replies — they sample an empty
+    /* patches that hide the two baked-in replies - they sample an empty
        stretch of the same screenshot, so the ground matches exactly */
     .f02-patch,
     .f02-reply {
@@ -121,7 +121,7 @@
       opacity: 0;
     }
 
-    /* touched card — the recipient of the press */
+    /* touched card - the recipient of the press */
     #f02-touch {
       position: absolute;
       left: 16px;
@@ -235,7 +235,7 @@
 
       const RIPPLES = ["#f02-ripple-1", "#f02-ripple-2", "#f02-ripple-3"];
 
-      /* Scene 1 (0.0–1.3) — the plate surfaces out of the empty canvas */
+      /* Scene 1 (0.0–1.3) - the plate surfaces out of the empty canvas */
       tl.fromTo(
         "#f02-plate",
         { opacity: 0, scale: 0.965, y: 26 },
@@ -243,7 +243,7 @@
         0.05,
       );
 
-      /* Scene 2 (1.3–2.6) — cursor-click-ripple on the topic card.
+      /* Scene 2 (1.3–2.6) - cursor-click-ripple on the topic card.
          Nothing else moves. */
       tl.to("#f02-cursor", { x: -560, y: -640, duration: 0.75, ease: "power3.out" }, 1.3);
 
@@ -254,7 +254,7 @@
         1.94,
       );
 
-      /* press — cursor compresses more than the target, both return */
+      /* press - cursor compresses more than the target, both return */
       tl.to("#f02-cursor", { scale: 0.85, duration: 0.08, ease: "power2.in" }, 2.2);
       tl.to("#f02-cursor", { scale: 1, duration: 0.08, ease: "power2.out" }, 2.29);
       tl.to("#f02-touch", { scale: 0.955, duration: 0.08, ease: "power2.in" }, 2.2);
@@ -275,7 +275,7 @@
         2.26,
       );
 
-      /* Scene 3 (2.6–3.6) — content swap inside a stationary plate */
+      /* Scene 3 (2.6–3.6) - content swap inside a stationary plate */
       tl.to("#f02-touch", { opacity: 0, duration: 0.12, ease: "power1.out" }, 2.56);
       tl.fromTo(
         "#f02-state-open",
@@ -285,10 +285,10 @@
       );
       tl.to("#f02-state-list", { opacity: 0, duration: 0.1, ease: "none" }, 2.74);
 
-      /* cursor leaves the frame — its work is done */
+      /* cursor leaves the frame - its work is done */
       tl.to("#f02-cursor", { x: 0, y: 0, duration: 0.7, ease: "power2.in" }, 2.7);
 
-      /* Scene 4 (3.6–4.6) — Ким's grey reply arrives from the left */
+      /* Scene 4 (3.6–4.6) - Ким's grey reply arrives from the left */
       tl.fromTo(
         "#f02-reply-grey",
         { opacity: 0, x: -64, y: 14 },
@@ -296,7 +296,7 @@
         3.7,
       );
 
-      /* Scene 5 (4.6–5.6) — a real pause, then the pink reply from the right */
+      /* Scene 5 (4.6–5.6) - a real pause, then the pink reply from the right */
       tl.fromTo(
         "#f02-reply-pink",
         { opacity: 0, x: 64, y: 14 },
@@ -304,7 +304,7 @@
         4.8,
       );
 
-      /* Scene 6 (5.6–7.0) — the title lands in the bottom band and holds */
+      /* Scene 6 (5.6–7.0) - the title lands in the bottom band and holds */
       tl.fromTo(
         "#f02-rule",
         { opacity: 0, scaleX: 0 },

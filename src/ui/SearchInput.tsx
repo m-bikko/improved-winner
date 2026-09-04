@@ -18,7 +18,7 @@ export function SearchInput({ value, onChange, placeholder = 'Поиск', autoF
         placeholder={placeholder}
         autoFocus={autoFocus}
         // Поиск идёт локально по кэшу, поэтому автодополнение и автокоррекция
-        // браузера только мешают — они правят запрос уже после фильтрации
+        // браузера только мешают - они правят запрос уже после фильтрации
         autoComplete="off"
         autoCorrect="off"
         autoCapitalize="off"

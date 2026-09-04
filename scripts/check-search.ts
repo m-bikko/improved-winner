@@ -4,7 +4,7 @@
  *   pnpm tsx scripts/check-search.ts
  *
  * Тянет name_norm прямо из foods и прогоняет тот же код, что работает
- * в браузере, — так проверяется и логика скоринга, и то, что нормализация
+ * в браузере, - так проверяется и логика скоринга, и то, что нормализация
  * в TypeScript совпадает с выражением generated-колонки в Postgres.
  */
 import { Client } from 'pg'
@@ -19,12 +19,12 @@ const cases: { query: string; expectFirst?: string; expectAmong?: string; expect
   { query: 'курца', expectAmong: 'Курица с кожей' }, // опечатка
   { query: 'греча', expectAmong: 'Гречка сухая' },
   { query: 'творог 5', expectFirst: 'Творог 5%' },
-  { query: 'ёлка', expectNone: true }, // такого продукта нет — важно, что не падает
+  { query: 'ёлка', expectNone: true }, // такого продукта нет - важно, что не падает
   { query: 'яй', expectAmong: 'Яйцо куриное' },
   { query: 'куриная грудка', expectFirst: 'Куриная грудка' },
   { query: 'олив масло', expectAmong: 'Масло оливковое' }, // слова в другом порядке
   { query: 'it\'s & bad(', expectNone: true }, // спецсимволы не должны ломать
-  { query: '', expectAmong: 'Куриная грудка' }, // пустой запрос — всё подряд
+  { query: '', expectAmong: 'Куриная грудка' }, // пустой запрос - всё подряд
 ]
 
 async function main(): Promise<void> {
@@ -42,7 +42,7 @@ async function main(): Promise<void> {
   // Нормализация в TS обязана совпадать с generated-колонкой в Postgres,
   // иначе поиск будет промахиваться именно на словах с «ё».
   //
-  // Колонка считается по названию И бренду — поиск по бренду это фича,
+  // Колонка считается по названию И бренду - поиск по бренду это фича,
   // а не побочный эффект. Сравнивать только с названием было ошибкой самой
   // проверки: она проходила лишь потому, что в сиде брендов нет.
   const mismatched = rows.filter(
@@ -67,10 +67,10 @@ async function main(): Promise<void> {
       detail = ok ? 'пусто, как и ожидалось' : `нашлось лишнее: ${names.slice(0, 3).join(', ')}`
     } else if (c.expectFirst) {
       ok = names[0] === c.expectFirst
-      detail = `первый: ${names[0] ?? '—'}`
+      detail = `первый: ${names[0] ?? '-'}`
     } else {
       ok = names.includes(c.expectAmong ?? '')
-      detail = names.slice(0, 4).join(', ') || '—'
+      detail = names.slice(0, 4).join(', ') || '-'
     }
 
     if (!ok) failed++
