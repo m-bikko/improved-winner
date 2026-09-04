@@ -1,0 +1,323 @@
+[
+ {
+  "name": "Кефир 2,5%",
+  "brand": "FoodMaster",
+  "kcal": 52,
+  "protein": 2.8,
+  "fat": 2.5,
+  "carbs": 4.6,
+  "source": "https://foodmaster.kz/ru/catalog/foodmaster-kefir-25-1",
+  "image": "https://foodmaster.kz/static/upload/FM_Tetra_1L_Kefir-2.5-w150.png"
+ },
+ {
+  "name": "Ряженка 2,5%",
+  "brand": "FoodMaster",
+  "kcal": 52,
+  "protein": 2.8,
+  "fat": 2.5,
+  "carbs": 4.6,
+  "source": "https://foodmaster.kz/ru/catalog/foodmaster-riazhenka-25-3",
+  "image": "https://foodmaster.kz/static/upload/FM_Tetra_1L_Ryazhenka-w150.png"
+ },
+ {
+  "name": "Снежок 2%",
+  "brand": "FoodMaster",
+  "kcal": 69,
+  "protein": 2.8,
+  "fat": 2.0,
+  "carbs": 10.0,
+  "source": "https://foodmaster.kz/ru/catalog/foodmaster-snezhok-2-4",
+  "image": "https://foodmaster.kz/static/upload/FM_Tetra_1L_Snezhok-w150.png"
+ },
+ {
+  "name": "Молоко 2,5%",
+  "brand": "FoodMaster",
+  "kcal": 52,
+  "protein": 2.8,
+  "fat": 2.5,
+  "carbs": 4.6,
+  "source": "https://foodmaster.kz/ru/catalog/foodmaster-moloko-25-7",
+  "image": "https://foodmaster.kz/static/upload/Milk_25.png"
+ },
+ {
+  "name": "Греческий йогурт натуральный 8,4%",
+  "brand": "FoodMaster",
+  "kcal": 119,
+  "protein": 4.5,
+  "fat": 8.4,
+  "carbs": 6.4,
+  "source": "https://foodmaster.kz/ru/catalog/foodmaster-grecheskii-iogurt-naturalnyi-84-12",
+  "image": "https://foodmaster.kz/static/upload/FM_Greek-plain_w250.png"
+ },
+ {
+  "name": "Живой творожок ваниль 4%",
+  "brand": "FoodMaster",
+  "kcal": 110,
+  "protein": 4.5,
+  "fat": 4.0,
+  "carbs": 14.0,
+  "source": "https://foodmaster.kz/ru/catalog/foodmaster-zhivoi-tvorozhok-vanil-4-11",
+  "image": "https://foodmaster.kz/static/upload/vanil.png"
+ },
+ {
+  "name": "Живой йогурт питьевой, лесные ягоды",
+  "brand": "FoodMaster",
+  "kcal": 77.2,
+  "protein": 2.8,
+  "fat": 2.0,
+  "carbs": 12.0,
+  "source": "https://world.openfoodfacts.org/product/4870207314196",
+  "image": null
+ },
+ {
+  "name": "Сыр твёрдый Gouda",
+  "brand": "FoodMaster",
+  "kcal": 364.5,
+  "protein": 27.0,
+  "fat": 28.5,
+  "carbs": 0.5,
+  "source": "https://foodmaster.kz/ru/catalog/tverdyi-syr-gouda-276",
+  "image": "https://foodmaster.kz/static/upload/gouda_full2.png"
+ },
+ {
+  "name": "Творог домашний рассыпчатый 9%",
+  "brand": "President",
+  "kcal": 135,
+  "protein": 12,
+  "fat": 9,
+  "carbs": 1.5,
+  "source": "https://foodmaster.kz/ru/catalog/tvorog-president-domashnii-rassypchatyi-9-29",
+  "image": "https://foodmaster.kz/static/upload/Tvorog-Vanna9_450g_230.png"
+ },
+ {
+  "name": "Творог традиционный мягкий 9%",
+  "brand": "President",
+  "kcal": 137,
+  "protein": 12,
+  "fat": 9,
+  "carbs": 2,
+  "source": "https://foodmaster.kz/ru/catalog/tvorog-president-traditsionnyi-miagkii-9-31",
+  "image": "https://foodmaster.kz/static/upload/Tvorog-Pergament9_w230.png"
+ },
+ {
+  "name": "Сметана 20%",
+  "brand": "President",
+  "kcal": 205,
+  "protein": 2.4,
+  "fat": 20.0,
+  "carbs": 3.8,
+  "source": "https://foodmaster.kz/ru/catalog/smetana-president-20-33",
+  "image": "https://foodmaster.kz/static/upload/President_Smetana20-Stakan_400g_w190.png",
+  "note": "На странице производителя стоит 254 ккал при 20 г жира, 2.4 белка и 3.8 углеводов - это даёт 205, а не 254. Опечатка на стороне сайта: 254 соответствует примерно 25-процентной жирности. Взято значение, согласованное с собственными БЖУ страницы."
+ },
+ {
+  "name": "Сливки 23%",
+  "brand": "President",
+  "kcal": 232,
+  "protein": 2.5,
+  "fat": 23.0,
+  "carbs": 3.7,
+  "source": "https://foodmaster.kz/ru/catalog/slivki-president-23-34",
+  "image": "https://foodmaster.kz/static/upload/sliv_full_1jV8UxI.png"
+ },
+ {
+  "name": "Масло сливочное 82%",
+  "brand": "President",
+  "kcal": 745,
+  "protein": 0.7,
+  "fat": 82.0,
+  "carbs": 1.0,
+  "source": "https://foodmaster.kz/ru/catalog/maslo-president-slivochnoe-82-35",
+  "image": "https://foodmaster.kz/static/upload/President_Butter82-125g_w220.png"
+ },
+ {
+  "name": "Сыр творожный",
+  "brand": "President",
+  "kcal": 199,
+  "protein": 7.5,
+  "fat": 17.0,
+  "carbs": 4.0,
+  "source": "https://foodmaster.kz/ru/catalog/tvorozhnyi-syr-president-280",
+  "image": "https://foodmaster.kz/static/upload/ssllivn_full.png"
+ },
+ {
+  "name": "Брынза 45%",
+  "brand": "President",
+  "kcal": 213,
+  "protein": 12.0,
+  "fat": 16.7,
+  "carbs": 3.7,
+  "source": "https://foodmaster.kz/ru/catalog/syr-rassolnyi-president-brynza-45-45",
+  "image": "https://foodmaster.kz/static/upload/Brinza_PRESIDENT_500g_2021_230x194px.png"
+ },
+ {
+  "name": "Сыр Мааздам 48%",
+  "brand": "President",
+  "kcal": 368,
+  "protein": 29,
+  "fat": 28,
+  "carbs": 0,
+  "source": "https://foodmaster.kz/ru/catalog/syr-tverdyi-president-maazdam-48-50",
+  "image": "https://foodmaster.kz/static/upload/maazdam_w230.png"
+ },
+ {
+  "name": "Моцарелла мини 45%",
+  "brand": "Galbani",
+  "kcal": 242,
+  "protein": 18,
+  "fat": 18,
+  "carbs": 2,
+  "source": "https://foodmaster.kz/ru/catalog/syr-galbani-motsarella-mini-45-53",
+  "image": "https://foodmaster.kz/static/upload/mozzarella20mini_full.png"
+ },
+ {
+  "name": "Шоколад «Казахстанский»",
+  "brand": "Рахат",
+  "kcal": 532,
+  "protein": 6.3,
+  "fat": 33.4,
+  "carbs": 52.7,
+  "source": "https://www.rakhat.kz/products/shokolad/shokolad-temnyj/kazahstanskij-3/",
+  "image": "http://www.rakhat.kz/app/uploads/cache/2017/07/Kazahstanskij-400h300-800x600-c-default.jpg"
+ },
+ {
+  "name": "Шоколад Rakhat 70% cocoa",
+  "brand": "Рахат",
+  "kcal": 567,
+  "protein": 8.9,
+  "fat": 42.3,
+  "carbs": 38.3,
+  "source": "https://www.rakhat.kz/products/shokolad/shokolad-chernyj/rakhat-70-6/",
+  "image": "http://www.rakhat.kz/app/uploads/cache/2017/07/Rahat-70-Perfectio100g400h300-800x600-c-default.jpg"
+ },
+ {
+  "name": "Шоколад «Almaty» пористый молочный",
+  "brand": "Рахат",
+  "kcal": 539,
+  "protein": 5.4,
+  "fat": 33.4,
+  "carbs": 54.8,
+  "source": "https://www.rakhat.kz/products/shokolad/shokolad-vozdushnyj/almaty-4/",
+  "image": "http://www.rakhat.kz/app/uploads/cache/2019/10/Almaty-poristyj-molochnyj1-800-800x600-c-default.jpg"
+ },
+ {
+  "name": "Шоколад молочный «Айналайын»",
+  "brand": "Рахат",
+  "kcal": 552,
+  "protein": 6.8,
+  "fat": 36.0,
+  "carbs": 52.5,
+  "source": "https://www.rakhat.kz/products/shokolad/shokolad-molochnyj/molochnyj-shokolad-ajnalajyn-2/",
+  "image": "http://www.rakhat.kz/app/uploads/cache/2022/08/Ajnalajyn-160g-800h600-800x600-c-default.jpg"
+ },
+ {
+  "name": "Шоколад «Тысяча и одна ночь»",
+  "brand": "Рахат",
+  "kcal": 534,
+  "protein": 5.8,
+  "fat": 33.4,
+  "carbs": 53.9,
+  "source": "https://www.rakhat.kz/products/shokolad/shokolad-bez-dobavok/tysyacha-i-odna-noch-2/",
+  "image": "http://www.rakhat.kz/app/uploads/cache/2017/07/Tysyacha-i-odna-noch-Pena-400h300-800x600-c-default.jpg"
+ },
+ {
+  "name": "Конфеты «Птичье молоко»",
+  "brand": "Рахат",
+  "kcal": 474,
+  "protein": 2.8,
+  "fat": 25.5,
+  "carbs": 59.3,
+  "source": "https://www.rakhat.kz/products/candies/shokoladnye-konfety-v-hudozhestvennyh-korobkah/ptiche-moloko/",
+  "image": "http://www.rakhat.kz/app/uploads/cache/2017/06/1X3A5349-800x600-c-default.jpg"
+ },
+ {
+  "name": "Конфеты «Умка»",
+  "brand": "Рахат",
+  "kcal": 530,
+  "protein": 8.7,
+  "fat": 32.1,
+  "carbs": 56.5,
+  "source": "https://www.rakhat.kz/products/candies/konfety-glazirovannye-s-nachinkoj-mezhdu-sloyami-vafel/umka/",
+  "image": "http://www.rakhat.kz/app/uploads/cache/2017/06/Umka-800h600-800x600-c-default.jpg"
+ },
+ {
+  "name": "Конфеты «Sary-Arka» со сгущённым молоком",
+  "brand": "Рахат",
+  "kcal": 389,
+  "protein": 2.5,
+  "fat": 9.4,
+  "carbs": 77.6,
+  "source": "https://www.rakhat.kz/products/candies/konfety-glazirovannye-s-pomadnym-korpusom/sary-arka-so-sgushhyonnym-molokom/",
+  "image": "http://www.rakhat.kz/app/uploads/cache/2023/05/Sary-Arka-so-sgushhennym-molokom_400h300-800x600-c-default.jpg"
+ },
+ {
+  "name": "Печенье RAKHAT BAKERY шоколадно-сливочное",
+  "brand": "Рахат",
+  "kcal": 475,
+  "protein": 6.1,
+  "fat": 23.3,
+  "carbs": 59.3,
+  "source": "https://www.rakhat.kz/products/pechene/pechene-otsadnoe/rakhat-bakery-s-shokoladno-slivochnym-vkusom/",
+  "image": "http://www.rakhat.kz/app/uploads/cache/2022/03/Rakhat-Bakery-s-shokoladno-slivochnym-vkusom-1-800x600-c-default.png"
+ },
+ {
+  "name": "Паста шоколадно-ореховая",
+  "brand": "Рахат",
+  "kcal": 542,
+  "protein": 7.1,
+  "fat": 34.6,
+  "carbs": 52.0,
+  "source": "https://world.openfoodfacts.org/product/4870208437818",
+  "image": "https://images.openfoodfacts.org/images/products/487/020/843/7818/front_ru.10.400.jpg"
+ },
+ {
+  "name": "Паста шоколадно-ореховая с фундуком",
+  "brand": "Рахат",
+  "kcal": 555,
+  "protein": 5.4,
+  "fat": 36.3,
+  "carbs": 52.7,
+  "source": "https://world.openfoodfacts.org/product/4870208435265",
+  "image": "https://images.openfoodfacts.org/images/products/487/020/843/5265/front_fr.17.400.jpg"
+ },
+ {
+  "name": "Молоко питьевое ультрапастеризованное",
+  "brand": "Айналайын",
+  "kcal": 52.5,
+  "protein": 2.8,
+  "fat": 2.5,
+  "carbs": 4.7,
+  "source": "https://world.openfoodfacts.org/product/4870003431646",
+  "image": "https://images.openfoodfacts.org/images/products/487/000/343/1646/front_ru.9.400.jpg"
+ },
+ {
+  "name": "Мороженое пломбир «Как раньше»",
+  "brand": "Шин-Лайн",
+  "kcal": 207,
+  "protein": 2.9,
+  "fat": 12.0,
+  "carbs": 22.4,
+  "source": "https://world.openfoodfacts.org/product/4870233462472",
+  "image": "https://images.openfoodfacts.org/images/products/487/023/346/2472/front_ru.7.400.jpg"
+ },
+ {
+  "name": "Мороженое «Байтерек»",
+  "brand": "Шин-Лайн",
+  "kcal": 180,
+  "protein": 4.6,
+  "fat": 7.9,
+  "carbs": 22.5,
+  "source": "https://world.openfoodfacts.org/product/4870233461758",
+  "image": "https://images.openfoodfacts.org/images/products/487/023/346/1758/front_ru.14.400.jpg"
+ },
+ {
+  "name": "Мороженое «Бомба конус XXL» клубника",
+  "brand": "Шин-Лайн",
+  "kcal": 260,
+  "protein": 3.7,
+  "fat": 12.1,
+  "carbs": 34.2,
+  "source": "https://world.openfoodfacts.org/product/4870004909939",
+  "image": "https://images.openfoodfacts.org/images/products/487/000/490/9939/front_ru.6.400.jpg"
+ }
+]
