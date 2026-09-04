@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Droplet, Info, Plus, ShieldCheck, Trash2, TriangleAlert } from 'lucide-react'
+import { ChevronDown, Droplet, Info, Plus, ShieldCheck, Trash2, TriangleAlert } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
 import { useProfiles } from '@/features/profile/api'
 import { todayLocal, shiftDays, formatDayLabel } from '@/lib/date'
@@ -27,19 +27,19 @@ import {
   type CycleDay,
   type Period,
 } from './cycle'
-import { PHASE_SUMMARY, tipsFor } from './tips'
+import { CATEGORY_LABELS, PHASE_SUMMARY, tipsByCategory } from './tips'
 
 /**
  * Раздел цикла.
  *
  * Устроен не как остальные разделы, и это главное, что о нём надо знать.
- * Везде в приложении оба видят данные друг друга — так было решено с самого
+ * Везде в приложении оба видят данные друг друга - так было решено с самого
  * начала. Здесь не так: раздел выключен, пока владелец его не включит,
- * и не виден партнёру, пока владелец не откроет. Остальные данные — общий
+ * и не виден партнёру, пока владелец не откроет. Остальные данные - общий
  * быт, а эти про тело одного человека, и решать, показывать ли их, должен он.
  *
  * Отсюда четыре состояния страницы: свой цикл, чужой открытый, оба сразу
- * и ничего. Последнее — не пустой экран, а объяснение, что это за раздел
+ * и ничего. Последнее - не пустой экран, а объяснение, что это за раздел
  * и что включение ничего никому не откроет само по себе.
  */
 export function CyclePage() {
@@ -140,7 +140,7 @@ function CycleBody({
   // Сегодняшний день уже внутри какой-то записи?
   //
   // Без этой проверки кнопка «Началась сегодня» предлагалась и в день, когда
-  // менструация только что отмечена завершившейся, — а вставка упёрлась бы
+  // менструация только что отмечена завершившейся, - а вставка упёрлась бы
   // в ограничение пересечения и вернула человеку текст ошибки Postgres.
   // Инвариант держит база, и это правильно; но предлагать действие, которое
   // база обязана отклонить, интерфейс не должен.
@@ -153,7 +153,7 @@ function CycleBody({
       <div className="rounded-2xl bg-surface p-5 ring-1 ring-line">
         <p className="text-sm text-muted">
           {owned
-            ? 'Записей пока нет. Отметьте день, когда началась менструация, — от него считается всё остальное.'
+            ? 'Записей пока нет. Отметьте день, когда началась менструация, - от него считается всё остальное.'
             : 'Записей пока нет.'}
         </p>
         {owned && (
@@ -247,15 +247,7 @@ function CycleBody({
         </section>
       )}
 
-      <section className="flex flex-col gap-2">
-        <h2 className="px-1 text-sm text-muted">Сегодня стоит знать</h2>
-        {tipsFor(state).map((tip) => (
-          <div key={tip.id} className="rounded-2xl bg-surface p-4 ring-1 ring-line">
-            <p className="font-medium">{tip.title}</p>
-            <p className="mt-1.5 text-sm text-muted">{tip.body}</p>
-          </div>
-        ))}
-      </section>
+      <Tips state={state} />
 
       <History periods={periods} owned={owned} onEdit={onEdit} />
 
@@ -269,6 +261,66 @@ function CycleBody({
         </button>
       )}
     </div>
+  )
+}
+
+/**
+ * Подсказки, сгруппированные по темам.
+ *
+ * Плоским списком их пятнадцать, и никто не дочитывает до середины. Группы
+ * сворачиваемые, открыта первая: остальные видно по заголовкам, и человек
+ * сам решает, что ему сегодня нужно — про еду, про нагрузку или про близость.
+ *
+ * Порядок тем не случаен: сначала то, что чувствуешь прямо сейчас, потом
+ * то, на что это влияет, и в конце то, что касается двоих.
+ */
+function Tips({ state }: { state: CycleDay }) {
+  const groups = tipsByCategory(state)
+  const [closed, setClosed] = useState<string[]>(() => groups.slice(1).map((g) => g.category))
+
+  const toggle = (category: string) => {
+    setClosed((prev) =>
+      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category],
+    )
+  }
+
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="px-1 text-sm text-muted">Сегодня стоит знать</h2>
+      {groups.map(({ category, tips }) => {
+        const open = !closed.includes(category)
+        return (
+          <div key={category} className="overflow-hidden rounded-2xl bg-surface ring-1 ring-line">
+            <button
+              type="button"
+              onClick={() => toggle(category)}
+              aria-expanded={open}
+              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+            >
+              <span className="font-medium">{CATEGORY_LABELS[category]}</span>
+              <span className="flex items-center gap-2 text-sm text-muted">
+                {tips.length}
+                <ChevronDown
+                  size={18}
+                  aria-hidden
+                  className={`transition-transform ${open ? 'rotate-180' : ''}`}
+                />
+              </span>
+            </button>
+            {open && (
+              <div className="flex flex-col gap-3 border-t border-line px-4 py-3">
+                {tips.map((tip) => (
+                  <div key={tip.id}>
+                    <p className="text-sm font-medium">{tip.title}</p>
+                    <p className="mt-1 text-sm text-muted">{tip.body}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </section>
   )
 }
 
@@ -313,7 +365,7 @@ function Today({ state, stats }: { state: CycleDay; stats: ReturnType<typeof cyc
 /**
  * Полоса цикла: где мы внутри круга.
  *
- * Два цвета, а не четыре. Акцент — дни менструации, зелёный — фертильное окно,
+ * Два цвета, а не четыре. Акцент - дни менструации, зелёный - фертильное окно,
  * остальное нейтральное. Оба цвета уже прогнаны через валидатор палитры вместе
  * со всей гаммой; выдумывать под фазы ещё две краски значило бы проверять
  * заново весь набор ради оттенка, который ничего не добавляет.
@@ -336,7 +388,7 @@ function PhaseStrip({ state }: { state: CycleDay }) {
               key={iso}
               aria-hidden
               // Сегодняшний день выше остальных. Обводка на трёхпиксельном
-              // сегменте не читается — проверено на снимке.
+              // сегменте не читается - проверено на снимке.
               className={`flex-1 ${isToday ? 'h-6 rounded-sm bg-ink' : 'h-3'} ${
                 isToday ? '' : bleeding ? 'bg-accent' : fertile ? 'bg-carbs' : 'bg-raised'
               }`}
@@ -355,7 +407,7 @@ function PhaseStrip({ state }: { state: CycleDay }) {
         </span>
         <span className="flex items-center gap-1.5">
           <span className="size-2.5 rounded-full bg-carbs" aria-hidden />
-          фертильное окно, {formatDayLabel(state.fertileFrom)} — {formatDayLabel(state.fertileTo)}
+          фертильное окно, {formatDayLabel(state.fertileFrom)} - {formatDayLabel(state.fertileTo)}
         </span>
       </div>
       <p className="mt-2 text-xs text-muted">
@@ -391,7 +443,7 @@ function History({
               <span className="min-w-0">
                 <span className="block text-sm">
                   {formatDayLabel(p.startedOn)}
-                  {p.endedOn ? ` — ${formatDayLabel(p.endedOn)}` : ' — идёт'}
+                  {p.endedOn ? ` - ${formatDayLabel(p.endedOn)}` : ' - идёт'}
                 </span>
                 {p.note && <span className="block text-xs text-muted">{p.note}</span>}
               </span>
@@ -451,7 +503,7 @@ function PeriodSheet({ period, onClose }: { period: Period; onClose: () => void 
             onChange={(e) => setEndedOn(e.target.value)}
             className="w-full min-w-0 rounded-xl bg-surface px-4 py-3 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
           />
-          <span className="text-xs text-muted">Пусто — значит идёт прямо сейчас.</span>
+          <span className="text-xs text-muted">Пусто - значит идёт прямо сейчас.</span>
         </label>
 
         <label className="flex flex-col gap-1.5">
@@ -510,7 +562,7 @@ function SettingsSheet({ onClose }: { onClose: () => void }) {
 
         <Toggle
           label="Показывать партнёру"
-          hint="Партнёр увидит даты, фазу и прогноз. Выключите — и он снова не увидит ничего. Это единственное место в приложении, где данные не общие по умолчанию."
+          hint="Партнёр увидит даты, фазу и прогноз. Выключите - и он снова не увидит ничего. Это единственное место в приложении, где данные не общие по умолчанию."
           checked={current.shareWithPartner}
           disabled={!current.trackingEnabled}
           onChange={(v) => void update({ shareWithPartner: v })}
@@ -530,7 +582,7 @@ function SettingsSheet({ onClose }: { onClose: () => void }) {
             className="w-20 rounded-lg bg-surface px-3 py-2 text-center ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
           />
           <span className="text-xs text-muted">
-            От неё считается овуляция — назад от следующей менструации. У большинства
+            От неё считается овуляция - назад от следующей менструации. У большинства
             12–16 дней; 14 стоит по умолчанию.
           </span>
         </label>
@@ -562,7 +614,7 @@ function Intro({
           прогноз следующей и предупреждения, если числа выходят за общепринятые границы.
         </p>
         <p className="mt-3 text-sm text-muted">
-          Во всём остальном приложении вы двое видите данные друг друга. Здесь — нет:
+          Во всём остальном приложении вы двое видите данные друг друга. Здесь - нет:
           пока вы сами не откроете раздел партнёру, он не увидит ничего, даже что раздел
           включён.
         </p>

@@ -26,7 +26,7 @@ import {
  * Иначе поставленную по ошибке отметку нельзя было бы убрать, не удаляя
  * весь день целиком.
  *
- * Пустую отметку база не принимает — есть ограничение. Поэтому «сохранить
+ * Пустую отметку база не принимает - есть ограничение. Поэтому «сохранить
  * пустое» здесь превращается в удаление строки, а не в ошибку в лицо.
  */
 export function DaySheet({
@@ -145,7 +145,7 @@ function ReadOnly({ log }: { log: DayLog }) {
   return (
     <dl className="flex flex-col gap-3 text-sm">
       {log.flow && <Row label="Обильность" value={FLOW_LABELS[log.flow]} />}
-      {log.pain !== null && <Row label="Боль" value={PAIN_LABELS[log.pain] ?? '—'} />}
+      {log.pain !== null && <Row label="Боль" value={PAIN_LABELS[log.pain] ?? '-'} />}
       {log.mood && <Row label="Настроение" value={MOOD_LABELS[log.mood]} />}
       {log.symptoms.length > 0 && (
         <Row label="Симптомы" value={log.symptoms.map((s) => SYMPTOM_LABELS[s]).join(', ')} />

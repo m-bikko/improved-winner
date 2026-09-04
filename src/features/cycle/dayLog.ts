@@ -3,7 +3,7 @@
  *
  * Ключи совпадают со значениями, которые разрешает CHECK в базе. Совпадение
  * не случайно и не должно расходиться: предлагать в интерфейсе то, что база
- * откажется принять, — та же ошибка, что была бы с напоминаниями задач.
+ * откажется принять, - та же ошибка, что была бы с напоминаниями задач.
  */
 
 export const FLOW = ['spotting', 'light', 'medium', 'heavy'] as const
@@ -72,7 +72,7 @@ export function emptyLog(date: string): DayLog {
   return { date, flow: null, pain: null, mood: null, symptoms: [], note: null }
 }
 
-/** Есть ли в отметке хоть что-то. База пустые не принимает — и правильно. */
+/** Есть ли в отметке хоть что-то. База пустые не принимает - и правильно. */
 export function isEmpty(log: DayLog): boolean {
   return (
     log.flow === null &&

@@ -6,10 +6,10 @@
  * Две половины и обе обязательны.
  *
  * База: каждый запрещённый случай должен УПАСТЬ. Если он проходит, значит
- * инвариант держит не база, а форма — а форму можно обойти.
+ * инвариант держит не база, а форма - а форму можно обойти.
  *
  * Арифметика: фазы и прогноз считаются на клиенте, и проверять их надо
- * отдельно от базы. Главное здесь — что овуляция отсчитывается назад
+ * отдельно от базы. Главное здесь - что овуляция отсчитывается назад
  * от следующего начала, а не вперёд от прошлого: при цикле в 34 дня
  * разница между этими способами составляет шесть дней.
  *
@@ -23,6 +23,7 @@ import {
   warnings,
   type Period,
 } from '../src/features/cycle/cycle.ts'
+import { TIP_CATEGORIES, tipsByCategory, tipsFor } from '../src/features/cycle/tips.ts'
 import { pgConfig } from './env.ts'
 
 let failed = 0
@@ -97,7 +98,7 @@ async function schemaChecks(client: Client): Promise<void> {
     '2026-08-01',
   ])
 
-  // Одна незакрытая — можно, вторая — нельзя
+  // Одна незакрытая - можно, вторая - нельзя
   await client.query(ins, [uid, '2026-02-01', null])
   await mustFail(client, 'Две идущие одновременно отвергаются', ins, [uid, '2026-04-01', null])
 
@@ -155,10 +156,10 @@ function logicChecks(): void {
   )
 
   const d1 = cycleDay(even, '2026-07-27', 14)
-  check(d1?.day === 1 && d1.phase === 'menstrual', 'Первый день — менструальная фаза', `день ${d1?.day}, фаза ${d1?.phase}`)
+  check(d1?.day === 1 && d1.phase === 'menstrual', 'Первый день - менструальная фаза', `день ${d1?.day}, фаза ${d1?.phase}`)
 
   const d10 = cycleDay(even, '2026-08-05', 14)
-  check(d10?.phase === 'follicular', 'Десятый день — фолликулярная', `день ${d10?.day}, фаза ${d10?.phase}`)
+  check(d10?.phase === 'follicular', 'Десятый день - фолликулярная', `день ${d10?.day}, фаза ${d10?.phase}`)
 
   const d14 = cycleDay(even, '2026-08-09', 14)
   check(
@@ -168,7 +169,7 @@ function logicChecks(): void {
   )
 
   const d22 = cycleDay(even, '2026-08-17', 14)
-  check(d22?.phase === 'luteal', 'Двадцать второй день — лютеиновая', `день ${d22?.day}, фаза ${d22?.phase}`)
+  check(d22?.phase === 'luteal', 'Двадцать второй день - лютеиновая', `день ${d22?.day}, фаза ${d22?.phase}`)
 
   check(
     d1?.nextStart === '2026-08-24' && d1.daysToNext === 28,
@@ -186,13 +187,13 @@ function logicChecks(): void {
   check(
     longDay?.ovulation === '2026-07-28',
     'При цикле 34 овуляция на 21-й день, а не на 14-й',
-    `овуляция ${longDay?.ovulation} (отсчёт вперёд дал бы 2026-07-21 — ошибка в 7 дней)`,
+    `овуляция ${longDay?.ovulation} (отсчёт вперёд дал бы 2026-07-21 - ошибка в 7 дней)`,
   )
 
   // Фертильное окно: пять дней до овуляции и один после
   check(
     longDay?.fertileFrom === '2026-07-23' && longDay.fertileTo === '2026-07-29',
-    'Фертильное окно — пять дней до и один после',
+    'Фертильное окно - пять дней до и один после',
     `${longDay?.fertileFrom} … ${longDay?.fertileTo}`,
   )
 
@@ -255,10 +256,36 @@ function logicChecks(): void {
   )
   check(
     f[0]?.end === '2026-08-28',
-    'Длина ожидаемой менструации — по средней, а не по константе',
-    `${f[0]?.start} — ${f[0]?.end} (среднее 5 дн.)`,
+    'Длина ожидаемой менструации - по средней, а не по константе',
+    `${f[0]?.start} - ${f[0]?.end} (среднее 5 дн.)`,
   )
   check(forecast([], 14, 3).length === 0, 'Без истории прогноза нет', 'вернулся пустой список')
+
+  // Подсказки: в каждой фазе есть что сказать, и ничего не теряется
+  // при группировке. Пропавшая подсказка — тихая потеря: экран выглядит
+  // рабочим, просто в нём меньше пользы, чем задумано.
+  const phaseDays = [
+    { iso: '2026-07-27', name: 'менструация' },
+    { iso: '2026-08-05', name: 'фолликулярная' },
+    { iso: '2026-08-09', name: 'овуляция' },
+    { iso: '2026-08-17', name: 'лютеиновая' },
+  ]
+  for (const { iso, name } of phaseDays) {
+    const st = cycleDay(even, iso, 14)
+    if (!st) {
+      check(false, `Подсказки для фазы «${name}»`, 'расчёт вернул null')
+      continue
+    }
+    const flat = tipsFor(st)
+    const grouped = tipsByCategory(st).flatMap((g) => g.tips)
+    const known = flat.every((t) => (TIP_CATEGORIES as readonly string[]).includes(t.category))
+    const ids = new Set(flat.map((t) => t.id))
+    check(
+      flat.length >= 4 && grouped.length === flat.length && known && ids.size === flat.length,
+      `Подсказки для фазы «${name}»`,
+      `${flat.length} шт., в группах ${grouped.length}, темы известны: ${known}, дублей нет: ${ids.size === flat.length}`,
+    )
+  }
 }
 
 async function main(): Promise<void> {
