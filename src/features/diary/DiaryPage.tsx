@@ -250,6 +250,7 @@ export function DiaryPage() {
             nickname: partner.nickname,
             totals: sumEntries(partnerDay.data ?? []),
           }}
+          theirEntries={partnerDay.data ?? []}
           loading={partnerDay.isPending}
         />
       ) : (
@@ -694,33 +695,91 @@ function MealSection({
   )
 }
 
+/**
+ * Сравнение дня: итоги рядом и что именно ел партнёр.
+ *
+ * Итогов одних мало. «У неё 1900 ккал» — это повод спросить «а из чего?»,
+ * и раньше ответ на этот вопрос приходилось искать вне приложения, хотя
+ * записи партнёра уже загружены тем же запросом, что даёт сумму.
+ *
+ * Список партнёра только для чтения: правит записи каждый свои, это
+ * закреплено политикой RLS, и кнопки, ведущие к отказу базы, здесь не нужны.
+ * Свой день редактируется на вкладке «Я» — там он и живёт.
+ */
 function Comparison({
   mine,
   theirs,
+  theirEntries,
   loading,
 }: {
   mine: { nickname: string; totals: Macros }
   theirs: { nickname: string; totals: Macros }
+  theirEntries: DiaryEntry[]
   loading: boolean
 }) {
   if (loading) return <Loading />
+
+  const theirMeals = MEALS.map((meal) => ({
+    meal,
+    entries: theirEntries.filter((e) => e.meal === meal),
+  })).filter((group) => group.entries.length > 0)
+
   return (
-    <div className="mt-4 grid grid-cols-2 gap-3">
-      {[mine, theirs].map((side) => (
-        <div key={side.nickname} className="rounded-xl bg-surface px-4 py-4 ring-1 ring-line">
-          <p className="text-sm text-muted">{side.nickname}</p>
-          <p className="mt-1 text-2xl font-semibold">{Math.round(side.totals.kcal)}</p>
-          <p className="text-xs text-muted">ккал</p>
-          <p className="mt-3 text-sm">
-            <span className="text-protein">Б {trim(side.totals.protein)}</span>
-            <br />
-            <span className="text-fat">Ж {trim(side.totals.fat)}</span>
-            <br />
-            <span className="text-carbs">У {trim(side.totals.carbs)}</span>
+    <>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        {[mine, theirs].map((side) => (
+          <div key={side.nickname} className="rounded-xl bg-surface px-4 py-4 ring-1 ring-line">
+            <p className="text-sm text-muted">{side.nickname}</p>
+            <p className="mt-1 text-2xl font-semibold">{Math.round(side.totals.kcal)}</p>
+            <p className="text-xs text-muted">ккал</p>
+            <p className="mt-3 text-sm">
+              <span className="text-protein">Б {trim(side.totals.protein)}</span>
+              <br />
+              <span className="text-fat">Ж {trim(side.totals.fat)}</span>
+              <br />
+              <span className="text-carbs">У {trim(side.totals.carbs)}</span>
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 flex flex-col gap-3">
+        <p className="text-sm text-muted">Что ел партнёр: {theirs.nickname}</p>
+
+        {theirMeals.length === 0 ? (
+          <p className="rounded-xl bg-surface px-4 py-5 text-center text-sm text-muted ring-1 ring-line">
+            За этот день записей нет
           </p>
-        </div>
-      ))}
-    </div>
+        ) : (
+          theirMeals.map(({ meal, entries }) => (
+            <div key={meal} className="rounded-xl bg-surface ring-1 ring-line">
+              <div className="flex items-center justify-between px-4 py-3">
+                <span className="text-sm font-medium">{MEAL_LABELS[meal]}</span>
+                <span className="text-sm text-muted">
+                  {Math.round(sumEntries(entries).kcal)} ккал
+                </span>
+              </div>
+              <ul className="border-t border-line">
+                {entries.map((entry) => (
+                  <li
+                    key={entry.id}
+                    className="flex items-baseline justify-between gap-3 px-4 py-2.5"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm">{entry.name}</span>
+                      <span className="text-xs text-muted">{trim(entry.grams)} г</span>
+                    </span>
+                    <span className="shrink-0 text-sm text-muted">
+                      {Math.round(entry.kcal)} ккал
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        )}
+      </div>
+    </>
   )
 }
 
