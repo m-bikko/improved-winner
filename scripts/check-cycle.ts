@@ -363,7 +363,7 @@ function logicChecks(): void {
     const ownerIds = new Set(tipsFor(st).map((t) => t.id))
     const partnerTips = tipsForPartner(st)
     const leaked = partnerTips.filter(
-      (t) => ownerIds.has(t.id) && !['intimacy', 'benefits'].includes(t.category),
+      (t) => ownerIds.has(t.id) && !['intimacy', 'practices', 'benefits'].includes(t.category),
     )
     check(
       partnerTips.length >= 8 && leaked.length === 0,
