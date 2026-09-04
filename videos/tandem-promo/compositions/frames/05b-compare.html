@@ -1,0 +1,647 @@
+<template>
+  <style>
+    /* ── 05b-compare — «Дни рядом» ──────────────────────────────────────────
+       Plate: assets/diary-compare.png (1170×2532, a 3× capture of the diary's
+       «Сравнение» tab). Measured off the PNG, in SCREENSHOT pixels:
+
+         ring card            x 48→1121   y  363→ 677
+         toggle «Я/Сравнение» x 48→1121   y  714→ 845
+         totals card L        x 48→ 566   y  894→1421   (radius 42)
+         totals card R        x 603→1121   y  894→1421
+           «Алекс»/«Ким»      cap top  957            42px  #9c958c
+           «2368»/«804»       cap top 1036 (h 53)     74px  #f2efea  w700
+           «ккал»             x-top   1126            39px  #9c958c
+           Б/Ж/У rows         cap tops 1208·1268·1328 43px  #2f7fd0 #c08000 #009c65
+         «Что ел партнёр: Ким» left 48, cap top 1495  42px  #9c958c
+         meal card 1          x 48→1121   y 1578→2096, divider y 1710 h3 #322f2b
+           «Завтрак»          cap top 1628            45px w600
+           «208 ккал»         right 1071, top 1628    43px  #9c958c
+           «Йогурт греческий 2%» cap top 1755 · «146 ккал» 1757 · «200 г» 1830
+           «Хлебцы»           cap top 1948 · «62 ккал» 1949 · «20 г» 2022
+         meal card 2          y 2133→2651  — the SAME structure +555px.
+                              The capture cuts off at 2532 mid-«Гречка сухая»,
+                              so both meal cards are rebuilt live on a covered
+                              ground and the world runs 168px past the image.
+
+       Everything the shot animates — the two kcal numbers, the six macro
+       lines, the partner heading, both meal cards — is a live element sitting
+       on an opaque cover, so the baked copy never double-prints.
+
+       CAMERA — the blueprint's hard rule: the ONE scale move is OUTWARD.
+       Scene 1 opens punched in at S0 (the two totals cards span 1040px of the
+       1080 canvas); Scene 3 runs a single decelerating pull to scale 1 and the
+       frame is LOCKED for the rest of the shot. No push-in anywhere.
+    ─────────────────────────────────────────────────────────────────────── */
+
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden; /* REQUIRED — the camera opens scaled past the frame */
+      font-family: -apple-system, system-ui, sans-serif;
+      color: #f2efea;
+    }
+
+    .f05b-clip {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* ── ground ─────────────────────────────────────────────────────────── */
+    #f05b-bg {
+      background: #141312;
+    }
+    /* One soft pool of the brand accent, static on the ground layer (never
+       inside the camera wrapper — a world-borne background warps with the
+       pull). Centred at y 880 so it lights the two cards while they are the
+       whole frame AND the phone once the camera lands. */
+    #f05b-bloom {
+      position: absolute;
+      left: -30px;
+      top: 180px;
+      width: 1140px;
+      height: 1360px;
+      border-radius: 50%;
+      background: radial-gradient(
+        closest-side,
+        rgba(229, 118, 140, 0.16) 0%,
+        rgba(229, 118, 140, 0.075) 52%,
+        rgba(229, 118, 140, 0) 100%
+      );
+    }
+
+    /* ── camera (viewport-change, single-wrapper composite transform) ─────
+       GSAP composes translate BEFORE scale on one element, which is exactly
+       the order the rule's math assumes, so GSAP itself is the single source
+       of truth for camera state — no onUpdate writer, and the pose is
+       therefore correct on any seek path. Counter-translate is the
+       single-wrapper form T = -offset × S (never the nested T = -offset).
+       transform-origin stays the default 50% 50% the math assumes. */
+    #f05b-world {
+      will-change: transform;
+    }
+
+    /* ── phone plate ────────────────────────────────────────────────────── */
+    #f05b-phone {
+      position: absolute;
+      box-sizing: border-box;
+      left: 200.5px;
+      top: 60px;
+      width: 679px;
+      height: 1532px;
+      padding: 12px;
+      background: #000;
+      border: 1.5px solid #322f2b;
+      border-radius: 62px;
+    }
+    #f05b-screen {
+      position: relative;
+      width: 652px;
+      height: 1505px;
+      overflow: hidden;
+      border-radius: 50px;
+      background: #141312;
+    }
+    #f05b-plate {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1170px;
+      height: 2700px; /* 168px past the capture — meal card 2 runs off it */
+      background: #141312;
+      transform: scale(0.55726496); /* 652 / 1170 */
+      transform-origin: 0 0;
+    }
+    #f05b-shot {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1170px;
+      height: 2532px;
+      display: block;
+    }
+
+    /* ── covers: the baked totals / heading / meal list ──────────────────── */
+    #f05b-cover-lower {
+      position: absolute;
+      left: 0;
+      top: 1440px;
+      width: 1170px;
+      height: 1260px;
+      background: #141312;
+    }
+    .f05b-cardground {
+      position: absolute;
+      top: 894px;
+      width: 519px;
+      height: 528px;
+      border-radius: 42px;
+      background: #1e1c1a;
+    }
+    #f05b-ground-a {
+      left: 48px;
+    }
+    #f05b-ground-b {
+      left: 603px;
+    }
+
+    /* ── live totals ────────────────────────────────────────────────────── */
+    .f05b-nick {
+      position: absolute;
+      top: 951px;
+      line-height: 1;
+      font-size: 42px;
+      font-weight: 400;
+      color: #9c958c;
+      white-space: nowrap;
+      opacity: 0;
+    }
+    .f05b-num {
+      position: absolute;
+      top: 1026px;
+      line-height: 1;
+      font-size: 74px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #f2efea;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+      white-space: nowrap;
+      transform-origin: left center;
+    }
+    .f05b-unit {
+      position: absolute;
+      top: 1113px;
+      line-height: 1;
+      font-size: 39px;
+      font-weight: 400;
+      color: #9c958c;
+      white-space: nowrap;
+      opacity: 0;
+    }
+    .f05b-macro {
+      position: absolute;
+      line-height: 1;
+      font-size: 43px;
+      font-weight: 400;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+      white-space: nowrap;
+      opacity: 0;
+    }
+    /* same top for both columns — the rows share a baseline so the two
+       numbers can be compared straight across, which is the whole shot */
+    .f05b-m1 {
+      top: 1202px;
+      color: #2f7fd0;
+    }
+    .f05b-m2 {
+      top: 1262px;
+      color: #c08000;
+    }
+    .f05b-m3 {
+      top: 1322px;
+      color: #009c65;
+    }
+    .f05b-colA {
+      left: 98px;
+    }
+    .f05b-colB {
+      left: 653px;
+    }
+
+    /* ── live partner heading ───────────────────────────────────────────── */
+    #f05b-heading {
+      position: absolute;
+      left: 48px;
+      top: 1489px;
+      line-height: 1;
+      font-size: 42px;
+      font-weight: 400;
+      color: #9c958c;
+      white-space: nowrap;
+      opacity: 0;
+    }
+
+    /* ── live meal cards ────────────────────────────────────────────────── */
+    .f05b-meal {
+      position: absolute;
+      left: 48px;
+      width: 1073px;
+      height: 518px;
+      border-radius: 42px;
+      background: #1e1c1a;
+      opacity: 0;
+    }
+    #f05b-meal1 {
+      top: 1578px;
+    }
+    #f05b-meal2 {
+      top: 2133px;
+    }
+    .f05b-mealname {
+      position: absolute;
+      left: 50px;
+      top: 44px;
+      line-height: 1;
+      font-size: 45px;
+      font-weight: 600;
+      color: #f2efea;
+      white-space: nowrap;
+    }
+    .f05b-mealkcal {
+      position: absolute;
+      right: 50px;
+      top: 44px;
+      line-height: 1;
+      font-size: 43px;
+      font-weight: 400;
+      color: #9c958c;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+      white-space: nowrap;
+    }
+    .f05b-divider {
+      position: absolute;
+      left: 0;
+      top: 132px;
+      width: 1073px;
+      height: 3px;
+      background: #322f2b;
+    }
+
+    .f05b-row {
+      position: absolute;
+      left: 48px;
+      width: 1073px;
+      height: 130px;
+      opacity: 0;
+    }
+    .f05b-rowname {
+      position: absolute;
+      left: 50px;
+      top: 0;
+      line-height: 1;
+      font-size: 43px;
+      font-weight: 400;
+      color: #f2efea;
+      white-space: nowrap;
+    }
+    .f05b-rowkcal {
+      position: absolute;
+      right: 50px;
+      top: 2px;
+      line-height: 1;
+      font-size: 43px;
+      font-weight: 400;
+      color: #9c958c;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+      white-space: nowrap;
+    }
+    .f05b-rowqty {
+      position: absolute;
+      left: 50px;
+      top: 75px;
+      line-height: 1;
+      font-size: 39px;
+      font-weight: 400;
+      color: #9c958c;
+      white-space: nowrap;
+    }
+    #f05b-r1a {
+      top: 1749px;
+    }
+    #f05b-r1b {
+      top: 1942px;
+    }
+    #f05b-r2a {
+      top: 2304px;
+    }
+    #f05b-r2b {
+      top: 2497px;
+    }
+
+    /* ── title band ─────────────────────────────────────────────────────── */
+    #f05b-scrim {
+      position: absolute;
+      left: 0;
+      top: 1596px;
+      width: 1080px;
+      height: 324px;
+      background: linear-gradient(
+        to bottom,
+        rgba(20, 19, 18, 0) 0px,
+        rgba(20, 19, 18, 1) 44px,
+        rgba(20, 19, 18, 1) 100%
+      );
+      opacity: 0;
+    }
+    #f05b-titlebox {
+      position: absolute;
+      left: 70px;
+      top: 1648px;
+      width: 940px;
+      text-align: center;
+    }
+    #f05b-accentline {
+      width: 64px;
+      height: 4px;
+      border-radius: 2px;
+      background: #e5768c;
+      margin: 0 auto 30px;
+      transform: scaleX(0);
+      transform-origin: center center;
+    }
+    .f05b-tline {
+      font-size: 48px;
+      font-weight: 600;
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      color: #f2efea;
+      opacity: 0;
+    }
+    .f05b-acc {
+      color: #e5768c;
+    }
+  </style>
+
+  <div id="root" data-composition-id="05b-compare" data-start="0" data-duration="9.4" data-width="1080" data-height="1920">
+    <!-- full-bleed ground (never on #root) -->
+    <div id="f05b-bg" class="clip f05b-clip" data-start="0" data-duration="9.4" data-track-index="0">
+      <div id="f05b-bloom"></div>
+    </div>
+
+    <!-- the one camera wrapper -->
+    <div id="f05b-world" class="clip f05b-clip" data-start="0" data-duration="9.4" data-track-index="1">
+      <div id="f05b-phone">
+        <div id="f05b-screen">
+          <div id="f05b-plate">
+            <img id="f05b-shot" src="assets/diary-compare.png" alt="" width="1170" height="2532">
+
+            <div id="f05b-cover-lower"></div>
+            <div id="f05b-ground-a" class="f05b-cardground"></div>
+            <div id="f05b-ground-b" class="f05b-cardground"></div>
+
+            <!-- ── left column: Алекс ───────────────────────────────────── -->
+            <div id="f05b-nick-a" class="f05b-nick f05b-colA">Алекс</div>
+            <div id="f05b-num-a" class="f05b-num f05b-colA">0</div>
+            <div id="f05b-unit-a" class="f05b-unit f05b-colA">ккал</div>
+            <div id="f05b-ma1" class="f05b-macro f05b-m1 f05b-colA">Б 131.8</div>
+            <div id="f05b-ma2" class="f05b-macro f05b-m2 f05b-colA">Ж 53.8</div>
+            <div id="f05b-ma3" class="f05b-macro f05b-m3 f05b-colA">У 338.9</div>
+
+            <!-- ── right column: Ким ────────────────────────────────────── -->
+            <div id="f05b-nick-b" class="f05b-nick f05b-colB">Ким</div>
+            <div id="f05b-num-b" class="f05b-num f05b-colB">0</div>
+            <div id="f05b-unit-b" class="f05b-unit f05b-colB">ккал</div>
+            <div id="f05b-mb1" class="f05b-macro f05b-m1 f05b-colB">Б 92.1</div>
+            <div id="f05b-mb2" class="f05b-macro f05b-m2 f05b-colB">Ж 18.1</div>
+            <div id="f05b-mb3" class="f05b-macro f05b-m3 f05b-colB">У 63.7</div>
+
+            <!-- ── what the pull-back reveals below ─────────────────────── -->
+            <div id="f05b-heading">Что ел партнёр: Ким</div>
+
+            <div id="f05b-meal1" class="f05b-meal">
+              <div class="f05b-mealname">Завтрак</div>
+              <div class="f05b-mealkcal">208 ккал</div>
+              <div class="f05b-divider"></div>
+            </div>
+            <div id="f05b-r1a" class="f05b-row">
+              <div class="f05b-rowname">Йогурт греческий 2%</div>
+              <div class="f05b-rowkcal">146 ккал</div>
+              <div class="f05b-rowqty">200 г</div>
+            </div>
+            <div id="f05b-r1b" class="f05b-row">
+              <div class="f05b-rowname">Хлебцы</div>
+              <div class="f05b-rowkcal">62 ккал</div>
+              <div class="f05b-rowqty">20 г</div>
+            </div>
+
+            <div id="f05b-meal2" class="f05b-meal">
+              <div class="f05b-mealname">Обед</div>
+              <div class="f05b-mealkcal">362 ккал</div>
+              <div class="f05b-divider"></div>
+            </div>
+            <div id="f05b-r2a" class="f05b-row">
+              <div class="f05b-rowname">Индейка филе</div>
+              <div class="f05b-rowkcal">156 ккал</div>
+              <div class="f05b-rowqty">150 г</div>
+            </div>
+            <div id="f05b-r2b" class="f05b-row">
+              <div class="f05b-rowname">Гречка сухая</div>
+              <div class="f05b-rowkcal">206 ккал</div>
+              <div class="f05b-rowqty">60 г</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- title band -->
+    <div id="f05b-title" class="clip f05b-clip" data-start="0" data-duration="9.4" data-track-index="2">
+      <div id="f05b-scrim"></div>
+      <div id="f05b-titlebox">
+        <div id="f05b-accentline"></div>
+        <div id="f05b-tl1" class="f05b-tline">Ваши дни рядом — и видно,</div>
+        <div id="f05b-tl2" class="f05b-tline"><span class="f05b-acc">из чего собран каждый</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+
+      /* ══ camera geometry ══════════════════════════════════════════════
+         Derived from the constants the CSS above uses — no measurement,
+         no fonts.ready, so the pose is identical on every render. */
+      var K = 0.55726496;      /* screenshot px → canvas px (652 / 1170)   */
+      var SCREEN_LEFT = 214;   /* 200.5 phone + 1.5 border + 12 padding    */
+      var SCREEN_TOP = 73.5;
+      var CANVAS_W = 1080;
+      var CANVAS_H = 1920;
+
+      /* the two totals cards, in screenshot px */
+      var CARD_L = 48;
+      var CARD_R = 1121;
+      var CARD_T = 894;
+      var CARD_B = 1421;
+
+      /* their box on the canvas at neutral camera */
+      var cardW = (CARD_R - CARD_L) * K;                       /* ≈ 598.0 */
+      var cardCx = SCREEN_LEFT + ((CARD_L + CARD_R) / 2) * K;  /* ≈ 539.7 */
+      var cardCy = SCREEN_TOP + ((CARD_T + CARD_B) / 2) * K;   /* ≈ 718.5 */
+
+      /* S0 — the opening pose: the pair spans 1040 of the 1080 canvas, so
+         the cards read edge-to-edge while both outer corners stay in frame.
+         At this scale the visible world band (166→1270 canvas px) sits well
+         inside the phone screen (73.5→1578.5): no bezel, no chrome, exactly
+         the blueprint's full-bleed detail open. */
+      var OPEN_CARD_W = 1040;
+      var S0 = OPEN_CARD_W / cardW;                            /* ≈ 1.739 */
+
+      /* viewport-change, single-wrapper composite transform: T = -offset × S.
+         OPEN_BIAS_Y rides the opening pose 80px above dead centre: the pair
+         then sits high with more air beneath it, which is the honest hint
+         that something lives below — and that is what the pull-back proves.
+         It costs nothing at the far end, where both translates land at 0. */
+      var OPEN_BIAS_Y = 80;
+      var X0 = -(cardCx - CANVAS_W / 2) * S0;                  /* ≈ 0.5   */
+      var Y0 = -(cardCy - CANVAS_H / 2) * S0 - OPEN_BIAS_Y;    /* ≈ 340.0 */
+
+      var SNAP = { innerText: 1 };
+
+      /* ══ Scene 1 (0.0–2.2) — full-bleed close-up on the two totals ═════
+         The camera is parked at S0 and does not move. counting-dynamic-scale:
+         both numbers count on the SAME position, duration and ease so they
+         land as one chord — the comparison is the point, an arpeggio would
+         break it. Scale grows 0.55 → 1 on that same ease; font-size never
+         tweens. tabular-nums + a left transform-origin keep 0→2368 from
+         shuffling the digits sideways. */
+      var COUNT_AT = 0.15;
+      var COUNT_DUR = 1.5;
+      var COUNT_EASE = "power2.out";
+
+      tl.fromTo(
+        ".f05b-nick",
+        { opacity: 0 },
+        { opacity: 1, duration: 0.3, ease: "power2.out" },
+        0.0
+      );
+
+      tl.fromTo(
+        "#f05b-num-a",
+        { innerText: 0 },
+        { innerText: 2368, snap: SNAP, duration: COUNT_DUR, ease: COUNT_EASE },
+        COUNT_AT
+      );
+      tl.fromTo(
+        "#f05b-num-b",
+        { innerText: 0 },
+        { innerText: 804, snap: SNAP, duration: COUNT_DUR, ease: COUNT_EASE },
+        COUNT_AT
+      );
+      tl.fromTo(
+        ".f05b-num",
+        { scale: 0.55 },
+        { scale: 1, duration: COUNT_DUR, ease: COUNT_EASE },
+        COUNT_AT
+      );
+
+      /* the unit is the suffix — it gets its own beat after the count lands */
+      tl.fromTo(
+        ".f05b-unit",
+        { opacity: 0, y: 26 },
+        { opacity: 1, y: 0, duration: 0.42, ease: "back.out(1.6)" },
+        COUNT_AT + COUNT_DUR
+      );
+
+      /* ══ Scene 2 (2.2–3.4) — Б/Ж/У under both numbers ═════════════════
+         Revealed as PAIRS, not column by column: Б left and Б right arrive
+         together on one baseline, then Ж, then У. That is what lets the eye
+         read 131.8 against 92.1 as a difference instead of as two lists.
+         Camera still parked. */
+      /* 1.1, не 2.25. На контактном листе видно, во что обходилась задержка:
+         с 38-й по 40-ю секунду ролика карточки стояли на две трети пустыми
+         и читались как незагрузившиеся. Причём пустовала ровно та часть,
+         ради которой кадр и существует, — колонки Б/Ж/У, которые надо
+         сравнить глазом.
+         Теперь макросы приходят, пока числа ещё досчитывают: карточка
+         собирается целиком к 2.5 с, и до отъезда в 3.45 остаётся настоящая
+         держащая доля, а не ожидание. */
+      var MACRO_AT = 1.1;
+      var MACRO_STEP = 0.2;
+      [
+        ["#f05b-ma1", "#f05b-mb1"],
+        ["#f05b-ma2", "#f05b-mb2"],
+        ["#f05b-ma3", "#f05b-mb3"],
+      ].forEach(function (pair, i) {
+        tl.fromTo(
+          pair,
+          { opacity: 0, y: 30 },
+          { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" },
+          MACRO_AT + i * MACRO_STEP
+        );
+      });
+
+      /* ══ Scene 3 (3.4–5.0) — THE ONE CAMERA MOVE, and it is outward ═══
+         A single decelerating pull from S0 to 1. It is the only scale tween
+         in this composition and it never reverses: after it stops at 4.95 the
+         frame is locked and every later beat is element motion.
+         Chorded with it, the captured chrome resolves — the 89% ring and the
+         «Я / Сравнение» toggle above the cards, the app bar at the top — so
+         the two columns turn out to be the head of a whole screen. */
+      var ZOOM_AT = 3.45;
+      var ZOOM_DUR = 1.5;
+
+      tl.fromTo(
+        "#f05b-world",
+        { scale: S0, x: X0, y: Y0 },
+        { scale: 1, x: 0, y: 0, duration: ZOOM_DUR, ease: "expo.out" },
+        ZOOM_AT
+      );
+
+      tl.fromTo(
+        "#f05b-shot",
+        { opacity: 0 },
+        { opacity: 1, duration: 0.9, ease: "power2.out" },
+        ZOOM_AT + 0.05
+      );
+
+      /* …and the heading the pull reveals below them */
+      tl.fromTo(
+        "#f05b-heading",
+        { opacity: 0, y: 40 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" },
+        4.3
+      );
+
+      /* ══ Scene 4 (5.0–6.6) — waterfall-entry, camera LOCKED ═══════════
+         The answer to «а из чего у неё 804». Pure element motion: opacity is
+         binary via tl.set, travel is one direction (from below), each element
+         starts within a frame or two of the previous settling and the gaps
+         shrink across the cascade. Offsets are plate px — the plate renders
+         at 0.557, so 130px of travel is ~72px on the canvas. */
+      var wf = [
+        { el: "#f05b-meal1", at: 5.05, y: 130, d: 0.22 }, /* anchor */
+        { el: "#f05b-r1a", at: 5.3, y: 85, d: 0.18 },
+        { el: "#f05b-r1b", at: 5.46, y: 75, d: 0.17 },
+        { el: "#f05b-meal2", at: 5.61, y: 120, d: 0.21 }, /* anchor */
+        { el: "#f05b-r2a", at: 5.8, y: 82, d: 0.17 },
+        { el: "#f05b-r2b", at: 5.94, y: 68, d: 0.16 },
+      ];
+      wf.forEach(function (w) {
+        tl.set(w.el, { opacity: 1, y: w.y }, w.at);
+        tl.to(w.el, { y: 0, duration: w.d, ease: "power4.out" }, w.at);
+      });
+
+      /* ══ Scene 5 (6.6–7.8) — the title stands up in the bottom band ═══ */
+      tl.to("#f05b-scrim", { opacity: 1, duration: 0.55, ease: "power2.out" }, 6.6);
+      tl.fromTo(
+        "#f05b-accentline",
+        { scaleX: 0 },
+        { scaleX: 1, duration: 0.5, ease: "power3.out" },
+        6.72
+      );
+      tl.fromTo(
+        "#f05b-tl1",
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" },
+        6.86
+      );
+      tl.fromTo(
+        "#f05b-tl2",
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" },
+        7.04
+      );
+
+      /* ══ Scene 6 (7.8–9.0) — held. Nothing moves, camera included. ════ */
+
+      window.__timelines["05b-compare"] = tl;
+    })();
+  </script>
+</template>

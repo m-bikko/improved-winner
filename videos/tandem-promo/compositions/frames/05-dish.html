@@ -260,119 +260,72 @@
     }
   </style>
 
-  <div
-    id="root"
-    data-composition-id="05-dish"
-    data-start="0"
-    data-duration="8.4"
-    data-width="1080"
-    data-height="1920"
-  >
+  <div data-hf-id="hf-h0h5" id="root" data-composition-id="05-dish" data-start="0" data-duration="8.35" data-width="1080" data-height="1920">
     <!-- full-bleed ground on its own clip layer -->
-    <div
-      class="clip d05-dish-bg"
-      id="f05-dish-bg"
-      data-start="0"
-      data-duration="8.4"
-      data-track-index="0"
-    ></div>
+    <div data-hf-id="hf-4lek" class="clip d05-dish-bg" id="f05-dish-bg" data-start="0" data-duration="8.4" data-track-index="0"></div>
 
     <!-- the phone plate + live overlays -->
-    <div
-      class="clip d05-dish-stage"
-      id="f05-dish-stage"
-      data-start="0"
-      data-duration="8.4"
-      data-track-index="1"
-    >
-      <div class="d05-dish-cam-outer" id="f05-dish-cam-outer">
-        <div class="d05-dish-cam-inner" id="f05-dish-cam-inner">
-          <div class="d05-dish-plate">
-            <div class="d05-dish-screen">
-              <img class="d05-dish-shot" src="assets/dish-editor.png" alt="" />
+    <div data-hf-id="hf-d4bp" class="clip d05-dish-stage" id="f05-dish-stage" data-start="0" data-duration="8.4" data-track-index="1">
+      <div data-hf-id="hf-ff6g" class="d05-dish-cam-outer" id="f05-dish-cam-outer">
+        <div data-hf-id="hf-yrkc" class="d05-dish-cam-inner" id="f05-dish-cam-inner">
+          <div data-hf-id="hf-vrgx" class="d05-dish-plate">
+            <div data-hf-id="hf-43v7" class="d05-dish-screen">
+              <img data-hf-id="hf-fa9x" class="d05-dish-shot" src="assets/dish-editor.png" alt="">
 
               <!-- covers: the baked-in состав block, the baked-in готовый вес value,
                    and the baked-in totals numbers -->
-              <div
-                class="d05-dish-cover"
-                style="left: 30px; top: 683px; width: 1110px; height: 415px; background: #141312"
-              ></div>
-              <div
-                class="d05-dish-cover"
-                style="left: 60px; top: 1412px; width: 960px; height: 100px; background: #1e1c1a"
-              ></div>
-              <div
-                class="d05-dish-cover"
-                style="left: 60px; top: 1850px; width: 1050px; height: 180px; background: #2a2724"
-              ></div>
+              <div data-hf-id="hf-th83" class="d05-dish-cover" style="left: 30px; top: 683px; width: 1110px; height: 415px; background: #141312"></div>
+              <div data-hf-id="hf-8pkg" class="d05-dish-cover" style="left: 60px; top: 1412px; width: 960px; height: 100px; background: #1e1c1a"></div>
+              <div data-hf-id="hf-cwdx" class="d05-dish-cover" style="left: 60px; top: 1850px; width: 1050px; height: 180px; background: #2a2724"></div>
 
               <!-- live ingredient rows are built here -->
-              <div id="f05-dish-rows"></div>
+              <div data-hf-id="hf-pscx" id="f05-dish-rows"></div>
 
               <!-- live «Готовый вес» value -->
-              <div class="d05-dish-fieldval">
-                <span id="f05-dish-typed"></span
-                ><span class="d05-dish-caret" id="f05-dish-caret"></span>
+              <div data-hf-id="hf-p58a" class="d05-dish-fieldval">
+                <span data-hf-id="hf-jgm1" id="f05-dish-typed"></span><span data-hf-id="hf-n151" class="d05-dish-caret" id="f05-dish-caret"></span>
               </div>
 
               <!-- live totals -->
-              <div class="d05-dish-kcalline">
-                <span class="d05-dish-kcalnum" id="f05-dish-kcal">0</span
-                ><span class="d05-dish-kcalunit">ккал</span>
+              <div data-hf-id="hf-rudw" class="d05-dish-kcalline">
+                <span data-hf-id="hf-yjcx" class="d05-dish-kcalnum" id="f05-dish-kcal">0</span><span data-hf-id="hf-0ym6" class="d05-dish-kcalunit">ккал</span>
               </div>
-              <div class="d05-dish-macros">
-                <div class="d05-dish-macro d05-dish-m-b">
-                  <span>Б</span
-                  ><span class="d05-dish-macro-num" id="f05-dish-mb" style="width: 100px">0</span>
+              <div data-hf-id="hf-z0ns" class="d05-dish-macros">
+                <div data-hf-id="hf-d9yq" class="d05-dish-macro d05-dish-m-b">
+                  <span data-hf-id="hf-epao">Б</span><span data-hf-id="hf-x4ce" class="d05-dish-macro-num" id="f05-dish-mb" style="width: 100px">0</span>
                 </div>
-                <div class="d05-dish-macro d05-dish-m-f">
-                  <span>Ж</span
-                  ><span class="d05-dish-macro-num" id="f05-dish-mf" style="width: 78px">0</span>
+                <div data-hf-id="hf-ygd2" class="d05-dish-macro d05-dish-m-f">
+                  <span data-hf-id="hf-bx5h">Ж</span><span data-hf-id="hf-yl48" class="d05-dish-macro-num" id="f05-dish-mf" style="width: 78px">0</span>
                 </div>
-                <div class="d05-dish-macro d05-dish-m-c">
-                  <span>У</span
-                  ><span class="d05-dish-macro-num" id="f05-dish-mc" style="width: 58px">0</span>
+                <div data-hf-id="hf-h82r" class="d05-dish-macro d05-dish-m-c">
+                  <span data-hf-id="hf-wzdy">У</span><span data-hf-id="hf-79hl" class="d05-dish-macro-num" id="f05-dish-mc" style="width: 58px">0</span>
                 </div>
               </div>
 
               <!-- the couple: control ring, target ring, the link between them -->
-              <div
-                class="d05-dish-ring"
-                id="f05-dish-field-ring"
-                style="left: 42px; top: 1390px; width: 1086px; height: 141px"
-              ></div>
-              <div
-                class="d05-dish-ring"
-                id="f05-dish-panel-ring"
-                style="left: 42px; top: 1748px; width: 1086px; height: 301px"
-              ></div>
-              <div class="d05-dish-link" id="f05-dish-link"></div>
+              <div data-hf-id="hf-t8qf" class="d05-dish-ring" id="f05-dish-field-ring" style="left: 42px; top: 1390px; width: 1086px; height: 141px"></div>
+              <div data-hf-id="hf-qmr0" class="d05-dish-ring" id="f05-dish-panel-ring" style="left: 42px; top: 1748px; width: 1086px; height: 301px"></div>
+              <div data-hf-id="hf-io62" class="d05-dish-link" id="f05-dish-link"></div>
             </div>
-            <div class="d05-dish-plate-edge"></div>
+            <div data-hf-id="hf-mwf5" class="d05-dish-plate-edge"></div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- title -->
-    <div
-      class="clip d05-dish-titleclip"
-      id="f05-dish-titleclip"
-      data-start="0"
-      data-duration="8.4"
-      data-track-index="2"
-    >
-      <div class="d05-dish-title" id="f05-dish-title">
-        <div class="d05-dish-rule" id="f05-dish-rule"></div>
-        <div class="d05-dish-line">
-          <span class="d05-dish-w">Блюдо</span> <span class="d05-dish-w">—</span>
-          <span class="d05-dish-w d05-dish-ac">по</span>
-          <span class="d05-dish-w d05-dish-ac">готовому</span>
-          <span class="d05-dish-w"><span class="d05-dish-ac">весу</span>,</span>
+    <div data-hf-id="hf-emju" class="clip d05-dish-titleclip" id="f05-dish-titleclip" data-start="0" data-duration="8.4" data-track-index="2">
+      <div data-hf-id="hf-luuw" class="d05-dish-title" id="f05-dish-title">
+        <div data-hf-id="hf-xcom" class="d05-dish-rule" id="f05-dish-rule"></div>
+        <div data-hf-id="hf-hih9" class="d05-dish-line">
+          <span data-hf-id="hf-gor9" class="d05-dish-w">Блюдо</span> <span data-hf-id="hf-0zc1" class="d05-dish-w">—</span>
+          <span data-hf-id="hf-gltt" class="d05-dish-w d05-dish-ac">по</span>
+          <span data-hf-id="hf-fzc0" class="d05-dish-w d05-dish-ac">готовому</span>
+          <span data-hf-id="hf-lzuh" class="d05-dish-w"><span data-hf-id="hf-mtmx" class="d05-dish-ac">весу</span>,</span>
         </div>
-        <div class="d05-dish-line">
-          <span class="d05-dish-w">а</span> <span class="d05-dish-w">не</span>
-          <span class="d05-dish-w">на</span> <span class="d05-dish-w">глаз</span>
+        <div data-hf-id="hf-6vwh" class="d05-dish-line">
+          <span data-hf-id="hf-jpot" class="d05-dish-w">а</span> <span data-hf-id="hf-ucih" class="d05-dish-w">не</span>
+          <span data-hf-id="hf-t5le" class="d05-dish-w">на</span> <span data-hf-id="hf-pt34" class="d05-dish-w">глаз</span>
         </div>
       </div>
     </div>
