@@ -26,3 +26,6 @@
 # Пакеты для исполнителей кадров - целиком производные: их собирает
 # frame-packets.mjs из STORYBOARD.md и текстов скиллов
 */.hyperframes/frame-packets/
+
+# Миниатюры таймлайна, которые пишет просмотрщик hyperframes
+*/.thumbnails/
