@@ -276,7 +276,12 @@ function CycleBody({
  */
 function Tips({ state }: { state: CycleDay }) {
   const groups = tipsByCategory(state)
-  const [closed, setClosed] = useState<string[]>(() => groups.slice(1).map((g) => g.category))
+  // Открыта только первая тема про сегодня. Справочные - «Близость»
+  // и «Что даёт близость» - свёрнуты всегда: их читают по желанию,
+  // а не каждый раз, когда открыли раздел.
+  const [closed, setClosed] = useState<string[]>(() =>
+    groups.filter((g, i) => i > 0 || g.library).map((g) => g.category),
+  )
 
   const toggle = (category: string) => {
     setClosed((prev) =>
@@ -348,11 +353,15 @@ function Today({ state, stats }: { state: CycleDay; stats: ReturnType<typeof cyc
         </div>
         <div className="rounded-xl bg-raised px-3 py-2.5">
           <dt className="text-xs text-muted">Средний цикл</dt>
+          {/* usableCycle, а не avgCycle: показывать надо то число, которым
+              приложение реально считает прогноз. Иначе в шапке стояло бы одно,
+              а «Следующая» была бы посчитана из другого - и разойтись они
+              могут ровно тогда, когда данные подозрительные. */}
           <dd className="mt-0.5 font-medium">
-            {stats.avgCycle === null ? 'нет данных' : `${Math.round(stats.avgCycle)} дн.`}
+            {stats.usableCycle === null ? 'нет данных' : `${Math.round(stats.usableCycle)} дн.`}
           </dd>
           <dd className="text-xs text-muted">
-            {stats.cyclesCounted === 0
+            {stats.usableCycle === null
               ? 'нужен второй цикл'
               : `по ${stats.cyclesCounted} посл.`}
           </dd>
@@ -583,7 +592,7 @@ function SettingsSheet({ onClose }: { onClose: () => void }) {
           />
           <span className="text-xs text-muted">
             От неё считается овуляция - назад от следующей менструации. У большинства
-            12–16 дней; 14 стоит по умолчанию.
+            12-16 дней; 14 стоит по умолчанию.
           </span>
         </label>
 

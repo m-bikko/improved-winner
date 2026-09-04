@@ -20,9 +20,9 @@ export const ACTIVITY_FACTORS: Record<ActivityLevel, number> = {
 
 export const ACTIVITY_LABELS: Record<ActivityLevel, string> = {
   sedentary: 'Сидячий образ жизни',
-  light: 'Лёгкая активность, 1–3 тренировки',
-  moderate: 'Умеренная, 3–5 тренировок',
-  active: 'Высокая, 6–7 тренировок',
+  light: 'Лёгкая активность, 1-3 тренировки',
+  moderate: 'Умеренная, 3-5 тренировок',
+  active: 'Высокая, 6-7 тренировок',
   very_active: 'Очень высокая, физическая работа',
 }
 

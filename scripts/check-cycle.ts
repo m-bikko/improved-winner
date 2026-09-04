@@ -17,6 +17,8 @@
  */
 import { Client } from 'pg'
 import {
+  DEFAULT_CYCLE_DAYS,
+  DEFAULT_PERIOD_DAYS,
   cycleDay,
   cycleStats,
   forecast,
@@ -261,6 +263,61 @@ function logicChecks(): void {
   )
   check(forecast([], 14, 3).length === 0, 'Без истории прогноза нет', 'вернулся пустой список')
 
+  // Однодневная отметка НЕ должна становиться законом.
+  //
+  // Ровно эта поломка была на живом приложении: человек отметил один день,
+  // приложение посчитало «среднюю длину менструации» по одному наблюдению,
+  // получило единицу и стало рисовать ею все будущие менструации.
+  const oneDay: Period[] = [withPeriodDays(period('2026-09-04', '2026-09-04', null), 1)]
+  const oneDayState = cycleDay(oneDay, '2026-09-04', 14)
+  check(
+    oneDayState?.periodLength === DEFAULT_PERIOD_DAYS,
+    'Однодневная отметка не задаёт длину будущих менструаций',
+    `в прогнозе ${oneDayState?.periodLength} дн., ждали умолчание ${DEFAULT_PERIOD_DAYS}`,
+  )
+  const oneDayForecast = forecast(oneDay, 14, 1)
+  check(
+    oneDayForecast[0]?.start === '2026-10-02' && oneDayForecast[0]?.end === '2026-10-06',
+    'Прогноз после однодневной отметки берёт умолчания',
+    `${oneDayForecast[0]?.start} - ${oneDayForecast[0]?.end}`,
+  )
+  check(
+    warnings(oneDay, '2026-09-04').some((w) => w.id === 'period-short'),
+    'Но предупреждение об однодневной менструации остаётся',
+    `выдано: ${warnings(oneDay, '2026-09-04').map((w) => w.id).join(', ') || 'ничего'}`,
+  )
+
+  // Две однодневные подряд не должны дать «средний цикл 1 день»
+  const twoShort: Period[] = [
+    withPeriodDays(period('2026-09-04', '2026-09-04', 1), 1),
+    withPeriodDays(period('2026-09-05', '2026-09-05', null), 1),
+  ]
+  const twoState = cycleDay(twoShort, '2026-09-05', 14)
+  check(
+    twoState?.cycleLength === DEFAULT_CYCLE_DAYS,
+    'Две отметки подряд не задают длину цикла в один день',
+    `в прогнозе цикл ${twoState?.cycleLength} дн., ждали умолчание ${DEFAULT_CYCLE_DAYS}`,
+  )
+
+  // Длинный, но реальный цикл прогноз ломать не должен: 40 дней вне нормы,
+  // однако это измерение, а не промах по кнопке.
+  const long40: Period[] = [
+    withPeriodDays(period('2026-01-01', '2026-01-06', 40), 6),
+    withPeriodDays(period('2026-02-10', '2026-02-15', 40), 6),
+    withPeriodDays(period('2026-03-22', '2026-03-27', null), 6),
+  ]
+  const longState = cycleDay(long40, '2026-03-22', 14)
+  check(
+    longState?.cycleLength === 40,
+    'Цикл вне нормы, но правдоподобный, прогноз использует как есть',
+    `в прогнозе ${longState?.cycleLength} дн., подменять на ${DEFAULT_CYCLE_DAYS} нельзя`,
+  )
+  check(
+    warnings(long40, '2026-03-22').some((w) => w.id === 'cycle-long'),
+    'И одновременно предупреждает, что это выше нормы',
+    `выдано: ${warnings(long40, '2026-03-22').map((w) => w.id).join(', ') || 'ничего'}`,
+  )
+
   // Подсказки: в каждой фазе есть что сказать, и ничего не теряется
   // при группировке. Пропавшая подсказка - тихая потеря: экран выглядит
   // рабочим, просто в нём меньше пользы, чем задумано.
@@ -281,9 +338,9 @@ function logicChecks(): void {
     const known = flat.every((t) => (TIP_CATEGORIES as readonly string[]).includes(t.category))
     const ids = new Set(flat.map((t) => t.id))
     check(
-      flat.length >= 4 && grouped.length === flat.length && known && ids.size === flat.length,
+      flat.length >= 20 && grouped.length === flat.length && known && ids.size === flat.length,
       `Подсказки для фазы «${name}»`,
-      `${flat.length} шт., в группах ${grouped.length}, темы известны: ${known}, дублей нет: ${ids.size === flat.length}`,
+      `${flat.length} шт. (минимум 20), в группах ${grouped.length}, темы известны: ${known}, дублей нет: ${ids.size === flat.length}`,
     )
   }
 }
