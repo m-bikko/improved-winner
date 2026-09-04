@@ -53,7 +53,7 @@
       background: #141312;
     }
     /* One soft pool of the brand accent, static on the ground layer (never
-       inside the camera wrapper — a world-borne background warps with the
+       inside the camera wrapper - a world-borne background warps with the
        pull). Centred at y 880 so it lights the two cards while they are the
        whole frame AND the phone once the camera lands. */
     #f05b-bloom {
@@ -74,7 +74,7 @@
     /* ── camera (viewport-change, single-wrapper composite transform) ─────
        GSAP composes translate BEFORE scale on one element, which is exactly
        the order the rule's math assumes, so GSAP itself is the single source
-       of truth for camera state — no onUpdate writer, and the pose is
+       of truth for camera state - no onUpdate writer, and the pose is
        therefore correct on any seek path. Counter-translate is the
        single-wrapper form T = -offset × S (never the nested T = -offset).
        transform-origin stays the default 50% 50% the math assumes. */
@@ -108,7 +108,7 @@
       left: 0;
       top: 0;
       width: 1170px;
-      height: 2700px; /* 168px past the capture — meal card 2 runs off it */
+      height: 2700px; /* 168px past the capture - meal card 2 runs off it */
       background: #141312;
       transform: scale(0.55726496); /* 652 / 1170 */
       transform-origin: 0 0;
@@ -190,7 +190,7 @@
       white-space: nowrap;
       opacity: 0;
     }
-    /* same top for both columns — the rows share a baseline so the two
+    /* same top for both columns - the rows share a baseline so the two
        numbers can be compared straight across, which is the whole shot */
     .f05b-m1 {
       top: 1202px;
@@ -444,7 +444,7 @@
       <div data-hf-id="hf-quwz" id="f05b-scrim"></div>
       <div data-hf-id="hf-re6y" id="f05b-titlebox">
         <div data-hf-id="hf-5uy7" id="f05b-accentline"></div>
-        <div data-hf-id="hf-5h06" id="f05b-tl1" class="f05b-tline">Ваши дни рядом — и видно,</div>
+        <div data-hf-id="hf-5h06" id="f05b-tl1" class="f05b-tline">Ваши дни рядом - и видно,</div>
         <div data-hf-id="hf-3cc2" id="f05b-tl2" class="f05b-tline"><span data-hf-id="hf-r6p3" class="f05b-acc">из чего собран каждый</span></div>
       </div>
     </div>
@@ -456,7 +456,7 @@
       var tl = gsap.timeline({ paused: true });
 
       /* ══ camera geometry ══════════════════════════════════════════════
-         Derived from the constants the CSS above uses — no measurement,
+         Derived from the constants the CSS above uses - no measurement,
          no fonts.ready, so the pose is identical on every render. */
       var K = 0.55726496;      /* screenshot px → canvas px (652 / 1170)   */
       var SCREEN_LEFT = 214;   /* 200.5 phone + 1.5 border + 12 padding    */
@@ -475,7 +475,7 @@
       var cardCx = SCREEN_LEFT + ((CARD_L + CARD_R) / 2) * K;  /* ≈ 539.7 */
       var cardCy = SCREEN_TOP + ((CARD_T + CARD_B) / 2) * K;   /* ≈ 718.5 */
 
-      /* S0 — the opening pose: the pair spans 1040 of the 1080 canvas, so
+      /* S0 - the opening pose: the pair spans 1040 of the 1080 canvas, so
          the cards read edge-to-edge while both outer corners stay in frame.
          At this scale the visible world band (166→1270 canvas px) sits well
          inside the phone screen (73.5→1578.5): no bezel, no chrome, exactly
@@ -486,7 +486,7 @@
       /* viewport-change, single-wrapper composite transform: T = -offset × S.
          OPEN_BIAS_Y rides the opening pose 80px above dead centre: the pair
          then sits high with m-re air beneath it, which is the honest hint
-         that something lives below — and that is what the pull-back proves.
+         that something lives below - and that is what the pull-back proves.
          It costs nothing at the far end, where both translates land at 0. */
       var OPEN_BIAS_Y = 80;-
       var X0 = -(cardCx - CANVAS_W / 2) * S0;                  /* ≈ 0.5   */
@@ -494,10 +494,10 @@
 
       var SNAP = { innerText: 1 };
 
-      /* ══ Scene 1 (0.0–2.2) — full-bleed close-up on the two totals ═════
+      /* ══ Scene 1 (0.0–2.2) - full-bleed close-up on the two totals ═════
          The camera is parked at S0 and does not move. counting-dynamic-scale:
          both numbers count on the SAME position, duration and ease so they
-         land as one chord — the comparison is the point, an arpeggio would
+         land as one chord - the comparison is the point, an arpeggio would
          break it. Scale grows 0.55 → 1 on that same ease; font-size never
          tweens. tabular-nums + a left transform-origin keep 0→2368 from
          shuffling the digits sideways. */
@@ -531,7 +531,7 @@
         COUNT_AT
       );
 -
-      /* the unit is the suffix — it gets its own beat after the count lands */
+      /* the unit is the suffix - it gets its own beat after the count lands */
       tl.fromTo(
         ".f05b-unit",
         { opacity: 0, y: 26 },
@@ -539,7 +539,7 @@
         COUNT_AT + COUNT_DUR
       );
 
-      /* ══ Scene 2 (2.2–3.4) — Б/Ж/У under both numbers ═════════════════
+      /* ══ Scene 2 (2.2–3.4) - Б/Ж/У under both numbers ═════════════════
          Revealed as PAIRS, not column by column: Б left and Б right arrive
          together on one baseline, then Ж, then У. That is what lets the eye
          read 131.8 against 92.1 as a difference instead of as two lists.
@@ -547,7 +547,7 @@
       /* 1.1, не 2.25. На контактном листе видно, во что обходилась задержка:
          с 38-й по 40-ю секунду ролика карточки стояли на две трети пустыми
          и читались как незагрузившиеся. Причём пустовала ровно та часть,
-         ради которой кадр и существует, — колонки Б/Ж/У, которые надо
+         ради которой кадр и существует, - колонки Б/Ж/У, которые надо
          сравнить глазом.
          Теперь макросы приходят, пока числа ещё досчитывают: карточка
          собирается целиком к -.5 с, и до отъезда в 3.45 остаётся настоящая
@@ -567,12 +567,12 @@
         );
       });
 
-      /* ══ Scene 3 (3.4–5.0) — THE ONE CAMERA MOVE, and it is outward ═══
+      /* ══ Scene 3 (3.4–5.0) - THE ONE CAMERA MOVE, and it is outward ═══
          A single decelerating pull from S0 to 1. It is the only scale tween
          in this composition and it never reverses: after it stops at 4.95 the
          frame is locked and every later beat is element motion.
-         Chorded with it, the captured chrome resolves — the 89% ring and the
-         «Я / Сравнение» toggle above the cards, the app bar at the top — so
+         Chorded with it, the captured chrome resolves - the 89% ring and the
+         «Я / Сравнение» toggle above the cards, the app bar at the top - so
          the two columns turn out to be the head of a whole screen. */
       var ZOOM_AT = 3.45;
       var ZOOM_DUR = 1.5;
@@ -599,11 +599,11 @@
         4.3
       );
 
-      /* ══ Scene 4 (5.0–6.6) — waterfall-entry, camera LOCKED ═══════════
+      /* ══ Scene 4 (5.0–6.6) - waterfall-entry, camera LOCKED ═══════════
          The answer to «а из чего у неё 804». Pure element motion: opacity is
          binary via tl.set, tr-vel is one direction (from below), each element
          starts within a frame or two of the previous settling and the gaps
-         shrink across the cascade. Offsets are plate px — the plate renders
+         shrink across the cascade. Offsets are plate px - the plate renders
          at 0.557, so 130px of travel is ~72px on the canvas. */
       var wf = [
         { el: "#f05b-meal1", at: 5.05, y: 130, d: 0.22 }, /* anchor */
@@ -618,7 +618,7 @@
         tl.to(w.el, { y: 0, duration: w.d, ease: "power4.out" }, w.at);
       });
 
-      /* ══ Scene 5 (6.6–7.8) — the title stands up in the bottom band ═══ */
+      /* ══ Scene 5 (6.6–7.8) - the title stands up in the bottom band ═══ */
       tl.to("#f05b-scrim", { opacity: 1, duration: 0.55, ease: "power2.out" }, 6.6);
       tl.fromTo(
         "#f05b-accentline",
@@ -639,7 +639,7 @@
         7.04
       );
 
-      /* ══ Scene 6 (7.8–9.0) — held. Nothing moves, camera included. ════ */
+      /* ══ Scene 6 (7.8–9.0) - held. Nothing moves, camera included. ════ */
 
       window.__timelines["05b-compare"] = tl;
     })();
