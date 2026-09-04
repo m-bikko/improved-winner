@@ -20,18 +20,46 @@ export function isOver(ratio: number): boolean {
 }
 
 /**
+ * Длины двух дуг кольца в долях окружности.
+ *
+ * Вынесено из разметки, чтобы на это можно было поставить проверку: поломка
+ * здесь молчаливая. Кольцо, перестав рисовать перебор, выглядит совершенно
+ * исправным - просто закрытым ровно на сто процентов, - и заметить подмену
+ * можно только сравнив с числом в центре.
+ */
+export function ringArcs(ratio: number): { filled: number; excess: number } {
+  return {
+    filled: Math.min(Math.max(ratio, 0), 1),
+    // Больше одного лишнего витка не рисуем: двести процентов и триста
+    // выглядели бы одинаково полными, а разницу показывает число в центре.
+    excess: Math.min(Math.max(ratio - 1, 0), 1),
+  }
+}
+
+/**
  * Дуга-мера.
  *
  * Вынесена отдельно, потому что кольцо рисуется в двух размерах - крупным
  * в раскрытом виде и мелким в свёрнутом, - а правила у него одни: незаполненная
- * часть это светлая ступень той же гаммы, что и заливка, и дуга упирается
- * в полный круг. Второй виток поверх первого читался бы как «меньше».
+ * часть это светлая ступень той же гаммы, что и заливка.
+ *
+ * Перебор идёт ВТОРЫМ витком поверх полного круга, а не вместо него.
+ *
+ * Раньше здесь стоял довод «второй виток читался бы как меньше», и он верен -
+ * но только если рисовать перебором один короткий отрезок, а полный круг
+ * убирать. Тогда 110% выглядели бы как 10%. Если же полный круг остаётся
+ * на месте, а перебор ложится сверху от двенадцати часов, читается ровно
+ * то, что произошло: норму закрыл и пошёл дальше. Видно и сам факт,
+ * и насколько.
+ *
+ * Больше одного лишнего витка не рисуем: двести процентов и триста выглядели
+ * бы одинаково полными, а разницу всё равно показывает число в центре.
  */
 export function RingArc({ size, ratio }: { size: number; ratio: number }) {
   const stroke = Math.max(3, size * STROKE_RATIO)
   const radius = (size - stroke) / 2
   const circumference = 2 * Math.PI * radius
-  const filled = Math.min(ratio, 1)
+  const { filled, excess } = ringArcs(ratio)
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
@@ -50,13 +78,27 @@ export function RingArc({ size, ratio }: { size: number; ratio: number }) {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={isOver(ratio) ? 'var(--color-danger)' : 'var(--color-accent)'}
+          stroke="var(--color-accent)"
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={circumference * (1 - filled)}
           className="transition-[stroke-dashoffset] duration-500"
         />
+        {excess > 0 && (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke="var(--color-danger)"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={circumference * (1 - excess)}
+            className="transition-[stroke-dashoffset] duration-500"
+          />
+        )}
       </g>
     </svg>
   )
@@ -84,7 +126,10 @@ export function CalorieRing({ totals, goals, goalDirection }: Props) {
       <div className="relative" style={{ width: FULL_SIZE, height: FULL_SIZE }}>
         <div
           role="img"
-          aria-label={`Съедено ${Math.round(totals.kcal)} из ${goals.kcal} ккал, ${percent} процентов нормы`}
+          aria-label={
+            `Съедено ${Math.round(totals.kcal)} из ${goals.kcal} ккал, ${percent} процентов нормы` +
+            (over ? `, перебор на ${Math.round(-left)} ккал` : '')
+          }
         >
           <RingArc size={FULL_SIZE} ratio={ratio} />
         </div>
@@ -126,7 +171,10 @@ export function CalorieRingMini({ totals, goals, goalDirection }: Props) {
       <div
         className="shrink-0"
         role="img"
-        aria-label={`${percent} процентов дневной нормы`}
+        aria-label={
+          `${percent} процентов дневной нормы` +
+          (over ? `, перебор на ${Math.round(-left)} ккал` : '')
+        }
       >
         <RingArc size={MINI_SIZE} ratio={ratio} />
       </div>

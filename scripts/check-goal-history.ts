@@ -9,6 +9,7 @@
  * Всё внутри транзакции, откатывается.
  */
 import { Client } from 'pg'
+import { isOver, ringArcs } from '../src/features/diary/CalorieRing.tsx'
 import { pgConfig } from './env.ts'
 
 let failed = 0
@@ -96,6 +97,34 @@ async function main(): Promise<void> {
   } finally {
     await client.query('rollback')
     await client.end()
+  }
+
+  // Кольцо: перебор обязан быть видим
+  //
+  // Поломка здесь молчаливая. Кольцо, перестав рисовать перебор, выглядит
+  // исправным - закрытым ровно на сто процентов, - и заметить подмену можно
+  // только сравнив с числом в центре, чего никто не делает.
+  const ringCases: [number, number, number, boolean, string][] = [
+    [0, 0, 0, false, 'пустой день'],
+    [0.5, 0.5, 0, false, 'половина нормы'],
+    [1, 1, 0, false, 'ровно норма'],
+    [1.03, 1, 0.03, false, 'чуть выше нормы - в допуске'],
+    [1.31, 1, 0.31, true, 'перебор на треть'],
+    [2, 1, 1, true, 'двойная норма'],
+    [3.5, 1, 1, true, 'втрое - больше витка не рисуем'],
+  ]
+  for (const [ratio, filled, excess, over, name] of ringCases) {
+    const a = ringArcs(ratio)
+    const ok =
+      Math.abs(a.filled - filled) < 1e-9 &&
+      Math.abs(a.excess - excess) < 1e-9 &&
+      isOver(ratio) === over
+    check(
+      ok,
+      `Кольцо: ${name}`,
+      `доля ${a.filled.toFixed(2)} (ждали ${filled}), перебор ${a.excess.toFixed(2)} ` +
+        `(ждали ${excess}), тревога ${isOver(ratio)} (ждали ${over})`,
+    )
   }
 
   console.log(failed === 0 ? '\nЗакрытые кольца не двигаются.' : `\nПровалено: ${failed}`)
