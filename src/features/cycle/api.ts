@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useUserId } from '@/auth/AuthProvider'
 import { supabase } from '@/lib/supabase'
 import type { Database } from '@/types/db'
 import type { Period } from './cycle'
@@ -79,11 +80,12 @@ export function useCycleSettings() {
 
 export function useSaveCycleSettings() {
   const qc = useQueryClient()
+  // id берётся из контекста, а не из supabase.auth.getUser(): тот ходит
+  // в сеть на каждый вызов, и в логе запросов это было видно отдельной
+  // строкой «user» рядом с каждой записью настроек.
+  const userId = useUserId()
   return useMutation({
     mutationFn: async (next: CycleSettings): Promise<void> => {
-      const { data: session } = await supabase.auth.getUser()
-      const userId = session.user?.id
-      if (!userId) throw new Error('Нет сессии')
       const { error } = await supabase.from('cycle_settings').upsert({
         user_id: userId,
         tracking_enabled: next.trackingEnabled,
@@ -93,10 +95,10 @@ export function useSaveCycleSettings() {
       })
       if (error) throw error
     },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['cycle-settings'] })
-      void qc.invalidateQueries({ queryKey: ['periods'] })
-    },
+    // Записи не трогаем: от настроек зависят только производные величины,
+    // а они считаются на клиенте из уже загруженных данных. Лишний инвалидейт
+    // тянул за собой перезапрос обеих историй на каждое изменение.
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['cycle-settings'] }),
   })
 }
 
@@ -184,11 +186,9 @@ export function useCycleDays(userId: string) {
 
 export function useSaveCycleDay() {
   const qc = useQueryClient()
+  const userId = useUserId()
   return useMutation({
     mutationFn: async (log: DayLog): Promise<void> => {
-      const { data: session } = await supabase.auth.getUser()
-      const userId = session.user?.id
-      if (!userId) throw new Error('Нет сессии')
       const { error } = await supabase.from('cycle_days').upsert({
         user_id: userId,
         date: log.date,

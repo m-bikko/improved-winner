@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ChevronDown, Droplet, Info, Plus, ShieldCheck, Trash2, TriangleAlert } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
 import { useProfiles } from '@/features/profile/api'
@@ -577,28 +577,80 @@ function SettingsSheet({ onClose }: { onClose: () => void }) {
           onChange={(v) => void update({ shareWithPartner: v })}
         />
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-muted">Лютеиновая фаза, дней</span>
-          <input
-            inputMode="numeric"
-            value={String(current.lutealDays)}
-            onChange={(e) => {
-              const raw = e.target.value.replace(/\D/g, '')
-              if (raw === '') return
-              const n = Math.min(20, Math.max(8, Number(raw)))
-              void update({ lutealDays: n })
-            }}
-            className="w-20 rounded-lg bg-surface px-3 py-2 text-center ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
-          />
-          <span className="text-xs text-muted">
-            От неё считается овуляция - назад от следующей менструации. У большинства
-            12-16 дней; 14 стоит по умолчанию.
-          </span>
-        </label>
+        <LutealField
+          value={current.lutealDays}
+          onCommit={(days) => void update({ lutealDays: days })}
+        />
 
         {error && <p className="text-sm text-danger">{error}</p>}
       </div>
     </Sheet>
+  )
+}
+
+/**
+ * Длина лютеиновой фазы.
+ *
+ * Отдельным компонентом из-за двух поломок, которые были здесь одновременно.
+ *
+ * Первая: значение бралось прямо из загруженных настроек, а введённое тут же
+ * зажималось в 8-20. Набираешь «1» - получаешь 8, и «12» набрать невозможно
+ * в принципе. Ровно эта ошибка уже была в NumberField, и лечится она так же:
+ * набранный текст живёт отдельно от числа.
+ *
+ * Вторая: запись шла в базу на каждое нажатие, а следом инвалидировались
+ * настройки и обе истории. В логе запросов это выглядело как сотня обращений
+ * на одно поле. Теперь запись происходит на потере фокуса и только если
+ * значение действительно изменилось.
+ */
+function LutealField({
+  value,
+  onCommit,
+}: {
+  value: number
+  onCommit: (days: number) => void
+}) {
+  const [text, setText] = useState(String(value))
+
+  // Значение пришло снаружи (загрузились настройки, откатилась запись) -
+  // подхватываем, но только когда оно отличается от набранного, иначе
+  // затрём то, что человек печатает прямо сейчас.
+  useEffect(() => {
+    if (Number(text) !== value) setText(String(value))
+    // text намеренно вне зависимостей: эффект реагирует на внешнее значение
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value])
+
+  const commit = () => {
+    const raw = text.replace(/\D/g, '')
+    // Пустое поле - это не «ноль», а «передумал»: возвращаем прежнее.
+    if (raw === '') {
+      setText(String(value))
+      return
+    }
+    const days = Math.min(20, Math.max(8, Number(raw)))
+    setText(String(days))
+    if (days !== value) onCommit(days)
+  }
+
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="text-sm text-muted">Лютеиновая фаза, дней</span>
+      <input
+        inputMode="numeric"
+        value={text}
+        onChange={(e) => setText(e.target.value.replace(/\D/g, '').slice(0, 2))}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur()
+        }}
+        className="w-20 rounded-lg bg-surface px-3 py-2 text-center ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
+      />
+      <span className="text-xs text-muted">
+        От неё считается овуляция - назад от следующей менструации. У большинства
+        12-16 дней; 14 стоит по умолчанию. Сохраняется, когда уводите фокус.
+      </span>
+    </label>
   )
 }
 
@@ -611,6 +663,19 @@ function Intro({
   open: boolean
   onClose: () => void
 }) {
+  const settings = useCycleSettings()
+  const save = useSaveCycleSettings()
+
+  // Кнопка обязана делать то, что на ней написано. Раньше «Включить» только
+  // открывало настройки, а раздел оставался выключенным, пока человек
+  // не найдёт там тумблер, - то есть кнопка обещала одно, а делала другое.
+  // Теперь она включает ведение и открывает настройки следом: доступ
+  // партнёру по-прежнему остаётся отдельным осознанным решением.
+  const enable = async () => {
+    await save.mutateAsync({ ...(settings.data ?? DEFAULT_SETTINGS), trackingEnabled: true })
+    onEnable()
+  }
+
   return (
     <div className="px-4 py-6">
       <div className="rounded-2xl bg-surface p-5 ring-1 ring-line">
@@ -628,7 +693,7 @@ function Intro({
           включён.
         </p>
         <div className="mt-4">
-          <Button onClick={onEnable}>
+          <Button onClick={() => void enable()} loading={save.isPending}>
             <Plus size={18} aria-hidden />
             Включить
           </Button>
