@@ -42,19 +42,12 @@ async function signIn(url: string, key: string, email: string, password: string)
 }
 
 async function main(): Promise<void> {
-  loadEnv()
-  const vars = readVars([
-    'VITE_PUBLIC_SUPABASE_URL',
-    'VITE_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
-    'LOVE_PIN_BIKOSH',
-    'LOVE_PIN_AMINOSH',
-  ])
-  const url = vars.VITE_PUBLIC_SUPABASE_URL
-  const key = vars.VITE_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  const { supabaseUrl: url, publishableKey: key } = loadEnv()
+  const vars = readVars()
 
   const pins: Record<string, string> = {
-    bikosh: vars.LOVE_PIN_BIKOSH,
-    aminosh: vars.LOVE_PIN_AMINOSH,
+    bikosh: vars['LOVE_PIN_BIKOSH'] ?? '',
+    aminosh: vars['LOVE_PIN_AMINOSH'] ?? '',
   }
 
   for (const owner of ACCOUNTS) {
@@ -63,7 +56,7 @@ async function main(): Promise<void> {
 
     const ownerPin = pins[owner.id]
     const otherPin = pins[other.id]
-    if (!ownerPin || !otherPin) throw new Error('Нет PIN в окружении')
+    if (!ownerPin || !otherPin) throw new Error(`Нет PIN для ${owner.id}/${other.id}`)
 
     const asOwner = await signIn(url, key, owner.email, ownerPin)
     const asOther = await signIn(url, key, other.email, otherPin)

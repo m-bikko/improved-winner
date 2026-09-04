@@ -37,7 +37,7 @@ export const PHASE_LABELS: Record<Phase, string> = {
 /**
  * Нормы.
  *
- * Взяты по общепринятым ориентирам: цикл 21–35 дней, менструация 2–8 дней,
+ * Взяты по общепринятым ориентирам: цикл 21-35 дней, менструация 2-8 дней,
  * разброс между соседними циклами до 9 дней, отсутствие менструации
  * 90 дней и дольше - повод показаться врачу.
  *
@@ -55,6 +55,31 @@ export const NORMS = {
   absenceDays: 90,
   /** Сколько последних циклов берём для средних. */
   window: 6,
+} as const
+
+/**
+ * Границы правдоподобия - это НЕ нормы здоровья, и путать их нельзя.
+ *
+ * NORMS отвечает на вопрос «стоит ли показаться врачу»: цикл 21-35, менструация
+ * 2-8. PLAUSIBLE отвечает на другой - «это вообще похоже на измерение или это
+ * промах по кнопке». Границы здесь шире: сорокадневный цикл выходит за норму,
+ * но он реален, и прогноз обязан считаться с ним, а не подменять его двадцатью
+ * восемью.
+ *
+ * Появились не из теории. Человек отметил один день менструации, приложение
+ * посчитало «среднюю длину» по одному наблюдению, получило единицу - и стало
+ * рисовать этой единицей все будущие менструации. Две однодневные отметки
+ * подряд дали бы «средний цикл 1 день» и развалили бы прогноз целиком.
+ *
+ * Отсюда правило: в среднее для ПРОГНОЗА идут только правдоподобные значения.
+ * В предупреждения - все, какие есть, иначе однодневная менструация перестала
+ * бы о себе сообщать.
+ */
+export const PLAUSIBLE = {
+  cycleMin: 15,
+  cycleMax: 60,
+  periodMin: 2,
+  periodMax: 12,
 } as const
 
 export const DEFAULT_CYCLE_DAYS = 28
@@ -80,6 +105,12 @@ export type CycleStats = {
   spread: number | null
   /** Сколько завершённых циклов легло в среднее. */
   cyclesCounted: number
+  /**
+   * То же среднее, но по значениям, прошедшим проверку на правдоподобие.
+   * Именно оно идёт в прогноз. null - считать не из чего, берётся умолчание.
+   */
+  usableCycle: number | null
+  usablePeriod: number | null
 }
 
 /**
@@ -99,11 +130,20 @@ export function cycleStats(periods: Period[]): CycleStats {
     .filter((d): d is number => d !== null)
     .slice(-NORMS.window)
 
+  const plausibleCycles = cycles.filter(
+    (d) => d >= PLAUSIBLE.cycleMin && d <= PLAUSIBLE.cycleMax,
+  )
+  const plausibleLengths = lengths.filter(
+    (d) => d >= PLAUSIBLE.periodMin && d <= PLAUSIBLE.periodMax,
+  )
+
   return {
     avgCycle: average(cycles),
     avgPeriod: average(lengths),
     spread: cycles.length >= 2 ? Math.max(...cycles) - Math.min(...cycles) : null,
     cyclesCounted: cycles.length,
+    usableCycle: average(plausibleCycles),
+    usablePeriod: average(plausibleLengths),
   }
 }
 
@@ -146,8 +186,8 @@ export function cycleDay(
   if (!last) return null
 
   const stats = cycleStats(periods)
-  const cycleLength = Math.round(stats.avgCycle ?? DEFAULT_CYCLE_DAYS)
-  const periodLength = Math.round(stats.avgPeriod ?? DEFAULT_PERIOD_DAYS)
+  const cycleLength = Math.round(stats.usableCycle ?? DEFAULT_CYCLE_DAYS)
+  const periodLength = Math.round(stats.usablePeriod ?? DEFAULT_PERIOD_DAYS)
 
   const day = daysBetween(last.startedOn, today) + 1
   const nextStart = shiftDays(last.startedOn, cycleLength)
@@ -211,14 +251,14 @@ export function warnings(periods: Period[], today: string): Warning[] {
         id: 'cycle-short',
         level: 'attention',
         title: `Средний цикл - ${avg} дней`,
-        body: `Обычно цикл держится в ${NORMS.cycleMin}–${NORMS.cycleMax} дней. Если так идёт не первый месяц, это стоит обсудить с врачом.`,
+        body: `Обычно цикл держится в ${NORMS.cycleMin}-${NORMS.cycleMax} дней. Если так идёт не первый месяц, это стоит обсудить с врачом.`,
       })
     } else if (avg > NORMS.cycleMax) {
       out.push({
         id: 'cycle-long',
         level: 'attention',
         title: `Средний цикл - ${avg} дней`,
-        body: `Обычно цикл держится в ${NORMS.cycleMin}–${NORMS.cycleMax} дней. Если так идёт не первый месяц, это стоит обсудить с врачом.`,
+        body: `Обычно цикл держится в ${NORMS.cycleMin}-${NORMS.cycleMax} дней. Если так идёт не первый месяц, это стоит обсудить с врачом.`,
       })
     }
   }
@@ -314,8 +354,8 @@ export function forecast(
   if (!last) return []
 
   const stats = cycleStats(periods)
-  const cycleLength = Math.round(stats.avgCycle ?? DEFAULT_CYCLE_DAYS)
-  const periodLength = Math.round(stats.avgPeriod ?? DEFAULT_PERIOD_DAYS)
+  const cycleLength = Math.round(stats.usableCycle ?? DEFAULT_CYCLE_DAYS)
+  const periodLength = Math.round(stats.usablePeriod ?? DEFAULT_PERIOD_DAYS)
 
   const out: Forecast[] = []
   for (let i = 1; i <= count; i++) {
