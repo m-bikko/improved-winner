@@ -24,6 +24,30 @@ export type Database = {
         }
         Relationships: []
       }
+      cycle_settings: {
+        Row: {
+          luteal_days: number
+          share_with_partner: boolean
+          tracking_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          luteal_days?: number
+          share_with_partner?: boolean
+          tracking_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          luteal_days?: number
+          share_with_partner?: boolean
+          tracking_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_goals: {
         Row: {
           carbs: number
@@ -323,6 +347,36 @@ export type Database = {
         }
         Relationships: []
       }
+      periods: {
+        Row: {
+          created_at: string
+          ended_on: string | null
+          id: string
+          note: string | null
+          started_on: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ended_on?: string | null
+          id?: string
+          note?: string | null
+          started_on: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          ended_on?: string | null
+          id?: string
+          note?: string | null
+          started_on?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           activity_level: string
@@ -577,8 +631,21 @@ export type Database = {
         }
         Relationships: []
       }
+      periods_v: {
+        Row: {
+          cycle_days: number | null
+          ended_on: string | null
+          id: string | null
+          note: string | null
+          period_days: number | null
+          started_on: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      cycle_shared_with_me: { Args: { owner: string }; Returns: boolean }
       diary_month: {
         Args: { p_from: string; p_to: string; p_user: string }
         Returns: {

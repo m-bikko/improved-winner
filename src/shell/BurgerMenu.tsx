@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
-import { Apple, ListChecks, LogOut, NotebookPen, MessagesSquare, User, X } from 'lucide-react'
+import { Apple, Droplet, ListChecks, LogOut, NotebookPen, MessagesSquare, User, X } from 'lucide-react'
 import { useAuth } from '@/auth/AuthProvider'
 import { APP_NAME } from '@/lib/appName'
 
@@ -9,6 +9,7 @@ export const NAV = [
   { to: '/tasks', label: 'Задачи', icon: ListChecks },
   { to: '/diary', label: 'Дневник', icon: NotebookPen },
   { to: '/foods', label: 'Продукты', icon: Apple },
+  { to: '/cycle', label: 'Цикл', icon: Droplet },
   { to: '/profile', label: 'Профиль', icon: User },
 ] as const
 
