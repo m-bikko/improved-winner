@@ -73,12 +73,67 @@ async function main(): Promise<void> {
       [user.user_id, breakfastZone],
     )
 
+    // И отметку о том, что сегодня уже напоминали.
+    //
+    // Без этого проверка флаки по построению: настоящий cron идёт каждый час
+    // и, отправив человеку завтрак в его собственном поясе, оставляет отметку.
+    // Дальше проверка подбирает пояс, где сейчас 11, — а дата там нередко
+    // та же самая, — и функция законно молчит. То есть до 11:00 по месту
+    // проверка проходила, после падала, и виноват был не код.
+    //
+    // Всё внутри транзакции, которая откатывается, так что живой отметке
+    // ничего не грозит.
+    await client.query(
+      `delete from public.meal_reminders
+        where user_id = $1 and meal = 'breakfast'
+          and date = (now() at time zone $2)::date`,
+      [user.user_id, breakfastZone],
+    )
+
+    const before = await client.query<{ n: string }>(
+      'select count(*)::text as n from net.http_request_queue',
+    )
     const first = await client.query<{ n: string }>('select public.send_meal_reminders()::text as n')
     check(
       Number(first.rows[0]?.n) >= 1,
       'Пустой завтрак в 11 часов даёт напоминание',
       `${breakfastZone}, отправлено: ${first.rows[0]?.n}`,
     )
+
+    // Род в тексте берётся из профиля, а не один на всех.
+    //
+    // Раньше текст был только в мужском роде, и Аминош каждый раз получала
+    // «Позавтракал?». Приложение знает пол — значит и слово должно быть
+    // правильное; скобочное «(а)» тут не решение, а отказ от него.
+    const { rows: sexRows } = await client.query<{ sex: string | null }>(
+      'select sex from public.profiles where user_id = $1',
+      [user.user_id],
+    )
+    const sex = sexRows[0]?.sex ?? null
+    const expected =
+      sex === 'female' ? 'Позавтракала' : sex === 'male' ? 'Позавтракал?' : 'Завтрак был?'
+    // convert_from, а не ::text: body в очереди pg_net — bytea, и приведение
+    // к тексту даёт шестнадцатеричную строку, в которой никакое слово
+    // не найдётся. Кириллица тут вдвойне обязывает раскодировать честно.
+    const { rows: bodyRows } = await client.query<{ body: string }>(
+      `select convert_from(q.body, 'utf8') as body from net.http_request_queue q
+        order by q.id desc limit 1`,
+    )
+    const body = bodyRows[0]?.body ?? ''
+    check(
+      body.includes(expected),
+      'Текст напоминания в роде из профиля',
+      `пол ${sex ?? 'не задан'}, ждали «${expected}», в запросе ${body.includes(expected) ? 'есть' : 'НЕТ'}`,
+    )
+    check(
+      Number(before.rows[0]?.n) < Number(
+        (await client.query<{ n: string }>('select count(*)::text as n from net.http_request_queue'))
+          .rows[0]?.n,
+      ),
+      'Запрос на отправку действительно поставлен в очередь',
+      'счётчик net.http_request_queue вырос',
+    )
+
 
     const second = await client.query<{ n: string }>('select public.send_meal_reminders()::text as n')
     check(
