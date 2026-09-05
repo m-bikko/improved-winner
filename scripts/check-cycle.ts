@@ -502,7 +502,13 @@ function logicChecks(): void {
     const ownerIds = new Set(tipsFor(st).map((t) => t.id))
     const partnerTips = tipsForPartner(st)
     const leaked = partnerTips.filter(
-      (t) => ownerIds.has(t.id) && !['intimacy', 'practices', 'benefits'].includes(t.category),
+      // Общие темы - те, что написаны для двоих изначально. «Вдвоём»
+      // попала сюда позже остальных: она про обоих по определению, и держать
+      // её в личных значило требовать, чтобы совет «спроси, чем помочь»
+      // читал только тот, кому помогают.
+      (t) =>
+        ownerIds.has(t.id) &&
+        !['intimacy', 'practices', 'benefits', 'together'].includes(t.category),
     )
     check(
       partnerTips.length >= 8 && leaked.length === 0,

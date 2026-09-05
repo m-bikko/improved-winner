@@ -24,6 +24,51 @@ export type Database = {
         }
         Relationships: []
       }
+      checkin_asks: {
+        Row: {
+          created_at: string
+          date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      checkins: {
+        Row: {
+          created_at: string
+          date: string
+          note: string | null
+          states: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          note?: string | null
+          states?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          note?: string | null
+          states?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cycle_days: {
         Row: {
           created_at: string
@@ -386,6 +431,39 @@ export type Database = {
         }
         Relationships: []
       }
+      love_notes: {
+        Row: {
+          message: string
+          on_date: string
+        }
+        Insert: {
+          message: string
+          on_date: string
+        }
+        Update: {
+          message?: string
+          on_date?: string
+        }
+        Relationships: []
+      }
+      love_notes_sent: {
+        Row: {
+          created_at: string
+          on_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          on_date: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          on_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meal_reminders: {
         Row: {
           date: string
@@ -708,6 +786,7 @@ export type Database = {
       }
     }
     Functions: {
+      ask_checkins: { Args: never; Returns: number }
       cycle_shared_with_me: { Args: { owner: string }; Returns: boolean }
       cycle_state: {
         Args: { on_date: string; owner: string }
@@ -742,6 +821,7 @@ export type Database = {
         Returns: string
       }
       notify_due_tasks: { Args: never; Returns: number }
+      partner_of: { Args: { author_id: string }; Returns: string }
       push_notify: {
         Args: { body: string; target_id: string; title: string }
         Returns: undefined
@@ -770,6 +850,7 @@ export type Database = {
         }
       }
       send_cycle_notices: { Args: never; Returns: number }
+      send_love_notes: { Args: never; Returns: number }
       send_meal_reminders: { Args: never; Returns: number }
       tg_escape: { Args: { input: string }; Returns: string }
       tg_notify_partner: {

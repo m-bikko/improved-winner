@@ -1,10 +1,21 @@
 import { useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
-import { Apple, Droplet, ListChecks, LogOut, NotebookPen, MessagesSquare, User, X } from 'lucide-react'
+import {
+  Apple,
+  Droplet,
+  ListChecks,
+  LogOut,
+  MessagesSquare,
+  NotebookPen,
+  Smile,
+  User,
+  X,
+} from 'lucide-react'
 import { useAuth } from '@/auth/AuthProvider'
 import { APP_NAME } from '@/lib/appName'
 
 export const NAV = [
+  { to: '/checkin', label: 'Как ты', icon: Smile },
   { to: '/topics', label: 'Темы', icon: MessagesSquare },
   { to: '/tasks', label: 'Задачи', icon: ListChecks },
   { to: '/diary', label: 'Дневник', icon: NotebookPen },
