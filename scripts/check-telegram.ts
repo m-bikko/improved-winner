@@ -65,8 +65,13 @@ async function main(): Promise<void> {
     for (let i = 0; i < 20; i++) {
       await new Promise((r) => setTimeout(r, 500))
       const { rows } = await client.query<{ status_code: number | null; content: string | null }>(
+        // Именно ТЕЛЕГРАМНЫЙ ответ, а не последний подряд. С добавлением
+        // push по темам в буфер стали попадать и ответы вида {"sent":2},
+        // и проверка ловила их вместо Telegram - падая на ровном месте.
+        // Ответ Telegram узнаётся по полю "ok".
         `select status_code, content from net._http_response
-          where created >= $1::timestamptz order by created desc limit 1`,
+          where created >= $1::timestamptz and content like '%"ok"%'
+          order by created desc limit 1`,
         [since],
       )
       if (rows[0]) {
@@ -107,6 +112,47 @@ async function main(): Promise<void> {
         chatMissing ? 'ответ: chat not found - цепочка рабочая' : body.slice(0, 160),
       )
     }
+
+    // Push по темам добавлен позже телеграма: темы делались первыми, когда
+    // push в проекте ещё не было. Проверяем, что теперь идут оба канала -
+    // иначе разница вернулась бы незаметно при следующей правке функций.
+    //
+    // Считаем ВНУТРИ транзакции и откатываем. Очередь pg_net разгребается
+    // на лету, и подсчёт после коммита ловит только то, что не успело уйти:
+    // первая версия этой проверки показывала «push 1, telegram 1» вместо
+    // трёх и трёх - и это была её ошибка, а не кода.
+    await client.query('begin')
+    const { rows: base } = await client.query<{ push: string; tg: string }>(
+      `select count(*) filter (where url like '%/api/push')::text as push,
+              count(*) filter (where url like '%api.telegram.org%')::text as tg
+         from net.http_request_queue`,
+    )
+    const { rows: probe } = await client.query<{ id: string }>(
+      `insert into topics (title, body, created_by)
+       values ('ТЕСТ каналы', 'тело', $1) returning id`,
+      [author.user_id],
+    )
+    await client.query(
+      `insert into topic_comments (topic_id, author_id, body)
+       values ($1, $2, 'ТЕСТ ответ')`,
+      [probe[0]?.id, author.user_id],
+    )
+    const { rows: channels } = await client.query<{ push: string; tg: string }>(
+      `select count(*) filter (where url like '%/api/push')::text as push,
+              count(*) filter (where url like '%api.telegram.org%')::text as tg
+         from net.http_request_queue`,
+    )
+    await client.query('rollback')
+
+    // Прирост, а не абсолютное число: в очереди могло что-то лежать
+    // до нас, и первая версия проверки считала эти строки своими.
+    const pushDelta = Number(channels[0]?.push) - Number(base[0]?.push)
+    const tgDelta = Number(channels[0]?.tg) - Number(base[0]?.tg)
+    check(
+      pushDelta === 2 && tgDelta === 2,
+      'По темам уходят оба канала, а не только телеграм',
+      `на «завёл» и «ответил»: push +${pushDelta}, telegram +${tgDelta} (ждали по 2)`,
+    )
 
     // Ждём, пока pg_net разберёт очередь по всем трём событиям
     let sent = 0
