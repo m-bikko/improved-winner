@@ -134,6 +134,145 @@ async function schemaChecks(client: Client): Promise<void> {
     uid, '2026-01-07', null, null, null, [], '   ',
   ])
 
+  // --- зеркало расчёта в SQL ---
+  //
+  // Фазы считает клиент, а рассылает база, и расчёт продублирован. Дублирование
+  // здесь неизбежно, но молчаливое расхождение недопустимо: приложение
+  // показывало бы одну фазу, а уведомление называло другую, и человек узнал бы
+  // об этом только сверив два экрана.
+  await client.query(
+    `insert into public.cycle_settings (user_id, tracking_enabled, luteal_days)
+     values ($1, true, 14)
+     on conflict (user_id) do update set tracking_enabled = true, luteal_days = 14`,
+    [uid],
+  )
+  await client.query('delete from public.periods where user_id = $1', [uid])
+  for (const [s0, e0] of [
+    ['2026-06-01', '2026-06-05'],
+    ['2026-06-29', '2026-07-03'],
+    ['2026-07-27', '2026-07-31'],
+  ]) {
+    await client.query(ins, [uid, s0, e0])
+  }
+
+  const mirror: Period[] = [
+    withPeriodDays(period('2026-06-01', '2026-06-05', 28), 5),
+    withPeriodDays(period('2026-06-29', '2026-07-03', 28), 5),
+    withPeriodDays(period('2026-07-27', '2026-07-31', null), 5),
+  ]
+
+  for (const iso of ['2026-07-27', '2026-08-05', '2026-08-09', '2026-08-17', '2026-08-23']) {
+    // Даты берём ТЕКСТОМ. Драйвер отдаёт колонку date объектом Date
+    // в местной полуночи, и toISOString уводит её на день назад - ровно
+    // та ловушка, из-за которой в проекте запрещён current_date.
+    const { rows: sql } = await client.query<{
+      day: number
+      phase: string
+      cycle_length: number
+      next_start: string
+      ovulation: string
+    }>(
+      `select day, phase, cycle_length,
+              next_start::text as next_start, ovulation::text as ovulation
+         from public.cycle_state($1, $2::date)`,
+      [uid, iso],
+    )
+    const ts = cycleDay(mirror, iso, 14)
+    const row = sql[0]
+    const same =
+      row !== undefined &&
+      ts !== null &&
+      row.day === ts.day &&
+      row.phase === ts.phase &&
+      row.cycle_length === ts.cycleLength &&
+      row.next_start === ts.nextStart &&
+      row.ovulation === ts.ovulation
+    check(
+      same,
+      `SQL и клиент согласны на ${iso}`,
+      `SQL ${row?.day} ${row?.phase} цикл ${row?.cycle_length} след ${row?.next_start} овул ${row?.ovulation} | ` +
+        `TS ${ts?.day} ${ts?.phase} цикл ${ts?.cycleLength} след ${ts?.nextStart} овул ${ts?.ovulation}`,
+    )
+  }
+
+  // --- рассылка ---
+  //
+  // Час проверяем подбором пояса, где сейчас 13: ждать тринадцати часов
+  // ради проверки нельзя, а заодно это проверяет главное свойство функции -
+  // решение принимается по местному времени профиля, а не сервера.
+  const queued = async (): Promise<number> => {
+    const { rows } = await client.query<{ n: string }>(
+      'select count(*)::text as n from net.http_request_queue',
+    )
+    return Number(rows[0]?.n ?? 0)
+  }
+
+  const { rows: zones } = await client.query<{ name: string }>(
+    `select name from pg_timezone_names
+      where extract(hour from now() at time zone name)::int = 13
+        and name like '%/%' order by name limit 1`,
+  )
+  const noonZone = zones[0]?.name
+  const { rows: quiet } = await client.query<{ name: string }>(
+    `select name from pg_timezone_names
+      where extract(hour from now() at time zone name)::int = 3
+        and name like '%/%' order by name limit 1`,
+  )
+
+  if (noonZone && quiet[0]) {
+    // Ставим последнюю менструацию так, чтобы сегодня была середина цикла:
+    // ни начала, ни смены фазы - только подсказка дня.
+    await client.query('delete from public.periods where user_id = $1', [uid])
+    await client.query('delete from public.cycle_notices where user_id = $1', [uid])
+    await client.query(
+      `insert into public.periods (user_id, started_on, ended_on)
+       values ($1, (now() at time zone $2)::date - 8, (now() at time zone $2)::date - 4)`,
+      [uid, noonZone],
+    )
+
+    await client.query('update public.profiles set timezone = $1 where user_id = $2', [
+      quiet[0].name,
+      uid,
+    ])
+    const beforeQuiet = await queued()
+    await client.query('select public.send_cycle_notices()')
+    check(
+      (await queued()) === beforeQuiet,
+      'В неурочный час рассылки нет',
+      `${quiet[0].name}, запросов не прибавилось`,
+    )
+
+    await client.query('update public.profiles set timezone = $1 where user_id = $2', [
+      noonZone,
+      uid,
+    ])
+    await client.query('update public.cycle_settings set share_with_partner = true where user_id = $1', [uid])
+    const beforeTip = await queued()
+    await client.query('select public.send_cycle_notices()')
+    const tipRequests = (await queued()) - beforeTip
+    check(
+      tipRequests === 2,
+      'Подсказка дня уходит ТОЛЬКО владельцу, даже при открытом доступе',
+      `запросов ${tipRequests} (ожидалось 2: телеграм и push одному человеку)`,
+    )
+
+    const beforeRepeat = await queued()
+    await client.query('select public.send_cycle_notices()')
+    check(
+      (await queued()) === beforeRepeat,
+      'Повторный запуск в тот же день молчит',
+      'дубли недопустимы: задание идёт каждый час',
+    )
+  }
+
+  await client.query('delete from public.periods where user_id = $1', [uid])
+  for (const [s1, e1] of [
+    ['2026-01-01', '2026-01-05'],
+    ['2026-02-01', null],
+  ] as [string, string | null][]) {
+    await client.query(ins, [uid, s1, e1])
+  }
+
   // Вью считает длины
   const { rows: hist } = await client.query<{ period_days: number; cycle_days: number }>(
     `select period_days, cycle_days from public.periods_v

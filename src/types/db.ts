@@ -60,6 +60,27 @@ export type Database = {
         }
         Relationships: []
       }
+      cycle_notices: {
+        Row: {
+          created_at: string
+          date: string
+          kind: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          kind: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          kind?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cycle_settings: {
         Row: {
           luteal_days: number
@@ -688,6 +709,19 @@ export type Database = {
     }
     Functions: {
       cycle_shared_with_me: { Args: { owner: string }; Returns: boolean }
+      cycle_state: {
+        Args: { on_date: string; owner: string }
+        Returns: {
+          cycle_length: number
+          day: number
+          last_start: string
+          next_start: string
+          ovulation: string
+          period_length: number
+          phase: string
+        }[]
+      }
+      cycle_tip: { Args: { day: number; phase: string }; Returns: string }
       diary_month: {
         Args: { p_from: string; p_to: string; p_user: string }
         Returns: {
@@ -735,6 +769,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      send_cycle_notices: { Args: never; Returns: number }
       send_meal_reminders: { Args: never; Returns: number }
       tg_escape: { Args: { input: string }; Returns: string }
       tg_notify_partner: {
