@@ -1,10 +1,19 @@
 import { useMemo, useState } from 'react'
-import { Check, Trash2 } from 'lucide-react'
+import { Check, Flame, Trash2 } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
 import { useProfiles } from '@/features/profile/api'
 import { formatDayLabel, todayLocal } from '@/lib/date'
+import { plural } from '@/lib/plural'
 import { Button } from '@/ui/Button'
-import { useCheckins, useDeleteCheckin, useSaveCheckin } from './api'
+import {
+  useCheckins,
+  useDeleteCheckin,
+  useRestorable,
+  useRestoreDay,
+  useSaveCheckin,
+  useStreaks,
+} from './api'
+import type { Restorable } from './api'
 import {
   GROUP_LABELS,
   STATES,
@@ -22,12 +31,20 @@ import {
  * спросить, а спрашивают не каждый день.
  *
  * Свой ответ правится, чужой только читается. Это держит база, а не форма.
+ *
+ * Огонёк - число дней подряд. Он тут не ради игры: вопрос «как ты» ценен
+ * привычкой, а не отдельным ответом, и видимая серия - единственное, что
+ * эту привычку показывает. Отсюда же и восстановление: серия, оборвавшаяся
+ * из-за одного забытого вечера, перестаёт что-либо значить, и человек
+ * бросает. Два раза в месяц - чтобы прощение осталось прощением.
  */
 export function CheckinPage() {
   const userId = useUserId()
   const profiles = useProfiles()
   const all = useCheckins()
   const today = todayLocal()
+  const streaks = useStreaks(today)
+  const restorable = useRestorable(today)
 
   const partner = profiles.data?.find((p) => p.userId !== userId)
   const me = profiles.data?.find((p) => p.userId === userId)
@@ -56,11 +73,19 @@ export function CheckinPage() {
         <Card
           title={`Я${me?.nickname ? ` - ${me.nickname}` : ''}`}
           checkin={mine}
+          streak={streaks.data?.[userId] ?? 0}
           onEdit={() => setEditing(true)}
         />
       )}
 
-      <Card title={partner?.nickname ?? 'Партнёр'} checkin={theirs ?? null} onEdit={null} />
+      <Card
+        title={partner?.nickname ?? 'Партнёр'}
+        checkin={theirs ?? null}
+        streak={partner ? (streaks.data?.[partner.userId] ?? 0) : 0}
+        onEdit={null}
+      />
+
+      <Missed days={restorable.data ?? []} today={today} />
 
       <History all={all.data ?? []} userId={userId} partnerName={partner?.nickname ?? 'Партнёр'} />
     </div>
@@ -70,16 +95,21 @@ export function CheckinPage() {
 function Card({
   title,
   checkin,
+  streak,
   onEdit,
 }: {
   title: string
   checkin: Checkin | null
+  streak: number
   onEdit: (() => void) | null
 }) {
   return (
     <section className="rounded-2xl bg-surface p-4 ring-1 ring-line">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="font-medium">{title}</p>
+        <p className="flex items-baseline gap-2 font-medium">
+          {title}
+          {streak > 0 && <Streak days={streak} />}
+        </p>
         {onEdit && (
           <button type="button" onClick={onEdit} className="text-sm text-accent underline">
             Изменить
@@ -110,6 +140,79 @@ function Card({
           {checkin.note && <p className="mt-3 text-sm text-muted">{checkin.note}</p>}
         </>
       )}
+    </section>
+  )
+}
+
+/**
+ * Огонёк с числом.
+ *
+ * Число рядом с иконкой, а не только иконка: «горит» и «горит двенадцатый
+ * день» - разные вещи, и вторая как раз и есть то, что жалко потерять.
+ */
+function Streak({ days }: { days: number }) {
+  return (
+    <span
+      className="flex items-baseline gap-1 text-sm text-accent"
+      title={`${days} ${plural(days, 'день', 'дня', 'дней')} подряд`}
+    >
+      <Flame size={14} aria-hidden className="self-center" />
+      {days}
+    </span>
+  )
+}
+
+/**
+ * Пропущенные дни за неделю с возможностью вернуть огонёк.
+ *
+ * Показываем и когда попытки кончились: молча спрятать кнопку - значит
+ * оставить человека гадать, почему вчера она была, а сегодня нет.
+ */
+function Missed({ days, today }: { days: Restorable[]; today: string }) {
+  const restore = useRestoreDay(today)
+  const [error, setError] = useState<string | null>(null)
+
+  if (days.length === 0) return null
+
+  const left = days[0]?.monthLeft ?? 0
+
+  return (
+    <section className="flex flex-col gap-3 rounded-2xl bg-surface p-4 ring-1 ring-line">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="font-medium">Пропущенные дни</p>
+        <p className="text-sm text-muted">
+          {left > 0
+            ? `${left} ${plural(left, 'восстановление', 'восстановления', 'восстановлений')} в этом месяце`
+            : 'в этом месяце восстановлений не осталось'}
+        </p>
+      </div>
+
+      {days.map((d) => (
+        <div key={d.date} className="flex items-center justify-between gap-3">
+          <p className="text-sm">{formatDayLabel(d.date)}</p>
+          {d.monthLeft > 0 ? (
+            <button
+              type="button"
+              disabled={restore.isPending}
+              onClick={() => {
+                setError(null)
+                restore.mutate(d.date, {
+                  onError: (e) => setError(e instanceof Error ? e.message : String(e)),
+                })
+              }}
+              className="flex items-center gap-1.5 rounded-full bg-raised px-3 py-1.5 text-sm
+                         text-accent ring-1 ring-line disabled:opacity-50"
+            >
+              <Flame size={14} aria-hidden />
+              Восстановить
+            </button>
+          ) : (
+            <span className="text-sm text-muted">-</span>
+          )}
+        </div>
+      ))}
+
+      {error && <p className="text-sm text-danger">{error}</p>}
     </section>
   )
 }

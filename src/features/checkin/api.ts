@@ -51,7 +51,13 @@ export function useSaveCheckin() {
       })
       if (error) throw error
     },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['checkins'] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['checkins'] })
+      // Отметка двигает огонёк, а восстановление становится ненужным -
+      // оставить их несвежими значило бы показать вчерашнее число
+      void qc.invalidateQueries({ queryKey: ['checkin-streaks'] })
+      void qc.invalidateQueries({ queryKey: ['checkin-restorable'] })
+    },
   })
 }
 
@@ -63,6 +69,68 @@ export function useDeleteCheckin() {
       const { error } = await supabase.from('checkins').delete().eq('date', date)
       if (error) throw error
     },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['checkins'] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['checkins'] })
+      // Отметка двигает огонёк, а восстановление становится ненужным -
+      // оставить их несвежими значило бы показать вчерашнее число
+      void qc.invalidateQueries({ queryKey: ['checkin-streaks'] })
+      void qc.invalidateQueries({ queryKey: ['checkin-restorable'] })
+    },
+  })
+}
+
+/**
+ * Огоньки обоих: сколько дней подряд человек отмечался.
+ *
+ * Считает база, а не клиент. Копия арифметики на TS была бы третьей
+ * (SQL для вечернего напоминания, SQL для экрана) - и первая разошедшаяся
+ * копия показала бы уверенное неправильное число.
+ */
+export function useStreaks(today: string) {
+  return useQuery({
+    queryKey: ['checkin-streaks', today],
+    queryFn: async (): Promise<Record<string, number>> => {
+      const { data, error } = await supabase.rpc('checkin_streaks', { today })
+      if (error) throw error
+      return Object.fromEntries(data.map((r) => [r.user_id, r.streak ?? 0]))
+    },
+  })
+}
+
+export type Restorable = { date: string; monthLeft: number }
+
+/** Пропущенные дни за неделю и сколько восстановлений осталось в их месяце. */
+export function useRestorable(today: string) {
+  return useQuery({
+    queryKey: ['checkin-restorable', today],
+    queryFn: async (): Promise<Restorable[]> => {
+      const { data, error } = await supabase.rpc('checkin_restorable', { today })
+      if (error) throw error
+      return data.map((r) => ({ date: r.date, monthLeft: r.month_left ?? 0 }))
+    },
+  })
+}
+
+/**
+ * Восстановление пропущенного дня.
+ *
+ * Окно и лимит проверяет база: форма показывает только то, что уже разрешено,
+ * но полагаться на это нельзя - между показом и нажатием проходит время,
+ * а вкладок бывает две.
+ */
+export function useRestoreDay(today: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (date: string) => {
+      const { error } = await supabase.rpc('restore_checkin_day', {
+        target_date: date,
+        today,
+      })
+      if (error) throw error
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['checkin-streaks'] })
+      void qc.invalidateQueries({ queryKey: ['checkin-restorable'] })
+    },
   })
 }

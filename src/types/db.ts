@@ -28,16 +28,61 @@ export type Database = {
         Row: {
           created_at: string
           date: string
+          kind: string
           user_id: string
         }
         Insert: {
           created_at?: string
           date: string
+          kind?: string
           user_id: string
         }
         Update: {
           created_at?: string
           date?: string
+          kind?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      checkin_notices: {
+        Row: {
+          date: string
+          notified_at: string
+          user_id: string
+        }
+        Insert: {
+          date: string
+          notified_at?: string
+          user_id: string
+        }
+        Update: {
+          date?: string
+          notified_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      checkin_restores: {
+        Row: {
+          created_at: string
+          date: string
+          month: string
+          slot: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          month?: string
+          slot: number
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          month?: string
+          slot?: number
           user_id?: string
         }
         Relationships: []
@@ -787,6 +832,29 @@ export type Database = {
     }
     Functions: {
       ask_checkins: { Args: never; Returns: number }
+      ask_checkins_evening: { Args: never; Returns: number }
+      by_sex: {
+        Args: { female: string; male: string; neutral: string; person: string }
+        Returns: string
+      }
+      checkin_restorable: {
+        Args: { today: string }
+        Returns: {
+          date: string
+          month_left: number
+        }[]
+      }
+      checkin_streak: {
+        Args: { person: string; today: string }
+        Returns: number
+      }
+      checkin_streaks: {
+        Args: { today: string }
+        Returns: {
+          streak: number
+          user_id: string
+        }[]
+      }
       cycle_shared_with_me: { Args: { owner: string }; Returns: boolean }
       cycle_state: {
         Args: { on_date: string; owner: string }
@@ -823,10 +891,14 @@ export type Database = {
       notify_due_tasks: { Args: never; Returns: number }
       partner_of: { Args: { author_id: string }; Returns: string }
       push_notify: {
-        Args: { body: string; target_id: string; title: string }
+        Args: { body: string; target_id: string; title: string; url?: string }
         Returns: undefined
       }
       reorder_diary: { Args: { p_items: Json }; Returns: undefined }
+      restore_checkin_day: {
+        Args: { target_date: string; today: string }
+        Returns: undefined
+      }
       search_topics: {
         Args: { q: string }
         Returns: {
