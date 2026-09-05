@@ -323,6 +323,7 @@ export type Database = {
           name: string
           name_norm: string | null
           protein_100: number
+          source_url: string | null
           updated_at: string
           yield_grams: number | null
         }
@@ -340,6 +341,7 @@ export type Database = {
           name: string
           name_norm?: string | null
           protein_100?: number
+          source_url?: string | null
           updated_at?: string
           yield_grams?: number | null
         }
@@ -357,6 +359,7 @@ export type Database = {
           name?: string
           name_norm?: string | null
           protein_100?: number
+          source_url?: string | null
           updated_at?: string
           yield_grams?: number | null
         }
@@ -507,6 +510,7 @@ export type Database = {
           done_at: string | null
           done_by: string | null
           due_at: string | null
+          excluded_at: string[]
           id: string
           notes: string | null
           recurrence: Json | null
@@ -522,6 +526,7 @@ export type Database = {
           done_at?: string | null
           done_by?: string | null
           due_at?: string | null
+          excluded_at?: string[]
           id?: string
           notes?: string | null
           recurrence?: Json | null
@@ -537,6 +542,7 @@ export type Database = {
           done_at?: string | null
           done_by?: string | null
           due_at?: string | null
+          excluded_at?: string[]
           id?: string
           notes?: string | null
           recurrence?: Json | null
@@ -695,6 +701,10 @@ export type Database = {
       is_member: { Args: never; Returns: boolean }
       next_occurrence: {
         Args: { from_ts: string; rule: Json }
+        Returns: string
+      }
+      next_occurrence_allowed: {
+        Args: { excluded: string[]; from_ts: string; rule: Json }
         Returns: string
       }
       notify_due_tasks: { Args: never; Returns: number }

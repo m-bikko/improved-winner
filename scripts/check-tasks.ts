@@ -68,6 +68,40 @@ async function main(): Promise<void> {
     )
     const taskId = overdue.rows[0]?.id
 
+    // Создание задачи само по себе уведомляет обоих.
+    //
+    // Считаем отдельно от срока: это разные события, и раньше первого
+    // не существовало вовсе - о задаче узнавали только когда наступал срок,
+    // хотя список общий.
+    const beforeCreate = await client.query<{ n: string }>(
+      'select count(*)::text as n from net.http_request_queue',
+    )
+    await client.query(
+      `insert into public.tasks (title, notes, due_at, created_by)
+       values ('ТЕСТ создание', 'заметка', now() + interval '3 days', $1)`,
+      [author],
+    )
+    const afterCreate = await client.query<{ n: string }>(
+      'select count(*)::text as n from net.http_request_queue',
+    )
+    const onCreate = Number(afterCreate.rows[0]?.n) - Number(beforeCreate.rows[0]?.n)
+    check(
+      onCreate === memberCount * 2,
+      'Созданная задача уведомляет ОБОИХ, двумя каналами каждому',
+      `участников ${memberCount}, запросов ${onCreate} (ожидалось ${memberCount * 2})`,
+    )
+
+    const createdBody = await client.query<{ body: string }>(
+      `select convert_from(q.body, 'utf8') as body from net.http_request_queue q
+        order by q.id desc limit 1`,
+    )
+    const body = createdBody.rows[0]?.body ?? ''
+    check(
+      body.includes('ТЕСТ создание'),
+      'В уведомлении о создании есть заголовок задачи',
+      body.includes('ТЕСТ создание') ? 'заголовок на месте' : `в теле: ${body.slice(0, 80)}`,
+    )
+
     const before = await client.query<{ n: string }>(
       'select count(*)::text as n from net.http_request_queue',
     )

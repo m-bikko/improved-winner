@@ -29,7 +29,12 @@ export function TasksPage() {
 
   const [asCalendar, setAsCalendar] = useLocalFlag('tasks-calendar-view', true)
   const [selected, setSelected] = useState(todayLocal)
-  const [editing, setEditing] = useState<Task | 'new' | null>(null)
+  // Не просто задача, а КАКОЕ вхождение открыли.
+  //
+  // Раньше в форму уезжала одна задача, и правка неизбежно означала «все
+  // вхождения» - выбора у человека не было, потому что приложение само
+  // не знало, какое из них он нажал.
+  const [editing, setEditing] = useState<{ task: Task; at: Date | null } | 'new' | null>(null)
 
   const nicknames = useMemo(
     () => new Map((profiles.data ?? []).map((p) => [p.userId, p.nickname])),
@@ -88,7 +93,7 @@ export function TasksPage() {
                     occurrence={item}
                     nicknames={nicknames}
                     onToggle={() => markDone(item.task, true)}
-                    onOpen={() => setEditing(item.task)}
+                    onOpen={() => setEditing({ task: item.task, at: item.at })}
                   />
                 </li>
               ))}
@@ -105,7 +110,7 @@ export function TasksPage() {
                       occurrence={{ task, at: null }}
                       nicknames={nicknames}
                       onToggle={() => markDone(task, true)}
-                      onOpen={() => setEditing(task)}
+                      onOpen={() => setEditing({ task, at: task.dueAt ? new Date(task.dueAt) : null })}
                     />
                   </li>
                 ))}
@@ -130,7 +135,7 @@ export function TasksPage() {
                     occurrence={{ task, at: task.dueAt ? new Date(task.dueAt) : null }}
                     nicknames={nicknames}
                     onToggle={() => markDone(task, true)}
-                    onOpen={() => setEditing(task)}
+                    onOpen={() => setEditing({ task, at: task.dueAt ? new Date(task.dueAt) : null })}
                   />
                 </li>
               ))}
@@ -147,7 +152,7 @@ export function TasksPage() {
                       occurrence={{ task, at: task.dueAt ? new Date(task.dueAt) : null }}
                       nicknames={nicknames}
                       onToggle={() => markDone(task, false)}
-                      onOpen={() => setEditing(task)}
+                      onOpen={() => setEditing({ task, at: task.dueAt ? new Date(task.dueAt) : null })}
                     />
                   </li>
                 ))}
@@ -171,8 +176,9 @@ export function TasksPage() {
 
       {editing && (
         <TaskEditor
-          task={editing === 'new' ? null : editing}
-          canDelete={editing !== 'new' && editing.createdBy === userId}
+          task={editing === 'new' ? null : editing.task}
+          occurrenceAt={editing === 'new' ? null : (editing.at?.toISOString() ?? null)}
+          canDelete={editing !== 'new' && editing.task.createdBy === userId}
           // Новая задача из календаря попадает на выбранный день, а не на сегодня
           {...(editing === 'new' && asCalendar ? { defaultDue: `${selected}T09:00` } : {})}
           onClose={() => setEditing(null)}

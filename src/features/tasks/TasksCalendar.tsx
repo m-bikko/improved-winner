@@ -53,6 +53,8 @@ export function TasksCalendar({
         task.recurrenceUntil ? new Date(`${task.recurrenceUntil}T23:59:59`) : null,
         rangeFrom,
         rangeTo,
+        200,
+        task.excludedAt,
       )
       for (const at of dates) {
         const key = toLocalISO(at)
@@ -186,6 +188,8 @@ export function occurrencesOn(tasks: Task[], iso: string): Occurrence[] {
       task.recurrenceUntil ? new Date(`${task.recurrenceUntil}T23:59:59`) : null,
       from,
       to,
+      200,
+      task.excludedAt,
     )) {
       out.push({ task, at })
     }

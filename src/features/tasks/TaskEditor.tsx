@@ -4,7 +4,7 @@ import { fromDateTimeInput, toDateTimeInput } from '@/lib/date'
 import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
 import { Sheet } from '@/ui/Sheet'
-import { useDeleteTask, useSaveTask, type Task } from './api'
+import { useDeleteTask, useSaveTask, type EditScope, type Task } from './api'
 import {
   FREQ_LABELS,
   WEEKDAY_LABELS,
@@ -40,11 +40,17 @@ const MAX_REMINDERS = 5
 
 export function TaskEditor({
   task,
+  occurrenceAt,
   canDelete,
   defaultDue,
   onClose,
 }: {
   task: Task | null
+  /**
+   * Какое вхождение открыли, в ISO. Нужен, чтобы спросить область правки:
+   * без него «только это» не к чему привязать.
+   */
+  occurrenceAt?: string | null
   canDelete: boolean
   /** Дата, выбранная в календаре: новая задача попадает на неё, а не на сегодня. */
   defaultDue?: string | undefined
@@ -62,7 +68,13 @@ export function TaskEditor({
   const [recurrence, setRecurrence] = useState<Recurrence | null>(task?.recurrence ?? null)
   const [until, setUntil] = useState(task?.recurrenceUntil ?? '')
   const [pickingReminder, setPickingReminder] = useState(false)
+  const [askingScope, setAskingScope] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Спрашивать область есть смысл только когда правят одно из МНОГИХ вхождений.
+  // У разовой задачи вариант ровно один, и лишний вопрос был бы данью
+  // единообразию, а не помощью.
+  const recurring = task !== null && task.recurrence !== null && occurrenceAt != null
 
   const hasDue = due !== ''
 
@@ -97,7 +109,7 @@ export function TaskEditor({
     })
   }
 
-  const submit = async () => {
+  const submit = async (scope: EditScope = 'all') => {
     setError(null)
     try {
       await save.mutateAsync({
@@ -108,9 +120,12 @@ export function TaskEditor({
         reminders: hasDue ? [...reminders].sort((a, b) => b - a) : [],
         recurrence,
         recurrenceUntil: until || null,
+        ...(occurrenceAt ? { occurrenceAt } : {}),
+        scope,
       })
       onClose()
     } catch (e) {
+      setAskingScope(false)
       setError(e instanceof Error ? e.message : String(e))
     }
   }
@@ -314,7 +329,11 @@ export function TaskEditor({
 
         {error && <p className="text-sm text-danger">{error}</p>}
 
-        <Button onClick={() => void submit()} disabled={!title.trim()} loading={save.isPending}>
+        <Button
+          onClick={() => (recurring ? setAskingScope(true) : void submit('all'))}
+          disabled={!title.trim()}
+          loading={save.isPending}
+        >
           Сохранить
         </Button>
 
@@ -328,6 +347,69 @@ export function TaskEditor({
             Удалить
           </Button>
         )}
+      </div>
+
+      {askingScope && (
+        <ScopeSheet
+          busy={save.isPending}
+          onPick={(scope) => void submit(scope)}
+          onClose={() => setAskingScope(false)}
+        />
+      )}
+    </Sheet>
+  )
+}
+
+/**
+ * Вопрос об области правки.
+ *
+ * Порядок вариантов не случаен: «только это» первым, потому что это самый
+ * частый случай - перенести одну тренировку, - и самый безобидный при
+ * ошибочном нажатии. «Все» стоит последним, хотя раньше был единственным
+ * и молчаливым.
+ */
+function ScopeSheet({
+  busy,
+  onPick,
+  onClose,
+}: {
+  busy: boolean
+  onPick: (scope: EditScope) => void
+  onClose: () => void
+}) {
+  const options: { scope: EditScope; label: string; hint: string }[] = [
+    {
+      scope: 'one',
+      label: 'Только это событие',
+      hint: 'Остальные вхождения останутся как были.',
+    },
+    {
+      scope: 'following',
+      label: 'Это и дальнейшие',
+      hint: 'Прошедшие вхождения не изменятся.',
+    },
+    {
+      scope: 'all',
+      label: 'Все события',
+      hint: 'Изменит и прошедшие тоже.',
+    },
+  ]
+
+  return (
+    <Sheet open onClose={onClose} title="Что изменить">
+      <div className="flex flex-col gap-2 px-4 py-4">
+        {options.map((o) => (
+          <button
+            key={o.scope}
+            type="button"
+            disabled={busy}
+            onClick={() => onPick(o.scope)}
+            className="rounded-xl bg-surface px-4 py-3.5 text-left ring-1 ring-line disabled:opacity-60"
+          >
+            <span className="block font-medium">{o.label}</span>
+            <span className="mt-0.5 block text-sm text-muted">{o.hint}</span>
+          </button>
+        ))}
       </div>
     </Sheet>
   )

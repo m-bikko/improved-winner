@@ -12,7 +12,11 @@
  * результат до минуты.
  */
 import { Client } from 'pg'
-import { nextOccurrence, type Recurrence } from '../src/features/tasks/recurrence.ts'
+import {
+  nextOccurrence,
+  occurrencesInRange,
+  type Recurrence,
+} from '../src/features/tasks/recurrence.ts'
 import { pgConfig } from './env.ts'
 
 let failed = 0
@@ -88,6 +92,57 @@ async function main(): Promise<void> {
         `${ok ? '  OK  ' : ' ПРОВАЛ '} ${c.note}\n         ${c.from.replace('T', ' ').slice(0, 16)} → SQL ${fromSql} | TS ${fromJs}`,
       )
     }
+
+    // Исключения: SQL и TypeScript обязаны пропускать ОДНИ И ТЕ ЖЕ вхождения.
+    //
+    // Расхождение здесь тихое и обидное: календарь показал бы отменённую
+    // тренировку, а уведомление о ней не пришло бы, - или наоборот. Заметить
+    // это можно только сверив два экрана, чего никто не делает.
+    const rule: Recurrence = { freq: 'daily', interval: 1 }
+    const start = new Date('2026-09-07T09:00:00.000Z')
+    const excluded = [
+      new Date('2026-09-08T09:00:00.000Z').toISOString(),
+      new Date('2026-09-10T09:00:00.000Z').toISOString(),
+    ]
+
+    const sqlDates: string[] = []
+    let cursor: Date = start
+    for (let i = 0; i < 4; i++) {
+      const { rows } = await client.query<{ next: Date | null }>(
+        'select public.next_occurrence_allowed($1, $2::jsonb, $3::timestamptz[]) as next',
+        [cursor, JSON.stringify(rule), excluded],
+      )
+      const next = rows[0]?.next
+      if (!next) break
+      sqlDates.push(new Date(next).toISOString())
+      cursor = new Date(next)
+    }
+
+    const tsDates = occurrencesInRange(
+      start,
+      rule,
+      null,
+      new Date('2026-09-08T00:00:00.000Z'),
+      // до 14-го, чтобы в окно попали ровно четыре вхождения, которые
+      // мы запросили у SQL: иначе разошлись бы границы теста, а не код
+      new Date('2026-09-14T00:00:00.000Z'),
+      200,
+      excluded,
+    ).map((d) => d.toISOString())
+
+    const sameSkips = sqlDates.slice(0, 4).join(',') === tsDates.slice(0, 4).join(',')
+    if (!sameSkips) failed++
+    console.log(
+      `${sameSkips ? '  OK  ' : ' ПРОВАЛ '} исключённые вхождения пропускают обе реализации` +
+        `\n         SQL ${sqlDates.slice(0, 4).join(', ')}\n         TS  ${tsDates.slice(0, 4).join(', ')}`,
+    )
+
+    const noExcluded = !tsDates.some((d) => excluded.includes(d))
+    if (!noExcluded) failed++
+    console.log(
+      `${noExcluded ? '  OK  ' : ' ПРОВАЛ '} отменённое вхождение не попадает в календарь` +
+        `\n         в раскрытии: ${tsDates.join(', ')}`,
+    )
   } finally {
     await client.end()
   }

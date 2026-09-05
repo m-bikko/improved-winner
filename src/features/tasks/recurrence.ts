@@ -100,9 +100,21 @@ export function occurrencesInRange(
   from: Date,
   to: Date,
   limit = 200,
+  /**
+   * Отменённые вхождения - моменты, а не даты.
+   *
+   * Дата потребовала бы решать, в чьём часовом поясе она считается: у базы
+   * UTC, у людей Алматы, и вхождение в час ночи попадало бы во вчера.
+   * Момент сравнивается точно и пояса не знает. То же представление
+   * и в базе, иначе календарь и рассылка расходились бы.
+   */
+  excluded: readonly string[] = [],
 ): Date[] {
+  const skip = new Set(excluded.map((iso) => new Date(iso).getTime()))
+
   if (!rule) {
-    return dueAt >= from && dueAt <= to ? [dueAt] : []
+    const single = dueAt >= from && dueAt <= to && !skip.has(dueAt.getTime())
+    return single ? [dueAt] : []
   }
 
   const out: Date[] = []
@@ -111,7 +123,7 @@ export function occurrencesInRange(
   for (let i = 0; i < limit; i++) {
     if (cursor > to) break
     if (until && cursor > until) break
-    if (cursor >= from) out.push(new Date(cursor))
+    if (cursor >= from && !skip.has(cursor.getTime())) out.push(new Date(cursor))
 
     const next = nextOccurrence(cursor, rule)
     if (!next || next <= cursor) break

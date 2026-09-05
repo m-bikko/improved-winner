@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toLocalISO } from '@/lib/date'
 import { supabase } from '@/lib/supabase'
 import type { Database } from '@/types/db'
 import { nextOccurrence, type Recurrence } from './recurrence'
@@ -20,6 +21,14 @@ export type Task = {
   recurrence: Recurrence | null
   /** Последний день, когда повторение уместно. */
   recurrenceUntil: string | null
+  /**
+   * Отменённые или заменённые вхождения - моменты в ISO.
+   *
+   * Момент, а не дата: у базы часовой пояс UTC, у людей Алматы, и вхождение
+   * в час ночи попадало бы во вчера. То же представление и в SQL, иначе
+   * календарь и рассылка расходились бы в том, какое вхождение отменено.
+   */
+  excludedAt: string[]
 }
 
 function fromRow(row: Row): Task {
@@ -35,6 +44,7 @@ function fromRow(row: Row): Task {
     reminders: row.reminders ?? [],
     recurrence: (row.recurrence as Recurrence | null) ?? null,
     recurrenceUntil: row.recurrence_until,
+    excludedAt: row.excluded_at ?? [],
   }
 }
 
@@ -55,6 +65,21 @@ export function useTasks() {
   })
 }
 
+/**
+ * Область правки повторяющейся задачи - как в календарях.
+ *
+ * `all` - правило и все вхождения. Единственный режим, который был раньше,
+ *   и потому единственный, который человек получал не выбирая.
+ * `one` - только открытое вхождение: оно уходит в excluded_at исходной
+ *   задачи, а рядом заводится обычная разовая.
+ * `following` - это и дальнейшие: у исходной ставится recurrence_until
+ *   на день перед вхождением, а новая продолжает правило с новыми полями.
+ *
+ * Материализовать вхождения по-прежнему не нужно: и исключение, и разрез
+ * выражаются двумя строками вместо тысячи.
+ */
+export type EditScope = 'all' | 'one' | 'following'
+
 export function useSaveTask() {
   const qc = useQueryClient()
   return useMutation({
@@ -66,6 +91,9 @@ export function useSaveTask() {
       reminders: number[]
       recurrence: Recurrence | null
       recurrenceUntil: string | null
+      /** Какое вхождение открыли. Нужен только для `one` и `following`. */
+      occurrenceAt?: string | null
+      scope?: EditScope
     }) => {
       const payload = {
         title: input.title.trim(),
@@ -75,6 +103,56 @@ export function useSaveTask() {
         // Повторение без срока нечему сдвигать - это же требует CHECK в схеме
         recurrence: input.dueAt ? input.recurrence : null,
         recurrence_until: input.dueAt ? input.recurrenceUntil : null,
+      }
+
+      const scope = input.scope ?? 'all'
+
+      if (input.id && scope !== 'all' && input.occurrenceAt) {
+        const { data: current, error: readError } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('id', input.id)
+          .single()
+        if (readError) throw readError
+
+        if (scope === 'one') {
+          const { error: excludeError } = await supabase
+            .from('tasks')
+            .update({
+              excluded_at: [...(current.excluded_at ?? []), input.occurrenceAt],
+            })
+            .eq('id', input.id)
+          if (excludeError) throw excludeError
+
+          // Разовая замена: правило не наследуется, иначе одна перенесённая
+          // тренировка размножилась бы в собственный ряд.
+          const { data, error } = await supabase
+            .from('tasks')
+            .insert({ ...payload, recurrence: null, recurrence_until: null })
+            .select('id')
+            .single()
+          if (error) throw error
+          return data.id
+        }
+
+        // following: исходная кончается за день до открытого вхождения
+        const cutoff = new Date(input.occurrenceAt)
+        cutoff.setDate(cutoff.getDate() - 1)
+        const until = toLocalISO(cutoff)
+
+        const { error: cutError } = await supabase
+          .from('tasks')
+          .update({ recurrence_until: until })
+          .eq('id', input.id)
+        if (cutError) throw cutError
+
+        const { data, error } = await supabase
+          .from('tasks')
+          .insert(payload)
+          .select('id')
+          .single()
+        if (error) throw error
+        return data.id
       }
 
       if (input.id) {
