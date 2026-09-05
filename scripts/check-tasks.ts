@@ -102,6 +102,27 @@ async function main(): Promise<void> {
       body.includes('ТЕСТ создание') ? 'заголовок на месте' : `в теле: ${body.slice(0, 80)}`,
     )
 
+    // Удаление тоже уведомляет обоих: пропажа из общего списка - событие
+    // того же порядка, что и появление. Без этого задача выглядела бы
+    // исчезнувшей сама.
+    const { rows: doomed } = await client.query<{ id: string }>(
+      `insert into public.tasks (title, created_by) values ('ТЕСТ удаление', $1) returning id`,
+      [author],
+    )
+    const beforeDelete = await client.query<{ n: string }>(
+      'select count(*)::text as n from net.http_request_queue',
+    )
+    await client.query('delete from public.tasks where id = $1', [doomed[0]?.id])
+    const afterDelete = await client.query<{ n: string }>(
+      'select count(*)::text as n from net.http_request_queue',
+    )
+    const onDelete = Number(afterDelete.rows[0]?.n) - Number(beforeDelete.rows[0]?.n)
+    check(
+      onDelete === memberCount * 2,
+      'Удалённая задача уведомляет ОБОИХ',
+      `участников ${memberCount}, запросов ${onDelete} (ожидалось ${memberCount * 2})`,
+    )
+
     const before = await client.query<{ n: string }>(
       'select count(*)::text as n from net.http_request_queue',
     )
