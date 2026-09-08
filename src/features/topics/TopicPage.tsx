@@ -239,7 +239,7 @@ function TopicDetail({
       </div>
 
       <Sheet open={closing} onClose={() => setClosing(false)} title="Как решили">
-        <div className="flex flex-col gap-4 px-4 py-4">
+        <div className="flex flex-col gap-4">
           <p className="text-sm text-muted">
             Через полгода вы не вспомните, к чему пришли. Запишите так, чтобы было понятно
             без контекста.

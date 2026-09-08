@@ -132,7 +132,7 @@ export function TaskEditor({
 
   return (
     <Sheet open onClose={onClose} title={task ? 'Задача' : 'Новая задача'}>
-      <div className="flex min-w-0 flex-col gap-5 px-4 py-4">
+      <div className="flex min-w-0 flex-col gap-5">
         <Field
           label="Что сделать"
           value={title}
@@ -397,7 +397,7 @@ function ScopeSheet({
 
   return (
     <Sheet open onClose={onClose} title="Что изменить">
-      <div className="flex flex-col gap-2 px-4 py-4">
+      <div className="flex flex-col gap-2">
         {options.map((o) => (
           <button
             key={o.scope}

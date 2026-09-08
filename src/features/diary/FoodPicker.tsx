@@ -63,7 +63,7 @@ export function FoodPicker({ open, meal, userId, onClose, onPick }: Props) {
   }, [foods.data, recent.data, query])
 
   return (
-    <Sheet open={open} onClose={onClose} title={MEAL_LABELS[meal]}>
+    <Sheet open={open} onClose={onClose} title={MEAL_LABELS[meal]} bleed>
       <div className="sticky top-0 z-10 bg-bg px-4 pt-3 pb-2">
         <SearchInput value={query} onChange={setQuery} placeholder="Что ел?" autoFocus />
       </div>

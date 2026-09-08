@@ -422,7 +422,7 @@ function ChangePinSheet({ open, onClose }: { open: boolean; onClose: () => void 
       }}
       title="Смена PIN"
     >
-      <div className="flex flex-col items-center px-4 py-6">
+      <div className="flex flex-col items-center py-2">
         {done ? (
           <div className="flex flex-col items-center gap-3 py-8 text-center">
             <Check size={28} className="text-carbs" aria-hidden />

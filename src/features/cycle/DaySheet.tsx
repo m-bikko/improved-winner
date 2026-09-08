@@ -68,7 +68,7 @@ export function DaySheet({
 
   return (
     <Sheet open onClose={onClose} title={formatDayLabel(log.date)}>
-      <div className="flex min-w-0 flex-col gap-5 px-4 py-4">
+      <div className="flex min-w-0 flex-col gap-5">
         {readOnly ? (
           <ReadOnly log={log} />
         ) : (

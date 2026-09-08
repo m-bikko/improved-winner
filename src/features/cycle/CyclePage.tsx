@@ -533,7 +533,7 @@ function PeriodSheet({ period, onClose }: { period: Period; onClose: () => void 
 
   return (
     <Sheet open onClose={onClose} title="Менструация">
-      <div className="flex min-w-0 flex-col gap-5 px-4 py-4">
+      <div className="flex min-w-0 flex-col gap-5">
         <label className="flex flex-col gap-1.5">
           <span className="text-sm text-muted">Началась</span>
           <input
@@ -601,7 +601,7 @@ function SettingsSheet({ onClose }: { onClose: () => void }) {
 
   return (
     <Sheet open onClose={onClose} title="Настройки раздела">
-      <div className="flex min-w-0 flex-col gap-5 px-4 py-4">
+      <div className="flex min-w-0 flex-col gap-5">
         <Toggle
           label="Вести цикл"
           hint="Раздел появляется только у вас."

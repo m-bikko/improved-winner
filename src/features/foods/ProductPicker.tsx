@@ -36,7 +36,7 @@ export function ProductPicker({
   }, [foods.data, query, excludeIds])
 
   return (
-    <Sheet open={open} onClose={onClose} title="Ингредиент">
+    <Sheet open={open} onClose={onClose} title="Ингредиент" bleed>
       <div className="sticky top-0 z-10 bg-bg px-4 pt-3 pb-2">
         <SearchInput value={query} onChange={setQuery} placeholder="Название продукта" autoFocus />
       </div>

@@ -94,7 +94,7 @@ export function MacroInfoSheet({
   return (
     <Sheet open={article !== null} onClose={onClose} title={article?.title ?? ''}>
       {article && (
-        <div className="flex flex-col gap-4 px-4 py-4">
+        <div className="flex flex-col gap-4">
           <Block label="За что отвечает">{article.role}</Block>
           <Block label="Если недобирать">{article.under}</Block>
           <Block label="Если перебирать">{article.over}</Block>

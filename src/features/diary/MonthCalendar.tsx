@@ -102,7 +102,7 @@ export function MonthCalendar({
 
   return (
     <Sheet open={open} onClose={onClose} title="Календарь">
-      <div className="px-4 pb-6">
+      <div className="pb-2">
         <div className="flex items-center justify-between py-2">
           <button type="button" onClick={() => shift(-1)} aria-label="Предыдущий месяц" className="p-3 text-muted">
             <ChevronLeft size={20} aria-hidden />

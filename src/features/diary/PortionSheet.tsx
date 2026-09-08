@@ -60,7 +60,7 @@ export function PortionSheet({
 
   return (
     <Sheet open={open} onClose={onClose} title={food.name}>
-      <div className="flex flex-col gap-4 px-4 py-4">
+      <div className="flex flex-col gap-4">
         {servings.length > 0 && (
           <div className="flex flex-wrap gap-2">
             <Chip active={servingLabel === null} onClick={() => pickServing(null)}>
