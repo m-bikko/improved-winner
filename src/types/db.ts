@@ -530,6 +530,74 @@ export type Database = {
         }
         Relationships: []
       }
+      occasion_notices: {
+        Row: {
+          created_at: string
+          lead: number
+          occasion_id: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          lead: number
+          occasion_id: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          lead?: number
+          occasion_id?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "occasion_notices_occasion_id_fkey"
+            columns: ["occasion_id"]
+            isOneToOne: false
+            referencedRelation: "occasions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      occasions: {
+        Row: {
+          created_at: string
+          created_by: string
+          date: string
+          id: string
+          kind: string
+          note: string | null
+          title: string
+          updated_at: string
+          yearly: boolean
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          date: string
+          id?: string
+          kind?: string
+          note?: string | null
+          title: string
+          updated_at?: string
+          yearly?: boolean
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          date?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          title?: string
+          updated_at?: string
+          yearly?: boolean
+        }
+        Relationships: []
+      }
       periods: {
         Row: {
           created_at: string
@@ -889,6 +957,26 @@ export type Database = {
         Returns: string
       }
       notify_due_tasks: { Args: never; Returns: number }
+      notify_occasions: { Args: never; Returns: number }
+      occasion_next: {
+        Args: { source: string; today: string; yearly: boolean }
+        Returns: string
+      }
+      occasions_upcoming: {
+        Args: { today: string }
+        Returns: {
+          created_by: string
+          date: string
+          days: number
+          id: string
+          kind: string
+          next_on: string
+          note: string
+          title: string
+          yearly: boolean
+          years: number
+        }[]
+      }
       partner_of: { Args: { author_id: string }; Returns: string }
       push_notify: {
         Args: { body: string; target_id: string; title: string; url?: string }

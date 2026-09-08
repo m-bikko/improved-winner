@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
   Apple,
+  CalendarHeart,
   Droplet,
   ListChecks,
   LogOut,
@@ -21,6 +22,7 @@ export const NAV = [
   { to: '/diary', label: 'Дневник', icon: NotebookPen },
   { to: '/foods', label: 'Продукты', icon: Apple },
   { to: '/cycle', label: 'Цикл', icon: Droplet },
+  { to: '/dates', label: 'Даты', icon: CalendarHeart },
   { to: '/profile', label: 'Профиль', icon: User },
 ] as const
 

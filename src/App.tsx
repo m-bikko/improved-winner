@@ -13,6 +13,7 @@ import { DiaryPage } from '@/features/diary/DiaryPage'
 import { ProfilePage } from '@/features/profile/ProfilePage'
 import { CheckinPage } from '@/features/checkin/CheckinPage'
 import { CyclePage } from '@/features/cycle/CyclePage'
+import { DatesPage } from '@/features/dates/DatesPage'
 import { TasksPage } from '@/features/tasks/TasksPage'
 import { TopicsPage } from '@/features/topics/TopicsPage'
 import { TopicPage } from '@/features/topics/TopicPage'
@@ -66,6 +67,7 @@ function Gate() {
         <Route path="/topics/:id" element={<TopicPage />} />
         <Route path="/tasks" element={<TasksPage />} />
         <Route path="/cycle" element={<CyclePage />} />
+        <Route path="/dates" element={<DatesPage />} />
         <Route path="/checkin" element={<CheckinPage />} />
         <Route path="/diary" element={<DiaryPage />} />
         <Route path="/foods" element={<FoodsPage />} />
