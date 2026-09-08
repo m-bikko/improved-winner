@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react'
-import { BellRing, Check, KeyRound, Scale, Send, Target } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import {
+  BellRing,
+  Check,
+  ChevronRight,
+  KeyRound,
+  Scale,
+  Send,
+  Sparkles,
+  Target,
+} from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { todayLocal } from '@/lib/date'
 import {
@@ -173,6 +183,17 @@ function ProfileForm({ profile }: { profile: Profile }) {
           </span>
         </p>
       )}
+
+      <Link
+        to="/year"
+        className="flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-4 ring-1 ring-line"
+      >
+        <span className="flex items-center gap-2 text-sm font-medium">
+          <Sparkles size={16} aria-hidden />
+          Год в цифрах
+        </span>
+        <ChevronRight size={18} aria-hidden className="text-muted" />
+      </Link>
 
       <div className="rounded-xl bg-surface px-4 py-4 ring-1 ring-line">
         <p className="mb-3 flex items-center gap-2 text-sm font-medium">

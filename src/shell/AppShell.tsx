@@ -23,7 +23,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 function Chrome({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const { pathname } = useLocation()
-  const title = NAV.find((n) => pathname.startsWith(n.to))?.label ?? APP_NAME
+  // Разделы вне меню: попасть в них можно только ссылкой изнутри, но
+  // заголовок им всё равно нужен - иначе в шапке висит название приложения
+  const title =
+    NAV.find((n) => pathname.startsWith(n.to))?.label ??
+    (pathname.startsWith('/year') ? 'Год в цифрах' : APP_NAME)
   const action = useHeaderActionSlot()
 
   return (

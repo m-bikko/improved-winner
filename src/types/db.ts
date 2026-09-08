@@ -1142,6 +1142,7 @@ export type Database = {
         Args: { chat_id: string; message: string }
         Returns: number
       }
+      year_in_numbers: { Args: { year: number }; Returns: Json }
     }
     Enums: {
       [_ in never]: never
