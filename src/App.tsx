@@ -20,6 +20,7 @@ import { YearPage } from '@/features/year/YearPage'
 import { TasksPage } from '@/features/tasks/TasksPage'
 import { TopicsPage } from '@/features/topics/TopicsPage'
 import { TopicPage } from '@/features/topics/TopicPage'
+import { TodayPage } from '@/features/today/TodayPage'
 
 export default function App() {
   return (
@@ -66,6 +67,7 @@ function Gate() {
   return (
     <AppShell>
       <Routes>
+        <Route path="/today" element={<TodayPage />} />
         <Route path="/topics" element={<TopicsPage />} />
         <Route path="/topics/:id" element={<TopicPage />} />
         <Route path="/tasks" element={<TasksPage />} />
@@ -80,7 +82,7 @@ function Gate() {
         <Route path="/foods/new" element={<FoodEditPage />} />
         <Route path="/foods/:id" element={<FoodEditPage />} />
         <Route path="/profile" element={<ProfilePage />} />
-        <Route path="*" element={<Navigate to="/diary" replace />} />
+        <Route path="*" element={<Navigate to="/today" replace />} />
       </Routes>
     </AppShell>
   )

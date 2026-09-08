@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
   Apple,
+  Sun,
   CalendarHeart,
   Droplet,
   ListChecks,
@@ -17,6 +18,7 @@ import { useAuth } from '@/auth/AuthProvider'
 import { APP_NAME } from '@/lib/appName'
 
 export const NAV = [
+  { to: '/today', label: 'Сегодня', icon: Sun },
   { to: '/checkin', label: 'Как ты', icon: Smile },
   { to: '/topics', label: 'Темы', icon: MessagesSquare },
   { to: '/tasks', label: 'Задачи', icon: ListChecks },
