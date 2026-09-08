@@ -15,6 +15,7 @@ import { CheckinPage } from '@/features/checkin/CheckinPage'
 import { CyclePage } from '@/features/cycle/CyclePage'
 import { DatesPage } from '@/features/dates/DatesPage'
 import { WishlistPage } from '@/features/wishlist/WishlistPage'
+import { WishlistDetailPage } from '@/features/wishlist/WishlistDetailPage'
 import { YearPage } from '@/features/year/YearPage'
 import { TasksPage } from '@/features/tasks/TasksPage'
 import { TopicsPage } from '@/features/topics/TopicsPage'
@@ -71,6 +72,7 @@ function Gate() {
         <Route path="/cycle" element={<CyclePage />} />
         <Route path="/dates" element={<DatesPage />} />
         <Route path="/wishlist" element={<WishlistPage />} />
+        <Route path="/wishlist/:id" element={<WishlistDetailPage />} />
         <Route path="/year" element={<YearPage />} />
         <Route path="/checkin" element={<CheckinPage />} />
         <Route path="/diary" element={<DiaryPage />} />

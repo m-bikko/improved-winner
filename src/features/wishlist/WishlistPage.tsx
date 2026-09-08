@@ -1,69 +1,122 @@
-import { useMemo, useRef, useState } from 'react'
-import { Check, ImagePlus, ListPlus, Plus, Trash2 } from 'lucide-react'
-import { useUserId } from '@/auth/AuthProvider'
-import { formatBytes, loadBitmap, prepareSquare, type SquareCrop } from '@/lib/image'
-import { plural } from '@/lib/plural'
+import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import { SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { Check, GripVertical, ImageOff, ListPlus } from 'lucide-react'
 import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
 import { Sheet } from '@/ui/Sheet'
-import { SquareCropper } from '@/ui/SquareCropper'
 import { EmptyState, ErrorState, Loading } from '@/ui/States'
+import { plural } from '@/lib/plural'
 import {
-  useAddItem,
-  useDeleteItem,
-  useDeleteWishlist,
-  useRemoveItemPhoto,
-  useSaveItem,
+  isClosed,
+  useReorderWishlists,
   useSaveWishlist,
-  useToggleItem,
-  useUploadItemPhoto,
   useWishlistPhotoUrls,
   useWishlists,
   type Wishlist,
-  type WishlistItem,
 } from './api'
 
 /**
- * Вишлисты: что посмотреть, куда сходить, что подарить.
+ * Доска вишлистов: карточка с картинкой, чеклист внутри.
  *
- * Все вишлисты на одном экране, без захода внутрь. Вишлистов у пары единицы,
- * а лишний уровень навигации на телефоне стоит дороже, чем длинная страница:
- * добавить фильм должно быть одним движением, а не «открыть - добавить -
- * вернуться».
+ * «Приобретено» - не статус, который выставляют руками, а следствие галочек:
+ * карточка уезжает туда, когда закрыт последний пункт, и возвращается,
+ * стоит снять любую. Ручной статус рядом с галочками неизбежно с ними
+ * разъезжается, и человеку приходится помнить, что нажать вторым.
  *
- * Вычеркнутое не удаляется, а сворачивается: это и есть история
- * «что мы уже посмотрели», и стирать её жалко.
+ * Порядок карточек - ручной: доска желаний упорядочена не датой, а тем,
+ * чего хочется сильнее.
  */
 export function WishlistPage() {
   const lists = useWishlists()
+  const reorder = useReorderWishlists()
+  const [tab, setTab] = useState<'want' | 'got'>('want')
   const [creating, setCreating] = useState(false)
+  const [order, setOrder] = useState<string[] | null>(null)
 
-  // Ссылки на картинки берутся одной пачкой на весь экран: бакет приватный,
-  // и запрос на строку превратил бы открытие раздела в десяток походов в сеть
+  const sensors = useSensors(
+    // Порог в пикселях, а не удержание: карточка тянется ручкой, и жест
+    // не спорит ни с тапом по ней, ни с прокруткой доски
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+  )
+
   const paths = useMemo(
     () =>
-      (lists.data ?? [])
-        .flatMap((l) => l.items)
-        .map((i) => i.imagePath)
-        .filter((p): p is string => p !== null),
+      (lists.data ?? []).map((l) => l.imagePath).filter((p): p is string => p !== null),
     [lists.data],
   )
   const urls = useWishlistPhotoUrls(paths)
 
+  const all = useMemo(() => {
+    const data = lists.data ?? []
+    if (!order) return data
+    // Пока перестановка летит на сервер, показываем её же: иначе карточка
+    // прыгнет обратно и вернётся только после ответа
+    const index = new Map(order.map((id, i) => [id, i]))
+    return [...data].sort((a, b) => (index.get(a.id) ?? 0) - (index.get(b.id) ?? 0))
+  }, [lists.data, order])
+
+  const shown = all.filter((l) => (tab === 'got' ? isClosed(l) : !isClosed(l)))
+
   if (lists.isError) return <ErrorState error={lists.error} onRetry={() => void lists.refetch()} />
   if (lists.isPending) return <Loading />
 
+  const onDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const ids = all.map((l) => l.id)
+    const from = ids.indexOf(String(active.id))
+    const to = ids.indexOf(String(over.id))
+    if (from < 0 || to < 0) return
+
+    const next = [...ids]
+    next.splice(to, 0, ...next.splice(from, 1))
+    setOrder(next)
+    reorder.mutate(next, { onSettled: () => setOrder(null) })
+  }
+
+  const gotCount = all.filter(isClosed).length
+
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 pt-3 pb-28">
-      {lists.data.length === 0 ? (
+    <div className="mx-auto max-w-2xl px-4 pt-3 pb-28">
+      <div className="mb-4 flex gap-1 rounded-xl bg-raised p-1">
+        <Tab active={tab === 'want'} onClick={() => setTab('want')}>
+          Хотим
+        </Tab>
+        <Tab active={tab === 'got'} onClick={() => setTab('got')}>
+          Приобретено{gotCount > 0 && ` · ${gotCount}`}
+        </Tab>
+      </div>
+
+      {shown.length === 0 ? (
         <EmptyState
-          title="Вишлистов пока нет"
-          hint="Что посмотреть, куда сходить, что подарить. Без сроков и без ответственных - просто чтобы не забылось."
+          title={tab === 'want' ? 'Хотелок пока нет' : 'Пока ничего не собрано'}
+          hint={
+            tab === 'want'
+              ? 'Карточка - это одно желание: посуда на кухню, поездка, подарок. Внутри чеклист из того, что для него нужно.'
+              : 'Сюда карточка попадает сама, когда закрыт последний пункт её чеклиста.'
+          }
         />
       ) : (
-        lists.data.map((list) => (
-          <WishlistCard key={list.id} list={list} urls={urls.data ?? {}} />
-        ))
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          <SortableContext items={shown.map((l) => l.id)} strategy={rectSortingStrategy}>
+            <ul className="grid grid-cols-2 gap-3">
+              {shown.map((list) => (
+                <Card key={list.id} list={list} urls={urls.data ?? {}} />
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
       )}
 
       <button
@@ -78,348 +131,93 @@ export function WishlistPage() {
         <ListPlus size={24} aria-hidden />
       </button>
 
-      {creating && <WishlistEditor list={null} onClose={() => setCreating(false)} />}
+      {creating && <NewWishlist onClose={() => setCreating(false)} />}
     </div>
   )
 }
 
-function WishlistCard({ list, urls }: { list: Wishlist; urls: Record<string, string> }) {
-  const userId = useUserId()
-  const add = useAddItem()
-  const [draft, setDraft] = useState('')
-  const [showDone, setShowDone] = useState(false)
-  const [editing, setEditing] = useState(false)
-  const [opened, setOpened] = useState<WishlistItem | null>(null)
-
-  const { open, done } = useMemo(
-    () => ({
-      open: list.items.filter((i) => i.doneAt === null),
-      done: list.items
-        .filter((i) => i.doneAt !== null)
-        .sort((a, b) => (b.doneAt ?? '').localeCompare(a.doneAt ?? '')),
-    }),
-    [list.items],
-  )
-
-  // Открытый пункт берём из свежего списка, а не из состояния: после загрузки
-  // картинки в замыкании остался бы пункт без неё, и превью не появилось бы
-  // до закрытия шторки
-  const current = opened ? (list.items.find((i) => i.id === opened.id) ?? null) : null
-
-  const submit = () => {
-    const title = draft.trim()
-    if (title === '') return
-    setDraft('')
-    add.mutate({ wishlistId: list.id, title })
-  }
-
+function Tab({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
   return (
-    <section className="rounded-2xl bg-surface p-4 ring-1 ring-line">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="font-medium">{list.title}</h2>
-        {list.createdBy === userId && (
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            className="text-sm text-accent underline"
-          >
-            Изменить
-          </button>
-        )}
-      </div>
-
-      {open.length > 0 && (
-        <ul className="mt-3 flex flex-col">
-          {open.map((item) => (
-            <Row key={item.id} item={item} urls={urls} onOpen={() => setOpened(item)} />
-          ))}
-        </ul>
-      )}
-
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          submit()
-        }}
-        className="mt-3 flex items-center gap-2"
-      >
-        <Plus size={18} aria-hidden className="shrink-0 text-muted" />
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Добавить"
-          aria-label={`Добавить в «${list.title}»`}
-          className="w-full min-w-0 bg-transparent py-1.5 outline-none placeholder:text-muted"
-        />
-      </form>
-
-      {done.length > 0 && (
-        <div className="mt-3 border-t border-line pt-3">
-          <button
-            type="button"
-            onClick={() => setShowDone((v) => !v)}
-            className="text-sm text-muted underline"
-          >
-            {showDone
-              ? 'Свернуть'
-              : `${done.length} ${plural(done.length, 'вычеркнут', 'вычеркнуто', 'вычеркнуто')}`}
-          </button>
-          {showDone && (
-            <ul className="mt-2 flex flex-col">
-              {done.map((item) => (
-                <Row key={item.id} item={item} urls={urls} onOpen={() => setOpened(item)} />
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {editing && <WishlistEditor list={list} onClose={() => setEditing(false)} />}
-      {current && <ItemSheet item={current} urls={urls} onClose={() => setOpened(null)} />}
-    </section>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`flex-1 rounded-lg py-2 text-sm transition-colors ${
+        active ? 'bg-surface font-medium text-ink shadow-sm' : 'text-muted'
+      }`}
+    >
+      {children}
+    </button>
   )
 }
 
-function Row({
-  item,
-  urls,
-  onOpen,
-}: {
-  item: WishlistItem
-  urls: Record<string, string>
-  onOpen: () => void
-}) {
-  const toggle = useToggleItem()
-  const isDone = item.doneAt !== null
-  const url = item.imagePath ? urls[item.imagePath] : undefined
+function Card({ list, urls }: { list: Wishlist; urls: Record<string, string> }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: list.id,
+  })
+  const url = list.imagePath ? urls[list.imagePath] : undefined
+  const done = list.items.filter((i) => i.doneAt !== null).length
+  const closed = isClosed(list)
 
   return (
-    <li className="flex items-center gap-3 py-1.5">
-      <button
-        type="button"
-        role="checkbox"
-        aria-checked={isDone}
-        aria-label={item.title}
-        onClick={() => toggle.mutate({ id: item.id, done: !isDone })}
-        className={`flex size-6 shrink-0 items-center justify-center rounded-md ring-1 transition-colors ${
-          isDone ? 'bg-accent text-accent-ink ring-accent' : 'bg-bg ring-line'
-        }`}
+    <li
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`relative ${isDragging ? 'z-10 opacity-80' : ''}`}
+    >
+      <Link
+        to={`/wishlist/${list.id}`}
+        className="block overflow-hidden rounded-2xl bg-surface ring-1 ring-line"
       >
-        {isDone && <Check size={15} aria-hidden />}
-      </button>
+        <div className="relative flex aspect-square items-center justify-center bg-raised">
+          {url ? (
+            <img src={url} alt="" className={`size-full object-cover ${closed ? 'opacity-60' : ''}`} />
+          ) : (
+            <ImageOff size={24} className="text-muted" aria-hidden />
+          )}
+          {closed && (
+            <span className="absolute top-2 left-2 flex size-7 items-center justify-center rounded-full bg-accent text-accent-ink">
+              <Check size={16} aria-hidden />
+            </span>
+          )}
+        </div>
+        <div className="p-3">
+          <p className="truncate font-medium">{list.title}</p>
+          <p className="text-sm text-muted">
+            {list.items.length === 0
+              ? 'пусто'
+              : `${done} из ${list.items.length} ${plural(list.items.length, 'пункта', 'пунктов', 'пунктов')}`}
+          </p>
+        </div>
+      </Link>
 
+      {/* Ручка отдельно от ссылки: иначе любое перетаскивание заканчивалось бы
+          переходом внутрь карточки */}
       <button
         type="button"
-        onClick={onOpen}
-        aria-label={`Открыть «${item.title}»`}
-        className="flex min-w-0 flex-1 items-center gap-3 py-0.5 text-left"
+        {...attributes}
+        {...listeners}
+        aria-label={`Переставить «${list.title}»`}
+        className="absolute top-2 right-2 flex size-8 touch-none items-center justify-center
+                   rounded-full bg-bg/80 text-muted backdrop-blur-sm"
       >
-        {url && (
-          <img
-            src={url}
-            alt=""
-            className={`size-10 shrink-0 rounded-lg object-cover ${isDone ? 'opacity-50' : ''}`}
-          />
-        )}
-        <span className="min-w-0 flex-1">
-          <span className={`block truncate ${isDone ? 'text-muted line-through' : ''}`}>
-            {item.title}
-          </span>
-          {item.note && <span className="block truncate text-sm text-muted">{item.note}</span>}
-        </span>
+        <GripVertical size={16} aria-hidden />
       </button>
     </li>
   )
 }
 
-function ItemSheet({
-  item,
-  urls,
-  onClose,
-}: {
-  item: WishlistItem
-  urls: Record<string, string>
-  onClose: () => void
-}) {
-  const save = useSaveItem()
-  const remove = useDeleteItem()
-  const [title, setTitle] = useState(item.title)
-  const [note, setNote] = useState(item.note ?? '')
-  const [error, setError] = useState<string | null>(null)
-
-  const submit = async () => {
-    setError(null)
-    if (title.trim() === '') {
-      setError('Без названия пункт не найти')
-      return
-    }
-    try {
-      await save.mutateAsync({ id: item.id, title, note: note || null })
-      onClose()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
-    }
-  }
-
-  return (
-    <Sheet open onClose={onClose} title={item.title}>
-      <div className="flex flex-col gap-4">
-        <Photo item={item} urls={urls} />
-
-        <Field label="Что это" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <Field
-          label="Заметка"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="необязательно"
-        />
-
-        {error && <p className="text-sm text-danger">{error}</p>}
-
-        <Button onClick={() => void submit()} loading={save.isPending}>
-          Сохранить
-        </Button>
-
-        <Button
-          variant="danger"
-          loading={remove.isPending}
-          onClick={() => void remove.mutateAsync(item.id).then(onClose)}
-        >
-          <Trash2 size={18} aria-hidden />
-          Удалить
-        </Button>
-      </div>
-    </Sheet>
-  )
-}
-
-/**
- * Картинка пункта: превью, кадрирование, замена.
- *
- * Квадрат режется НА КЛИЕНТЕ до загрузки, а не подгоняется стилями при показе.
- * Иначе в хранилище лежал бы произвольный формат, и кадр выбирал бы браузер
- * своим object-fit - то есть всегда центр, даже когда нужное не в центре.
- */
-function Photo({ item, urls }: { item: WishlistItem; urls: Record<string, string> }) {
-  const input = useRef<HTMLInputElement>(null)
-  const upload = useUploadItemPhoto()
-  const remove = useRemoveItemPhoto()
-
-  const [bitmap, setBitmap] = useState<ImageBitmap | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [saved, setSaved] = useState<{ from: number; to: number } | null>(null)
-  const original = useRef(0)
-
-  const url = item.imagePath ? urls[item.imagePath] : undefined
-
-  const pick = async (file: File) => {
-    setError(null)
-    setSaved(null)
-    original.current = file.size
-    try {
-      setBitmap(await loadBitmap(file))
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
-    }
-  }
-
-  const confirm = async (crop: SquareCrop) => {
-    if (!bitmap) return
-    try {
-      const prepared = await prepareSquare(bitmap, crop)
-      await upload.mutateAsync({
-        itemId: item.id,
-        blob: prepared.blob,
-        extension: prepared.extension,
-        previousPath: item.imagePath,
-      })
-      setSaved({ from: original.current, to: prepared.blob.size })
-      bitmap.close()
-      setBitmap(null)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
-    }
-  }
-
-  const cancel = () => {
-    bitmap?.close()
-    setBitmap(null)
-  }
-
-  if (bitmap) {
-    return (
-      <div className="flex flex-col gap-3">
-        <p className="text-sm text-muted">Выберите квадрат: тяните, щипком меняйте масштаб</p>
-        <SquareCropper
-          bitmap={bitmap}
-          busy={upload.isPending}
-          onConfirm={(crop) => void confirm(crop)}
-          onCancel={cancel}
-        />
-        {error && <p className="text-sm text-danger">{error}</p>}
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex items-start gap-4">
-      <div className="flex size-28 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-raised ring-1 ring-line">
-        {url ? (
-          <img src={url} alt="" className="size-full object-cover" />
-        ) : (
-          <ImagePlus size={22} className="text-muted" aria-hidden />
-        )}
-      </div>
-
-      <div className="flex min-w-0 flex-col items-start gap-2">
-        <input
-          ref={input}
-          type="file"
-          accept="image/*"
-          className="sr-only"
-          onChange={(e) => {
-            const file = e.target.files?.[0]
-            // Сбрасываем значение: без этого повторный выбор ТОГО ЖЕ файла
-            // не даёт события, и «заменить» молча ничего не делает
-            e.target.value = ''
-            if (file) void pick(file)
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => input.current?.click()}
-          className="text-sm text-accent underline"
-        >
-          {url ? 'Заменить картинку' : 'Добавить картинку'}
-        </button>
-
-        {url && item.imagePath && (
-          <button
-            type="button"
-            onClick={() =>
-              void remove.mutateAsync({ itemId: item.id, path: item.imagePath as string })
-            }
-            className="text-sm text-muted underline"
-          >
-            Убрать
-          </button>
-        )}
-
-        {saved && (
-          <p className="text-xs text-muted">
-            {formatBytes(saved.from)} → {formatBytes(saved.to)}
-          </p>
-        )}
-        {error && <p className="text-sm text-danger">{error}</p>}
-      </div>
-    </div>
-  )
-}
-
-function WishlistEditor({ list, onClose }: { list: Wishlist | null; onClose: () => void }) {
+function NewWishlist({ onClose }: { onClose: () => void }) {
   const save = useSaveWishlist()
-  const remove = useDeleteWishlist()
-  const [title, setTitle] = useState(list?.title ?? '')
+  const [title, setTitle] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   const submit = async () => {
@@ -429,7 +227,7 @@ function WishlistEditor({ list, onClose }: { list: Wishlist | null; onClose: () 
       return
     }
     try {
-      await save.mutateAsync({ ...(list ? { id: list.id } : {}), title })
+      await save.mutateAsync({ title })
       onClose()
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -437,34 +235,24 @@ function WishlistEditor({ list, onClose }: { list: Wishlist | null; onClose: () 
   }
 
   return (
-    <Sheet open onClose={onClose} title={list ? 'Вишлист' : 'Новый вишлист'}>
+    <Sheet open onClose={onClose} title="Новый вишлист">
       <div className="flex flex-col gap-4">
         <Field
           label="Название"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Что посмотреть"
-          autoFocus={!list}
+          placeholder="Посуда на кухню"
+          autoFocus
         />
+        <p className="text-sm text-muted">
+          Картинку и пункты добавите внутри - карточка откроется сразу после сохранения.
+        </p>
 
         {error && <p className="text-sm text-danger">{error}</p>}
 
         <Button onClick={() => void submit()} loading={save.isPending}>
-          Сохранить
+          Создать
         </Button>
-
-        {list && (
-          <Button
-            variant="danger"
-            loading={remove.isPending}
-            onClick={() => void remove.mutateAsync(list.id).then(onClose)}
-          >
-            <Trash2 size={18} aria-hidden />
-            Удалить вишлист
-            {list.items.length > 0 &&
-              ` и ${list.items.length} ${plural(list.items.length, 'пункт', 'пункта', 'пунктов')}`}
-          </Button>
-        )}
       </div>
     </Sheet>
   )

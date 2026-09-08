@@ -868,10 +868,10 @@ export type Database = {
           done_at: string | null
           done_by: string | null
           id: string
-          image_path: string | null
           note: string | null
           title: string
           updated_at: string
+          wanted_by: string
           wishlist_id: string
         }
         Insert: {
@@ -880,10 +880,10 @@ export type Database = {
           done_at?: string | null
           done_by?: string | null
           id?: string
-          image_path?: string | null
           note?: string | null
           title: string
           updated_at?: string
+          wanted_by?: string
           wishlist_id: string
         }
         Update: {
@@ -892,10 +892,10 @@ export type Database = {
           done_at?: string | null
           done_by?: string | null
           id?: string
-          image_path?: string | null
           note?: string | null
           title?: string
           updated_at?: string
+          wanted_by?: string
           wishlist_id?: string
         }
         Relationships: [
@@ -910,23 +910,32 @@ export type Database = {
       }
       wishlists: {
         Row: {
+          closed_at: string | null
           created_at: string
           created_by: string
           id: string
+          image_path: string | null
+          sort_order: number
           title: string
           updated_at: string
         }
         Insert: {
+          closed_at?: string | null
           created_at?: string
           created_by?: string
           id?: string
+          image_path?: string | null
+          sort_order?: number
           title: string
           updated_at?: string
         }
         Update: {
+          closed_at?: string | null
           created_at?: string
           created_by?: string
           id?: string
+          image_path?: string | null
+          sort_order?: number
           title?: string
           updated_at?: string
         }
@@ -1103,6 +1112,7 @@ export type Database = {
         Returns: undefined
       }
       reorder_diary: { Args: { p_items: Json }; Returns: undefined }
+      reorder_wishlists: { Args: { ids: string[] }; Returns: undefined }
       restore_checkin_day: {
         Args: { target_date: string; today: string }
         Returns: undefined
@@ -1133,6 +1143,7 @@ export type Database = {
       send_love_notes: { Args: never; Returns: number }
       send_meal_reminders: { Args: never; Returns: number }
       tg_escape: { Args: { input: string }; Returns: string }
+      tg_notify_both: { Args: { message: string }; Returns: undefined }
       tg_notify_partner: {
         Args: { author_id: string; message: string }
         Returns: undefined
@@ -1145,6 +1156,7 @@ export type Database = {
         Args: { chat_id: string; message: string }
         Returns: number
       }
+      wishlist_closed_value: { Args: { list: string }; Returns: string }
       year_in_numbers: { Args: { year: number }; Returns: Json }
     }
     Enums: {
