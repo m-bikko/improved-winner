@@ -476,6 +476,74 @@ export type Database = {
         }
         Relationships: []
       }
+      list_items: {
+        Row: {
+          created_at: string
+          created_by: string
+          done_at: string | null
+          done_by: string | null
+          id: string
+          list_id: string
+          note: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          done_at?: string | null
+          done_by?: string | null
+          id?: string
+          list_id: string
+          note?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          done_at?: string | null
+          done_by?: string | null
+          id?: string
+          list_id?: string
+          note?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lists: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       love_notes: {
         Row: {
           message: string
