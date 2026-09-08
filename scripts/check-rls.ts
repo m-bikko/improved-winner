@@ -12,11 +12,19 @@
  * любой новый аккаунт в проекте получил бы полный доступ.
  *
  * Временный аккаунт создаётся и удаляется внутри скрипта.
+ *
+ * Список таблиц берётся ИЗ БАЗЫ, а не из кода. Раньше он был вписан руками
+ * и успел устареть на семь таблиц: задачи, отметки самочувствия, цикл и всё,
+ * что появилось после. То есть проверка спокойно говорила «посторонний
+ * ничего не видит», ни разу не заглянув в половину приложения. Перечисление
+ * из pg_class такого повторить не даст: новая таблица попадает под проверку
+ * в тот же день, когда появляется.
  */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { Client } from 'pg'
 import type { Database } from '../src/types/db.ts'
 import { ACCOUNTS } from '../src/lib/accounts.ts'
-import { loadEnv, readVars } from './env.ts'
+import { loadEnv, pgConfig, readVars } from './env.ts'
 
 type Db = SupabaseClient<Database>
 
@@ -27,6 +35,28 @@ let failed = 0
 function report(ok: boolean, name: string, detail: string): void {
   if (!ok) failed++
   console.log(`${ok ? '  OK  ' : ' ПРОВАЛ '} ${name}\n         ${detail}`)
+}
+
+/**
+ * Все таблицы схемы public - прямо из каталога.
+ *
+ * Ходим служебным подключением: посторонний по определению не должен уметь
+ * перечислять таблицы, и просить об этом его же сессию было бы бессмысленно.
+ */
+async function listPublicTables(): Promise<string[]> {
+  const client = new Client(pgConfig())
+  await client.connect()
+  try {
+    const { rows } = await client.query<{ name: string }>(
+      `select c.relname as name
+         from pg_class c join pg_namespace n on n.oid = c.relnamespace
+        where n.nspname = 'public' and c.relkind = 'r'
+        order by c.relname`,
+    )
+    return rows.map((r) => r.name)
+  } finally {
+    await client.end()
+  }
 }
 
 async function signIn(url: string, key: string, email: string, password: string): Promise<Db> {
@@ -131,22 +161,25 @@ async function main(): Promise<void> {
       OUTSIDER.password,
     )
 
-    for (const table of [
-      'foods',
-      'food_servings',
-      'dish_items',
-      'diary_entries',
-      'daily_goals',
-      'weight_log',
-      'profiles',
-      'topics',
-      'topic_comments',
-      'app_members',
-    ] as const) {
-      const res = await asOutsider.from(table).select('*')
+    const tables = await listPublicTables()
+    report(tables.length > 0, 'Список таблиц получен из базы', `таблиц: ${tables.length}`)
+
+    let leaked = 0
+    for (const table of tables) {
+      const res = await asOutsider.from(table as never).select('*')
+      // Отказ в правах - тоже успех, и даже более крепкий: до политик
+      // дело просто не доходит
       const rows = res.data?.length ?? 0
-      report(rows === 0, `Посторонний не видит ${table}`, `строк: ${rows}`)
+      if (rows > 0) {
+        leaked++
+        report(false, `Посторонний ВИДИТ ${table}`, `строк: ${rows}`)
+      }
     }
+    report(
+      leaked === 0,
+      'Посторонний не видит ни одной таблицы',
+      `проверено ${tables.length}, утечек ${leaked}`,
+    )
 
     const write = await asOutsider
       .from('foods')
