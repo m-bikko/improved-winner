@@ -5,7 +5,7 @@ import {
   CalendarHeart,
   Droplet,
   ListChecks,
-  ListTodo,
+  Gift,
   LogOut,
   MessagesSquare,
   NotebookPen,
@@ -24,7 +24,7 @@ export const NAV = [
   { to: '/foods', label: 'Продукты', icon: Apple },
   { to: '/cycle', label: 'Цикл', icon: Droplet },
   { to: '/dates', label: 'Даты', icon: CalendarHeart },
-  { to: '/lists', label: 'Списки', icon: ListTodo },
+  { to: '/wishlist', label: 'Вишлисты', icon: Gift },
   { to: '/profile', label: 'Профиль', icon: User },
 ] as const
 

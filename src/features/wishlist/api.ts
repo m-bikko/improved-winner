@@ -3,12 +3,12 @@ import { useUserId } from '@/auth/AuthProvider'
 import { supabase } from '@/lib/supabase'
 import type { Database } from '@/types/db'
 
-type ListRow = Database['public']['Tables']['lists']['Row']
-type ItemRow = Database['public']['Tables']['list_items']['Row']
+type ListRow = Database['public']['Tables']['wishlists']['Row']
+type ItemRow = Database['public']['Tables']['wishlist_items']['Row']
 
-export type ListItem = {
+export type WishlistItem = {
   id: string
-  listId: string
+  wishlistId: string
   title: string
   note: string | null
   doneAt: string | null
@@ -17,17 +17,17 @@ export type ListItem = {
   createdAt: string
 }
 
-export type List = {
+export type Wishlist = {
   id: string
   title: string
   createdBy: string
-  items: ListItem[]
+  items: WishlistItem[]
 }
 
-function itemFromRow(r: ItemRow): ListItem {
+function itemFromRow(r: ItemRow): WishlistItem {
   return {
     id: r.id,
-    listId: r.list_id,
+    wishlistId: r.wishlist_id,
     title: r.title,
     note: r.note,
     doneAt: r.done_at,
@@ -38,29 +38,29 @@ function itemFromRow(r: ItemRow): ListItem {
 }
 
 /**
- * Списки вместе с пунктами - двумя запросами, а не вложенным select.
+ * Вишлисты вместе с пунктами - двумя запросами, а не вложенным select.
  *
- * Списков тут единицы, пунктов десятки. Собрать их на клиенте дешевле, чем
+ * Вишлистов тут единицы, пунктов десятки. Собрать их на клиенте дешевле, чем
  * тянуть вложенную выборку, и главное - кэш остаётся плоским: пункт правится
  * куда чаще, чем сам список.
  */
-export function useLists() {
+export function useWishlists() {
   return useQuery({
-    queryKey: ['lists'],
-    queryFn: async (): Promise<List[]> => {
+    queryKey: ['wishlist'],
+    queryFn: async (): Promise<Wishlist[]> => {
       const [lists, items] = await Promise.all([
-        supabase.from('lists').select('*').order('created_at'),
-        supabase.from('list_items').select('*').order('created_at', { ascending: false }),
+        supabase.from('wishlists').select('*').order('created_at'),
+        supabase.from('wishlist_items').select('*').order('created_at', { ascending: false }),
       ])
       if (lists.error) throw lists.error
       if (items.error) throw items.error
 
-      const byList = new Map<string, ListItem[]>()
+      const byList = new Map<string, WishlistItem[]>()
       for (const row of items.data) {
         const item = itemFromRow(row)
-        const bucket = byList.get(item.listId)
+        const bucket = byList.get(item.wishlistId)
         if (bucket) bucket.push(item)
-        else byList.set(item.listId, [item])
+        else byList.set(item.wishlistId, [item])
       }
       return lists.data.map((l: ListRow) => ({
         id: l.id,
@@ -74,28 +74,28 @@ export function useLists() {
 
 function useInvalidate() {
   const qc = useQueryClient()
-  return () => void qc.invalidateQueries({ queryKey: ['lists'] })
+  return () => void qc.invalidateQueries({ queryKey: ['wishlist'] })
 }
 
-export function useSaveList() {
+export function useSaveWishlist() {
   const done = useInvalidate()
   return useMutation({
     mutationFn: async (input: { id?: string; title: string }) => {
       const title = input.title.trim()
       const { error } = input.id
-        ? await supabase.from('lists').update({ title }).eq('id', input.id)
-        : await supabase.from('lists').insert({ title })
+        ? await supabase.from('wishlists').update({ title }).eq('id', input.id)
+        : await supabase.from('wishlists').insert({ title })
       if (error) throw error
     },
     onSuccess: done,
   })
 }
 
-export function useDeleteList() {
+export function useDeleteWishlist() {
   const done = useInvalidate()
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('lists').delete().eq('id', id)
+      const { error } = await supabase.from('wishlists').delete().eq('id', id)
       if (error) throw error
     },
     onSuccess: done,
@@ -105,10 +105,10 @@ export function useDeleteList() {
 export function useAddItem() {
   const done = useInvalidate()
   return useMutation({
-    mutationFn: async (input: { listId: string; title: string }) => {
+    mutationFn: async (input: { wishlistId: string; title: string }) => {
       const { error } = await supabase
-        .from('list_items')
-        .insert({ list_id: input.listId, title: input.title.trim() })
+        .from('wishlist_items')
+        .insert({ wishlist_id: input.wishlistId, title: input.title.trim() })
       if (error) throw error
     },
     onSuccess: done,
@@ -127,7 +127,7 @@ export function useToggleItem() {
   return useMutation({
     mutationFn: async (input: { id: string; done: boolean }) => {
       const { error } = await supabase
-        .from('list_items')
+        .from('wishlist_items')
         .update(
           input.done
             ? { done_at: new Date().toISOString(), done_by: userId }
@@ -144,7 +144,7 @@ export function useDeleteItem() {
   const done = useInvalidate()
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('list_items').delete().eq('id', id)
+      const { error } = await supabase.from('wishlist_items').delete().eq('id', id)
       if (error) throw error
     },
     onSuccess: done,

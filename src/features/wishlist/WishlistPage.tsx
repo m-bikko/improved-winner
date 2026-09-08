@@ -9,18 +9,18 @@ import { EmptyState, ErrorState, Loading } from '@/ui/States'
 import {
   useAddItem,
   useDeleteItem,
-  useDeleteList,
-  useLists,
-  useSaveList,
+  useDeleteWishlist,
+  useSaveWishlist,
   useToggleItem,
-  type List,
-  type ListItem,
+  useWishlists,
+  type Wishlist,
+  type WishlistItem,
 } from './api'
 
 /**
- * Совместные списки: что посмотреть, куда сходить, что подарить.
+ * Вишлисты: что посмотреть, куда сходить, что подарить.
  *
- * Все списки на одном экране, без захода внутрь. Списков у пары единицы,
+ * Все вишлисты на одном экране, без захода внутрь. Вишлистов у пары единицы,
  * а лишний уровень навигации на телефоне стоит дороже, чем длинная страница:
  * добавить фильм должно быть одним движением, а не «открыть - добавить -
  * вернуться».
@@ -28,8 +28,8 @@ import {
  * Выполненные не удаляются, а сворачиваются: вычеркнутое - это и есть
  * история «что мы уже посмотрели», и стирать её жалко.
  */
-export function ListsPage() {
-  const lists = useLists()
+export function WishlistPage() {
+  const lists = useWishlists()
   const [creating, setCreating] = useState(false)
 
   if (lists.isError) return <ErrorState error={lists.error} onRetry={() => void lists.refetch()} />
@@ -39,17 +39,17 @@ export function ListsPage() {
     <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 pt-3 pb-28">
       {lists.data.length === 0 ? (
         <EmptyState
-          title="Списков пока нет"
+          title="Вишлистов пока нет"
           hint="Что посмотреть, куда сходить, что подарить. Без сроков и без ответственных - просто чтобы не забылось."
         />
       ) : (
-        lists.data.map((list) => <ListCard key={list.id} list={list} />)
+        lists.data.map((list) => <WishlistCard key={list.id} list={list} />)
       )}
 
       <button
         type="button"
         onClick={() => setCreating(true)}
-        aria-label="Новый список"
+        aria-label="Новый вишлист"
         className="fixed right-5 bottom-6 z-20 flex size-14 items-center justify-center
                    rounded-full bg-accent text-accent-ink shadow-lg
                    transition-transform active:scale-95"
@@ -58,12 +58,12 @@ export function ListsPage() {
         <ListPlus size={24} aria-hidden />
       </button>
 
-      {creating && <ListEditor list={null} onClose={() => setCreating(false)} />}
+      {creating && <WishlistEditor list={null} onClose={() => setCreating(false)} />}
     </div>
   )
 }
 
-function ListCard({ list }: { list: List }) {
+function WishlistCard({ list }: { list: Wishlist }) {
   const userId = useUserId()
   const add = useAddItem()
   const [draft, setDraft] = useState('')
@@ -84,7 +84,7 @@ function ListCard({ list }: { list: List }) {
     const title = draft.trim()
     if (title === '') return
     setDraft('')
-    add.mutate({ listId: list.id, title })
+    add.mutate({ wishlistId: list.id, title })
   }
 
   return (
@@ -148,12 +148,12 @@ function ListCard({ list }: { list: List }) {
         </div>
       )}
 
-      {editing && <ListEditor list={list} onClose={() => setEditing(false)} />}
+      {editing && <WishlistEditor list={list} onClose={() => setEditing(false)} />}
     </section>
   )
 }
 
-function Row({ item }: { item: ListItem }) {
+function Row({ item }: { item: WishlistItem }) {
   const toggle = useToggleItem()
   const remove = useDeleteItem()
   const isDone = item.doneAt !== null
@@ -187,16 +187,16 @@ function Row({ item }: { item: ListItem }) {
   )
 }
 
-function ListEditor({ list, onClose }: { list: List | null; onClose: () => void }) {
-  const save = useSaveList()
-  const remove = useDeleteList()
+function WishlistEditor({ list, onClose }: { list: Wishlist | null; onClose: () => void }) {
+  const save = useSaveWishlist()
+  const remove = useDeleteWishlist()
   const [title, setTitle] = useState(list?.title ?? '')
   const [error, setError] = useState<string | null>(null)
 
   const submit = async () => {
     setError(null)
     if (title.trim() === '') {
-      setError('Без названия список не найти')
+      setError('Без названия вишлист не найти')
       return
     }
     try {
@@ -208,7 +208,7 @@ function ListEditor({ list, onClose }: { list: List | null; onClose: () => void 
   }
 
   return (
-    <Sheet open onClose={onClose} title={list ? 'Список' : 'Новый список'}>
+    <Sheet open onClose={onClose} title={list ? 'Вишлист' : 'Новый вишлист'}>
       <div className="flex flex-col gap-4">
         <Field
           label="Название"
@@ -231,7 +231,7 @@ function ListEditor({ list, onClose }: { list: List | null; onClose: () => void 
             onClick={() => void remove.mutateAsync(list.id).then(onClose)}
           >
             <Trash2 size={18} aria-hidden />
-            Удалить список
+            Удалить вишлист
             {list.items.length > 0 && ` и ${list.items.length} ${plural(list.items.length, 'пункт', 'пункта', 'пунктов')}`}
           </Button>
         )}

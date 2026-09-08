@@ -476,74 +476,6 @@ export type Database = {
         }
         Relationships: []
       }
-      list_items: {
-        Row: {
-          created_at: string
-          created_by: string
-          done_at: string | null
-          done_by: string | null
-          id: string
-          list_id: string
-          note: string | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string
-          done_at?: string | null
-          done_by?: string | null
-          id?: string
-          list_id: string
-          note?: string | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          done_at?: string | null
-          done_by?: string | null
-          id?: string
-          list_id?: string
-          note?: string | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "list_items_list_id_fkey"
-            columns: ["list_id"]
-            isOneToOne: false
-            referencedRelation: "lists"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      lists: {
-        Row: {
-          created_at: string
-          created_by: string
-          id: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string
-          id?: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          id?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       love_notes: {
         Row: {
           message: string
@@ -926,6 +858,74 @@ export type Database = {
           date?: string
           user_id?: string
           weight_kg?: number
+        }
+        Relationships: []
+      }
+      wishlist_items: {
+        Row: {
+          created_at: string
+          created_by: string
+          done_at: string | null
+          done_by: string | null
+          id: string
+          note: string | null
+          title: string
+          updated_at: string
+          wishlist_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          done_at?: string | null
+          done_by?: string | null
+          id?: string
+          note?: string | null
+          title: string
+          updated_at?: string
+          wishlist_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          done_at?: string | null
+          done_by?: string | null
+          id?: string
+          note?: string | null
+          title?: string
+          updated_at?: string
+          wishlist_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_items_list_id_fkey"
+            columns: ["wishlist_id"]
+            isOneToOne: false
+            referencedRelation: "wishlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wishlists: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
