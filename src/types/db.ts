@@ -476,6 +476,65 @@ export type Database = {
         }
         Relationships: []
       }
+      letter_deliveries: {
+        Row: {
+          created_at: string
+          letter_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          letter_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          letter_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "letter_deliveries_letter_id_fkey"
+            columns: ["letter_id"]
+            isOneToOne: false
+            referencedRelation: "letters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      letters: {
+        Row: {
+          audience: string
+          author_id: string
+          body: string
+          created_at: string
+          deliver_on: string
+          delivered_at: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          audience?: string
+          author_id?: string
+          body: string
+          created_at?: string
+          deliver_on: string
+          delivered_at?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          audience?: string
+          author_id?: string
+          body?: string
+          created_at?: string
+          deliver_on?: string
+          delivered_at?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       love_notes: {
         Row: {
           message: string
@@ -1066,6 +1125,7 @@ export type Database = {
         }[]
       }
       cycle_tip: { Args: { day: number; phase: string }; Returns: string }
+      deliver_letters: { Args: never; Returns: number }
       diary_month: {
         Args: { p_from: string; p_to: string; p_user: string }
         Returns: {
@@ -1077,6 +1137,7 @@ export type Database = {
         }[]
       }
       is_member: { Args: never; Returns: boolean }
+      letter_recipients: { Args: { letter: string }; Returns: string[] }
       next_occurrence: {
         Args: { from_ts: string; rule: Json }
         Returns: string

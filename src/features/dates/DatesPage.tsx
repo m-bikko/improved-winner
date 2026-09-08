@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Cake, CalendarHeart, Plus, Star, Trash2 } from 'lucide-react'
+import { useLocalFlag } from '@/lib/localFlag'
+import { LettersTab } from '@/features/letters/LettersTab'
 import { fromLocalISO, todayLocal } from '@/lib/date'
 import { plural } from '@/lib/plural'
 import { Button } from '@/ui/Button'
@@ -40,6 +42,9 @@ export function DatesPage() {
   const today = todayLocal()
   const list = useOccasions(today)
   const [editing, setEditing] = useState<Occasion | 'new' | null>(null)
+  // Выбор вкладки переживает уход в другой раздел: человек, который сейчас
+  // пишет письма, вернётся к письмам, а не к списку дат
+  const [tab, setTab] = useLocalFlag('dates-letters-tab', false)
 
   if (list.isError) return <ErrorState error={list.error} onRetry={() => void list.refetch()} />
   if (list.isPending) return <Loading />
@@ -48,6 +53,58 @@ export function DatesPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-3 pb-28">
+      <div className="mb-4 flex gap-1 rounded-xl bg-raised p-1">
+        <TabButton active={!tab} onClick={() => setTab(false)}>
+          Даты
+        </TabButton>
+        <TabButton active={tab} onClick={() => setTab(true)}>
+          Письма
+        </TabButton>
+      </div>
+
+      {tab ? (
+        <LettersTab />
+      ) : (
+        <DatesTab items={items} onEdit={setEditing} editing={editing} />
+      )}
+    </div>
+  )
+}
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`flex-1 rounded-lg py-2 text-sm transition-colors ${
+        active ? 'bg-surface font-medium text-ink shadow-sm' : 'text-muted'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function DatesTab({
+  items,
+  onEdit,
+  editing,
+}: {
+  items: Occasion[]
+  onEdit: (value: Occasion | 'new' | null) => void
+  editing: Occasion | 'new' | null
+}) {
+  return (
+    <>
       {items.length === 0 ? (
         <EmptyState
           title="Пока пусто"
@@ -57,7 +114,7 @@ export function DatesPage() {
         <ul className="flex flex-col gap-2">
           {items.map((o) => (
             <li key={o.id}>
-              <Card occasion={o} onOpen={() => setEditing(o)} />
+              <Card occasion={o} onOpen={() => onEdit(o)} />
             </li>
           ))}
         </ul>
@@ -65,7 +122,7 @@ export function DatesPage() {
 
       <button
         type="button"
-        onClick={() => setEditing('new')}
+        onClick={() => onEdit('new')}
         aria-label="Новая дата"
         className="fixed right-5 bottom-6 z-20 flex size-14 items-center justify-center
                    rounded-full bg-accent text-accent-ink shadow-lg
@@ -76,12 +133,9 @@ export function DatesPage() {
       </button>
 
       {editing && (
-        <Editor
-          occasion={editing === 'new' ? null : editing}
-          onClose={() => setEditing(null)}
-        />
+        <Editor occasion={editing === 'new' ? null : editing} onClose={() => onEdit(null)} />
       )}
-    </div>
+    </>
   )
 }
 
