@@ -1,17 +1,23 @@
-import { useMemo, useState } from 'react'
-import { Check, ListPlus, Plus, Trash2, X } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
+import { Check, ImagePlus, ListPlus, Plus, Trash2 } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
+import { formatBytes, loadBitmap, prepareSquare, type SquareCrop } from '@/lib/image'
 import { plural } from '@/lib/plural'
 import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
 import { Sheet } from '@/ui/Sheet'
+import { SquareCropper } from '@/ui/SquareCropper'
 import { EmptyState, ErrorState, Loading } from '@/ui/States'
 import {
   useAddItem,
   useDeleteItem,
   useDeleteWishlist,
+  useRemoveItemPhoto,
+  useSaveItem,
   useSaveWishlist,
   useToggleItem,
+  useUploadItemPhoto,
+  useWishlistPhotoUrls,
   useWishlists,
   type Wishlist,
   type WishlistItem,
@@ -25,12 +31,24 @@ import {
  * добавить фильм должно быть одним движением, а не «открыть - добавить -
  * вернуться».
  *
- * Выполненные не удаляются, а сворачиваются: вычеркнутое - это и есть
- * история «что мы уже посмотрели», и стирать её жалко.
+ * Вычеркнутое не удаляется, а сворачивается: это и есть история
+ * «что мы уже посмотрели», и стирать её жалко.
  */
 export function WishlistPage() {
   const lists = useWishlists()
   const [creating, setCreating] = useState(false)
+
+  // Ссылки на картинки берутся одной пачкой на весь экран: бакет приватный,
+  // и запрос на строку превратил бы открытие раздела в десяток походов в сеть
+  const paths = useMemo(
+    () =>
+      (lists.data ?? [])
+        .flatMap((l) => l.items)
+        .map((i) => i.imagePath)
+        .filter((p): p is string => p !== null),
+    [lists.data],
+  )
+  const urls = useWishlistPhotoUrls(paths)
 
   if (lists.isError) return <ErrorState error={lists.error} onRetry={() => void lists.refetch()} />
   if (lists.isPending) return <Loading />
@@ -43,7 +61,9 @@ export function WishlistPage() {
           hint="Что посмотреть, куда сходить, что подарить. Без сроков и без ответственных - просто чтобы не забылось."
         />
       ) : (
-        lists.data.map((list) => <WishlistCard key={list.id} list={list} />)
+        lists.data.map((list) => (
+          <WishlistCard key={list.id} list={list} urls={urls.data ?? {}} />
+        ))
       )}
 
       <button
@@ -63,12 +83,13 @@ export function WishlistPage() {
   )
 }
 
-function WishlistCard({ list }: { list: Wishlist }) {
+function WishlistCard({ list, urls }: { list: Wishlist; urls: Record<string, string> }) {
   const userId = useUserId()
   const add = useAddItem()
   const [draft, setDraft] = useState('')
   const [showDone, setShowDone] = useState(false)
   const [editing, setEditing] = useState(false)
+  const [opened, setOpened] = useState<WishlistItem | null>(null)
 
   const { open, done } = useMemo(
     () => ({
@@ -79,6 +100,11 @@ function WishlistCard({ list }: { list: Wishlist }) {
     }),
     [list.items],
   )
+
+  // Открытый пункт берём из свежего списка, а не из состояния: после загрузки
+  // картинки в замыкании остался бы пункт без неё, и превью не появилось бы
+  // до закрытия шторки
+  const current = opened ? (list.items.find((i) => i.id === opened.id) ?? null) : null
 
   const submit = () => {
     const title = draft.trim()
@@ -105,7 +131,7 @@ function WishlistCard({ list }: { list: Wishlist }) {
       {open.length > 0 && (
         <ul className="mt-3 flex flex-col">
           {open.map((item) => (
-            <Row key={item.id} item={item} />
+            <Row key={item.id} item={item} urls={urls} onOpen={() => setOpened(item)} />
           ))}
         </ul>
       )}
@@ -141,7 +167,7 @@ function WishlistCard({ list }: { list: Wishlist }) {
           {showDone && (
             <ul className="mt-2 flex flex-col">
               {done.map((item) => (
-                <Row key={item.id} item={item} />
+                <Row key={item.id} item={item} urls={urls} onOpen={() => setOpened(item)} />
               ))}
             </ul>
           )}
@@ -149,14 +175,23 @@ function WishlistCard({ list }: { list: Wishlist }) {
       )}
 
       {editing && <WishlistEditor list={list} onClose={() => setEditing(false)} />}
+      {current && <ItemSheet item={current} urls={urls} onClose={() => setOpened(null)} />}
     </section>
   )
 }
 
-function Row({ item }: { item: WishlistItem }) {
+function Row({
+  item,
+  urls,
+  onOpen,
+}: {
+  item: WishlistItem
+  urls: Record<string, string>
+  onOpen: () => void
+}) {
   const toggle = useToggleItem()
-  const remove = useDeleteItem()
   const isDone = item.doneAt !== null
+  const url = item.imagePath ? urls[item.imagePath] : undefined
 
   return (
     <li className="flex items-center gap-3 py-1.5">
@@ -172,18 +207,212 @@ function Row({ item }: { item: WishlistItem }) {
       >
         {isDone && <Check size={15} aria-hidden />}
       </button>
-      <span className={`min-w-0 flex-1 truncate ${isDone ? 'text-muted line-through' : ''}`}>
-        {item.title}
-      </span>
+
       <button
         type="button"
-        onClick={() => remove.mutate(item.id)}
-        aria-label={`Удалить «${item.title}»`}
-        className="shrink-0 p-1 text-muted"
+        onClick={onOpen}
+        aria-label={`Открыть «${item.title}»`}
+        className="flex min-w-0 flex-1 items-center gap-3 py-0.5 text-left"
       >
-        <X size={16} aria-hidden />
+        {url && (
+          <img
+            src={url}
+            alt=""
+            className={`size-10 shrink-0 rounded-lg object-cover ${isDone ? 'opacity-50' : ''}`}
+          />
+        )}
+        <span className="min-w-0 flex-1">
+          <span className={`block truncate ${isDone ? 'text-muted line-through' : ''}`}>
+            {item.title}
+          </span>
+          {item.note && <span className="block truncate text-sm text-muted">{item.note}</span>}
+        </span>
       </button>
     </li>
+  )
+}
+
+function ItemSheet({
+  item,
+  urls,
+  onClose,
+}: {
+  item: WishlistItem
+  urls: Record<string, string>
+  onClose: () => void
+}) {
+  const save = useSaveItem()
+  const remove = useDeleteItem()
+  const [title, setTitle] = useState(item.title)
+  const [note, setNote] = useState(item.note ?? '')
+  const [error, setError] = useState<string | null>(null)
+
+  const submit = async () => {
+    setError(null)
+    if (title.trim() === '') {
+      setError('Без названия пункт не найти')
+      return
+    }
+    try {
+      await save.mutateAsync({ id: item.id, title, note: note || null })
+      onClose()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    }
+  }
+
+  return (
+    <Sheet open onClose={onClose} title={item.title}>
+      <div className="flex flex-col gap-4">
+        <Photo item={item} urls={urls} />
+
+        <Field label="Что это" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <Field
+          label="Заметка"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="необязательно"
+        />
+
+        {error && <p className="text-sm text-danger">{error}</p>}
+
+        <Button onClick={() => void submit()} loading={save.isPending}>
+          Сохранить
+        </Button>
+
+        <Button
+          variant="danger"
+          loading={remove.isPending}
+          onClick={() => void remove.mutateAsync(item.id).then(onClose)}
+        >
+          <Trash2 size={18} aria-hidden />
+          Удалить
+        </Button>
+      </div>
+    </Sheet>
+  )
+}
+
+/**
+ * Картинка пункта: превью, кадрирование, замена.
+ *
+ * Квадрат режется НА КЛИЕНТЕ до загрузки, а не подгоняется стилями при показе.
+ * Иначе в хранилище лежал бы произвольный формат, и кадр выбирал бы браузер
+ * своим object-fit - то есть всегда центр, даже когда нужное не в центре.
+ */
+function Photo({ item, urls }: { item: WishlistItem; urls: Record<string, string> }) {
+  const input = useRef<HTMLInputElement>(null)
+  const upload = useUploadItemPhoto()
+  const remove = useRemoveItemPhoto()
+
+  const [bitmap, setBitmap] = useState<ImageBitmap | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState<{ from: number; to: number } | null>(null)
+  const original = useRef(0)
+
+  const url = item.imagePath ? urls[item.imagePath] : undefined
+
+  const pick = async (file: File) => {
+    setError(null)
+    setSaved(null)
+    original.current = file.size
+    try {
+      setBitmap(await loadBitmap(file))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    }
+  }
+
+  const confirm = async (crop: SquareCrop) => {
+    if (!bitmap) return
+    try {
+      const prepared = await prepareSquare(bitmap, crop)
+      await upload.mutateAsync({
+        itemId: item.id,
+        blob: prepared.blob,
+        extension: prepared.extension,
+        previousPath: item.imagePath,
+      })
+      setSaved({ from: original.current, to: prepared.blob.size })
+      bitmap.close()
+      setBitmap(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    }
+  }
+
+  const cancel = () => {
+    bitmap?.close()
+    setBitmap(null)
+  }
+
+  if (bitmap) {
+    return (
+      <div className="flex flex-col gap-3">
+        <p className="text-sm text-muted">Выберите квадрат: тяните, щипком меняйте масштаб</p>
+        <SquareCropper
+          bitmap={bitmap}
+          busy={upload.isPending}
+          onConfirm={(crop) => void confirm(crop)}
+          onCancel={cancel}
+        />
+        {error && <p className="text-sm text-danger">{error}</p>}
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-start gap-4">
+      <div className="flex size-28 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-raised ring-1 ring-line">
+        {url ? (
+          <img src={url} alt="" className="size-full object-cover" />
+        ) : (
+          <ImagePlus size={22} className="text-muted" aria-hidden />
+        )}
+      </div>
+
+      <div className="flex min-w-0 flex-col items-start gap-2">
+        <input
+          ref={input}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            // Сбрасываем значение: без этого повторный выбор ТОГО ЖЕ файла
+            // не даёт события, и «заменить» молча ничего не делает
+            e.target.value = ''
+            if (file) void pick(file)
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => input.current?.click()}
+          className="text-sm text-accent underline"
+        >
+          {url ? 'Заменить картинку' : 'Добавить картинку'}
+        </button>
+
+        {url && item.imagePath && (
+          <button
+            type="button"
+            onClick={() =>
+              void remove.mutateAsync({ itemId: item.id, path: item.imagePath as string })
+            }
+            className="text-sm text-muted underline"
+          >
+            Убрать
+          </button>
+        )}
+
+        {saved && (
+          <p className="text-xs text-muted">
+            {formatBytes(saved.from)} → {formatBytes(saved.to)}
+          </p>
+        )}
+        {error && <p className="text-sm text-danger">{error}</p>}
+      </div>
+    </div>
   )
 }
 
@@ -232,7 +461,8 @@ function WishlistEditor({ list, onClose }: { list: Wishlist | null; onClose: () 
           >
             <Trash2 size={18} aria-hidden />
             Удалить вишлист
-            {list.items.length > 0 && ` и ${list.items.length} ${plural(list.items.length, 'пункт', 'пункта', 'пунктов')}`}
+            {list.items.length > 0 &&
+              ` и ${list.items.length} ${plural(list.items.length, 'пункт', 'пункта', 'пунктов')}`}
           </Button>
         )}
       </div>

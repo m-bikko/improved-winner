@@ -80,3 +80,4 @@ Supabase Storage, приватный бакет `food-photos`, политики 
 ## См. также
 
 - [[foods]], [[security]]
+- [[wishlist]] - тот же пайплайн плюс кадрирование в квадрат

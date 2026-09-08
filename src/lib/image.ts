@@ -40,15 +40,115 @@ function encode(canvas: HTMLCanvasElement, type: string, quality: number): Promi
   return new Promise((resolve) => canvas.toBlob(resolve, type, quality))
 }
 
-export async function prepareImage(file: File): Promise<PreparedImage> {
+/**
+ * Снимок с телефона, развёрнутый по EXIF.
+ *
+ * Вынесено отдельно, потому что кадрирование показывает ту же картинку
+ * на экране, а потом режет её же. Разверни их по-разному - и человек получит
+ * не тот кусок, который выбирал.
+ */
+export async function loadBitmap(file: File): Promise<ImageBitmap> {
   if (!file.type.startsWith('image/')) {
     throw new Error('Это не изображение')
   }
+  return createImageBitmap(file, { imageOrientation: 'from-image' })
+}
 
-  // imageOrientation: 'from-image' разворачивает снимок по EXIF. Без этого
-  // фотографии с телефона лежат на боку - камера пишет ориентацию в метаданные,
-  // а не в сами пиксели.
-  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
+/**
+ * Кодирование холста с подбором качества.
+ *
+ * Пробуем WebP по убыванию, пока не влезем в потолок; при отсутствии
+ * поддержки откатываемся на JPEG. Проверяем фактический тип блоба,
+ * а не запрошенный: браузер без WebP молча отдаёт PNG, а PNG для
+ * фотографии это мегабайты.
+ */
+async function encodeWithinBudget(
+  canvas: HTMLCanvasElement,
+): Promise<{ blob: Blob; extension: 'webp' | 'jpg' }> {
+  for (const quality of QUALITY_STEPS) {
+    const blob = await encode(canvas, 'image/webp', quality)
+    if (blob && blob.type === 'image/webp') {
+      if (blob.size <= MAX_BYTES) return { blob, extension: 'webp' }
+      continue
+    }
+    const jpeg = await encode(canvas, 'image/jpeg', quality)
+    if (jpeg && jpeg.size <= MAX_BYTES) return { blob: jpeg, extension: 'jpg' }
+  }
+
+  // Ни одно качество не влезло - редкость, но отдать что-то надо.
+  // Берём самое низкое: лучше зернистая картинка, чем отказ загрузить.
+  const fallback =
+    (await encode(canvas, 'image/webp', 0.35)) ?? (await encode(canvas, 'image/jpeg', 0.35))
+  if (!fallback) throw new Error('Не удалось сжать изображение')
+  return { blob: fallback, extension: fallback.type === 'image/webp' ? 'webp' : 'jpg' }
+}
+
+/** Квадрат в координатах исходной картинки. */
+export type SquareCrop = { x: number; y: number; side: number }
+
+/**
+ * Кадр по центру и кратности приближения.
+ *
+ * Чистая функция, а не метод компонента, потому что ошибиться тут легко,
+ * а увидеть ошибку - нет: кадр, уехавший за край, браузер дорисует прозрачным,
+ * и в углу картинки окажется дыра, которую заметишь уже в готовом файле.
+ *
+ * Кратность 1 - это вписанный квадрат по короткой стороне: больше из картинки
+ * всё равно не вырезать, поэтому отдалять некуда.
+ */
+export function squareCrop(
+  imageWidth: number,
+  imageHeight: number,
+  center: { x: number; y: number },
+  zoom: number,
+): SquareCrop {
+  const side = Math.min(imageWidth, imageHeight) / Math.max(zoom, 1)
+  const clamp = (v: number, max: number) => Math.min(Math.max(v, 0), max)
+  return {
+    x: clamp(center.x - side / 2, imageWidth - side),
+    y: clamp(center.y - side / 2, imageHeight - side),
+    side,
+  }
+}
+
+/**
+ * Сколько пикселей исходника приходится на пиксель экрана.
+ *
+ * Нужно, чтобы палец двигал картинку ровно за собой: при десятикратном
+ * приближении тот же сдвиг пальца обязан смещать кадр вдесятеро меньше.
+ */
+export function sourcePerScreenPx(
+  imageWidth: number,
+  imageHeight: number,
+  zoom: number,
+  boxPx: number,
+): number {
+  return Math.min(imageWidth, imageHeight) / Math.max(zoom, 1) / Math.max(boxPx, 1)
+}
+
+/**
+ * Вырезает квадрат и кодирует его.
+ *
+ * Сторона не растягивается вверх: если человек приблизил так, что в кадр
+ * попало 200 пикселей исходника, честнее отдать 200, чем растянуть их
+ * до 512 и сделать вид, что картинка чёткая.
+ */
+export async function prepareSquare(bitmap: ImageBitmap, crop: SquareCrop): Promise<PreparedImage> {
+  const side = Math.min(Math.round(crop.side), MAX_SIDE)
+  const canvas = document.createElement('canvas')
+  canvas.width = side
+  canvas.height = side
+
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Браузер не дал холст для обработки картинки')
+  ctx.drawImage(bitmap, crop.x, crop.y, crop.side, crop.side, 0, 0, side, side)
+
+  const { blob, extension } = await encodeWithinBudget(canvas)
+  return { blob, extension, width: side, height: side }
+}
+
+export async function prepareImage(file: File): Promise<PreparedImage> {
+  const bitmap = await loadBitmap(file)
 
   try {
     const size = targetSize(bitmap.width, bitmap.height)
@@ -60,30 +160,8 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
     if (!ctx) throw new Error('Браузер не дал холст для обработки картинки')
     ctx.drawImage(bitmap, 0, 0, size.width, size.height)
 
-    for (const quality of QUALITY_STEPS) {
-      const blob = await encode(canvas, 'image/webp', quality)
-      // Браузер без поддержки WebP в toBlob молча отдаёт PNG - а PNG для
-      // фотографии это мегабайты. Поэтому проверяем фактический тип, а не
-      // надеемся на запрошенный.
-      if (blob && blob.type === 'image/webp') {
-        if (blob.size <= MAX_BYTES) return { blob, extension: 'webp', ...size }
-        continue
-      }
-
-      const jpeg = await encode(canvas, 'image/jpeg', quality)
-      if (jpeg && jpeg.size <= MAX_BYTES) return { blob: jpeg, extension: 'jpg', ...size }
-    }
-
-    // Ни одно качество не влезло - редкость, но отдать что-то надо.
-    // Берём самое низкое: лучше зернистая картинка, чем отказ загрузить.
-    const fallback =
-      (await encode(canvas, 'image/webp', 0.35)) ?? (await encode(canvas, 'image/jpeg', 0.35))
-    if (!fallback) throw new Error('Не удалось сжать изображение')
-    return {
-      blob: fallback,
-      extension: fallback.type === 'image/webp' ? 'webp' : 'jpg',
-      ...size,
-    }
+    const { blob, extension } = await encodeWithinBudget(canvas)
+    return { blob, extension, ...size }
   } finally {
     bitmap.close()
   }

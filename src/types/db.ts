@@ -868,6 +868,7 @@ export type Database = {
           done_at: string | null
           done_by: string | null
           id: string
+          image_path: string | null
           note: string | null
           title: string
           updated_at: string
@@ -879,6 +880,7 @@ export type Database = {
           done_at?: string | null
           done_by?: string | null
           id?: string
+          image_path?: string | null
           note?: string | null
           title: string
           updated_at?: string
@@ -890,6 +892,7 @@ export type Database = {
           done_at?: string | null
           done_by?: string | null
           id?: string
+          image_path?: string | null
           note?: string | null
           title?: string
           updated_at?: string

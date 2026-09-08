@@ -164,6 +164,61 @@ async function main(): Promise<void> {
       'Пополнение вишлиста никого не будит',
       'три пункта подряд - ноль уведомлений, и это решение, а не упущение',
     )
+
+    // --- картинки ---------------------------------------------------------
+    const bucket = await q<{ public: boolean; limit: string; mimes: string }>(
+      `select public, file_size_limit::text as limit,
+              array_to_string(allowed_mime_types, ', ') as mimes
+         from storage.buckets where id = 'wishlist-photos'`,
+    )
+    const b0 = bucket[0]
+    check(b0 !== undefined, 'Бакет для картинок заведён', b0 ? 'wishlist-photos' : 'НЕТ')
+    check(
+      b0?.public === false,
+      'Бакет приватный',
+      'в приложении всё закрыто политиками, картинки не исключение',
+    )
+    check(
+      Number(b0?.limit ?? 0) === 262144,
+      'Потолок размера стоит на самом хранилище',
+      `${Math.round(Number(b0?.limit ?? 0) / 1024)} КБ - клиент можно обойти, бакет нельзя`,
+    )
+    check(
+      (b0?.mimes ?? '').includes('image/webp') && !(b0?.mimes ?? '').includes('image/png'),
+      'Разрешены только сжатые форматы',
+      `${b0?.mimes} - PNG для фотографии это мегабайты`,
+    )
+
+    const pol = await one(
+      `select string_agg(policyname, ', ' order by policyname) as v
+         from pg_policies
+        where schemaname = 'storage' and tablename = 'objects'
+          and policyname like 'wishlist_photos_%'`,
+    )
+    check(
+      ['select', 'insert', 'update', 'delete'].every((op) => pol.includes(`wishlist_photos_${op}`)),
+      'Политики есть на все четыре действия',
+      pol || 'политик нет',
+    )
+
+    const scoped = await one(
+      `select count(*)::text as v from pg_policies
+        where schemaname = 'storage' and tablename = 'objects'
+          and policyname like 'wishlist_photos_%'
+          and coalesce(qual, '') || coalesce(with_check, '') not like '%wishlist-photos%'`,
+    )
+    check(
+      scoped === '0',
+      'Каждая политика привязана к своему бакету',
+      'без bucket_id политика пустила бы к фотографиям продуктов',
+    )
+
+    const col = await one(
+      `select data_type as v from information_schema.columns
+        where table_schema = 'public' and table_name = 'wishlist_items'
+          and column_name = 'image_path'`,
+    )
+    check(col === 'text', 'У пункта есть путь картинки', `тип ${col || 'колонки нет'}`)
   } finally {
     await client.query('rollback').catch(() => {})
     await client.end()

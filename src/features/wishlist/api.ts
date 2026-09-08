@@ -11,6 +11,8 @@ export type WishlistItem = {
   wishlistId: string
   title: string
   note: string | null
+  /** Путь объекта в бакете. Готовый URL не хранится - он протухает. */
+  imagePath: string | null
   doneAt: string | null
   doneBy: string | null
   createdBy: string
@@ -30,6 +32,7 @@ function itemFromRow(r: ItemRow): WishlistItem {
     wishlistId: r.wishlist_id,
     title: r.title,
     note: r.note,
+    imagePath: r.image_path,
     doneAt: r.done_at,
     doneBy: r.done_by,
     createdBy: r.created_by,
@@ -148,5 +151,119 @@ export function useDeleteItem() {
       if (error) throw error
     },
     onSuccess: done,
+  })
+}
+
+const PHOTO_BUCKET = 'wishlist-photos'
+
+/** Час с запасом: ссылки кэшируются на 50 минут. */
+const SIGNED_URL_TTL = 3600
+
+/**
+ * Подписанные ссылки на картинки - пачкой на весь вишлист.
+ *
+ * Бакет приватный, прямых URL нет. Просить ссылку на каждую картинку
+ * отдельно означало бы запрос на строку при открытии раздела.
+ */
+export function useWishlistPhotoUrls(paths: readonly string[]) {
+  const key = [...paths].sort().join(',')
+  return useQuery({
+    queryKey: ['wishlist-photo-urls', key],
+    queryFn: async (): Promise<Record<string, string>> => {
+      if (paths.length === 0) return {}
+      const { data, error } = await supabase.storage
+        .from(PHOTO_BUCKET)
+        .createSignedUrls([...paths], SIGNED_URL_TTL)
+      if (error) throw error
+      const urls: Record<string, string> = {}
+      for (const item of data ?? []) {
+        if (item.signedUrl && item.path) urls[item.path] = item.signedUrl
+      }
+      return urls
+    },
+    enabled: paths.length > 0,
+    // Меньше срока жизни ссылки, чтобы не отдать компоненту протухшую
+    staleTime: 50 * 60_000,
+    gcTime: 50 * 60_000,
+  })
+}
+
+/** Правка названия и заметки. До картинок заметку было негде вписать. */
+export function useSaveItem() {
+  const done = useInvalidate()
+  return useMutation({
+    mutationFn: async (input: { id: string; title: string; note: string | null }) => {
+      const { error } = await supabase
+        .from('wishlist_items')
+        .update({ title: input.title.trim(), note: input.note?.trim() || null })
+        .eq('id', input.id)
+      if (error) throw error
+    },
+    onSuccess: done,
+  })
+}
+
+/**
+ * Загружает готовый квадрат и привязывает его к пункту.
+ *
+ * Имя объекта случайное, старый файл удаляется ПОСЛЕ привязки нового:
+ * запись по тому же пути оставила бы браузер и CDN отдавать прежнюю
+ * картинку, а обратный порядок удаления - пункт со ссылкой в никуда,
+ * если удаление прошло, а загрузка нет.
+ */
+export function useUploadItemPhoto() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      itemId,
+      blob,
+      extension,
+      previousPath,
+    }: {
+      itemId: string
+      blob: Blob
+      extension: string
+      previousPath: string | null
+    }): Promise<{ path: string; bytes: number }> => {
+      const path = `${itemId}/${crypto.randomUUID()}.${extension}`
+
+      const { error: uploadError } = await supabase.storage
+        .from(PHOTO_BUCKET)
+        .upload(path, blob, { contentType: blob.type, cacheControl: '31536000' })
+      if (uploadError) throw uploadError
+
+      const { error } = await supabase
+        .from('wishlist_items')
+        .update({ image_path: path })
+        .eq('id', itemId)
+      if (error) throw error
+
+      if (previousPath) {
+        await supabase.storage.from(PHOTO_BUCKET).remove([previousPath])
+      }
+      return { path, bytes: blob.size }
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['wishlist'] })
+      void qc.invalidateQueries({ queryKey: ['wishlist-photo-urls'] })
+    },
+  })
+}
+
+export function useRemoveItemPhoto() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ itemId, path }: { itemId: string; path: string }) => {
+      const { error } = await supabase
+        .from('wishlist_items')
+        .update({ image_path: null })
+        .eq('id', itemId)
+      if (error) throw error
+      await supabase.storage.from(PHOTO_BUCKET).remove([path])
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['wishlist'] })
+      void qc.invalidateQueries({ queryKey: ['wishlist-photo-urls'] })
+    },
   })
 }
