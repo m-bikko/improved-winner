@@ -1009,6 +1009,19 @@ export type Database = {
         Args: { female: string; male: string; neutral: string; person: string }
         Returns: string
       }
+      checkin_cycle_patterns: {
+        Args: { months?: number; owner: string; today: string }
+        Returns: {
+          days_in_phase: number
+          hits: number
+          observed_days: number
+          other_rate: number
+          phase: string
+          rate: number
+          ratio: number
+          state: string
+        }[]
+      }
       checkin_restorable: {
         Args: { today: string }
         Returns: {

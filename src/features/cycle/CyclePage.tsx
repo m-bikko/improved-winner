@@ -18,6 +18,7 @@ import {
 } from './api'
 import { CycleCalendar } from './CycleCalendar'
 import { DaySheet } from './DaySheet'
+import { Patterns } from './Patterns'
 import { emptyLog, type DayLog } from './dayLog'
 import {
   PHASE_LABELS,
@@ -112,6 +113,7 @@ export function CyclePage() {
         logs={logs}
         lutealDays={settings.data?.lutealDays ?? DEFAULT_SETTINGS.lutealDays}
         owned={owned}
+        ownerId={owned ? userId : (partner?.userId ?? '')}
         onEdit={setEditing}
         onSettings={() => setSettingsOpen(true)}
       />
@@ -127,6 +129,7 @@ function CycleBody({
   logs,
   lutealDays,
   owned,
+  ownerId,
   onEdit,
   onSettings,
 }: {
@@ -134,6 +137,7 @@ function CycleBody({
   logs: DayLog[]
   lutealDays: number
   owned: boolean
+  ownerId: string
   onEdit: (p: Period) => void
   onSettings: () => void
 }) {
@@ -280,6 +284,8 @@ function CycleBody({
           </p>
         </section>
       )}
+
+      <Patterns ownerId={ownerId} />
 
       <Tips state={state} owned={owned} />
 
