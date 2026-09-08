@@ -46,6 +46,8 @@ import {
   useUpdateEntry,
 } from './api'
 import { CalorieRing, CalorieRingMini } from './CalorieRing'
+import { WorkoutsSection } from './WorkoutsSection'
+import { useWorkouts } from './workoutsApi'
 import { DraggableEntry, MealDropZone } from './DraggableEntry'
 import { MacroInfoSheet, type Nutrient } from './MacroInfo'
 import { diffOrder, moveEntry } from './reorder'
@@ -94,6 +96,13 @@ export function DiaryPage() {
   const partnerDay = useDiaryDay(date, compare && partner ? partner.userId : '')
 
   const me = profiles.data?.find((p) => p.userId === userId)
+
+  // Тренировки обоих одним запросом. Ключ тот же, что и в секции ниже,
+  // поэтому лишнего похода в сеть нет - TanStack отдаёт один и тот же кэш
+  const workouts = useWorkouts(date)
+  const burnedBy = (who: string): number =>
+    (workouts.data ?? []).filter((w) => w.userId === who).reduce((sum, w) => sum + w.kcal, 0)
+
   const liveGoal = goalsFor(me)
   const frozen = useDayGoal(userId, date)
 
@@ -245,10 +254,11 @@ export function DiaryPage() {
 
       {compare && partner ? (
         <Comparison
-          mine={{ nickname: me?.nickname ?? 'Я', totals }}
+          mine={{ nickname: me?.nickname ?? 'Я', totals, burned: burnedBy(userId) }}
           theirs={{
             nickname: partner.nickname,
             totals: sumEntries(partnerDay.data ?? []),
+            burned: burnedBy(partner.userId),
           }}
           theirEntries={partnerDay.data ?? []}
           loading={partnerDay.isPending}
@@ -290,6 +300,10 @@ export function DiaryPage() {
             })}
           </div>
         </DndContext>
+      )}
+
+      {!compare && (
+        <WorkoutsSection date={date} eatenKcal={totals.kcal} goalKcal={goals?.kcal ?? null} />
       )}
 
       <MacroInfoSheet
@@ -712,8 +726,8 @@ function Comparison({
   theirEntries,
   loading,
 }: {
-  mine: { nickname: string; totals: Macros }
-  theirs: { nickname: string; totals: Macros }
+  mine: { nickname: string; totals: Macros; burned: number }
+  theirs: { nickname: string; totals: Macros; burned: number }
   theirEntries: DiaryEntry[]
   loading: boolean
 }) {
@@ -739,6 +753,11 @@ function Comparison({
               <br />
               <span className="text-carbs">У {trim(side.totals.carbs)}</span>
             </p>
+            {side.burned > 0 && (
+              <p className="mt-3 border-t border-line pt-2 text-sm text-muted">
+                −{Math.round(side.burned)} на тренировке
+              </p>
+            )}
           </div>
         ))}
       </div>
