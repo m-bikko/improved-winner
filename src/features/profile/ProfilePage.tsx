@@ -185,6 +185,17 @@ function ProfileForm({ profile }: { profile: Profile }) {
       )}
 
       <Link
+        to="/notifications"
+        className="flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-4 ring-1 ring-line"
+      >
+        <span className="flex items-center gap-2 text-sm font-medium">
+          <BellRing size={16} aria-hidden />
+          Уведомления
+        </span>
+        <ChevronRight size={18} aria-hidden className="text-muted" />
+      </Link>
+
+      <Link
         to="/year"
         className="flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-4 ring-1 ring-line"
       >

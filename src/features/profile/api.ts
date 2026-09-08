@@ -9,6 +9,9 @@ export type Profile = {
   sex: Sex | null
   heightCm: number | null
   weightKg: number | null
+  /** Тихие часы по местному времени. null - выключены. */
+  quietFrom: number | null
+  quietTo: number | null
   activityLevel: ActivityLevel
   goalDirection: GoalDirection
   goalsMode: 'auto' | 'manual'
@@ -37,6 +40,8 @@ export function useProfiles() {
         sex: row.sex as Sex | null,
         heightCm: row.height_cm,
         weightKg: row.weight_kg,
+        quietFrom: row.quiet_from,
+        quietTo: row.quiet_to,
         activityLevel: row.activity_level as ActivityLevel,
         goalDirection: row.goal_direction as GoalDirection,
         goalsMode: row.goals_mode as 'auto' | 'manual',

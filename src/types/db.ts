@@ -589,6 +589,30 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_settings: {
+        Row: {
+          kind: string
+          push: boolean
+          telegram: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          kind: string
+          push?: boolean
+          telegram?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          kind?: string
+          push?: boolean
+          telegram?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       occasion_notices: {
         Row: {
           created_at: string
@@ -700,6 +724,8 @@ export type Database = {
           goals_mode: string
           height_cm: number | null
           nickname: string
+          quiet_from: number | null
+          quiet_to: number | null
           sex: string | null
           telegram_chat_id: string | null
           timezone: string
@@ -719,6 +745,8 @@ export type Database = {
           goals_mode?: string
           height_cm?: number | null
           nickname: string
+          quiet_from?: number | null
+          quiet_to?: number | null
           sex?: string | null
           telegram_chat_id?: string | null
           timezone?: string
@@ -738,6 +766,8 @@ export type Database = {
           goals_mode?: string
           height_cm?: number | null
           nickname?: string
+          quiet_from?: number | null
+          quiet_to?: number | null
           sex?: string | null
           telegram_chat_id?: string | null
           timezone?: string
@@ -1136,6 +1166,7 @@ export type Database = {
           protein: number
         }[]
       }
+      in_quiet_hours: { Args: { target: string }; Returns: boolean }
       is_member: { Args: never; Returns: boolean }
       letter_recipients: { Args: { letter: string }; Returns: string[] }
       next_occurrence: {
@@ -1145,6 +1176,10 @@ export type Database = {
       next_occurrence_allowed: {
         Args: { excluded: string[]; from_ts: string; rule: Json }
         Returns: string
+      }
+      notify_allowed: {
+        Args: { channel: string; kind: string; target: string }
+        Returns: boolean
       }
       notify_due_tasks: { Args: never; Returns: number }
       notify_occasions: { Args: never; Returns: number }
@@ -1169,7 +1204,13 @@ export type Database = {
       }
       partner_of: { Args: { author_id: string }; Returns: string }
       push_notify: {
-        Args: { body: string; target_id: string; title: string; url?: string }
+        Args: {
+          body: string
+          kind: string
+          target_id: string
+          title: string
+          url?: string
+        }
         Returns: undefined
       }
       reorder_diary: { Args: { p_items: Json }; Returns: undefined }
@@ -1204,13 +1245,16 @@ export type Database = {
       send_love_notes: { Args: never; Returns: number }
       send_meal_reminders: { Args: never; Returns: number }
       tg_escape: { Args: { input: string }; Returns: string }
-      tg_notify_both: { Args: { message: string }; Returns: undefined }
+      tg_notify_both: {
+        Args: { kind: string; message: string }
+        Returns: undefined
+      }
       tg_notify_partner: {
-        Args: { author_id: string; message: string }
+        Args: { author_id: string; kind: string; message: string }
         Returns: undefined
       }
       tg_notify_self: {
-        Args: { message: string; target_id: string }
+        Args: { kind: string; message: string; target_id: string }
         Returns: undefined
       }
       tg_send_raw: {

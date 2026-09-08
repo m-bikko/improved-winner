@@ -11,6 +11,7 @@ import { FoodsPage } from '@/features/foods/FoodsPage'
 import { FoodEditPage } from '@/features/foods/FoodEditPage'
 import { DiaryPage } from '@/features/diary/DiaryPage'
 import { ProfilePage } from '@/features/profile/ProfilePage'
+import { NotificationsPage } from '@/features/profile/NotificationsPage'
 import { CheckinPage } from '@/features/checkin/CheckinPage'
 import { CyclePage } from '@/features/cycle/CyclePage'
 import { DatesPage } from '@/features/dates/DatesPage'
@@ -82,6 +83,7 @@ function Gate() {
         <Route path="/foods/new" element={<FoodEditPage />} />
         <Route path="/foods/:id" element={<FoodEditPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="*" element={<Navigate to="/today" replace />} />
       </Routes>
     </AppShell>

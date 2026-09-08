@@ -27,7 +27,11 @@ function Chrome({ children }: { children: ReactNode }) {
   // заголовок им всё равно нужен - иначе в шапке висит название приложения
   const title =
     NAV.find((n) => pathname.startsWith(n.to))?.label ??
-    (pathname.startsWith('/year') ? 'Год в цифрах' : APP_NAME)
+    (pathname.startsWith('/year')
+      ? 'Год в цифрах'
+      : pathname.startsWith('/notifications')
+        ? 'Уведомления'
+        : APP_NAME)
   const action = useHeaderActionSlot()
 
   return (
