@@ -56,7 +56,7 @@ export function YearPage() {
               <Stat n={summary.data.together.topicsClosed} label="тем закрыли" />
               <Stat n={summary.data.together.commentsWritten} label="ответов в темах" />
               <Stat n={summary.data.together.tasksDone} label="задач сделали" />
-              <Stat n={summary.data.together.listItemsDone} label="желаний исполнили" />
+              <Stat n={summary.data.together.wishesAdded} label="желаний записали" />
             </dl>
           </section>
 

@@ -1,91 +1,45 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useUserId } from '@/auth/AuthProvider'
 import { supabase } from '@/lib/supabase'
 import type { Database } from '@/types/db'
 
-type ListRow = Database['public']['Tables']['wishlists']['Row']
-type ItemRow = Database['public']['Tables']['wishlist_items']['Row']
+type Row = Database['public']['Tables']['wishlists']['Row']
 
-export type WishlistItem = {
-  id: string
-  wishlistId: string
-  title: string
-  note: string | null
-  /** Кто хочет. Ради этого поля вишлист и заводят: оно подсказывает подарок. */
-  wantedBy: string
-  doneAt: string | null
-  doneBy: string | null
-  createdBy: string
-  createdAt: string
-}
-
-export type Wishlist = {
+export type Wish = {
   id: string
   title: string
+  details: string | null
+  category: string
   /** Путь объекта в бакете. Готовый URL не хранится - он протухает. */
   imagePath: string | null
-  /** Когда закрылся последний пункт. null - карточка в «Хотим». */
-  closedAt: string | null
   sortOrder: number
   createdBy: string
   createdAt: string
-  items: WishlistItem[]
 }
 
-function itemFromRow(r: ItemRow): WishlistItem {
+function fromRow(r: Row): Wish {
   return {
     id: r.id,
-    wishlistId: r.wishlist_id,
     title: r.title,
-    note: r.note,
-    wantedBy: r.wanted_by,
-    doneAt: r.done_at,
-    doneBy: r.done_by,
+    details: r.details,
+    category: r.category,
+    imagePath: r.image_path,
+    sortOrder: r.sort_order,
     createdBy: r.created_by,
     createdAt: r.created_at,
   }
 }
 
-/** Карточка собрана: пункты есть и все закрыты. Это решает база, тут - чтение. */
-export function isClosed(list: Wishlist): boolean {
-  return list.closedAt !== null
-}
-
-/**
- * Карточки вместе с пунктами - двумя запросами, а не вложенным select.
- *
- * Карточек тут единицы, пунктов десятки. Собрать их на клиенте дешевле,
- * чем тянуть вложенную выборку, и главное - кэш остаётся плоским: пункт
- * правится куда чаще, чем сама карточка.
- */
-export function useWishlists() {
+export function useWishes() {
   return useQuery({
     queryKey: ['wishlist'],
-    queryFn: async (): Promise<Wishlist[]> => {
-      const [lists, items] = await Promise.all([
-        supabase.from('wishlists').select('*').order('sort_order').order('created_at'),
-        supabase.from('wishlist_items').select('*').order('created_at'),
-      ])
-      if (lists.error) throw lists.error
-      if (items.error) throw items.error
-
-      const byList = new Map<string, WishlistItem[]>()
-      for (const row of items.data) {
-        const item = itemFromRow(row)
-        const bucket = byList.get(item.wishlistId)
-        if (bucket) bucket.push(item)
-        else byList.set(item.wishlistId, [item])
-      }
-      return lists.data.map((l: ListRow) => ({
-        id: l.id,
-        title: l.title,
-        imagePath: l.image_path,
-        closedAt: l.closed_at,
-        sortOrder: l.sort_order,
-        createdBy: l.created_by,
-        createdAt: l.created_at,
-        items: byList.get(l.id) ?? [],
-      }))
+    queryFn: async (): Promise<Wish[]> => {
+      const { data, error } = await supabase
+        .from('wishlists')
+        .select('*')
+        .order('sort_order')
+        .order('created_at')
+      if (error) throw error
+      return data.map(fromRow)
     },
   })
 }
@@ -95,21 +49,26 @@ function useInvalidate() {
   return () => void qc.invalidateQueries({ queryKey: ['wishlist'] })
 }
 
-export function useSaveWishlist() {
+export function useSaveWish() {
   const done = useInvalidate()
   return useMutation({
-    mutationFn: async (input: { id?: string; title: string }): Promise<string> => {
-      const title = input.title.trim()
+    mutationFn: async (input: {
+      id?: string
+      title: string
+      details: string | null
+      category: string
+    }): Promise<string> => {
+      const row = {
+        title: input.title.trim(),
+        details: input.details?.trim() || null,
+        category: input.category,
+      }
       if (input.id) {
-        const { error } = await supabase.from('wishlists').update({ title }).eq('id', input.id)
+        const { error } = await supabase.from('wishlists').update(row).eq('id', input.id)
         if (error) throw error
         return input.id
       }
-      const { data, error } = await supabase
-        .from('wishlists')
-        .insert({ title })
-        .select('id')
-        .single()
+      const { data, error } = await supabase.from('wishlists').insert(row).select('id').single()
       if (error) throw error
       return data.id
     },
@@ -117,7 +76,7 @@ export function useSaveWishlist() {
   })
 }
 
-export function useDeleteWishlist() {
+export function useDeleteWish() {
   const done = useInvalidate()
   return useMutation({
     mutationFn: async (id: string) => {
@@ -129,91 +88,16 @@ export function useDeleteWishlist() {
 }
 
 /**
- * Новый порядок доски - одним вызовом.
+ * Новый порядок - одним вызовом.
  *
- * Не серией обновлений: оборванная на середине серия оставила бы доску
- * переставленной наполовину, и понять, что пошло не так, было бы нельзя.
+ * Не серией обновлений: оборванная на середине серия оставила бы список
+ * переставленным наполовину, и понять, что пошло не так, было бы нельзя.
  */
-export function useReorderWishlists() {
+export function useReorderWishes() {
   const done = useInvalidate()
   return useMutation({
     mutationFn: async (ids: string[]) => {
       const { error } = await supabase.rpc('reorder_wishlists', { ids })
-      if (error) throw error
-    },
-    onSuccess: done,
-  })
-}
-
-export function useAddItem() {
-  const done = useInvalidate()
-  const userId = useUserId()
-  return useMutation({
-    mutationFn: async (input: { wishlistId: string; title: string; wantedBy?: string }) => {
-      const { error } = await supabase.from('wishlist_items').insert({
-        wishlist_id: input.wishlistId,
-        title: input.title.trim(),
-        wanted_by: input.wantedBy ?? userId,
-      })
-      if (error) throw error
-    },
-    onSuccess: done,
-  })
-}
-
-export function useSaveItem() {
-  const done = useInvalidate()
-  return useMutation({
-    mutationFn: async (input: {
-      id: string
-      title: string
-      note: string | null
-      wantedBy: string
-    }) => {
-      const { error } = await supabase
-        .from('wishlist_items')
-        .update({
-          title: input.title.trim(),
-          note: input.note?.trim() || null,
-          wanted_by: input.wantedBy,
-        })
-        .eq('id', input.id)
-      if (error) throw error
-    },
-    onSuccess: done,
-  })
-}
-
-/**
- * Отметка «приобретено» вместе с тем, кто отметил.
- *
- * Пара done_at/done_by держится ограничением в базе, поэтому обнулять
- * их нужно вдвоём - иначе снятая галочка оставила бы висеть автора.
- */
-export function useToggleItem() {
-  const done = useInvalidate()
-  const userId = useUserId()
-  return useMutation({
-    mutationFn: async (input: { id: string; done: boolean }) => {
-      const { error } = await supabase
-        .from('wishlist_items')
-        .update(
-          input.done
-            ? { done_at: new Date().toISOString(), done_by: userId }
-            : { done_at: null, done_by: null },
-        )
-        .eq('id', input.id)
-      if (error) throw error
-    },
-    onSuccess: done,
-  })
-}
-
-export function useDeleteItem() {
-  const done = useInvalidate()
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('wishlist_items').delete().eq('id', id)
       if (error) throw error
     },
     onSuccess: done,
@@ -228,12 +112,12 @@ const PHOTO_BUCKET = 'wishlist-photos'
 const SIGNED_URL_TTL = 3600
 
 /**
- * Подписанные ссылки на картинки - пачкой на всю доску.
+ * Подписанные ссылки - пачкой на весь список.
  *
- * Бакет приватный, прямых URL нет. Просить ссылку на каждую карточку
- * отдельно означало бы запрос на карточку при открытии раздела.
+ * Бакет приватный, прямых URL нет. Просить ссылку на каждую строку отдельно
+ * означало бы запрос на строку при открытии раздела.
  */
-export function useWishlistPhotoUrls(paths: readonly string[]) {
+export function useWishPhotoUrls(paths: readonly string[]) {
   const key = [...paths].sort().join(',')
   return useQuery({
     queryKey: ['wishlist-photo-urls', key],
@@ -250,35 +134,34 @@ export function useWishlistPhotoUrls(paths: readonly string[]) {
       return urls
     },
     enabled: paths.length > 0,
-    // Меньше срока жизни ссылки, чтобы не отдать компоненту протухшую
     staleTime: 50 * 60_000,
     gcTime: 50 * 60_000,
   })
 }
 
 /**
- * Загружает готовый квадрат и привязывает его к карточке.
+ * Загружает готовый квадрат и привязывает его к желанию.
  *
  * Имя объекта случайное, старый файл удаляется ПОСЛЕ привязки нового:
- * запись по тому же пути оставила бы браузер и CDN отдавать прежнюю
- * картинку, а обратный порядок удаления - карточку со ссылкой в никуда,
- * если удаление прошло, а загрузка нет.
+ * запись по тому же пути оставила бы браузер и CDN отдавать прежнюю картинку,
+ * а обратный порядок - строку со ссылкой в никуда, если удаление прошло,
+ * а загрузка нет.
  */
-export function useUploadWishlistPhoto() {
+export function useUploadWishPhoto() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async ({
-      wishlistId,
+      wishId,
       blob,
       extension,
       previousPath,
     }: {
-      wishlistId: string
+      wishId: string
       blob: Blob
       extension: string
       previousPath: string | null
     }): Promise<{ path: string; bytes: number }> => {
-      const path = `${wishlistId}/${crypto.randomUUID()}.${extension}`
+      const path = `${wishId}/${crypto.randomUUID()}.${extension}`
 
       const { error: uploadError } = await supabase.storage
         .from(PHOTO_BUCKET)
@@ -288,12 +171,10 @@ export function useUploadWishlistPhoto() {
       const { error } = await supabase
         .from('wishlists')
         .update({ image_path: path })
-        .eq('id', wishlistId)
+        .eq('id', wishId)
       if (error) throw error
 
-      if (previousPath) {
-        await supabase.storage.from(PHOTO_BUCKET).remove([previousPath])
-      }
+      if (previousPath) await supabase.storage.from(PHOTO_BUCKET).remove([previousPath])
       return { path, bytes: blob.size }
     },
     onSuccess: () => {
@@ -303,14 +184,14 @@ export function useUploadWishlistPhoto() {
   })
 }
 
-export function useRemoveWishlistPhoto() {
+export function useRemoveWishPhoto() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ wishlistId, path }: { wishlistId: string; path: string }) => {
+    mutationFn: async ({ wishId, path }: { wishId: string; path: string }) => {
       const { error } = await supabase
         .from('wishlists')
         .update({ image_path: null })
-        .eq('id', wishlistId)
+        .eq('id', wishId)
       if (error) throw error
       await supabase.storage.from(PHOTO_BUCKET).remove([path])
     },

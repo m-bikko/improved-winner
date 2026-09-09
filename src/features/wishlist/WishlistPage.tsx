@@ -1,5 +1,4 @@
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useMemo, useRef, useState } from 'react'
 import {
   DndContext,
   PointerSensor,
@@ -8,111 +7,147 @@ import {
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core'
-import { SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sortable'
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Check, GripVertical, ImageOff, ListPlus } from 'lucide-react'
+import { GripVertical, ImageOff, ImagePlus, Plus, Trash2 } from 'lucide-react'
+import { formatBytes, loadBitmap, prepareSquare, type SquareCrop } from '@/lib/image'
 import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
+import { PhotoViewer } from '@/ui/PhotoViewer'
 import { Sheet } from '@/ui/Sheet'
+import { SquareCropper } from '@/ui/SquareCropper'
 import { EmptyState, ErrorState, Loading } from '@/ui/States'
-import { plural } from '@/lib/plural'
+import { useProfiles } from '@/features/profile/api'
+import { CATEGORIES, CATEGORY_BY_ID } from './categories'
 import {
-  isClosed,
-  useReorderWishlists,
-  useSaveWishlist,
-  useWishlistPhotoUrls,
-  useWishlists,
-  type Wishlist,
+  useDeleteWish,
+  useRemoveWishPhoto,
+  useReorderWishes,
+  useSaveWish,
+  useUploadWishPhoto,
+  useWishPhotoUrls,
+  useWishes,
+  type Wish,
 } from './api'
 
 /**
- * Доска вишлистов: карточка с картинкой, чеклист внутри.
+ * Вишлист: список желаний с картинками.
  *
- * «Приобретено» - не статус, который выставляют руками, а следствие галочек:
- * карточка уезжает туда, когда закрыт последний пункт, и возвращается,
- * стоит снять любую. Ручной статус рядом с галочками неизбежно с ними
- * разъезжается, и человеку приходится помнить, что нажать вторым.
+ * Плоский. Прежняя карточка с чеклистом внутри требовала решить, что тут
+ * «желание», а что «шаг к нему», - а для «хочу съездить в Грузию» такого
+ * деления нет, и нижний уровень выдумывался ради структуры.
  *
- * Порядок карточек - ручной: доска желаний упорядочена не датой, а тем,
- * чего хочется сильнее.
+ * Фильтр по категории, а не вкладки «хотим / приобретено»: вкладки делили
+ * список по признаку, который меняется сам, а по смыслу желания
+ * действительно хочется отфильтровать - «покажи, куда мы хотели съездить».
  */
 export function WishlistPage() {
-  const lists = useWishlists()
-  const reorder = useReorderWishlists()
-  const [tab, setTab] = useState<'want' | 'got'>('want')
-  const [creating, setCreating] = useState(false)
+  const wishes = useWishes()
+  const reorder = useReorderWishes()
+  const profiles = useProfiles()
+
+  const [category, setCategory] = useState<string | null>(null)
+  const [editing, setEditing] = useState<Wish | 'new' | null>(null)
+  const [viewing, setViewing] = useState<{ url: string; alt: string } | null>(null)
   const [order, setOrder] = useState<string[] | null>(null)
 
   const sensors = useSensors(
-    // Порог в пикселях, а не удержание: карточка тянется ручкой, и жест
-    // не спорит ни с тапом по ней, ни с прокруткой доски
+    // Тянем за ручку, поэтому порога в пикселях достаточно: жест не спорит
+    // ни с тапом по строке, ни с прокруткой
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   )
 
   const paths = useMemo(
-    () =>
-      (lists.data ?? []).map((l) => l.imagePath).filter((p): p is string => p !== null),
-    [lists.data],
+    () => (wishes.data ?? []).map((w) => w.imagePath).filter((p): p is string => p !== null),
+    [wishes.data],
   )
-  const urls = useWishlistPhotoUrls(paths)
+  const urls = useWishPhotoUrls(paths)
 
   const all = useMemo(() => {
-    const data = lists.data ?? []
+    const data = wishes.data ?? []
     if (!order) return data
-    // Пока перестановка летит на сервер, показываем её же: иначе карточка
+    // Пока перестановка летит на сервер, показываем её же: иначе строка
     // прыгнет обратно и вернётся только после ответа
     const index = new Map(order.map((id, i) => [id, i]))
     return [...data].sort((a, b) => (index.get(a.id) ?? 0) - (index.get(b.id) ?? 0))
-  }, [lists.data, order])
+  }, [wishes.data, order])
 
-  const shown = all.filter((l) => (tab === 'got' ? isClosed(l) : !isClosed(l)))
+  if (wishes.isError) return <ErrorState error={wishes.error} onRetry={() => void wishes.refetch()} />
+  if (wishes.isPending) return <Loading />
 
-  if (lists.isError) return <ErrorState error={lists.error} onRetry={() => void lists.refetch()} />
-  if (lists.isPending) return <Loading />
+  const shown = category === null ? all : all.filter((w) => w.category === category)
+  const counts = new Map<string, number>()
+  for (const w of all) counts.set(w.category, (counts.get(w.category) ?? 0) + 1)
 
   const onDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (!over || active.id === over.id) return
-
-    const ids = all.map((l) => l.id)
+    const ids = all.map((w) => w.id)
     const from = ids.indexOf(String(active.id))
     const to = ids.indexOf(String(over.id))
     if (from < 0 || to < 0) return
-
     const next = [...ids]
     next.splice(to, 0, ...next.splice(from, 1))
     setOrder(next)
     reorder.mutate(next, { onSettled: () => setOrder(null) })
   }
 
-  const gotCount = all.filter(isClosed).length
+  const nick = (who: string): string =>
+    profiles.data?.find((p) => p.userId === who)?.nickname ?? 'Партнёр'
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pt-3 pb-28">
-      <div className="mb-4 flex gap-1 rounded-xl bg-raised p-1">
-        <Tab active={tab === 'want'} onClick={() => setTab('want')}>
-          Хотим
-        </Tab>
-        <Tab active={tab === 'got'} onClick={() => setTab('got')}>
-          Приобретено{gotCount > 0 && ` · ${gotCount}`}
-        </Tab>
+    <div className="mx-auto max-w-2xl pt-3 pb-28">
+      {/* Фильтр прокручивается вбок: категорий восемь, в две строки они
+          съедали бы верх экрана на каждом заходе. Отступ здесь, а не
+          на всей странице: список должен занимать её целиком */}
+      <div className="overflow-x-auto px-4 pb-1">
+        <div className="flex w-max gap-2">
+          <Chip active={category === null} onClick={() => setCategory(null)}>
+            Все{all.length > 0 && ` · ${all.length}`}
+          </Chip>
+          {CATEGORIES.map((c) => {
+            const n = counts.get(c.id) ?? 0
+            const Icon = c.icon
+            return (
+              <Chip
+                key={c.id}
+                active={category === c.id}
+                dim={n === 0}
+                onClick={() => setCategory(category === c.id ? null : c.id)}
+              >
+                <Icon size={14} aria-hidden />
+                {c.label}
+                {n > 0 && ` · ${n}`}
+              </Chip>
+            )
+          })}
+        </div>
       </div>
 
       {shown.length === 0 ? (
-        <EmptyState
-          title={tab === 'want' ? 'Хотелок пока нет' : 'Пока ничего не собрано'}
-          hint={
-            tab === 'want'
-              ? 'Карточка - это одно желание: посуда на кухню, поездка, подарок. Внутри чеклист из того, что для него нужно.'
-              : 'Сюда карточка попадает сама, когда закрыт последний пункт её чеклиста.'
-          }
-        />
+        <div className="px-4">
+          <EmptyState
+            title={category === null ? 'Вишлист пуст' : 'В этой категории пусто'}
+            hint={
+              category === null
+                ? 'Всё, что хочется: съездить, купить, попробовать, посмотреть. С картинкой и подробностями.'
+                : 'Выберите «Все», чтобы увидеть остальные желания.'
+            }
+          />
+        </div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-          <SortableContext items={shown.map((l) => l.id)} strategy={rectSortingStrategy}>
-            <ul className="grid grid-cols-2 gap-3">
-              {shown.map((list) => (
-                <Card key={list.id} list={list} urls={urls.data ?? {}} />
+          <SortableContext items={shown.map((w) => w.id)} strategy={verticalListSortingStrategy}>
+            <ul className="mx-4 mt-3 divide-y divide-line overflow-hidden rounded-2xl ring-1 ring-line">
+              {shown.map((wish) => (
+                <Row
+                  key={wish.id}
+                  wish={wish}
+                  url={wish.imagePath ? urls.data?.[wish.imagePath] : undefined}
+                  author={nick(wish.createdBy)}
+                  onOpen={() => setEditing(wish)}
+                  onView={(url) => setViewing({ url, alt: wish.title })}
+                />
               ))}
             </ul>
           </SortableContext>
@@ -121,27 +156,38 @@ export function WishlistPage() {
 
       <button
         type="button"
-        onClick={() => setCreating(true)}
-        aria-label="Новый вишлист"
+        onClick={() => setEditing('new')}
+        aria-label="Новое желание"
         className="fixed right-5 bottom-6 z-20 flex size-14 items-center justify-center
                    rounded-full bg-accent text-accent-ink shadow-lg
                    transition-transform active:scale-95"
         style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <ListPlus size={24} aria-hidden />
+        <Plus size={26} aria-hidden />
       </button>
 
-      {creating && <NewWishlist onClose={() => setCreating(false)} />}
+      {editing && (
+        <Editor
+          wish={editing === 'new' ? null : editing}
+          defaultCategory={category ?? 'buy'}
+          onClose={() => setEditing(null)}
+        />
+      )}
+      {viewing && (
+        <PhotoViewer url={viewing.url} alt={viewing.alt} onClose={() => setViewing(null)} />
+      )}
     </div>
   )
 }
 
-function Tab({
+function Chip({
   active,
+  dim,
   onClick,
   children,
 }: {
   active: boolean
+  dim?: boolean
   onClick: () => void
   children: React.ReactNode
 }) {
@@ -150,8 +196,10 @@ function Tab({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex-1 rounded-lg py-2 text-sm transition-colors ${
-        active ? 'bg-surface font-medium text-ink shadow-sm' : 'text-muted'
+      className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-sm transition-colors ${
+        active
+          ? 'bg-accent text-accent-ink'
+          : `bg-raised ring-1 ring-line ${dim ? 'text-muted' : 'text-ink'}`
       }`}
     >
       {children}
@@ -159,75 +207,96 @@ function Tab({
   )
 }
 
-function Card({ list, urls }: { list: Wishlist; urls: Record<string, string> }) {
+/** Строка списка - как у продуктов: превью, название, подпись. */
+function Row({
+  wish,
+  url,
+  author,
+  onOpen,
+  onView,
+}: {
+  wish: Wish
+  url: string | undefined
+  author: string
+  onOpen: () => void
+  onView: (url: string) => void
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: list.id,
+    id: wish.id,
   })
-  const url = list.imagePath ? urls[list.imagePath] : undefined
-  const done = list.items.filter((i) => i.doneAt !== null).length
-  const closed = isClosed(list)
+  const category = CATEGORY_BY_ID[wish.category]
+  const Icon = category?.icon ?? ImageOff
 
   return (
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`relative ${isDragging ? 'z-10 opacity-80' : ''}`}
+      className={`flex items-center gap-3 bg-surface px-3 py-3 ${isDragging ? 'opacity-80' : ''}`}
     >
-      <Link
-        to={`/wishlist/${list.id}`}
-        className="block overflow-hidden rounded-2xl bg-surface ring-1 ring-line"
+      {/* Картинка - отдельная кнопка: тап по ней открывает просмотр,
+          а не форму. Это то, чего ждёшь от превью */}
+      <button
+        type="button"
+        onClick={() => url && onView(url)}
+        disabled={!url}
+        aria-label={url ? `Посмотреть картинку: ${wish.title}` : wish.title}
+        className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-raised ring-1 ring-line"
       >
-        <div className="relative flex aspect-square items-center justify-center bg-raised">
-          {url ? (
-            <img src={url} alt="" className={`size-full object-cover ${closed ? 'opacity-60' : ''}`} />
-          ) : (
-            <ImageOff size={24} className="text-muted" aria-hidden />
-          )}
-          {closed && (
-            <span className="absolute top-2 left-2 flex size-7 items-center justify-center rounded-full bg-accent text-accent-ink">
-              <Check size={16} aria-hidden />
-            </span>
-          )}
-        </div>
-        <div className="p-3">
-          <p className="truncate font-medium">{list.title}</p>
-          <p className="text-sm text-muted">
-            {list.items.length === 0
-              ? 'пусто'
-              : `${done} из ${list.items.length} ${plural(list.items.length, 'пункта', 'пунктов', 'пунктов')}`}
-          </p>
-        </div>
-      </Link>
+        {url ? (
+          <img src={url} alt="" className="size-full object-cover" />
+        ) : (
+          <Icon size={20} className="text-muted" aria-hidden />
+        )}
+      </button>
 
-      {/* Ручка отдельно от ссылки: иначе любое перетаскивание заканчивалось бы
-          переходом внутрь карточки */}
+      <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
+        <span className="block truncate text-base">{wish.title}</span>
+        {wish.details && (
+          <span className="mt-0.5 block truncate text-sm text-muted">{wish.details}</span>
+        )}
+        <span className="mt-0.5 block truncate text-xs text-muted">
+          {category?.label ?? wish.category} · {author}
+        </span>
+      </button>
+
       <button
         type="button"
         {...attributes}
         {...listeners}
-        aria-label={`Переставить «${list.title}»`}
-        className="absolute top-2 right-2 flex size-8 touch-none items-center justify-center
-                   rounded-full bg-bg/80 text-muted backdrop-blur-sm"
+        aria-label={`Переставить «${wish.title}»`}
+        className="shrink-0 touch-none p-2 text-muted"
       >
-        <GripVertical size={16} aria-hidden />
+        <GripVertical size={18} aria-hidden />
       </button>
     </li>
   )
 }
 
-function NewWishlist({ onClose }: { onClose: () => void }) {
-  const save = useSaveWishlist()
-  const [title, setTitle] = useState('')
+function Editor({
+  wish,
+  defaultCategory,
+  onClose,
+}: {
+  wish: Wish | null
+  defaultCategory: string
+  onClose: () => void
+}) {
+  const save = useSaveWish()
+  const remove = useDeleteWish()
+  const [title, setTitle] = useState(wish?.title ?? '')
+  const [details, setDetails] = useState(wish?.details ?? '')
+  const [category, setCategory] = useState(wish?.category ?? defaultCategory)
+  const [savedId, setSavedId] = useState<string | null>(wish?.id ?? null)
   const [error, setError] = useState<string | null>(null)
 
   const submit = async () => {
     setError(null)
     if (title.trim() === '') {
-      setError('Без названия вишлист не найти')
+      setError('Без названия желание не найти')
       return
     }
     try {
-      await save.mutateAsync({ title })
+      await save.mutateAsync({ ...(savedId ? { id: savedId } : {}), title, details, category })
       onClose()
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -235,25 +304,225 @@ function NewWishlist({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Sheet open onClose={onClose} title="Новый вишлист">
+    <Sheet open onClose={onClose} title={wish ? 'Желание' : 'Новое желание'}>
       <div className="flex flex-col gap-4">
         <Field
-          label="Название"
+          label="Что хочется"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Посуда на кухню"
-          autoFocus
+          placeholder="Поездка в Грузию"
+          autoFocus={!wish}
         />
-        <p className="text-sm text-muted">
-          Картинку и пункты добавите внутри - карточка откроется сразу после сохранения.
-        </p>
+
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm text-muted">Подробности</span>
+          <textarea
+            value={details}
+            onChange={(e) => setDetails(e.target.value)}
+            rows={3}
+            placeholder="Ссылка, размер, цена, почему хочется"
+            className="w-full min-w-0 resize-none rounded-xl bg-surface px-4 py-3 ring-1 ring-line
+                       outline-none focus:ring-2 focus:ring-accent placeholder:text-muted"
+          />
+        </label>
+
+        <div className="flex flex-col gap-2">
+          <span className="text-sm text-muted">Категория</span>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIES.map((c) => {
+              const Icon = c.icon
+              const active = category === c.id
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setCategory(c.id)}
+                  aria-pressed={active}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-sm transition-colors ${
+                    active ? 'bg-accent text-accent-ink' : 'bg-raised text-ink ring-1 ring-line'
+                  }`}
+                >
+                  <Icon size={15} aria-hidden />
+                  {c.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <Photo
+          wish={wish}
+          savedId={savedId}
+          onNeedSave={async () => {
+            if (title.trim() === '') {
+              setError('Сначала впишите название - картинка привязывается к записи')
+              return null
+            }
+            const id = await save.mutateAsync({
+              ...(savedId ? { id: savedId } : {}),
+              title,
+              details,
+              category,
+            })
+            setSavedId(id)
+            return id
+          }}
+        />
 
         {error && <p className="text-sm text-danger">{error}</p>}
 
         <Button onClick={() => void submit()} loading={save.isPending}>
-          Создать
+          Сохранить
         </Button>
+
+        {wish && (
+          <Button
+            variant="danger"
+            loading={remove.isPending}
+            onClick={() => void remove.mutateAsync(wish.id).then(onClose)}
+          >
+            <Trash2 size={18} aria-hidden />
+            Удалить
+          </Button>
+        )}
       </div>
     </Sheet>
+  )
+}
+
+/**
+ * Картинка желания: превью, кадрирование, замена.
+ *
+ * Путь в хранилище строится от id записи, а у новой записи его ещё нет.
+ * Поэтому перед первой загрузкой желание сохраняется - молча, без выхода
+ * из формы: заставлять человека сохранить, вернуться и открыть заново
+ * значило бы объяснять ему устройство хранилища.
+ */
+function Photo({
+  wish,
+  savedId,
+  onNeedSave,
+}: {
+  wish: Wish | null
+  savedId: string | null
+  onNeedSave: () => Promise<string | null>
+}) {
+  const input = useRef<HTMLInputElement>(null)
+  const upload = useUploadWishPhoto()
+  const remove = useRemoveWishPhoto()
+
+  const [bitmap, setBitmap] = useState<ImageBitmap | null>(null)
+  const [path, setPath] = useState<string | null>(wish?.imagePath ?? null)
+  const [preview, setPreview] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState<{ from: number; to: number } | null>(null)
+  const original = useRef(0)
+
+  const pick = async (file: File) => {
+    setError(null)
+    setSaved(null)
+    original.current = file.size
+    try {
+      setBitmap(await loadBitmap(file))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    }
+  }
+
+  const confirm = async (crop: SquareCrop) => {
+    if (!bitmap) return
+    try {
+      const id = savedId ?? (await onNeedSave())
+      if (!id) return
+      const prepared = await prepareSquare(bitmap, crop)
+      const result = await upload.mutateAsync({
+        wishId: id,
+        blob: prepared.blob,
+        extension: prepared.extension,
+        previousPath: path,
+      })
+      setPath(result.path)
+      setPreview(URL.createObjectURL(prepared.blob))
+      setSaved({ from: original.current, to: prepared.blob.size })
+      bitmap.close()
+      setBitmap(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    }
+  }
+
+  if (bitmap) {
+    return (
+      <div className="flex flex-col gap-3">
+        <p className="text-sm text-muted">Выберите квадрат: тяните, щипком меняйте масштаб</p>
+        <SquareCropper
+          bitmap={bitmap}
+          busy={upload.isPending}
+          onConfirm={(crop) => void confirm(crop)}
+          onCancel={() => {
+            bitmap.close()
+            setBitmap(null)
+          }}
+        />
+        {error && <p className="text-sm text-danger">{error}</p>}
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-4">
+      <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-raised ring-1 ring-line">
+        {preview ? (
+          <img src={preview} alt="" className="size-full object-cover" />
+        ) : (
+          <ImagePlus size={22} className="text-muted" aria-hidden />
+        )}
+      </div>
+
+      <div className="flex min-w-0 flex-col items-start gap-1">
+        <input
+          ref={input}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            // Сбрасываем значение: без этого повторный выбор ТОГО ЖЕ файла
+            // не даёт события, и «заменить» молча ничего не делает
+            e.target.value = ''
+            if (file) void pick(file)
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => input.current?.click()}
+          className="text-sm text-accent underline"
+        >
+          {path ? 'Заменить картинку' : 'Добавить картинку'}
+        </button>
+
+        {path && savedId && (
+          <button
+            type="button"
+            onClick={() =>
+              void remove.mutateAsync({ wishId: savedId, path }).then(() => {
+                setPath(null)
+                setPreview(null)
+              })
+            }
+            className="text-sm text-muted underline"
+          >
+            Убрать
+          </button>
+        )}
+
+        {saved && (
+          <p className="text-xs text-muted">
+            {formatBytes(saved.from)} → {formatBytes(saved.to)}
+          </p>
+        )}
+        {error && <p className="text-sm text-danger">{error}</p>}
+      </div>
+    </div>
   )
 }

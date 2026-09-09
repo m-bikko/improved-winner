@@ -26,7 +26,7 @@ export const NAV = [
   { to: '/foods', label: 'Продукты', icon: Apple },
   { to: '/cycle', label: 'Цикл', icon: Droplet },
   { to: '/dates', label: 'Даты', icon: CalendarHeart },
-  { to: '/wishlist', label: 'Вишлисты', icon: Gift },
+  { to: '/wishlist', label: 'Вишлист', icon: Gift },
   { to: '/profile', label: 'Профиль', icon: User },
 ] as const
 

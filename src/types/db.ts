@@ -950,58 +950,12 @@ export type Database = {
         }
         Relationships: []
       }
-      wishlist_items: {
-        Row: {
-          created_at: string
-          created_by: string
-          done_at: string | null
-          done_by: string | null
-          id: string
-          note: string | null
-          title: string
-          updated_at: string
-          wanted_by: string
-          wishlist_id: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string
-          done_at?: string | null
-          done_by?: string | null
-          id?: string
-          note?: string | null
-          title: string
-          updated_at?: string
-          wanted_by?: string
-          wishlist_id: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          done_at?: string | null
-          done_by?: string | null
-          id?: string
-          note?: string | null
-          title?: string
-          updated_at?: string
-          wanted_by?: string
-          wishlist_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "list_items_list_id_fkey"
-            columns: ["wishlist_id"]
-            isOneToOne: false
-            referencedRelation: "wishlists"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       wishlists: {
         Row: {
-          closed_at: string | null
+          category: string
           created_at: string
           created_by: string
+          details: string | null
           id: string
           image_path: string | null
           sort_order: number
@@ -1009,9 +963,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          closed_at?: string | null
+          category?: string
           created_at?: string
           created_by?: string
+          details?: string | null
           id?: string
           image_path?: string | null
           sort_order?: number
@@ -1019,9 +974,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          closed_at?: string | null
+          category?: string
           created_at?: string
           created_by?: string
+          details?: string | null
           id?: string
           image_path?: string | null
           sort_order?: number
@@ -1261,7 +1217,6 @@ export type Database = {
         Args: { chat_id: string; message: string }
         Returns: number
       }
-      wishlist_closed_value: { Args: { list: string }; Returns: string }
       year_in_numbers: { Args: { year: number }; Returns: Json }
     }
     Enums: {
