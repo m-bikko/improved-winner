@@ -4,6 +4,7 @@ import { Menu } from 'lucide-react'
 import { APP_NAME } from '@/lib/appName'
 import { BurgerMenu, NAV } from './BurgerMenu'
 import { HeaderActionProvider, useHeaderActionSlot } from './HeaderAction'
+import { RefreshButton } from './RefreshButton'
 
 /**
  * Оболочка приложения: шапка с бургером и область контента.
@@ -47,6 +48,9 @@ function Chrome({ children }: { children: ReactNode }) {
             <Menu size={22} aria-hidden />
           </button>
           <h1 className="flex-1 text-lg font-semibold tracking-tight">{title}</h1>
+          {/* Обновление левее кнопки экрана: та относится к разделу и должна
+              оставаться на привычном месте у самого края */}
+          <RefreshButton />
           {action}
         </div>
       </header>
