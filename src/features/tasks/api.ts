@@ -171,7 +171,11 @@ export function useSaveTask() {
       if (error) throw error
       return data.id
     },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['tasks'] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['tasks'] })
+      // Просроченные задачи входят в число на иконке
+      void qc.invalidateQueries({ queryKey: ['attention'] })
+    },
   })
 }
 
@@ -218,7 +222,11 @@ export function useToggleTask() {
       if (error) throw error
       return 'closed' as const
     },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['tasks'] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['tasks'] })
+      // Просроченные задачи входят в число на иконке
+      void qc.invalidateQueries({ queryKey: ['attention'] })
+    },
   })
 }
 
@@ -229,6 +237,10 @@ export function useDeleteTask() {
       const { error } = await supabase.from('tasks').delete().eq('id', id)
       if (error) throw error
     },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['tasks'] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['tasks'] })
+      // Просроченные задачи входят в число на иконке
+      void qc.invalidateQueries({ queryKey: ['attention'] })
+    },
   })
 }

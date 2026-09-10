@@ -1062,6 +1062,7 @@ export type Database = {
     Functions: {
       ask_checkins: { Args: never; Returns: number }
       ask_checkins_evening: { Args: never; Returns: number }
+      attention_count: { Args: { target: string }; Returns: number }
       by_sex: {
         Args: { female: string; male: string; neutral: string; person: string }
         Returns: string

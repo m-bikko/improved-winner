@@ -7,6 +7,24 @@
  * нетронутым.
  */
 
+/**
+ * Число на иконке приложения.
+ *
+ * Считает база и присылает вместе с уведомлением: у воркера нет сессии,
+ * чтобы спросить самому. Ноль обязательно СНИМАЕТ бейдж, а не ставит ноль -
+ * ноль в кружке на iOS выглядит как единица.
+ */
+function applyBadge(count) {
+  if (typeof count !== 'number') return Promise.resolve()
+  try {
+    return count > 0
+      ? (self.navigator.setAppBadge ? self.navigator.setAppBadge(count) : Promise.resolve())
+      : (self.navigator.clearAppBadge ? self.navigator.clearAppBadge() : Promise.resolve())
+  } catch (e) {
+    return Promise.resolve()
+  }
+}
+
 self.addEventListener('push', (event) => {
   if (!event.data) return
 
@@ -21,7 +39,9 @@ self.addEventListener('push', (event) => {
   }
 
   event.waitUntil(
-    self.registration.showNotification(payload.title || 'Напоминание', {
+    Promise.all([
+      applyBadge(payload.badge),
+      self.registration.showNotification(payload.title || 'Напоминание', {
       body: payload.body,
       icon: '/icon-192.png',
       badge: '/icon-192.png',
@@ -32,8 +52,9 @@ self.addEventListener('push', (event) => {
       // то есть из вида события, и разные виды друг друга не затирают.
       tag: payload.tag || payload.title || 'push',
       renotify: true,
-      data: { url: payload.url || '/diary' },
-    }),
+        data: { url: payload.url || '/diary' },
+      }),
+    ]),
   )
 })
 

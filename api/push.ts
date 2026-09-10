@@ -26,7 +26,14 @@ type Response = ServerResponse & {
   send: (value: string) => void
 }
 
-type Payload = { userId?: string; title?: string; body?: string; url?: string }
+type Payload = {
+  userId?: string
+  title?: string
+  body?: string
+  url?: string
+  /** Число на иконке. Считает база - только она знает, что «требует тебя». */
+  badge?: number
+}
 
 function env(name: string): string {
   const value = process.env[name]
@@ -84,6 +91,10 @@ export default async function handler(req: Request, res: Response): Promise<void
     title: payload.title ?? 'Напоминание',
     body: payload.body,
     url: payload.url ?? '/diary',
+    // Проходит насквозь: считать это здесь значило бы вторым запросом
+    // ходить за чек-инами и повторением задач - знание, которое уже есть
+    // в базе
+    badge: payload.badge,
   })
 
   let sent = 0

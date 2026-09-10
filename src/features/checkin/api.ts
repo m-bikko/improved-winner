@@ -57,6 +57,8 @@ export function useSaveCheckin() {
       // оставить их несвежими значило бы показать вчерашнее число
       void qc.invalidateQueries({ queryKey: ['checkin-streaks'] })
       void qc.invalidateQueries({ queryKey: ['checkin-restorable'] })
+      // И снимает единицу с иконки
+      void qc.invalidateQueries({ queryKey: ['attention'] })
     },
   })
 }
@@ -75,6 +77,8 @@ export function useDeleteCheckin() {
       // оставить их несвежими значило бы показать вчерашнее число
       void qc.invalidateQueries({ queryKey: ['checkin-streaks'] })
       void qc.invalidateQueries({ queryKey: ['checkin-restorable'] })
+      // И снимает единицу с иконки
+      void qc.invalidateQueries({ queryKey: ['attention'] })
     },
   })
 }
