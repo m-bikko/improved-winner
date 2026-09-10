@@ -511,6 +511,7 @@ export type Database = {
           deliver_on: string
           delivered_at: string | null
           id: string
+          image_path: string | null
           updated_at: string
         }
         Insert: {
@@ -521,6 +522,7 @@ export type Database = {
           deliver_on: string
           delivered_at?: string | null
           id?: string
+          image_path?: string | null
           updated_at?: string
         }
         Update: {
@@ -531,6 +533,7 @@ export type Database = {
           deliver_on?: string
           delivered_at?: string | null
           id?: string
+          image_path?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1125,7 +1128,9 @@ export type Database = {
       }
       in_quiet_hours: { Args: { target: string }; Returns: boolean }
       is_member: { Args: never; Returns: boolean }
+      letter_delivered_to_me: { Args: { letter: string }; Returns: boolean }
       letter_recipients: { Args: { letter: string }; Returns: string[] }
+      letters_in_flight: { Args: never; Returns: number }
       next_occurrence: {
         Args: { from_ts: string; rule: Json }
         Returns: string

@@ -3,9 +3,13 @@
  *
  *   pnpm tsx scripts/check-letters.ts
  *
- * Главное свойство раздела - НЕВИДИМОСТЬ ДО СРОКА. Письмо, которое адресат
- * может прочитать заранее, письмом в будущее не является, и проверять это
- * надо политикой, а не экраном: экран обходится открытием консоли.
+ * Главное свойство раздела - НЕВИДИМОСТЬ ДО СРОКА, и не только для адресата.
+ * Автор тоже не видит своё запечатанное письмо: раздел «В пути» со списком
+ * портил сюрприз ему самому, а для письма «обоим» обессмысливал затею -
+ * написал и тут же перечитываешь.
+ *
+ * Проверять это надо политикой, а не экраном: экран обходится открытием
+ * консоли.
  *
  * Второе - доставка по адресатам. Отметка «отправлено» одна на письмо
  * работает ровно до тех пор, пока оба в одном поясе; стоит одному уехать,
@@ -107,9 +111,14 @@ async function main(): Promise<void> {
 
     await as(a.user_id)
     check(
-      (await q('select 1 from public.letters')).length === 2,
-      'Автор видит свои письма всегда',
-      'их нужно править и удалять до срока',
+      (await q('select 1 from public.letters')).length === 0,
+      'Автор НЕ видит своё запечатанное письмо',
+      'иначе «В пути» портит сюрприз тому, кто его и готовил',
+    )
+    check(
+      Number(await one('select public.letters_in_flight()::text as v')) === 2,
+      'Но знает, сколько своих писем в пути',
+      'без этого числа написанное исчезает в никуда',
     )
 
     await client.query('reset role')
@@ -123,6 +132,11 @@ async function main(): Promise<void> {
       (await q('select 1 from public.letters')).length === 1,
       'ПОСЛЕ доставки адресат видит своё письмо',
       'и только своё - второе ему ещё не доставлено',
+    )
+    check(
+      Number(await one('select public.letters_in_flight()::text as v')) === 0,
+      'Чужие письма в число «в пути» не попадают',
+      'узнать, что партнёр что-то написал, - уже спойлер',
     )
 
     // --- правка после отправки --------------------------------------------
@@ -143,11 +157,29 @@ async function main(): Promise<void> {
     const removed = await q(`delete from public.letters where id = $1 returning id`, [toPartner])
     check(removed.length === 0, 'Отправленное письмо удалить нельзя', 'то же правило')
 
-    const stillEditable = await q(
-      `update public.letters set body = 'поправил до срока' where id = $1 returning id`,
-      [toBoth],
+    // Право на отзыв запечатанного СОХРАНЕНО, хотя через интерфейс
+    // недостижимо: увидеть id негде. «Сгоряча написал» случается, и
+    // запечатывание должно быть трудно обратимым, а не невозможным
+    /*
+     * Запечатанное письмо недостижимо и на изменение.
+     *
+     * Политика letters_update по-прежнему разрешает правку автору до срока,
+     * но UPDATE с условием WHERE требует ещё и прав на ЧТЕНИЕ - строку надо
+     * сначала найти. letters_select запечатанное не показывает, и команда
+     * находит ноль строк, не сообщая об отказе.
+     *
+     * Проверяем без RETURNING: он сам требует чтения, и нулевой результат
+     * сказал бы не о том, разрешена ли правка, а о том, видно ли строку.
+     */
+    await client.query(`update public.letters set body = 'попытка отзыва' where id = $1`, [toBoth])
+    await client.query('reset role')
+    check(
+      (await one('select body as v from public.letters where id = $1', [toBoth])) !==
+        'попытка отзыва',
+      'Запечатанное письмо не изменить даже автору',
+      'письмо в будущее, которое можно отозвать, - черновик с отложенной доставкой',
     )
-    check(stillEditable.length === 1, 'Неотправленное править можно', 'срок ещё не наступил')
+    await client.query('set local role authenticated')
 
     await client.query('reset role')
 
@@ -209,6 +241,63 @@ async function main(): Promise<void> {
       )
       check(body !== '', 'В письме сказано, когда оно написано', body.slice(0, 110) || 'не найдено')
     }
+
+    // --- снимок запечатан вместе с письмом --------------------------------
+    //
+    // Общая политика бакета «видят участники» тут не годится: партнёр смог бы
+    // перечислить объекты и увидеть картинку до срока, обойдя запечатывание
+    // с чёрного хода. Поэтому чтение проверяет доставку конкретного письма.
+    const bucket = await q<{ public: boolean; limit: string }>(
+      `select public, file_size_limit::text as limit
+         from storage.buckets where id = 'letter-photos'`,
+    )
+    check(
+      bucket[0]?.public === false && Number(bucket[0]?.limit ?? 0) === 262144,
+      'Бакет для снимков приватный, с потолком',
+      `${Math.round(Number(bucket[0]?.limit ?? 0) / 1024)} КБ`,
+    )
+
+    const readPolicy = await one(
+      `select coalesce(qual, '') as v from pg_policies
+        where schemaname = 'storage' and tablename = 'objects'
+          and policyname = 'letter_photos_select'`,
+    )
+    check(
+      readPolicy.includes('letter_delivered_to_me'),
+      'Чтение снимка спрашивает про доставку, а не про членство',
+      'иначе партнёр увидел бы картинку, перечислив объекты бакета',
+    )
+
+    await client.query('reset role')
+    await client.query('delete from public.letter_deliveries')
+    await client.query('update public.letters set delivered_at = null')
+    const sealedLetter = await one('select id::text as v from public.letters limit 1')
+    await client.query('set local role authenticated')
+    await as(b.user_id)
+    check(
+      (await one('select public.letter_delivered_to_me($1)::text as v', [sealedLetter])) === 'false',
+      'До доставки снимок закрыт адресату',
+      'запечатано - значит и картинка тоже',
+    )
+    await as(a.user_id)
+    check(
+      (await one('select public.letter_delivered_to_me($1)::text as v', [sealedLetter])) === 'false',
+      'И автору тоже',
+      'иначе автор перечитывал бы своё письмо снимком',
+    )
+    await client.query('reset role')
+    await client.query(
+      `insert into public.letter_deliveries (letter_id, user_id) values ($1, $2)`,
+      [sealedLetter, b.user_id],
+    )
+    await client.query('set local role authenticated')
+    await as(b.user_id)
+    check(
+      (await one('select public.letter_delivered_to_me($1)::text as v', [sealedLetter])) === 'true',
+      'После доставки снимок открывается',
+      'ровно тому, кому письмо пришло',
+    )
+    await client.query('reset role')
 
     const job = await one(`select schedule as v from cron.job where jobname = 'letters'`)
     check(job === '0 * * * *', 'Задание стоит в расписании', job || 'нет задания')

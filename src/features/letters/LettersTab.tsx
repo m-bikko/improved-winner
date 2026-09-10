@@ -1,15 +1,19 @@
-import { useState } from 'react'
-import { Mail, MailOpen, Plus, Trash2 } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
+import { Check, ImagePlus, Mail, MailOpen, Plus, X } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
 import { fromLocalISO, shiftDays, todayLocal } from '@/lib/date'
+import { formatBytes, prepareImage, type PreparedImage } from '@/lib/image'
+import { plural } from '@/lib/plural'
 import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
+import { PhotoViewer } from '@/ui/PhotoViewer'
 import { Sheet } from '@/ui/Sheet'
 import { EmptyState, ErrorState, Loading } from '@/ui/States'
 import { useProfiles } from '@/features/profile/api'
 import {
-  useDeleteLetter,
+  useLetterPhotoUrls,
   useLetters,
+  useLettersInFlight,
   useSaveLetter,
   type Letter,
   type LetterAudience,
@@ -24,62 +28,76 @@ function day(iso: string): string {
 }
 
 /**
- * Письма в будущее.
+ * Письма в будущем.
  *
- * Живут рядом с датами, а не отдельным разделом: и то и другое - это «что
- * будет», а меню и так из десяти пунктов.
+ * Запечатанного письма тут нет ни у кого - ни у адресата, ни у автора.
+ * Раздел «В пути» со списком раньше портил сюрприз самому написавшему,
+ * а для письма «обоим» обессмысливал затею целиком: написал и тут же
+ * перечитываешь.
  *
- * Чужого неотправленного письма тут не появится - его не отдаёт база.
- * Поэтому список честно показывает всё, что пришло, и свои неотправленные,
- * без единой проверки на клиенте.
+ * Остаётся одно число - сколько своих писем в пути. Без него написанное
+ * исчезает в никуда, и человек не может отличить «запечатано»
+ * от «не сохранилось».
+ *
+ * Живут рядом с датами, а не отдельным разделом: и то и другое - «что будет»,
+ * а меню и так из десяти пунктов.
  */
 export function LettersTab() {
   const userId = useUserId()
   const letters = useLetters()
-  const [editing, setEditing] = useState<Letter | 'new' | null>(null)
+  const inFlight = useLettersInFlight()
+  const [writing, setWriting] = useState(false)
+  const [viewing, setViewing] = useState<string | null>(null)
+
+  const paths = useMemo(
+    () =>
+      (letters.data ?? []).map((l) => l.imagePath).filter((p): p is string => p !== null),
+    [letters.data],
+  )
+  const urls = useLetterPhotoUrls(paths)
 
   if (letters.isError) {
     return <ErrorState error={letters.error} onRetry={() => void letters.refetch()} />
   }
   if (letters.isPending) return <Loading />
 
-  const waiting = letters.data.filter((l) => l.deliveredAt === null)
-  const arrived = letters.data
-    .filter((l) => l.deliveredAt !== null)
-    .sort((a, b) => (b.deliveredAt ?? '').localeCompare(a.deliveredAt ?? ''))
+  const arrived = [...letters.data].sort((a, b) =>
+    (b.deliveredAt ?? '').localeCompare(a.deliveredAt ?? ''),
+  )
+  const flying = inFlight.data ?? 0
 
   return (
     <>
-      {letters.data.length === 0 ? (
+      {arrived.length === 0 ? (
         <EmptyState
-          title="Писем пока нет"
-          hint="Написали сегодня - придёт в выбранный день. На годовщину, на день рождения или просто «через год посмотрим, что мы думали»."
+          title="Писем пока не приходило"
+          hint="Написали сегодня - придёт в выбранный день. До срока письма не видно никому, включая вас."
         />
       ) : (
-        <div className="flex flex-col gap-4">
-          {waiting.length > 0 && (
-            <section className="flex flex-col gap-2">
-              <h2 className="px-1 text-sm text-muted">В пути</h2>
-              {waiting.map((l) => (
-                <Card key={l.id} letter={l} userId={userId} onOpen={() => setEditing(l)} />
-              ))}
-            </section>
-          )}
+        <ul className="flex flex-col gap-2">
+          {arrived.map((l) => (
+            <li key={l.id}>
+              <Card
+                letter={l}
+                userId={userId}
+                url={l.imagePath ? urls.data?.[l.imagePath] : undefined}
+                onView={setViewing}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
 
-          {arrived.length > 0 && (
-            <section className="flex flex-col gap-2">
-              <h2 className="px-1 text-sm text-muted">Пришли</h2>
-              {arrived.map((l) => (
-                <Card key={l.id} letter={l} userId={userId} onOpen={null} />
-              ))}
-            </section>
-          )}
-        </div>
+      {flying > 0 && (
+        <p className="mt-4 flex items-center justify-center gap-2 text-sm text-muted">
+          <Mail size={15} aria-hidden className="text-accent" />
+          {flying} {plural(flying, 'ваше письмо', 'ваших письма', 'ваших писем')} в пути
+        </p>
       )}
 
       <button
         type="button"
-        onClick={() => setEditing('new')}
+        onClick={() => setWriting(true)}
         aria-label="Новое письмо"
         className="fixed right-5 bottom-6 z-20 flex size-14 items-center justify-center
                    rounded-full bg-accent text-accent-ink shadow-lg
@@ -89,8 +107,9 @@ export function LettersTab() {
         <Plus size={26} aria-hidden />
       </button>
 
-      {editing && (
-        <Editor letter={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />
+      {writing && <Editor onClose={() => setWriting(false)} />}
+      {viewing && (
+        <PhotoViewer url={viewing} alt="Снимок из письма" onClose={() => setViewing(null)} />
       )}
     </>
   )
@@ -99,52 +118,67 @@ export function LettersTab() {
 function Card({
   letter,
   userId,
-  onOpen,
+  url,
+  onView,
 }: {
   letter: Letter
   userId: string
-  onOpen: (() => void) | null
+  url: string | undefined
+  onView: (url: string) => void
 }) {
   const profiles = useProfiles()
-  const sealed = letter.deliveredAt === null
   const mine = letter.authorId === userId
   const author = profiles.data?.find((p) => p.userId === letter.authorId)?.nickname ?? 'Партнёр'
-  const Icon = sealed ? Mail : MailOpen
 
-  const body = (
-    <>
+  return (
+    <div className="rounded-2xl bg-surface p-4 ring-1 ring-line">
       <div className="flex items-center gap-2 text-sm text-muted">
-        <Icon size={15} aria-hidden className={sealed ? 'text-accent' : ''} />
-        {sealed ? `придёт ${day(letter.deliverOn)}` : `пришло ${day(letter.deliverOn)}`}
+        <MailOpen size={15} aria-hidden />
+        пришло {day(letter.deliverOn)}
         {!mine && ` · ${author}`}
         {mine && letter.audience === 'both' && ' · обоим'}
       </div>
+      {url && (
+        <button
+          type="button"
+          onClick={() => onView(url)}
+          aria-label="Посмотреть снимок из письма"
+          className="mt-3 block w-full overflow-hidden rounded-xl bg-raised"
+        >
+          {/* object-contain, а не cover: снимок в письме не превью в сетке,
+              и обрезать его - значит обрезать то, ради чего он приложен */}
+          <img src={url} alt="" className="max-h-72 w-full object-contain" />
+        </button>
+      )}
       <p className="mt-2 text-sm whitespace-pre-wrap">{letter.body}</p>
-    </>
-  )
-
-  return onOpen ? (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="w-full rounded-2xl bg-surface p-4 text-left ring-1 ring-line"
-    >
-      {body}
-    </button>
-  ) : (
-    <div className="rounded-2xl bg-surface p-4 ring-1 ring-line">{body}</div>
+      <p className="mt-2 text-xs text-muted">написано {day(letter.createdAt.slice(0, 10))}</p>
+    </div>
   )
 }
 
-function Editor({ letter, onClose }: { letter: Letter | null; onClose: () => void }) {
+function Editor({ onClose }: { onClose: () => void }) {
   const save = useSaveLetter()
-  const remove = useDeleteLetter()
-  const [body, setBody] = useState(letter?.body ?? '')
+  const [body, setBody] = useState('')
   // По умолчанию через год: письмо «на завтра» - это записка, а не письмо
   // в будущее, и предлагать завтрашний день значило бы подталкивать не к тому
-  const [deliverOn, setDeliverOn] = useState(letter?.deliverOn ?? shiftDays(todayLocal(), 365))
-  const [audience, setAudience] = useState<LetterAudience>(letter?.audience ?? 'partner')
+  const [deliverOn, setDeliverOn] = useState(shiftDays(todayLocal(), 365))
+  const [audience, setAudience] = useState<LetterAudience>('partner')
   const [error, setError] = useState<string | null>(null)
+  const [sealed, setSealed] = useState(false)
+  const [photo, setPhoto] = useState<{ prepared: PreparedImage; url: string; from: number } | null>(
+    null,
+  )
+  const input = useRef<HTMLInputElement>(null)
+
+  const pick = async (file: File) => {
+    setError(null)
+    try {
+      const prepared = await prepareImage(file)
+      setPhoto({ prepared, url: URL.createObjectURL(prepared.blob), from: file.size })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    }
+  }
 
   const submit = async () => {
     setError(null)
@@ -157,15 +191,52 @@ function Editor({ letter, onClose }: { letter: Letter | null; onClose: () => voi
       return
     }
     try {
-      await save.mutateAsync({ ...(letter ? { id: letter.id } : {}), body, deliverOn, audience })
-      onClose()
+      await save.mutateAsync({
+        body,
+        deliverOn,
+        audience,
+        photo: photo
+          ? { blob: photo.prepared.blob, extension: photo.prepared.extension }
+          : null,
+      })
+      setSealed(true)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     }
   }
 
+  /*
+   * Подтверждение вместо закрытия.
+   *
+   * Письмо после отправки исчезает отовсюду, и без этого экрана человек
+   * остался бы наедине с вопросом «сохранилось ли». Дата названа прямо -
+   * по ней видно, что письмо ушло на тот день, который имели в виду,
+   * а не на соседний.
+   */
+  if (sealed) {
+    return (
+      <Sheet open onClose={onClose} title="Запечатано">
+        <div className="flex flex-col items-center gap-4 py-4 text-center">
+          <span className="flex size-14 items-center justify-center rounded-full bg-accent text-accent-ink">
+            <Check size={28} aria-hidden />
+          </span>
+          <div>
+            <p className="font-medium">Письмо запечатано</p>
+            <p className="mt-1 text-sm text-muted">
+              Придёт {day(deliverOn)}
+              {audience === 'both' ? ', вам обоим' : ''}
+              {photo ? ' — вместе со снимком' : ''}. До этого дня письма не видно никому -
+              включая вас.
+            </p>
+          </div>
+          <Button onClick={onClose}>Готово</Button>
+        </div>
+      </Sheet>
+    )
+  }
+
   return (
-    <Sheet open onClose={onClose} title={letter ? 'Письмо' : 'Письмо в будущее'}>
+    <Sheet open onClose={onClose} title="Письмо в будущее">
       <div className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5">
           <span className="text-sm text-muted">Что написать</span>
@@ -173,12 +244,57 @@ function Editor({ letter, onClose }: { letter: Letter | null; onClose: () => voi
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={6}
-            autoFocus={!letter}
+            autoFocus
             placeholder="Прочитаешь это через год…"
             className="w-full min-w-0 resize-none rounded-xl bg-surface px-4 py-3 ring-1 ring-line
                        outline-none focus:ring-2 focus:ring-accent placeholder:text-muted"
           />
         </label>
+
+        <div className="flex flex-col gap-2">
+          <span className="text-sm text-muted">Снимок</span>
+          <input
+            ref={input}
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              // Сбрасываем значение: без этого повторный выбор ТОГО ЖЕ файла
+              // не даёт события, и «заменить» молча ничего не делает
+              e.target.value = ''
+              if (file) void pick(file)
+            }}
+          />
+          {photo ? (
+            <div className="relative overflow-hidden rounded-xl bg-raised">
+              <img src={photo.url} alt="" className="max-h-56 w-full object-contain" />
+              <button
+                type="button"
+                onClick={() => {
+                  URL.revokeObjectURL(photo.url)
+                  setPhoto(null)
+                }}
+                aria-label="Убрать снимок"
+                className="absolute top-2 right-2 rounded-full bg-black/60 p-2 text-white"
+              >
+                <X size={16} aria-hidden />
+              </button>
+              <p className="px-3 py-2 text-xs text-muted">
+                {formatBytes(photo.from)} → {formatBytes(photo.prepared.blob.size)}
+              </p>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => input.current?.click()}
+              className="flex items-center gap-2 self-start rounded-xl bg-raised px-4 py-3 text-sm ring-1 ring-line"
+            >
+              <ImagePlus size={17} aria-hidden className="text-muted" />
+              Приложить снимок
+            </button>
+          )}
+        </div>
 
         <div className="flex flex-col gap-2">
           <span className="text-sm text-muted">Кому</span>
@@ -212,25 +328,14 @@ function Editor({ letter, onClose }: { letter: Letter | null; onClose: () => voi
           value={deliverOn}
           min={shiftDays(todayLocal(), 1)}
           onChange={(e) => setDeliverOn(e.target.value)}
-          hint="Утром выбранного дня. После отправки письмо уже не поправить"
+          hint="Утром выбранного дня. После запечатывания письмо не поправить и не перечитать"
         />
 
         {error && <p className="text-sm text-danger">{error}</p>}
 
         <Button onClick={() => void submit()} loading={save.isPending}>
-          {letter ? 'Сохранить' : 'Запечатать'}
+          Запечатать
         </Button>
-
-        {letter && (
-          <Button
-            variant="danger"
-            loading={remove.isPending}
-            onClick={() => void remove.mutateAsync(letter.id).then(onClose)}
-          >
-            <Trash2 size={18} aria-hidden />
-            Удалить
-          </Button>
-        )}
       </div>
     </Sheet>
   )
