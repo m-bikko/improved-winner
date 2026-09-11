@@ -21,30 +21,30 @@ import {
  * а не измерение: реальные числа зависят от интенсивности, и разброс легко
  * в полтора раза. Поэтому оценку всегда можно переписать руками.
  *
+ * Подписи живут в словарях перевода - здесь только id.
  * Словарь видов продублирован здесь и в CHECK у таблицы. Коэффициенты -
  * только здесь: база их не считает, потому что расход хранится снимком.
  * Совпадение видов проверяет `check-workouts`.
  */
 export type WorkoutKind = {
   id: string
-  label: string
   met: number
   icon: LucideIcon
 }
 
 export const WORKOUT_KINDS: WorkoutKind[] = [
-  { id: 'gym', label: 'Зал', met: 5.0, icon: Dumbbell },
-  { id: 'run', label: 'Бег', met: 9.8, icon: Zap },
-  { id: 'walk', label: 'Ходьба', met: 3.5, icon: Footprints },
-  { id: 'bike', label: 'Велосипед', met: 7.5, icon: Bike },
-  { id: 'swim', label: 'Плавание', met: 7.0, icon: Waves },
-  { id: 'yoga', label: 'Йога', met: 3.0, icon: Wind },
-  { id: 'stretch', label: 'Растяжка', met: 2.3, icon: StretchHorizontal },
-  { id: 'football', label: 'Футбол', met: 7.0, icon: Trophy },
-  { id: 'tennis', label: 'Теннис', met: 6.0, icon: Target },
-  { id: 'dance', label: 'Танцы', met: 5.0, icon: Music },
-  { id: 'fight', label: 'Единоборства', met: 8.0, icon: Shield },
-  { id: 'other', label: 'Другое', met: 4.0, icon: Dumbbell },
+  { id: 'gym', met: 5.0, icon: Dumbbell },
+  { id: 'run', met: 9.8, icon: Zap },
+  { id: 'walk', met: 3.5, icon: Footprints },
+  { id: 'bike', met: 7.5, icon: Bike },
+  { id: 'swim', met: 7.0, icon: Waves },
+  { id: 'yoga', met: 3.0, icon: Wind },
+  { id: 'stretch', met: 2.3, icon: StretchHorizontal },
+  { id: 'football', met: 7.0, icon: Trophy },
+  { id: 'tennis', met: 6.0, icon: Target },
+  { id: 'dance', met: 5.0, icon: Music },
+  { id: 'fight', met: 8.0, icon: Shield },
+  { id: 'other', met: 4.0, icon: Dumbbell },
 ]
 
 export const KIND_BY_ID: Record<string, WorkoutKind> = Object.fromEntries(

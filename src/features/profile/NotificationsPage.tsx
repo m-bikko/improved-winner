@@ -1,3 +1,4 @@
+import { dynamicKey, useT } from '@/lib/i18n'
 import { useState } from 'react'
 import { BellOff, Moon, Send, Smartphone } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
@@ -23,6 +24,7 @@ const ON: ChannelSettings = { telegram: true, push: true }
  * Настройки персональные: партнёр не видит и не меняет, что приходит мне.
  */
 export function NotificationsPage() {
+  const t = useT()
   const userId = useUserId()
   const profiles = useProfiles()
   const settings = useNotificationSettings()
@@ -65,18 +67,18 @@ export function NotificationsPage() {
                 className="flex items-center justify-between gap-3 border-b border-line px-4 py-3 last:border-0"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm">{kind.label}</p>
-                  <p className="truncate text-xs text-muted">{kind.hint}</p>
+                  <p className="truncate text-sm">{t(dynamicKey('notif', kind.id))}</p>
+                  <p className="truncate text-xs text-muted">{t(dynamicKey('notif', `${kind.id}.hint`))}</p>
                 </div>
                 <div className="flex shrink-0 gap-3">
                   <Box
                     on={c.telegram}
-                    label={`${kind.label}: телеграм`}
+                    label={`${t(dynamicKey('notif', kind.id))}: Telegram`}
                     onClick={() => toggle(kind.id, 'telegram')}
                   />
                   <Box
                     on={c.push}
-                    label={`${kind.label}: push`}
+                    label={`${t(dynamicKey('notif', kind.id))}: push`}
                     onClick={() => toggle(kind.id, 'push')}
                   />
                 </div>

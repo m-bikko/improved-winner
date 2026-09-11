@@ -44,3 +44,26 @@ export function pluralFor(lang: Lang, n: number, one: string, few: string, many:
   if (last >= 2 && last <= 4) return few
   return many
 }
+
+/**
+ * Активный язык вне React.
+ *
+ * Нужен чистым помощникам - форматированию дат, например: они вызываются
+ * из десятков мест, и протаскивать язык параметром через каждое значило бы
+ * менять сигнатуры всего кода ради одной подписи. Значение ставит провайдер,
+ * и при его смене перерисовывается всё дерево, так что расхождения
+ * на экране не будет.
+ */
+let active: Lang = 'ru'
+
+export function setActiveLang(lang: Lang): void {
+  active = lang
+}
+
+export function activeLang(): Lang {
+  return active
+}
+
+export function activeLocale(): string {
+  return LOCALES[active]
+}

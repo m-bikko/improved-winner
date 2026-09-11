@@ -22,19 +22,18 @@ import {
  */
 export type Category = {
   id: string
-  label: string
   icon: LucideIcon
 }
 
 export const CATEGORIES: Category[] = [
-  { id: 'buy', label: 'Хочу купить', icon: ShoppingBag },
-  { id: 'visit', label: 'Хочу посетить', icon: MapPin },
-  { id: 'try', label: 'Хочу попробовать', icon: Sparkles },
-  { id: 'food', label: 'Еда', icon: UtensilsCrossed },
-  { id: 'watch', label: 'Посмотреть', icon: Popcorn },
-  { id: 'read', label: 'Прочитать', icon: BookOpen },
-  { id: 'together', label: 'Сделать вместе', icon: Users },
-  { id: 'gift', label: 'Подарить', icon: Gift },
+  { id: 'buy', icon: ShoppingBag },
+  { id: 'visit', icon: MapPin },
+  { id: 'try', icon: Sparkles },
+  { id: 'food', icon: UtensilsCrossed },
+  { id: 'watch', icon: Popcorn },
+  { id: 'read', icon: BookOpen },
+  { id: 'together', icon: Users },
+  { id: 'gift', icon: Gift },
 ]
 
 export const CATEGORY_BY_ID: Record<string, Category> = Object.fromEntries(

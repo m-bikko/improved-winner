@@ -1,5 +1,5 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { isLang, pluralFor, type Lang } from './lang'
+import { activeLang, isLang, pluralFor, setActiveLang, type Lang } from './lang'
 import { ru, type Key } from './ru'
 import { kk } from './kk'
 import { en } from './en'
@@ -37,6 +37,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
 
   const setLang = useCallback((next: Lang) => {
     setLangState(next)
+    setActiveLang(next)
     try {
       localStorage.setItem(STORE_KEY, next)
     } catch {
@@ -46,6 +47,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    setActiveLang(lang)
     document.documentElement.lang = lang
   }, [lang])
 
@@ -61,6 +63,27 @@ export function LangProvider({ children }: { children: ReactNode }) {
  * категориям, видам тренировок, - и гарантия «все ключи на месте»
  * превратилась бы в набор обещаний.
  */
+/**
+ * Перевод вне компонентов.
+ *
+ * Для чистых помощников, которые нельзя переписать на хук. Подписки
+ * на изменение тут нет и не нужно: язык меняется в корневом провайдере,
+ * и дерево перерисовывается целиком.
+ */
+export function tr(key: Key, vars?: Record<string, string | number>): string {
+  const raw = DICTS[activeLang()][key] ?? ru[key] ?? key
+  if (!vars) return raw
+  return raw.replace(/\{(\w+)\}/g, (whole, name: string) =>
+    name in vars ? String(vars[name]) : whole,
+  )
+}
+
+export function trPlural(key: string, n: number): string {
+  const dict = DICTS[activeLang()]
+  const pick = (suffix: string) => dict[`${key}.${suffix}` as Key] ?? ''
+  return pluralFor(activeLang(), n, pick('one'), pick('few'), pick('many'))
+}
+
 export function dynamicKey(prefix: string, id: string): Key {
   return `${prefix}.${id}` as Key
 }

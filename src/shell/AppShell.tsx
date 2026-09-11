@@ -3,6 +3,9 @@ import { useLocation } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { APP_NAME } from '@/lib/appName'
 import { useT } from '@/lib/i18n'
+import { useSyncLang } from '@/lib/i18n/sync'
+import { useProfiles } from '@/features/profile/api'
+import { useUserId } from '@/auth/AuthProvider'
 import { useAppBadge } from '@/lib/badge'
 import { BurgerMenu, NAV } from './BurgerMenu'
 import { HeaderActionProvider, useHeaderActionSlot } from './HeaderAction'
@@ -25,6 +28,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 function Chrome({ children }: { children: ReactNode }) {
   const t = useT()
+  // Язык из профиля главнее того, что лежит в localStorage
+  const userId = useUserId()
+  const profiles = useProfiles()
+  useSyncLang(profiles.data?.find((p) => p.userId === userId)?.language)
   // Здесь, а не в отдельном экране: бейдж относится ко всему приложению
   useAppBadge(true)
   const [menuOpen, setMenuOpen] = useState(false)

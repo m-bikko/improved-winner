@@ -10,6 +10,9 @@
  * в плюсовых поясах - то есть ровно там, где живут пользователи.
  */
 
+import { tr } from '@/lib/i18n'
+import { activeLocale } from '@/lib/i18n/lang'
+
 /** Локальная дата в формате YYYY-MM-DD. */
 export function toLocalISO(date: Date): string {
   const year = date.getFullYear()
@@ -33,16 +36,6 @@ export function shiftDays(iso: string, days: number): string {
   date.setDate(date.getDate() + days)
   return toLocalISO(date)
 }
-
-const MONTHS = [
-  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
-] as const
-
-const WEEKDAYS = [
-  'воскресенье', 'понедельник', 'вторник', 'среда',
-  'четверг', 'пятница', 'суббота',
-] as const
 
 /**
  * Момент времени → значение для <input type="datetime-local">.
@@ -69,30 +62,37 @@ export function fromDateTimeInput(value: string): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString()
 }
 
+/*
+ * Месяцы и дни недели НЕ лежат в словарях: их знает Intl, и на всех трёх
+ * языках он назовёт их правильнее, чем список, переписанный руками.
+ * В словаре остаётся только то, чего в Intl нет, - «сегодня» и «вчера».
+ */
+
 /** «Сегодня в 14:30», «Вчера в 9:00», «3 сентября, 14:30». */
 export function formatDueAt(iso: string): string {
   const date = new Date(iso)
   const day = toLocalISO(date)
-  const time = date.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })
+  const time = date.toLocaleTimeString(activeLocale(), { hour: '2-digit', minute: '2-digit' })
   const today = todayLocal()
 
-  if (day === today) return `сегодня в ${time}`
-  if (day === shiftDays(today, -1)) return `вчера в ${time}`
-  if (day === shiftDays(today, 1)) return `завтра в ${time}`
+  if (day === today) return tr('date.todayAt', { time })
+  if (day === shiftDays(today, -1)) return tr('date.yesterdayAt', { time })
+  if (day === shiftDays(today, 1)) return tr('date.tomorrowAt', { time })
 
-  const month = MONTHS[date.getMonth()] ?? ''
-  return `${date.getDate()} ${month}, ${time}`
+  const dayMonth = date.toLocaleDateString(activeLocale(), { day: 'numeric', month: 'long' })
+  return `${dayMonth}, ${time}`
 }
 
 /** «Сегодня», «Вчера», «Завтра» или «3 сентября, среда». */
 export function formatDayLabel(iso: string): string {
   const today = todayLocal()
-  if (iso === today) return 'Сегодня'
-  if (iso === shiftDays(today, -1)) return 'Вчера'
-  if (iso === shiftDays(today, 1)) return 'Завтра'
+  if (iso === today) return tr('common.today')
+  if (iso === shiftDays(today, -1)) return tr('common.yesterday')
+  if (iso === shiftDays(today, 1)) return tr('common.tomorrow')
 
-  const date = fromLocalISO(iso)
-  const month = MONTHS[date.getMonth()] ?? ''
-  const weekday = WEEKDAYS[date.getDay()] ?? ''
-  return `${date.getDate()} ${month}, ${weekday}`
+  return fromLocalISO(iso).toLocaleDateString(activeLocale(), {
+    day: 'numeric',
+    month: 'long',
+    weekday: 'long',
+  })
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   BellRing,
+  Languages,
   Check,
   ChevronRight,
   KeyRound,
@@ -22,6 +23,9 @@ import {
   type Sex,
 } from '@/lib/nutrition'
 import { PIN_LENGTH } from '@/lib/accounts'
+import { useLang, useT } from '@/lib/i18n'
+import { LANGS, LANG_NAMES } from '@/lib/i18n/lang'
+import { useSaveLang } from '@/lib/i18n/sync'
 import {
   biometricsAvailable,
   enrollBiometrics,
@@ -373,7 +377,47 @@ function ProfileForm({ profile }: { profile: Profile }) {
 
       <ChangePinSheet open={pinOpen} onClose={() => setPinOpen(false)} />
 
+      <LanguageRow />
+
       <FaceIdRow />
+    </div>
+  )
+}
+
+/**
+ * Язык интерфейса.
+ *
+ * Свой у каждого: они могут читать на разных языках, и общий переключатель
+ * заставил бы одного уступить. Переключается сразу, не дожидаясь сети -
+ * язык интерфейса должен меняться по нажатию, а не по ответу сервера.
+ */
+function LanguageRow() {
+  const t = useT()
+  const { lang } = useLang()
+  const save = useSaveLang()
+
+  return (
+    <div className="rounded-xl bg-surface px-4 py-4 ring-1 ring-line">
+      <p className="flex items-center gap-2 text-sm font-medium">
+        <Languages size={16} aria-hidden />
+        {t('lang.title')}
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {LANGS.map((code) => (
+          <button
+            key={code}
+            type="button"
+            onClick={() => save.mutate(code)}
+            aria-pressed={lang === code}
+            className={`rounded-full px-4 py-2 text-sm transition-colors ${
+              lang === code ? 'bg-accent text-accent-ink' : 'bg-raised text-ink ring-1 ring-line'
+            }`}
+          >
+            {LANG_NAMES[code]}
+          </button>
+        ))}
+      </div>
+      <p className="mt-2 text-xs text-muted">{t('lang.hint')}</p>
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import { dynamicKey, useT } from '@/lib/i18n'
 import { useMemo, useRef, useState } from 'react'
 import {
   DndContext,
@@ -42,6 +43,7 @@ import {
  * действительно хочется отфильтровать - «покажи, куда мы хотели съездить».
  */
 export function WishlistPage() {
+  const t = useT()
   const wishes = useWishes()
   const reorder = useReorderWishes()
   const profiles = useProfiles()
@@ -116,7 +118,7 @@ export function WishlistPage() {
                 onClick={() => setCategory(category === c.id ? null : c.id)}
               >
                 <Icon size={14} aria-hidden />
-                {c.label}
+                {t(dynamicKey('wish', c.id))}
                 {n > 0 && ` · ${n}`}
               </Chip>
             )
@@ -221,6 +223,7 @@ function Row({
   onOpen: () => void
   onView: (url: string) => void
 }) {
+  const t = useT()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: wish.id,
   })
@@ -255,7 +258,7 @@ function Row({
           <span className="mt-0.5 block truncate text-sm text-muted">{wish.details}</span>
         )}
         <span className="mt-0.5 block truncate text-xs text-muted">
-          {category?.label ?? wish.category} · {author}
+          {category ? t(dynamicKey('wish', category.id)) : wish.category} · {author}
         </span>
       </button>
 
@@ -263,7 +266,7 @@ function Row({
         type="button"
         {...attributes}
         {...listeners}
-        aria-label={`Переставить «${wish.title}»`}
+        aria-label={wish.title}
         className="shrink-0 touch-none p-2 text-muted"
       >
         <GripVertical size={18} aria-hidden />
@@ -281,6 +284,7 @@ function Editor({
   defaultCategory: string
   onClose: () => void
 }) {
+  const t = useT()
   const save = useSaveWish()
   const remove = useDeleteWish()
   const [title, setTitle] = useState(wish?.title ?? '')
@@ -343,7 +347,7 @@ function Editor({
                   }`}
                 >
                   <Icon size={15} aria-hidden />
-                  {c.label}
+                  {t(dynamicKey('wish', c.id))}
                 </button>
               )
             })}

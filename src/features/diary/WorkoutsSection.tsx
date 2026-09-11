@@ -1,3 +1,4 @@
+import { dynamicKey, useT } from '@/lib/i18n'
 import { useState } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
@@ -30,6 +31,7 @@ export function WorkoutsSection({
   eatenKcal: number
   goalKcal: number | null
 }) {
+  const t = useT()
   const userId = useUserId()
   const all = useWorkouts(date)
   const [editing, setEditing] = useState<Workout | 'new' | null>(null)
@@ -69,7 +71,7 @@ export function WorkoutsSection({
                     {Icon && <Icon size={17} aria-hidden />}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate">{kind?.label ?? w.kind}</span>
+                    <span className="block truncate">{kind ? t(dynamicKey('workout', kind.id)) : w.kind}</span>
                     {w.note && <span className="block truncate text-sm text-muted">{w.note}</span>}
                   </span>
                   <span className="shrink-0 text-right text-sm text-muted">
@@ -112,6 +114,7 @@ function Editor({
   workout: Workout | null
   onClose: () => void
 }) {
+  const t = useT()
   const userId = useUserId()
   const profiles = useProfiles()
   const save = useSaveWorkout()
@@ -172,7 +175,7 @@ function Editor({
                 }`}
               >
                 <Icon size={15} aria-hidden />
-                {k.label}
+                {t(dynamicKey('workout', k.id))}
               </button>
             )
           })}

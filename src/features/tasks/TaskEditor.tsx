@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { useState } from 'react'
 import { Bell, Plus, Repeat, Trash2, X } from 'lucide-react'
 import { fromDateTimeInput, toDateTimeInput } from '@/lib/date'
@@ -6,8 +7,8 @@ import { Field } from '@/ui/Field'
 import { Sheet } from '@/ui/Sheet'
 import { useDeleteTask, useSaveTask, type EditScope, type Task } from './api'
 import {
-  FREQ_LABELS,
-  WEEKDAY_LABELS,
+  FREQ_KEYS,
+  WEEKDAY_KEYS,
   describeRecurrence,
   isoWeekday,
   type Freq,
@@ -56,6 +57,7 @@ export function TaskEditor({
   defaultDue?: string | undefined
   onClose: () => void
 }) {
+  const t = useT()
   const save = useSaveTask()
   const remove = useDeleteTask()
 
@@ -263,9 +265,9 @@ export function TaskEditor({
                 <Chip active={recurrence === null} onClick={() => setFreq(null)}>
                   Не повторять
                 </Chip>
-                {(Object.keys(FREQ_LABELS) as Freq[]).map((freq) => (
+                {(Object.keys(FREQ_KEYS) as Freq[]).map((freq) => (
                   <Chip key={freq} active={recurrence?.freq === freq} onClick={() => setFreq(freq)}>
-                    {FREQ_LABELS[freq]}
+                    {t(FREQ_KEYS[freq])}
                   </Chip>
                 ))}
               </div>
@@ -284,17 +286,17 @@ export function TaskEditor({
                       }}
                       className="w-16 rounded-lg bg-surface px-3 py-2 text-center ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
                     />
-                    <span className="text-muted">{FREQ_LABELS[recurrence.freq].toLowerCase()}</span>
+                    <span className="text-muted">{t(FREQ_KEYS[recurrence.freq]).toLowerCase()}</span>
                   </label>
 
                   {recurrence.freq === 'weekly' && (
                     <div className="flex flex-wrap gap-1.5">
-                      {WEEKDAY_LABELS.map((label, i) => {
+                      {WEEKDAY_KEYS.map((key, i) => {
                         const day = i + 1
                         const active = (recurrence.weekdays ?? []).includes(day)
                         return (
                           <button
-                            key={label}
+                            key={key}
                             type="button"
                             onClick={() => toggleWeekday(day)}
                             aria-pressed={active}
@@ -302,7 +304,7 @@ export function TaskEditor({
                               active ? 'bg-accent text-accent-ink' : 'bg-raised ring-1 ring-line'
                             }`}
                           >
-                            {label}
+                            {t(key)}
                           </button>
                         )
                       })}

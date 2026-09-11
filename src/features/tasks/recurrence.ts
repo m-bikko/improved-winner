@@ -13,6 +13,8 @@
  * а уведомления приходят в другие.
  */
 
+import { tr, trPlural } from '@/lib/i18n'
+
 export type Freq = 'daily' | 'weekly' | 'monthly' | 'yearly'
 
 export type Recurrence = {
@@ -22,14 +24,23 @@ export type Recurrence = {
   weekdays?: number[]
 }
 
-export const FREQ_LABELS: Record<Freq, string> = {
-  daily: 'День',
-  weekly: 'Неделя',
-  monthly: 'Месяц',
-  yearly: 'Год',
+/** Ключи подписей: сами подписи живут в словарях. */
+export const FREQ_KEYS: Record<Freq, 'recur.day' | 'recur.week' | 'recur.month' | 'recur.year'> = {
+  daily: 'recur.day',
+  weekly: 'recur.week',
+  monthly: 'recur.month',
+  yearly: 'recur.year',
 }
 
-export const WEEKDAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] as const
+export const WEEKDAY_KEYS = [
+  'weekday.mon',
+  'weekday.tue',
+  'weekday.wed',
+  'weekday.thu',
+  'weekday.fri',
+  'weekday.sat',
+  'weekday.sun',
+] as const
 
 /** ISO-номер дня недели: понедельник 1, воскресенье 7. */
 export function isoWeekday(date: Date): number {
@@ -133,61 +144,33 @@ export function occurrencesInRange(
   return out
 }
 
-/**
- * «Каждый день», «Каждые 2 недели: Пн, Ср», «Каждый месяц».
- *
- * Формы выписаны целиком, а не собираются из корня и окончания: попытка
- * приклеить «ую» к «Каждый» давала «Каждыйую неделю».
- */
-const SINGULAR: Record<Freq, string> = {
-  daily: 'Каждый день',
-  weekly: 'Каждую неделю',
-  monthly: 'Каждый месяц',
-  yearly: 'Каждый год',
+const EVERY: Record<Freq, 'recur.everyDay' | 'recur.everyWeek' | 'recur.everyMonth' | 'recur.everyYear'> = {
+  daily: 'recur.everyDay',
+  weekly: 'recur.everyWeek',
+  monthly: 'recur.everyMonth',
+  yearly: 'recur.everyYear',
 }
 
-/** Родительный падеж множественного: «каждые 3 …». */
-const PLURAL: Record<Freq, string> = {
-  daily: 'дня',
-  weekly: 'недели',
-  monthly: 'месяца',
-  yearly: 'года',
-}
-
-/** Для 5 и больше форма меняется: «5 дней», а не «5 дня». */
-const MANY: Record<Freq, string> = {
-  daily: 'дней',
-  weekly: 'недель',
-  monthly: 'месяцев',
-  yearly: 'лет',
-}
-
-/** Числа на 1, кроме 11: «каждые 21 день», а не «21 дней». */
-const ONE: Record<Freq, string> = {
-  daily: 'день',
-  weekly: 'неделю',
-  monthly: 'месяц',
-  yearly: 'год',
-}
-
-function unitFor(freq: Freq, step: number): string {
-  const last = step % 10
-  const teen = step % 100 >= 11 && step % 100 <= 14
-  if (!teen && last === 1) return ONE[freq]
-  if (!teen && last >= 2 && last <= 4) return PLURAL[freq]
-  return MANY[freq]
+const UNIT: Record<Freq, string> = {
+  daily: 'recur.unit.day',
+  weekly: 'recur.unit.week',
+  monthly: 'recur.unit.month',
+  yearly: 'recur.unit.year',
 }
 
 export function describeRecurrence(rule: Recurrence | null): string {
-  if (!rule) return 'Не повторяется'
+  if (!rule) return tr('recur.none')
 
   const step = Math.max(1, Math.trunc(rule.interval))
-  const base = step === 1 ? SINGULAR[rule.freq] : `Каждые ${step} ${unitFor(rule.freq, step)}`
+  const base =
+    step === 1
+      ? tr(EVERY[rule.freq])
+      : tr('recur.every', { step, unit: trPlural(UNIT[rule.freq] ?? '', step) })
 
   if (rule.freq === 'weekly' && rule.weekdays && rule.weekdays.length > 0) {
     const days = [...rule.weekdays]
       .sort((a, b) => a - b)
-      .map((d) => WEEKDAY_LABELS[d - 1])
+      .map((d) => tr(WEEKDAY_KEYS[d - 1] ?? 'weekday.mon'))
       .join(', ')
     return `${base}: ${days}`
   }
