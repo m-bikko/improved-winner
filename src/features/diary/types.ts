@@ -3,13 +3,6 @@ import type { Database } from '@/types/db'
 export const MEALS = ['breakfast', 'lunch', 'dinner', 'snack'] as const
 export type Meal = (typeof MEALS)[number]
 
-export const MEAL_LABELS: Record<Meal, string> = {
-  breakfast: 'Завтрак',
-  lunch: 'Обед',
-  dinner: 'Ужин',
-  snack: 'Перекус',
-}
-
 export type DiaryEntry = {
   id: string
   userId: string

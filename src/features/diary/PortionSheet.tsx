@@ -1,3 +1,4 @@
+import { dynamicKey, useT } from '@/lib/i18n'
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { Button } from '@/ui/Button'
@@ -5,7 +6,7 @@ import { NumberField } from '@/ui/Field'
 import { Sheet } from '@/ui/Sheet'
 import { portionOf, type Food, type Serving } from '@/features/foods/types'
 import { trim } from '@/features/foods/FoodsPage'
-import { MEALS, MEAL_LABELS, type Meal } from './types'
+import { MEALS, type Meal } from './types'
 
 type Props = {
   open: boolean
@@ -41,6 +42,7 @@ export function PortionSheet({
   onSubmit,
   busy = false,
 }: Props) {
+  const t = useT()
   const [grams, setGrams] = useState<number | ''>(initialGrams ?? 100)
   const [meal, setMeal] = useState<Meal>(initialMeal)
   const [servingLabel, setServingLabel] = useState<string | null>(initialServingLabel ?? null)
@@ -64,19 +66,19 @@ export function PortionSheet({
         {servings.length > 0 && (
           <div className="flex flex-wrap gap-2">
             <Chip active={servingLabel === null} onClick={() => pickServing(null)}>
-              100 г
+              {t('portion.per100')}
             </Chip>
             {servings.map((s) => (
               <Chip key={s.id} active={servingLabel === s.label} onClick={() => pickServing(s)}>
-                {s.label} · {trim(s.grams)} г
+                {s.label} · {trim(s.grams)} {t('unit.gram')}
               </Chip>
             ))}
           </div>
         )}
 
         <NumberField
-          label="Вес"
-          suffix="г"
+          label={t('portion.weight')}
+          suffix={t('unit.gram')}
           value={grams}
           onValueChange={(g) => {
             setGrams(g)
@@ -86,20 +88,28 @@ export function PortionSheet({
         />
 
         <div className="rounded-xl bg-raised px-4 py-3">
-          <p className="text-2xl font-semibold">{Math.round(portion.kcal)} ккал</p>
+          <p className="text-2xl font-semibold">
+            {Math.round(portion.kcal)} {t('unit.kcal')}
+          </p>
           <p className="mt-1 text-sm">
-            <span className="text-protein">Б {trim(portion.protein)}</span>{' '}
-            <span className="text-fat">Ж {trim(portion.fat)}</span>{' '}
-            <span className="text-carbs">У {trim(portion.carbs)}</span>
+            <span className="text-protein">
+              {t('macro.p')} {trim(portion.protein)}
+            </span>{' '}
+            <span className="text-fat">
+              {t('macro.f')} {trim(portion.fat)}
+            </span>{' '}
+            <span className="text-carbs">
+              {t('macro.c')} {trim(portion.carbs)}
+            </span>
           </p>
         </div>
 
         <div>
-          <p className="mb-2 text-sm text-muted">Приём пищи</p>
+          <p className="mb-2 text-sm text-muted">{t('meal.title')}</p>
           <div className="flex flex-wrap gap-2">
             {MEALS.map((m) => (
               <Chip key={m} active={meal === m} onClick={() => setMeal(m)}>
-                {MEAL_LABELS[m]}
+                {t(dynamicKey('meal', m))}
               </Chip>
             ))}
           </div>
@@ -110,13 +120,13 @@ export function PortionSheet({
           disabled={value <= 0}
           loading={busy}
         >
-          {onDelete ? 'Сохранить' : 'Добавить'}
+          {t(onDelete ? 'common.save' : 'common.add')}
         </Button>
 
         {onDelete && (
           <Button variant="danger" onClick={onDelete}>
             <Trash2 size={18} aria-hidden />
-            Удалить
+            {t('common.delete')}
           </Button>
         )}
       </div>

@@ -1,3 +1,4 @@
+import { tr, useT } from '@/lib/i18n'
 import type { GoalDirection, Macros } from '@/lib/nutrition'
 
 const STROKE_RATIO = 0.078
@@ -116,6 +117,7 @@ const FULL_SIZE = 180
  * при похудении перебор. Поэтому подпись под кольцом разная.
  */
 export function CalorieRing({ totals, goals, goalDirection }: Props) {
+  const t = useT()
   const ratio = ratioOf(totals, goals)
   const percent = Math.round(ratio * 100)
   const left = goals.kcal - totals.kcal
@@ -127,8 +129,11 @@ export function CalorieRing({ totals, goals, goalDirection }: Props) {
         <div
           role="img"
           aria-label={
-            `Съедено ${Math.round(totals.kcal)} из ${goals.kcal} ккал, ${percent} процентов нормы` +
-            (over ? `, перебор на ${Math.round(-left)} ккал` : '')
+            t('ring.eaten', {
+              n: Math.round(totals.kcal),
+              goal: goals.kcal,
+              percent,
+            }) + (over ? t('ring.overBy', { n: Math.round(-left) }) : '')
           }
         >
           <RingArc size={FULL_SIZE} ratio={ratio} />
@@ -140,7 +145,7 @@ export function CalorieRing({ totals, goals, goalDirection }: Props) {
             <span className="text-2xl font-normal text-muted">%</span>
           </span>
           <span className="mt-0.5 text-sm text-muted">
-            {Math.round(totals.kcal)} / {goals.kcal} ккал
+            {Math.round(totals.kcal)} / {goals.kcal} {t('unit.kcal')}
           </span>
         </div>
       </div>
@@ -161,6 +166,7 @@ const MINI_SIZE = 52
  * нечитаемым, а сам круг всё равно показывает заполненность формой.
  */
 export function CalorieRingMini({ totals, goals, goalDirection }: Props) {
+  const t = useT()
   const ratio = ratioOf(totals, goals)
   const percent = Math.round(ratio * 100)
   const left = goals.kcal - totals.kcal
@@ -172,8 +178,8 @@ export function CalorieRingMini({ totals, goals, goalDirection }: Props) {
         className="shrink-0"
         role="img"
         aria-label={
-          `${percent} процентов дневной нормы` +
-          (over ? `, перебор на ${Math.round(-left)} ккал` : '')
+          t('ring.percentOfDay', { percent }) +
+          (over ? t('ring.overBy', { n: Math.round(-left) }) : '')
         }
       >
         <RingArc size={MINI_SIZE} ratio={ratio} />
@@ -185,7 +191,7 @@ export function CalorieRingMini({ totals, goals, goalDirection }: Props) {
             {percent}%
           </span>
           <span className="truncate text-sm text-muted">
-            {Math.round(totals.kcal)} / {goals.kcal} ккал
+            {Math.round(totals.kcal)} / {goals.kcal} {t('unit.kcal')}
           </span>
         </p>
         <p className={`truncate text-xs ${over ? 'text-danger' : 'text-muted'}`}>
@@ -198,11 +204,11 @@ export function CalorieRingMini({ totals, goals, goalDirection }: Props) {
 
 function hint(left: number, ratio: number, goal: GoalDirection): string {
   if (ratio > OVER_TOLERANCE) {
-    return `Перебор на ${Math.round(-left)} ккал`
+    return tr('ring.over', { n: Math.round(-left) })
   }
   if (ratio >= 0.95) {
-    return goal === 'gain' ? 'Норма набрана' : 'Норма закрыта'
+    return tr(goal === 'gain' ? 'ring.reached' : 'ring.closed')
   }
   const rounded = Math.round(left)
-  return goal === 'gain' ? `Добрать ещё ${rounded} ккал` : `Осталось ${rounded} ккал`
+  return goal === 'gain' ? tr('ring.toGo', { n: rounded }) : tr('ring.left', { n: rounded })
 }

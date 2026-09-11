@@ -1,3 +1,4 @@
+import { dynamicKey, useT } from '@/lib/i18n'
 import { useMemo, useState } from 'react'
 import { Clock, Plus, Repeat } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -10,7 +11,7 @@ import { useFoodPhotoUrls, useFoods } from '@/features/foods/api'
 import { FoodThumb } from '@/features/foods/FoodPhoto'
 import type { Food } from '@/features/foods/types'
 import { useRecentFoodIds } from './api'
-import { MEAL_LABELS, type Meal } from './types'
+import { type Meal } from './types'
 
 type Props = {
   open: boolean
@@ -28,6 +29,7 @@ type Props = {
  * самого поиска.
  */
 export function FoodPicker({ open, meal, userId, onClose, onPick }: Props) {
+  const t = useT()
   const [query, setQuery] = useState('')
   const foods = useFoods()
   const recent = useRecentFoodIds(userId)
@@ -63,9 +65,9 @@ export function FoodPicker({ open, meal, userId, onClose, onPick }: Props) {
   }, [foods.data, recent.data, query])
 
   return (
-    <Sheet open={open} onClose={onClose} title={MEAL_LABELS[meal]} bleed>
+    <Sheet open={open} onClose={onClose} title={t(dynamicKey('meal', meal))} bleed>
       <div className="sticky top-0 z-10 bg-bg px-4 pt-3 pb-2">
-        <SearchInput value={query} onChange={setQuery} placeholder="Что ел?" autoFocus />
+        <SearchInput value={query} onChange={setQuery} placeholder={t('pick.placeholder')} autoFocus />
       </div>
 
       {foods.isPending && <Loading />}
@@ -73,18 +75,18 @@ export function FoodPicker({ open, meal, userId, onClose, onPick }: Props) {
       {mode === 'recent' && (
         <p className="flex items-center gap-1.5 px-4 pt-1 pb-2 text-xs text-muted">
           <Repeat size={13} aria-hidden />
-          Часто и недавно
+          {t('pick.frequent')}
         </p>
       )}
 
       {foods.isSuccess && results.length === 0 && (
         <EmptyState
-          title="Ничего не нашлось"
-          hint="Проверь написание или заведи новый продукт"
+          title={t('pick.nothingFound')}
+          hint={t('pick.nothingHint')}
           action={
             <Link to="/foods/new" onClick={onClose} className="flex items-center gap-1.5 text-sm text-accent">
               <Plus size={16} aria-hidden />
-              Новый продукт
+              {t('pick.newFood')}
             </Link>
           }
         />
@@ -105,9 +107,17 @@ export function FoodPicker({ open, meal, userId, onClose, onPick }: Props) {
                   {food.brand && <span className="text-muted"> · {food.brand}</span>}
                 </span>
                 <span className="mt-0.5 block text-xs text-muted">
-                  {Math.round(food.kcal100)} ккал · <span className="text-protein">Б {trim(food.protein100)}</span>{' '}
-                  <span className="text-fat">Ж {trim(food.fat100)}</span>{' '}
-                  <span className="text-carbs">У {trim(food.carbs100)}</span> на 100 г
+                  {Math.round(food.kcal100)} {t('unit.kcal')} ·{' '}
+                  <span className="text-protein">
+                    {t('macro.p')} {trim(food.protein100)}
+                  </span>{' '}
+                  <span className="text-fat">
+                    {t('macro.f')} {trim(food.fat100)}
+                  </span>{' '}
+                  <span className="text-carbs">
+                    {t('macro.c')} {trim(food.carbs100)}
+                  </span>{' '}
+                  {t('pick.per100')}
                 </span>
               </span>
               {mode === 'recent' && <Clock size={14} className="shrink-0 text-muted" aria-hidden />}

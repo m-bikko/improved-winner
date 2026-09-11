@@ -42,19 +42,19 @@ export function WorkoutsSection({
   return (
     <section className="mt-3 rounded-2xl bg-surface p-4 ring-1 ring-line">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="font-medium">Тренировки</h2>
+        <h2 className="font-medium">{t('workout.section')}</h2>
         <button
           type="button"
           onClick={() => setEditing('new')}
           className="flex items-center gap-1 text-sm text-accent"
         >
           <Plus size={15} aria-hidden />
-          Добавить
+          {t('common.add')}
         </button>
       </div>
 
       {mine.length === 0 ? (
-        <p className="mt-2 text-sm text-muted">За этот день ничего не отмечено.</p>
+        <p className="mt-2 text-sm text-muted">{t('workout.dayEmpty')}</p>
       ) : (
         <ul className="mt-3 flex flex-col gap-2">
           {mine.map((w) => {
@@ -75,9 +75,9 @@ export function WorkoutsSection({
                     {w.note && <span className="block truncate text-sm text-muted">{w.note}</span>}
                   </span>
                   <span className="shrink-0 text-right text-sm text-muted">
-                    {w.minutes} мин
+                    {w.minutes} {t('unit.min')}
                     <br />
-                    {Math.round(w.kcal)} ккал
+                    {Math.round(w.kcal)} {t('unit.kcal')}
                   </span>
                 </button>
               </li>
@@ -88,9 +88,14 @@ export function WorkoutsSection({
 
       {burned > 0 && (
         <p className="mt-3 border-t border-line pt-3 text-sm text-muted">
-          Съедено {Math.round(eatenKcal)} · потрачено {Math.round(burned)} ·{' '}
-          <span className="text-ink">баланс {Math.round(eatenKcal - burned)}</span>
-          {goalKcal !== null && ` из ${Math.round(goalKcal)}`}
+          {t('workout.balance', {
+            eaten: Math.round(eatenKcal),
+            burned: Math.round(burned),
+          })}
+          <span className="text-ink">
+            {t('workout.balanceValue', { n: Math.round(eatenKcal - burned) })}
+          </span>
+          {goalKcal !== null && t('workout.ofGoal', { n: Math.round(goalKcal) })}
         </p>
       )}
 
@@ -138,7 +143,7 @@ function Editor({
   const submit = async () => {
     setError(null)
     if (typeof minutes !== 'number' || minutes < 1 || minutes > 600) {
-      setError('Длительность - от 1 до 600 минут')
+      setError(t('workout.badMinutes'))
       return
     }
     const value = typeof shown === 'number' ? shown : 0
@@ -158,7 +163,7 @@ function Editor({
   }
 
   return (
-    <Sheet open onClose={onClose} title={workout ? 'Тренировка' : 'Новая тренировка'}>
+    <Sheet open onClose={onClose} title={t(workout ? 'workout.title' : 'workout.new')}>
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-2">
           {WORKOUT_KINDS.map((k) => {
@@ -182,42 +187,42 @@ function Editor({
         </div>
 
         <NumberField
-          label="Сколько минут"
+          label={t('workout.minutes')}
           value={minutes}
           onValueChange={setMinutes}
           max={600}
-          suffix="мин"
+          suffix={t('unit.min')}
         />
 
         <NumberField
-          label="Потрачено"
+          label={t('workout.burned')}
           value={shown}
           onValueChange={(v) => {
             setManual(true)
             setKcal(v)
           }}
           max={5000}
-          suffix="ккал"
+          suffix={t('unit.kcal')}
           hint={
             weight === null
-              ? 'Впишите руками: без веса в профиле оценить расход не из чего'
+              ? t('workout.noWeight')
               : manual
-                ? 'Вписано вручную'
-                : `Оценка по весу ${weight} кг - можно переписать`
+                ? t('workout.manual')
+                : t('workout.estimate', { n: weight })
           }
         />
 
         <Field
-          label="Заметка"
+          label={t('common.note')}
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="необязательно"
+          placeholder={t('common.optional')}
         />
 
         {error && <p className="text-sm text-danger">{error}</p>}
 
         <Button onClick={() => void submit()} loading={save.isPending}>
-          Сохранить
+          {t('common.save')}
         </Button>
 
         {workout && (
@@ -227,7 +232,7 @@ function Editor({
             onClick={() => void remove.mutateAsync({ id: workout.id, date }).then(onClose)}
           >
             <Trash2 size={18} aria-hidden />
-            Удалить
+            {t('common.delete')}
           </Button>
         )}
       </div>

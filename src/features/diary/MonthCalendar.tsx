@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
@@ -68,6 +69,7 @@ export function MonthCalendar({
   liveGoal: Macros | null
   onPickDate: (date: string) => void
 }) {
+  const t = useT()
   const anchor = fromLocalISO(currentDate)
   const [cursor, setCursor] = useState(() => ({
     year: anchor.getFullYear(),
@@ -94,16 +96,16 @@ export function MonthCalendar({
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title="Календарь">
+    <Sheet open={open} onClose={onClose} title={t('diary.calendar')}>
       <div className="pb-2">
         <div className="flex items-center justify-between py-2">
-          <button type="button" onClick={() => shift(-1)} aria-label="Предыдущий месяц" className="p-3 text-muted">
+          <button type="button" onClick={() => shift(-1)} aria-label={t('cal.prevMonth')} className="p-3 text-muted">
             <ChevronLeft size={20} aria-hidden />
           </button>
           <span className="text-base font-medium">
             {monthName(cursor.month)} {cursor.year}
           </span>
-          <button type="button" onClick={() => shift(1)} aria-label="Следующий месяц" className="p-3 text-muted">
+          <button type="button" onClick={() => shift(1)} aria-label={t('cal.nextMonth')} className="p-3 text-muted">
             <ChevronRight size={20} aria-hidden />
           </button>
         </div>
@@ -145,11 +147,11 @@ export function MonthCalendar({
         <div className="mt-5 flex flex-col gap-1.5 text-xs text-muted">
           <span className="flex items-center gap-2">
             <span className="size-2.5 rounded-full bg-accent" aria-hidden />
-            внешнее кольцо - калории
+            {t('cal.outerRing')}
           </span>
           <span className="flex items-center gap-2">
             <span className="size-2.5 rounded-full bg-protein" aria-hidden />
-            внутреннее - белок
+            {t('cal.innerRing')}
           </span>
         </div>
       </div>
@@ -182,13 +184,18 @@ function DayCell({
   isSelected: boolean
   onClick: () => void
 }) {
+  const t = useT()
   const empty = kcalRatio === 0 && proteinRatio === 0
 
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={`${day} число, калории ${Math.round(kcalRatio * 100)}%, белок ${Math.round(proteinRatio * 100)}%`}
+      aria-label={t('cal.dayMacros', {
+        day,
+        kcal: Math.round(kcalRatio * 100),
+        protein: Math.round(proteinRatio * 100),
+      })}
       className={`relative flex aspect-square items-center justify-center rounded-xl
                   transition-colors active:bg-raised ${isSelected ? 'bg-raised' : ''}`}
     >

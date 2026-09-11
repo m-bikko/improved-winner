@@ -1,3 +1,4 @@
+import { dynamicKey, useT } from '@/lib/i18n'
 import { useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
@@ -55,9 +56,10 @@ import { diffOrder, moveEntry } from './reorder'
 import { MonthCalendar } from './MonthCalendar'
 import { FoodPicker } from './FoodPicker'
 import { PortionSheet } from './PortionSheet'
-import { MEALS, MEAL_LABELS, sumEntries, type DiaryEntry, type Meal } from './types'
+import { MEALS, sumEntries, type DiaryEntry, type Meal } from './types'
 
 export function DiaryPage() {
+  const t = useT()
   const { user } = useAuth()
   const userId = user?.id ?? ''
 
@@ -74,7 +76,7 @@ export function DiaryPage() {
         <button
           type="button"
           onClick={() => setCalendarOpen(true)}
-          aria-label="Календарь"
+          aria-label={t('diary.calendar')}
           className="p-3 text-ink"
         >
           <CalendarDays size={21} aria-hidden />
@@ -200,7 +202,7 @@ export function DiaryPage() {
         <button
           type="button"
           onClick={() => setDate(shiftDays(date, -1))}
-          aria-label="Предыдущий день"
+          aria-label={t('diary.prevDay')}
           className="p-3 text-muted"
         >
           <ChevronLeft size={20} aria-hidden />
@@ -217,7 +219,7 @@ export function DiaryPage() {
         <button
           type="button"
           onClick={() => setDate(shiftDays(date, 1))}
-          aria-label="Следующий день"
+          aria-label={t('diary.nextDay')}
           className="p-3 text-muted"
         >
           <ChevronRight size={20} aria-hidden />
@@ -227,7 +229,7 @@ export function DiaryPage() {
       {pending > 0 && (
         <p className="mb-2 flex items-center justify-center gap-1.5 rounded-lg bg-raised py-1.5 text-xs text-muted">
           <CloudOff size={13} aria-hidden />
-          {pending} {pending === 1 ? 'запись ждёт' : 'записей ждут'} связи
+          {t.plural('diary.pending', pending).replace('{n}', String(pending))}
         </p>
       )}
 
@@ -245,17 +247,17 @@ export function DiaryPage() {
       {partner && (
         <div className="mt-3 flex gap-1 rounded-xl bg-raised p-1">
           <ModeTab active={!compare} onClick={() => setCompare(false)}>
-            Я
+            {t('diary.me')}
           </ModeTab>
           <ModeTab active={compare} onClick={() => setCompare(true)}>
-            Сравнение
+            {t('diary.compare')}
           </ModeTab>
         </div>
       )}
 
       {compare && partner ? (
         <Comparison
-          mine={{ nickname: me?.nickname ?? 'Я', totals, burned: burnedBy(userId) }}
+          mine={{ nickname: me?.nickname ?? t('diary.me'), totals, burned: burnedBy(userId) }}
           theirs={{
             nickname: partner.nickname,
             totals: sumEntries(partnerDay.data ?? []),
@@ -316,7 +318,7 @@ export function DiaryPage() {
           >
             <span className="flex items-center gap-2 text-sm font-medium">
               <ChartNoAxesColumn size={16} aria-hidden />
-              Итоги месяца
+              {t('diary.monthSummary')}
             </span>
             <ChevronRight size={18} aria-hidden className="text-muted" />
           </Link>
@@ -424,6 +426,7 @@ function Progress({
   goalDirection: GoalDirection
   onExplain: (nutrient: Nutrient) => void
 }) {
+  const t = useT()
   // Без роста и веса норму не посчитать, и выдумывать её нельзя: человек будет
   // ориентироваться на неё каждый день. Поэтому вместо числа - прямое указание,
   // чего не хватает, и кнопка туда, где это заполняется.
@@ -431,16 +434,17 @@ function Progress({
     return (
       <div className="mt-3 flex flex-col items-center gap-3 rounded-xl bg-raised px-5 py-6 text-center">
         <Target size={26} className="text-muted" aria-hidden />
-        <p className="text-2xl font-semibold">{Math.round(totals.kcal)} ккал</p>
+        <p className="text-2xl font-semibold">
+          {Math.round(totals.kcal)} {t('unit.kcal')}
+        </p>
         <p className="text-sm text-muted">
-          Чтобы появилась норма, укажи рост, вес, год рождения и пол. По ним считается
-          суточная норма под твою цель.
+          {t('diary.noGoalHint')}
         </p>
         <Link
           to="/profile"
           className="rounded-xl bg-accent px-5 py-3 text-sm font-medium text-accent-ink"
         >
-          Заполнить профиль
+          {t('diary.fillProfile')}
         </Link>
       </div>
     )
@@ -467,9 +471,9 @@ function Progress({
         </button>
 
         <div className="mt-2.5 grid grid-cols-3 gap-2">
-          <MiniMacro label="Б" value={totals.protein} goal={goals.protein} color="bg-protein" text="text-protein" />
-          <MiniMacro label="Ж" value={totals.fat} goal={goals.fat} color="bg-fat" text="text-fat" />
-          <MiniMacro label="У" value={totals.carbs} goal={goals.carbs} color="bg-carbs" text="text-carbs" />
+          <MiniMacro label={t('macro.p')} value={totals.protein} goal={goals.protein} color="bg-protein" text="text-protein" />
+          <MiniMacro label={t('macro.f')} value={totals.fat} goal={goals.fat} color="bg-fat" text="text-fat" />
+          <MiniMacro label={t('macro.c')} value={totals.carbs} goal={goals.carbs} color="bg-carbs" text="text-carbs" />
         </div>
       </div>
     )
@@ -478,7 +482,7 @@ function Progress({
   return (
     <div className="relative mt-3 rounded-xl bg-raised px-4 py-5">
       <HelpButton
-        label="Что такое калории"
+        label={t('diary.whatAreCalories')}
         onClick={() => onExplain('kcal')}
         className="absolute top-2 left-2"
       />
@@ -486,7 +490,7 @@ function Progress({
         type="button"
         onClick={() => setExpanded(false)}
         aria-expanded
-        aria-label="Свернуть"
+        aria-label={t('diary.collapse')}
         className="absolute top-2 right-2 p-2 text-muted"
       >
         <ChevronUp size={18} aria-hidden />
@@ -496,7 +500,7 @@ function Progress({
 
       <div className="mt-5 grid grid-cols-3 gap-3">
         <MacroBar
-          label="Б"
+          label={t('macro.p')}
           value={totals.protein}
           goal={goals.protein}
           color="bg-protein"
@@ -504,7 +508,7 @@ function Progress({
           onExplain={() => onExplain('protein')}
         />
         <MacroBar
-          label="Ж"
+          label={t('macro.f')}
           value={totals.fat}
           goal={goals.fat}
           color="bg-fat"
@@ -512,7 +516,7 @@ function Progress({
           onExplain={() => onExplain('fat')}
         />
         <MacroBar
-          label="У"
+          label={t('macro.c')}
           value={totals.carbs}
           goal={goals.carbs}
           color="bg-carbs"
@@ -594,6 +598,7 @@ function MacroBar({
   text: string
   onExplain: () => void
 }) {
+  const t = useT()
   return (
     <div>
       <div className="mb-1 flex items-center gap-0.5">
@@ -605,7 +610,11 @@ function MacroBar({
             {Math.round(value)} / {Math.round(goal)}
           </span>
         </p>
-        <HelpButton label={`Что такое ${label}`} onClick={onExplain} className="-my-2 -mr-1" />
+        <HelpButton
+          label={t('diary.whatIs', { name: label })}
+          onClick={onExplain}
+          className="-my-2 -mr-1"
+        />
       </div>
       <Bar value={value} goal={goal} className="h-1.5" color={color} />
     </div>
@@ -652,6 +661,7 @@ function MealSection({
   onRepeat: () => void
   repeating: boolean
 }) {
+  const t = useT()
   const totals = sumEntries(entries)
   const [collapsed, setCollapsed] = useLocalFlag(`diary-meal-${meal}-collapsed`, false)
 
@@ -668,21 +678,29 @@ function MealSection({
           className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-raised"
         >
           <span className="min-w-0 flex-1">
-            <span className="block font-medium">{MEAL_LABELS[meal]}</span>
+            <span className="block font-medium">{t(dynamicKey('meal', meal))}</span>
             {collapsed && entries.length > 0 && (
               <span className="mt-0.5 block truncate text-xs">
-                <span className="text-protein">Б {Math.round(totals.protein)}</span>{' '}
-                <span className="text-fat">Ж {Math.round(totals.fat)}</span>{' '}
-                <span className="text-carbs">У {Math.round(totals.carbs)}</span>
+                <span className="text-protein">
+                  {t('macro.p')} {Math.round(totals.protein)}
+                </span>{' '}
+                <span className="text-fat">
+                  {t('macro.f')} {Math.round(totals.fat)}
+                </span>{' '}
+                <span className="text-carbs">
+                  {t('macro.c')} {Math.round(totals.carbs)}
+                </span>
               </span>
             )}
             {collapsed && entries.length === 0 && (
-              <span className="mt-0.5 block text-xs text-muted">пусто</span>
+              <span className="mt-0.5 block text-xs text-muted">{t('diary.empty')}</span>
             )}
           </span>
 
           {entries.length > 0 && (
-            <span className="shrink-0 text-sm text-muted">{Math.round(totals.kcal)} ккал</span>
+            <span className="shrink-0 text-sm text-muted">
+              {Math.round(totals.kcal)} {t('unit.kcal')}
+            </span>
           )}
           {collapsed ? (
             <ChevronDown size={16} className="shrink-0 text-muted" aria-hidden />
@@ -708,7 +726,9 @@ function MealSection({
           className="flex w-full items-center gap-2 border-t border-line px-4 py-2.5 text-sm text-muted active:bg-raised"
         >
           <CopyPlus size={16} aria-hidden />
-          Повторить вчерашний {MEAL_LABELS[meal].toLowerCase()}
+          {t('diary.repeatYesterday', {
+            meal: t(dynamicKey('meal', meal)).toLowerCase(),
+          })}
         </button>
       )}
 
@@ -719,7 +739,7 @@ function MealSection({
           className="flex w-full items-center gap-2 border-t border-line px-4 py-3 text-sm text-accent active:bg-raised"
         >
           <Plus size={16} aria-hidden />
-          Добавить
+          {t('common.add')}
         </button>
       )}
     </section>
@@ -748,6 +768,7 @@ function Comparison({
   theirEntries: DiaryEntry[]
   loading: boolean
 }) {
+  const t = useT()
   if (loading) return <Loading />
 
   const theirMeals = MEALS.map((meal) => ({
@@ -762,17 +783,23 @@ function Comparison({
           <div key={side.nickname} className="rounded-xl bg-surface px-4 py-4 ring-1 ring-line">
             <p className="text-sm text-muted">{side.nickname}</p>
             <p className="mt-1 text-2xl font-semibold">{Math.round(side.totals.kcal)}</p>
-            <p className="text-xs text-muted">ккал</p>
+            <p className="text-xs text-muted">{t('unit.kcal')}</p>
             <p className="mt-3 text-sm">
-              <span className="text-protein">Б {trim(side.totals.protein)}</span>
+              <span className="text-protein">
+                {t('macro.p')} {trim(side.totals.protein)}
+              </span>
               <br />
-              <span className="text-fat">Ж {trim(side.totals.fat)}</span>
+              <span className="text-fat">
+                {t('macro.f')} {trim(side.totals.fat)}
+              </span>
               <br />
-              <span className="text-carbs">У {trim(side.totals.carbs)}</span>
+              <span className="text-carbs">
+                {t('macro.c')} {trim(side.totals.carbs)}
+              </span>
             </p>
             {side.burned > 0 && (
               <p className="mt-3 border-t border-line pt-2 text-sm text-muted">
-                −{Math.round(side.burned)} на тренировке
+                {t('diary.burnedOnTraining', { n: Math.round(side.burned) })}
               </p>
             )}
           </div>
@@ -780,19 +807,21 @@ function Comparison({
       </div>
 
       <div className="mt-5 flex flex-col gap-3">
-        <p className="text-sm text-muted">Что ел партнёр: {theirs.nickname}</p>
+        <p className="text-sm text-muted">
+          {t('diary.partnerAte', { name: theirs.nickname })}
+        </p>
 
         {theirMeals.length === 0 ? (
           <p className="rounded-xl bg-surface px-4 py-5 text-center text-sm text-muted ring-1 ring-line">
-            За этот день записей нет
+            {t('diary.noEntriesDay')}
           </p>
         ) : (
           theirMeals.map(({ meal, entries }) => (
             <div key={meal} className="rounded-xl bg-surface ring-1 ring-line">
               <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-sm font-medium">{MEAL_LABELS[meal]}</span>
+                <span className="text-sm font-medium">{t(dynamicKey('meal', meal))}</span>
                 <span className="text-sm text-muted">
-                  {Math.round(sumEntries(entries).kcal)} ккал
+                  {Math.round(sumEntries(entries).kcal)} {t('unit.kcal')}
                 </span>
               </div>
               <ul className="border-t border-line">
@@ -803,10 +832,12 @@ function Comparison({
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm">{entry.name}</span>
-                      <span className="text-xs text-muted">{trim(entry.grams)} г</span>
+                      <span className="text-xs text-muted">
+                        {trim(entry.grams)} {t('unit.gram')}
+                      </span>
                     </span>
                     <span className="shrink-0 text-sm text-muted">
-                      {Math.round(entry.kcal)} ккал
+                      {Math.round(entry.kcal)} {t('unit.kcal')}
                     </span>
                   </li>
                 ))}
