@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, ScanFace } from 'lucide-react'
 import { ACCOUNTS, PIN_LENGTH, type Account } from '@/lib/accounts'
+import { biometricsAvailable, hasBiometrics, unlockWithBiometrics } from '@/lib/biometrics'
 import { useAuth, type SignInFailure } from './AuthProvider'
 import { PinPad } from './PinPad'
 
@@ -36,6 +37,10 @@ export function LoginScreen() {
   const [now, setNow] = useState(() => Date.now())
 
   const submitting = useRef(false)
+  // Автоматическую попытку делаем один раз на выбор аккаунта: повторный
+  // запрос Face ID после того, как его отменили, - это спор с человеком
+  const autoTried = useRef<string | null>(null)
+  const [biometrics, setBiometrics] = useState(false)
 
   const lockLeft = Math.max(0, Math.ceil((lockUntil - now) / 1000))
 
@@ -75,6 +80,49 @@ export function LoginScreen() {
       })
   }, [pin, account, signIn, attempts, lockLeft])
 
+  // Есть ли чем разблокировать этот аккаунт
+  useEffect(() => {
+    if (!account) {
+      setBiometrics(false)
+      return
+    }
+    let alive = true
+    void (async () => {
+      const ok = hasBiometrics(account) && (await biometricsAvailable())
+      if (alive) setBiometrics(ok)
+    })()
+    return () => {
+      alive = false
+    }
+  }, [account])
+
+  /**
+   * Разблокировка отпечатком или лицом.
+   *
+   * Отмена - не ошибка: человек передумал, и PIN-пад никуда не делся.
+   * Поэтому сообщение показываем только на настоящем сбое.
+   */
+  const unlock = async (target: Account, silent: boolean) => {
+    setBusy(true)
+    try {
+      const saved = await unlockWithBiometrics(target)
+      if (saved) setPin(saved)
+    } catch {
+      if (!silent) setError('Не удалось подтвердить — введи PIN')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // Одна автоматическая попытка при заходе на экран PIN
+  useEffect(() => {
+    if (!account || !biometrics || autoTried.current === account.email) return
+    autoTried.current = account.email
+    void unlock(account, true)
+    // unlock стабильна по смыслу; следим за готовностью
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account, biometrics])
+
   if (!account) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-10 px-6">
@@ -111,18 +159,31 @@ export function LoginScreen() {
         shakeKey={shakeKey}
         disabled={busy || lockLeft > 0}
         footer={
-          <button
-            type="button"
-            onClick={() => {
-              setAccount(null)
-              setPin('')
-              setError(null)
-            }}
-            className="flex items-center gap-1 py-2 text-sm text-muted"
-          >
-            <ChevronLeft size={16} aria-hidden />
-            Сменить пользователя
-          </button>
+          <div className="flex flex-col items-center gap-1">
+            {biometrics && (
+              <button
+                type="button"
+                onClick={() => void unlock(account, false)}
+                disabled={busy}
+                className="flex items-center gap-2 py-2 text-sm text-accent disabled:opacity-50"
+              >
+                <ScanFace size={17} aria-hidden />
+                Войти по Face ID
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setAccount(null)
+                setPin('')
+                setError(null)
+              }}
+              className="flex items-center gap-1 py-2 text-sm text-muted"
+            >
+              <ChevronLeft size={16} aria-hidden />
+              Сменить пользователя
+            </button>
+          </div>
         }
       />
     </main>

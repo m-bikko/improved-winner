@@ -6,6 +6,7 @@ import {
   ChevronRight,
   KeyRound,
   Scale,
+  ScanFace,
   Send,
   Sparkles,
   Target,
@@ -21,6 +22,12 @@ import {
   type Sex,
 } from '@/lib/nutrition'
 import { PIN_LENGTH } from '@/lib/accounts'
+import {
+  biometricsAvailable,
+  enrollBiometrics,
+  forgetBiometrics,
+  hasBiometrics,
+} from '@/lib/biometrics'
 import { useAuth } from '@/auth/AuthProvider'
 import { PinPad } from '@/auth/PinPad'
 import { useFreezeDayGoal } from '@/features/diary/api'
@@ -365,7 +372,125 @@ function ProfileForm({ profile }: { profile: Profile }) {
       </Button>
 
       <ChangePinSheet open={pinOpen} onClose={() => setPinOpen(false)} />
+
+      <FaceIdRow />
     </div>
+  )
+}
+
+/**
+ * Вход по Face ID.
+ *
+ * Включение требует ввести PIN и проверяется настоящим входом: запомнить
+ * неверный значило бы сделать кнопку, которая всегда отказывает.
+ *
+ * На экране прямо сказано, чего это НЕ даёт. Проверка проходит на устройстве
+ * и сервером не сверяется, а PIN лежит рядом с refresh-токеном, который
+ * и без него открывает всё то же самое. Face ID тут заменяет набор цифр,
+ * а не добавляет защиту, и делать вид, что добавляет, нельзя.
+ */
+function FaceIdRow() {
+  const { account, signIn } = useAuth()
+  const [available, setAvailable] = useState(false)
+  const [on, setOn] = useState(false)
+  const [asking, setAsking] = useState(false)
+  const [pin, setPin] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [shake, setShake] = useState(0)
+
+  useEffect(() => {
+    if (!account) return
+    let alive = true
+    void biometricsAvailable().then((ok) => {
+      if (!alive) return
+      setAvailable(ok)
+      setOn(hasBiometrics(account))
+    })
+    return () => {
+      alive = false
+    }
+  }, [account])
+
+  if (!account || !available) return null
+
+  const finish = async (value: string) => {
+    if (value.length !== PIN_LENGTH || busy) return
+    setBusy(true)
+    setError(null)
+    const failure = await signIn(account, value)
+    if (failure) {
+      setError(failure.kind === 'wrong-pin' ? 'Неверный PIN' : 'Не удалось проверить PIN')
+      setShake((k) => k + 1)
+      setPin('')
+      setBusy(false)
+      return
+    }
+    try {
+      await enrollBiometrics(account, value)
+      setOn(true)
+      setAsking(false)
+      setPin('')
+    } catch {
+      setError('Устройство не создало ключ')
+      setShake((k) => k + 1)
+      setPin('')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <>
+      <div className="flex items-start justify-between gap-3 rounded-xl bg-surface px-4 py-4 ring-1 ring-line">
+        <div className="min-w-0">
+          <p className="flex items-center gap-2 text-sm font-medium">
+            <ScanFace size={16} aria-hidden />
+            Вход по Face ID
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            Заменяет набор PIN, но не усиливает защиту: проверка идёт на устройстве,
+            а PIN хранится рядом с уже сохранённым входом.
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={on}
+          aria-label="Вход по Face ID"
+          onClick={() => {
+            if (on) {
+              forgetBiometrics(account)
+              setOn(false)
+            } else {
+              setError(null)
+              setPin('')
+              setAsking(true)
+            }
+          }}
+          className={`mt-0.5 size-6 shrink-0 rounded-md ring-1 transition-colors ${
+            on ? 'bg-accent ring-accent' : 'bg-bg ring-line'
+          }`}
+        />
+      </div>
+
+      <Sheet open={asking} onClose={() => setAsking(false)} title="Вход по Face ID">
+        <div className="flex flex-col items-center py-2">
+          <PinPad
+            title="Подтверди PIN"
+            subtitle="Чтобы запомнить его для Face ID"
+            value={pin}
+            onChange={(next) => {
+              setPin(next)
+              void finish(next)
+            }}
+            error={error}
+            shakeKey={shake}
+            disabled={busy}
+          />
+        </div>
+      </Sheet>
+    </>
   )
 }
 
