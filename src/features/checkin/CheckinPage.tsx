@@ -3,9 +3,9 @@ import { Check, Flame, Trash2 } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
 import { useProfiles } from '@/features/profile/api'
 import { formatDayLabel, todayLocal } from '@/lib/date'
-import { plural } from '@/lib/plural'
 import { dynamicKey, useT } from '@/lib/i18n'
 import { Button } from '@/ui/Button'
+import { Loading } from '@/ui/States'
 import {
   useCheckins,
   useDeleteCheckin,
@@ -39,6 +39,7 @@ import {
  * бросает. Два раза в месяц - чтобы прощение осталось прощением.
  */
 export function CheckinPage() {
+  const t = useT()
   const userId = useUserId()
   const profiles = useProfiles()
   const all = useCheckins()
@@ -55,7 +56,7 @@ export function CheckinPage() {
   const [editing, setEditing] = useState(false)
 
   if (all.isPending || profiles.isPending) {
-    return <p className="px-4 py-10 text-center text-muted">Загрузка…</p>
+    return <Loading />
   }
 
   return (
@@ -71,7 +72,7 @@ export function CheckinPage() {
         />
       ) : (
         <Card
-          title={`Я${me?.nickname ? ` - ${me.nickname}` : ''}`}
+          title={me?.nickname ? t('checkin.meNamed', { name: me.nickname }) : t('checkin.me')}
           checkin={mine}
           streak={streaks.data?.[userId] ?? 0}
           onEdit={() => setEditing(true)}
@@ -79,7 +80,7 @@ export function CheckinPage() {
       )}
 
       <Card
-        title={partner?.nickname ?? 'Партнёр'}
+        title={partner?.nickname ?? t('partner')}
         checkin={theirs ?? null}
         streak={partner ? (streaks.data?.[partner.userId] ?? 0) : 0}
         onEdit={null}
@@ -87,7 +88,7 @@ export function CheckinPage() {
 
       <Missed days={restorable.data ?? []} today={today} />
 
-      <History all={all.data ?? []} userId={userId} partnerName={partner?.nickname ?? 'Партнёр'} />
+      <History all={all.data ?? []} userId={userId} partnerName={partner?.nickname ?? t('partner')} />
     </div>
   )
 }
@@ -113,13 +114,13 @@ function Card({
         </p>
         {onEdit && (
           <button type="button" onClick={onEdit} className="text-sm text-accent underline">
-            Изменить
+            {t('common.edit')}
           </button>
         )}
       </div>
 
       {!checkin ? (
-        <p className="mt-2 text-sm text-muted">Сегодня ещё не отмечался.</p>
+        <p className="mt-2 text-sm text-muted">{t('checkin.notYet')}</p>
       ) : (
         <>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -152,10 +153,11 @@ function Card({
  * день» - разные вещи, и вторая как раз и есть то, что жалко потерять.
  */
 function Streak({ days }: { days: number }) {
+  const t = useT()
   return (
     <span
       className="flex items-baseline gap-1 text-sm text-accent"
-      title={`${days} ${plural(days, 'день', 'дня', 'дней')} подряд`}
+      title={t('checkin.streak', { n: days, unit: t.plural('unit.day', days) })}
     >
       <Flame size={14} aria-hidden className="self-center" />
       {days}
@@ -170,6 +172,7 @@ function Streak({ days }: { days: number }) {
  * оставить человека гадать, почему вчера она была, а сегодня нет.
  */
 function Missed({ days, today }: { days: Restorable[]; today: string }) {
+  const t = useT()
   const restore = useRestoreDay(today)
   const [error, setError] = useState<string | null>(null)
 
@@ -180,11 +183,11 @@ function Missed({ days, today }: { days: Restorable[]; today: string }) {
   return (
     <section className="flex flex-col gap-3 rounded-2xl bg-surface p-4 ring-1 ring-line">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="font-medium">Пропущенные дни</p>
+        <p className="font-medium">{t('checkin.missed')}</p>
         <p className="text-sm text-muted">
           {left > 0
-            ? `${left} ${plural(left, 'восстановление', 'восстановления', 'восстановлений')} в этом месяце`
-            : 'в этом месяце восстановлений не осталось'}
+            ? t.plural('checkin.restoresLeft', left).replace('{n}', String(left))
+            : t('checkin.noRestores')}
         </p>
       </div>
 
@@ -205,7 +208,7 @@ function Missed({ days, today }: { days: Restorable[]; today: string }) {
                          text-accent ring-1 ring-line disabled:opacity-50"
             >
               <Flame size={14} aria-hidden />
-              Восстановить
+              {t('checkin.restore')}
             </button>
           ) : (
             <span className="text-sm text-muted">-</span>
@@ -262,7 +265,7 @@ function Editor({
 
   return (
     <section className="flex flex-col gap-4 rounded-2xl bg-surface p-4 ring-1 ring-line">
-      <p className="font-medium">Как ты сегодня?</p>
+      <p className="font-medium">{t('checkin.question')}</p>
 
       {STATE_GROUPS.map((group) => (
         <div key={group} className="flex flex-col gap-2">
@@ -291,12 +294,12 @@ function Editor({
       ))}
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm text-muted">Словами</span>
+        <span className="text-sm text-muted">{t('checkin.words')}</span>
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}
-          placeholder="необязательно"
+          placeholder={t('common.optional')}
           className="w-full min-w-0 resize-none rounded-xl bg-bg px-4 py-3 ring-1 ring-line
                      outline-none focus:ring-2 focus:ring-accent placeholder:text-muted"
         />
@@ -306,12 +309,12 @@ function Editor({
 
       <Button onClick={() => void submit()} loading={save.isPending || remove.isPending}>
         <Check size={18} aria-hidden />
-        {empty && current ? 'Стереть отметку' : 'Сохранить'}
+        {t(empty && current ? 'checkin.erase' : 'common.save')}
       </Button>
 
       {onCancel && (
         <button type="button" onClick={onCancel} className="text-sm text-muted underline">
-          Отмена
+          {t('common.cancel')}
         </button>
       )}
 
@@ -322,7 +325,7 @@ function Editor({
           onClick={() => void remove.mutateAsync(date).then(onDone)}
         >
           <Trash2 size={18} aria-hidden />
-          Стереть отметку
+          {t('checkin.erase')}
         </Button>
       )}
     </section>
@@ -344,6 +347,7 @@ function History({
   userId: string
   partnerName: string
 }) {
+  const t = useT()
   const today = todayLocal()
   const days = useMemo(() => {
     const set = [...new Set(all.map((c) => c.date))].filter((d) => d !== today).sort().reverse()
@@ -354,14 +358,14 @@ function History({
 
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="px-1 text-sm text-muted">Прошлые дни</h2>
+      <h2 className="px-1 text-sm text-muted">{t('checkin.pastDays')}</h2>
       {days.map((date) => {
         const mine = all.find((c) => c.date === date && c.userId === userId)
         const theirs = all.find((c) => c.date === date && c.userId !== userId)
         return (
           <div key={date} className="rounded-2xl bg-surface p-4 ring-1 ring-line">
             <p className="text-sm font-medium">{formatDayLabel(date)}</p>
-            <Row label="Я" checkin={mine ?? null} />
+            <Row label={t('checkin.me')} checkin={mine ?? null} />
             <Row label={partnerName} checkin={theirs ?? null} />
           </div>
         )

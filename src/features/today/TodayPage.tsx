@@ -13,11 +13,10 @@ import {
 } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
 import { fromLocalISO, todayLocal } from '@/lib/date'
-import { plural } from '@/lib/plural'
 import { Loading } from '@/ui/States'
 import { useCheckins, useStreaks } from '@/features/checkin/api'
 import { STATE_BY_ID } from '@/features/checkin/states'
-import { dynamicKey, useT } from '@/lib/i18n'
+import { activeLocale, dynamicKey, useT } from '@/lib/i18n'
 import { DEFAULT_SETTINGS, useCycleSettings, useCycleShared, usePeriods } from '@/features/cycle/api'
 import { cycleDay } from '@/features/cycle/cycle'
 import { useOccasions } from '@/features/dates/api'
@@ -43,6 +42,7 @@ import { NudgeButton } from './NudgeButton'
  * правды - и однажды показать на главной не то, что внутри.
  */
 export function TodayPage() {
+  const t = useT()
   const userId = useUserId()
   const today = todayLocal()
 
@@ -79,8 +79,8 @@ export function TodayPage() {
         today={today}
         userId={userId}
         partnerId={partnerId}
-        myName={me?.nickname ?? 'Я'}
-        partnerName={partner?.nickname ?? 'Партнёр'}
+        myName={me?.nickname ?? t('diary.me')}
+        partnerName={partner?.nickname ?? t('partner')}
         checkins={checkins.data ?? []}
         streaks={streaks.data ?? {}}
       />
@@ -88,17 +88,17 @@ export function TodayPage() {
       <Food
         eaten={sumEntries(myDay.data ?? []).kcal}
         goal={goalsFor(me)?.kcal ?? null}
-        partnerName={partner?.nickname ?? 'Партнёр'}
+        partnerName={partner?.nickname ?? t('partner')}
         partnerEaten={theirDay.data ? sumEntries(theirDay.data).kcal : null}
       />
 
       <Tasks tasks={tasks.data ?? []} today={today} />
 
-      <Cycle userId={userId} partnerId={partnerId} partnerName={partner?.nickname ?? 'Партнёр'} />
+      <Cycle userId={userId} partnerId={partnerId} partnerName={partner?.nickname ?? t('partner')} />
 
       <NextDate list={dates.data ?? []} />
 
-      <Reply reply={reply.data ?? null} userId={userId} partnerName={partner?.nickname ?? 'Партнёр'} />
+      <Reply reply={reply.data ?? null} userId={userId} partnerName={partner?.nickname ?? t('partner')} />
     </div>
   )
 }
@@ -168,13 +168,13 @@ function Mood({
             '-'}
         </p>
       ) : (
-        <p className="mt-1 text-sm text-muted">{own ? 'ты ещё не отмечался' : 'пока не отмечалась'}</p>
+        <p className="mt-1 text-sm text-muted">{t(own ? 'today.notMarkedYou' : 'today.notMarkedPartner')}</p>
       )}
     </div>
   )
 
   return (
-    <Tile to="/checkin" icon={Smile} title="Как мы">
+    <Tile to="/checkin" icon={Smile} title={t('today.howAreWe')}>
       <div className="flex gap-4">
         {side(myName, userId, mine, true)}
         {side(partnerName, partnerId, theirs, false)}
@@ -194,20 +194,21 @@ function Food({
   partnerName: string
   partnerEaten: number | null
 }) {
+  const t = useT()
   const left = goal === null ? null : Math.round(goal - eaten)
 
   return (
-    <Tile to="/diary" icon={NotebookPen} title="Еда">
+    <Tile to="/diary" icon={NotebookPen} title={t('today.food')}>
       <p className="text-2xl font-semibold tabular-nums">
         {Math.round(eaten)}
         {goal !== null && <span className="text-base font-normal text-muted"> / {Math.round(goal)}</span>}
       </p>
       <p className="text-sm text-muted">
         {left === null
-          ? 'ккал'
+          ? t('unit.kcal')
           : left >= 0
-            ? `ккал · осталось ${left}`
-            : `ккал · сверх нормы ${-left}`}
+            ? t('today.kcalLeft', { n: left })
+            : t('today.kcalOver', { n: -left })}
         {partnerEaten !== null && ` · ${partnerName} ${Math.round(partnerEaten)}`}
       </p>
     </Tile>
@@ -215,6 +216,7 @@ function Food({
 }
 
 function Tasks({ tasks, today }: { tasks: Parameters<typeof occurrencesOn>[0]; today: string }) {
+  const t = useT()
   const items = useMemo(() => occurrencesOn(tasks, today), [tasks, today])
   const open = items.filter((o) => o.task.doneAt === null)
   const overdue = useMemo(
@@ -226,9 +228,9 @@ function Tasks({ tasks, today }: { tasks: Parameters<typeof occurrencesOn>[0]; t
   )
 
   return (
-    <Tile to="/tasks" icon={ListChecks} title="Задачи">
+    <Tile to="/tasks" icon={ListChecks} title={t('today.tasks')}>
       {open.length === 0 ? (
-        <p className="text-sm text-muted">На сегодня ничего не назначено.</p>
+        <p className="text-sm text-muted">{t('today.noTasks')}</p>
       ) : (
         <ul className="flex flex-col gap-0.5">
           {open.slice(0, 3).map((o) => (
@@ -237,14 +239,16 @@ function Tasks({ tasks, today }: { tasks: Parameters<typeof occurrencesOn>[0]; t
             </li>
           ))}
           {open.length > 3 && (
-            <li className="text-sm text-muted">и ещё {open.length - 3}</li>
+            <li className="text-sm text-muted">
+              {t('today.andMore', { n: open.length - 3 })}
+            </li>
           )}
         </ul>
       )}
       {overdue > 0 && (
         <p className="mt-2 flex items-center gap-1.5 text-sm text-danger">
           <TriangleAlert size={14} aria-hidden />
-          {overdue} {plural(overdue, 'просрочена', 'просрочены', 'просрочено')}
+          {t.plural('today.overdue', overdue).replace('{n}', String(overdue))}
         </p>
       )}
     </Tile>
@@ -283,7 +287,7 @@ function Cycle({
   if (!state) return null
 
   return (
-    <Tile to="/cycle" icon={Droplet} title={own ? 'Цикл' : `Цикл · ${partnerName}`}>
+    <Tile to="/cycle" icon={Droplet} title={own ? t('today.cycle') : t('today.cycleOf', { name: partnerName })}>
       <p className="text-sm">
         {t('cyc.dayN', { n: state.day })} · {t(dynamicKey('phase', state.phase))}
       </p>
@@ -292,20 +296,21 @@ function Cycle({
 }
 
 function NextDate({ list }: { list: { title: string; days: number }[] }) {
+  const t = useT()
   const next = list.find((o) => o.days <= 45)
   if (!next) return null
 
   return (
-    <Tile to="/dates" icon={CalendarHeart} title="Ближайшая дата">
+    <Tile to="/dates" icon={CalendarHeart} title={t('today.nextDate')}>
       <p className="text-sm">
         {next.title}
         <span className="text-muted">
           {' — '}
           {next.days === 0
-            ? 'сегодня'
+            ? t('cyc.todayLower')
             : next.days === 1
-              ? 'завтра'
-              : `через ${next.days} ${plural(next.days, 'день', 'дня', 'дней')}`}
+              ? t('common.tomorrow').toLowerCase()
+              : t('dates.inDays', { n: next.days, unit: t.plural('unit.day', next.days) })}
         </span>
       </p>
     </Tile>
@@ -321,9 +326,10 @@ function Reply({
   userId: string
   partnerName: string
 }) {
+  const t = useT()
   if (!reply) return null
   const mine = reply.authorId === userId
-  const when = new Date(reply.createdAt).toLocaleString('ru-RU', {
+  const when = new Date(reply.createdAt).toLocaleString(activeLocale(), {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
@@ -331,10 +337,10 @@ function Reply({
   })
 
   return (
-    <Tile to={`/topics/${reply.topicId}`} icon={MessagesSquare} title="Последний ответ">
+    <Tile to={`/topics/${reply.topicId}`} icon={MessagesSquare} title={t('today.lastReply')}>
       <p className="truncate text-sm">{reply.topicTitle}</p>
       <p className="text-sm text-muted">
-        {mine ? 'ты' : partnerName} · {when}
+        {mine ? t('today.you') : partnerName} · {when}
       </p>
     </Tile>
   )

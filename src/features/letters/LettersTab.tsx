@@ -1,9 +1,9 @@
+import { useT } from '@/lib/i18n'
 import { useMemo, useRef, useState } from 'react'
 import { Check, ImagePlus, Mail, MailOpen, Plus, X } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
 import { fromLocalISO, shiftDays, todayLocal } from '@/lib/date'
 import { formatBytes, prepareImage, type PreparedImage } from '@/lib/image'
-import { plural } from '@/lib/plural'
 import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
 import { PhotoViewer } from '@/ui/PhotoViewer'
@@ -43,6 +43,7 @@ function day(iso: string): string {
  * а меню и так из десяти пунктов.
  */
 export function LettersTab() {
+  const t = useT()
   const userId = useUserId()
   const letters = useLetters()
   const inFlight = useLettersInFlight()
@@ -70,8 +71,8 @@ export function LettersTab() {
     <>
       {arrived.length === 0 ? (
         <EmptyState
-          title="Писем пока не приходило"
-          hint="Написали сегодня - придёт в выбранный день. До срока письма не видно никому, включая вас."
+          title={t('letter.emptyTitle')}
+          hint={t('letter.emptyHint')}
         />
       ) : (
         <ul className="flex flex-col gap-2">
@@ -91,14 +92,14 @@ export function LettersTab() {
       {flying > 0 && (
         <p className="mt-4 flex items-center justify-center gap-2 text-sm text-muted">
           <Mail size={15} aria-hidden className="text-accent" />
-          {flying} {plural(flying, 'ваше письмо', 'ваших письма', 'ваших писем')} в пути
+          {t.plural('letter.flying', flying).replace('{n}', String(flying))}
         </p>
       )}
 
       <button
         type="button"
         onClick={() => setWriting(true)}
-        aria-label="Новое письмо"
+        aria-label={t('letter.new')}
         className="fixed right-5 bottom-6 z-20 flex size-14 items-center justify-center
                    rounded-full bg-accent text-accent-ink shadow-lg
                    transition-transform active:scale-95"
@@ -109,7 +110,7 @@ export function LettersTab() {
 
       {writing && <Editor onClose={() => setWriting(false)} />}
       {viewing && (
-        <PhotoViewer url={viewing} alt="Снимок из письма" onClose={() => setViewing(null)} />
+        <PhotoViewer url={viewing} alt={t('letter.photoAlt')} onClose={() => setViewing(null)} />
       )}
     </>
   )
@@ -126,23 +127,24 @@ function Card({
   url: string | undefined
   onView: (url: string) => void
 }) {
+  const t = useT()
   const profiles = useProfiles()
   const mine = letter.authorId === userId
-  const author = profiles.data?.find((p) => p.userId === letter.authorId)?.nickname ?? 'Партнёр'
+  const author = profiles.data?.find((p) => p.userId === letter.authorId)?.nickname ?? t('partner')
 
   return (
     <div className="rounded-2xl bg-surface p-4 ring-1 ring-line">
       <div className="flex items-center gap-2 text-sm text-muted">
         <MailOpen size={15} aria-hidden />
-        пришло {day(letter.deliverOn)}
+        {t('letter.arrived', { day: day(letter.deliverOn) })}
         {!mine && ` · ${author}`}
-        {mine && letter.audience === 'both' && ' · обоим'}
+        {mine && letter.audience === 'both' && t('letter.toBoth')}
       </div>
       {url && (
         <button
           type="button"
           onClick={() => onView(url)}
-          aria-label="Посмотреть снимок из письма"
+          aria-label={t('letter.viewPhoto')}
           className="mt-3 block w-full overflow-hidden rounded-xl bg-raised"
         >
           {/* object-contain, а не cover: снимок в письме не превью в сетке,
@@ -151,12 +153,15 @@ function Card({
         </button>
       )}
       <p className="mt-2 text-sm whitespace-pre-wrap">{letter.body}</p>
-      <p className="mt-2 text-xs text-muted">написано {day(letter.createdAt.slice(0, 10))}</p>
+      <p className="mt-2 text-xs text-muted">
+        {t('letter.written', { day: day(letter.createdAt.slice(0, 10)) })}
+      </p>
     </div>
   )
 }
 
 function Editor({ onClose }: { onClose: () => void }) {
+  const t = useT()
   const save = useSaveLetter()
   const [body, setBody] = useState('')
   // По умолчанию через год: письмо «на завтра» - это записка, а не письмо
@@ -183,11 +188,11 @@ function Editor({ onClose }: { onClose: () => void }) {
   const submit = async () => {
     setError(null)
     if (body.trim() === '') {
-      setError('Пустое письмо отправлять незачем')
+      setError(t('letter.empty'))
       return
     }
     if (deliverOn <= todayLocal()) {
-      setError('День доставки должен быть в будущем')
+      setError(t('letter.pastDate'))
       return
     }
     try {
@@ -215,44 +220,45 @@ function Editor({ onClose }: { onClose: () => void }) {
    */
   if (sealed) {
     return (
-      <Sheet open onClose={onClose} title="Запечатано">
+      <Sheet open onClose={onClose} title={t('letter.sealedTitle')}>
         <div className="flex flex-col items-center gap-4 py-4 text-center">
           <span className="flex size-14 items-center justify-center rounded-full bg-accent text-accent-ink">
             <Check size={28} aria-hidden />
           </span>
           <div>
-            <p className="font-medium">Письмо запечатано</p>
+            <p className="font-medium">{t('letter.sealedHead')}</p>
             <p className="mt-1 text-sm text-muted">
-              Придёт {day(deliverOn)}
-              {audience === 'both' ? ', вам обоим' : ''}
-              {photo ? ' — вместе со снимком' : ''}. До этого дня письма не видно никому -
-              включая вас.
+              {t('letter.sealedBody', {
+                day: day(deliverOn),
+                who: audience === 'both' ? t('letter.sealedBoth') : '',
+                photo: photo ? t('letter.sealedPhoto') : '',
+              })}
             </p>
           </div>
-          <Button onClick={onClose}>Готово</Button>
+          <Button onClick={onClose}>{t('common.done')}</Button>
         </div>
       </Sheet>
     )
   }
 
   return (
-    <Sheet open onClose={onClose} title="Письмо в будущее">
+    <Sheet open onClose={onClose} title={t('letter.title')}>
       <div className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-muted">Что написать</span>
+          <span className="text-sm text-muted">{t('letter.what')}</span>
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={6}
             autoFocus
-            placeholder="Прочитаешь это через год…"
+            placeholder={t('letter.placeholder')}
             className="w-full min-w-0 resize-none rounded-xl bg-surface px-4 py-3 ring-1 ring-line
                        outline-none focus:ring-2 focus:ring-accent placeholder:text-muted"
           />
         </label>
 
         <div className="flex flex-col gap-2">
-          <span className="text-sm text-muted">Снимок</span>
+          <span className="text-sm text-muted">{t('letter.photo')}</span>
           <input
             ref={input}
             type="file"
@@ -275,7 +281,7 @@ function Editor({ onClose }: { onClose: () => void }) {
                   URL.revokeObjectURL(photo.url)
                   setPhoto(null)
                 }}
-                aria-label="Убрать снимок"
+                aria-label={t('letter.removePhoto')}
                 className="absolute top-2 right-2 rounded-full bg-black/60 p-2 text-white"
               >
                 <X size={16} aria-hidden />
@@ -291,18 +297,18 @@ function Editor({ onClose }: { onClose: () => void }) {
               className="flex items-center gap-2 self-start rounded-xl bg-raised px-4 py-3 text-sm ring-1 ring-line"
             >
               <ImagePlus size={17} aria-hidden className="text-muted" />
-              Приложить снимок
+              {t('letter.attachPhoto')}
             </button>
           )}
         </div>
 
         <div className="flex flex-col gap-2">
-          <span className="text-sm text-muted">Кому</span>
+          <span className="text-sm text-muted">{t('letter.to')}</span>
           <div className="flex flex-wrap gap-2">
             {(
               [
-                ['partner', 'Партнёру'],
-                ['both', 'Обоим'],
+                ['partner', 'letter.toPartner'],
+                ['both', 'letter.toBothChoice'],
               ] as const
             ).map(([id, label]) => (
               <button
@@ -316,25 +322,25 @@ function Editor({ onClose }: { onClose: () => void }) {
                     : 'bg-raised text-ink ring-1 ring-line'
                 }`}
               >
-                {label}
+                {t(label)}
               </button>
             ))}
           </div>
         </div>
 
         <Field
-          label="Когда придёт"
+          label={t('letter.when')}
           type="date"
           value={deliverOn}
           min={shiftDays(todayLocal(), 1)}
           onChange={(e) => setDeliverOn(e.target.value)}
-          hint="Утром выбранного дня. После запечатывания письмо не поправить и не перечитать"
+          hint={t('letter.whenHint')}
         />
 
         {error && <p className="text-sm text-danger">{error}</p>}
 
         <Button onClick={() => void submit()} loading={save.isPending}>
-          Запечатать
+          {t('letter.seal')}
         </Button>
       </div>
     </Sheet>

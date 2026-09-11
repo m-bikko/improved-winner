@@ -5,6 +5,7 @@ import { ru, type Key } from './ru'
 // Ключ реэкспортируем: в компонентах встречаются таблицы, где ключ лежит
 // полем, и без типа они становятся просто строками
 export type { Key }
+export { activeLang, activeLocale } from './lang'
 import { kk } from './kk'
 import { en } from './en'
 

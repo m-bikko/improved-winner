@@ -1,9 +1,9 @@
+import { activeLocale, dynamicKey, tr, trPlural, useT } from '@/lib/i18n'
 import { useState } from 'react'
 import { Cake, CalendarHeart, Plus, Star, Trash2 } from 'lucide-react'
 import { useLocalFlag } from '@/lib/localFlag'
 import { LettersTab } from '@/features/letters/LettersTab'
 import { fromLocalISO, todayLocal } from '@/lib/date'
-import { plural } from '@/lib/plural'
 import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
 import { Sheet } from '@/ui/Sheet'
@@ -16,10 +16,10 @@ import {
   type OccasionKind,
 } from './api'
 
-const KINDS: { id: OccasionKind; label: string; icon: typeof Cake }[] = [
-  { id: 'birthday', label: 'День рождения', icon: Cake },
-  { id: 'anniversary', label: 'Годовщина', icon: CalendarHeart },
-  { id: 'other', label: 'Другое', icon: Star },
+const KINDS: { id: OccasionKind; icon: typeof Cake }[] = [
+  { id: 'birthday', icon: Cake },
+  { id: 'anniversary', icon: CalendarHeart },
+  { id: 'other', icon: Star },
 ]
 
 const KIND_BY_ID = Object.fromEntries(KINDS.map((k) => [k.id, k])) as Record<
@@ -39,6 +39,7 @@ const KIND_BY_ID = Object.fromEntries(KINDS.map((k) => [k.id, k])) as Record<
  * Напоминание приходит дважды: за неделю - чтобы успеть с подарком, - и в день.
  */
 export function DatesPage() {
+  const t = useT()
   const today = todayLocal()
   const list = useOccasions(today)
   const [editing, setEditing] = useState<Occasion | 'new' | null>(null)
@@ -55,10 +56,10 @@ export function DatesPage() {
     <div className="mx-auto max-w-2xl px-4 pt-3 pb-28">
       <div className="mb-4 flex gap-1 rounded-xl bg-raised p-1">
         <TabButton active={!tab} onClick={() => setTab(false)}>
-          Даты
+          {t('dates.tabDates')}
         </TabButton>
         <TabButton active={tab} onClick={() => setTab(true)}>
-          Письма
+          {t('dates.tabLetters')}
         </TabButton>
       </div>
 
@@ -103,12 +104,13 @@ function DatesTab({
   onEdit: (value: Occasion | 'new' | null) => void
   editing: Occasion | 'new' | null
 }) {
+  const t = useT()
   return (
     <>
       {items.length === 0 ? (
         <EmptyState
-          title="Пока пусто"
-          hint="Дни рождения, годовщины, всё что не хочется вспоминать в последний момент. Напомним за неделю и в день."
+          title={t('common.nothingYet')}
+          hint={t('dates.emptyHint')}
         />
       ) : (
         <ul className="flex flex-col gap-2">
@@ -123,7 +125,7 @@ function DatesTab({
       <button
         type="button"
         onClick={() => onEdit('new')}
-        aria-label="Новая дата"
+        aria-label={t('dates.new')}
         className="fixed right-5 bottom-6 z-20 flex size-14 items-center justify-center
                    rounded-full bg-accent text-accent-ink shadow-lg
                    transition-transform active:scale-95"
@@ -141,25 +143,27 @@ function DatesTab({
 
 /** «через 6 дней», «сегодня», «завтра» - то, ради чего сюда заходят. */
 function countdown(days: number): string {
-  if (days === 0) return 'сегодня'
-  if (days === 1) return 'завтра'
-  if (days === 2) return 'послезавтра'
-  if (days < 31) return `через ${days} ${plural(days, 'день', 'дня', 'дней')}`
+  if (days === 0) return tr('cyc.todayLower')
+  if (days === 1) return tr('common.tomorrow').toLowerCase()
+  if (days === 2) return tr('common.dayAfterTomorrow')
+  if (days < 31) return tr('dates.inDays', { n: days, unit: trPlural('unit.day', days) })
   const months = Math.round(days / 30)
-  if (days < 350) return `через ${months} ${plural(months, 'месяц', 'месяца', 'месяцев')}`
-  return 'через год'
+  if (days < 350) {
+    return tr('dates.inMonths', { n: months, unit: trPlural('unit.month', months) })
+  }
+  return tr('dates.inYear')
 }
 
 function dayMonth(iso: string): string {
-  return fromLocalISO(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
+  return fromLocalISO(iso).toLocaleDateString(activeLocale(), { day: 'numeric', month: 'long' })
 }
 
 function anniversary(o: Occasion): string | null {
   if (!o.yearly || o.years <= 0) return null
   if (o.kind === 'birthday') {
-    return `${o.years} ${plural(o.years, 'год', 'года', 'лет')}`
+    return tr('dates.ageYears', { n: o.years, unit: trPlural('unit.year', o.years) })
   }
-  return `${o.years}-я годовщина`
+  return tr('dates.nthAnniversary', { n: o.years })
 }
 
 function Card({ occasion, onOpen }: { occasion: Occasion; onOpen: () => void }) {
@@ -195,6 +199,7 @@ function Card({ occasion, onOpen }: { occasion: Occasion; onOpen: () => void }) 
 }
 
 function Editor({ occasion, onClose }: { occasion: Occasion | null; onClose: () => void }) {
+  const t = useT()
   const save = useSaveOccasion()
   const remove = useDeleteOccasion()
   const [title, setTitle] = useState(occasion?.title ?? '')
@@ -207,7 +212,7 @@ function Editor({ occasion, onClose }: { occasion: Occasion | null; onClose: () 
   const submit = async () => {
     setError(null)
     if (title.trim() === '') {
-      setError('Без названия непонятно, о чём напоминать')
+      setError(t('dates.noTitle'))
       return
     }
     try {
@@ -226,13 +231,13 @@ function Editor({ occasion, onClose }: { occasion: Occasion | null; onClose: () 
   }
 
   return (
-    <Sheet open onClose={onClose} title={occasion ? 'Дата' : 'Новая дата'}>
+    <Sheet open onClose={onClose} title={t(occasion ? 'dates.title' : 'dates.new')}>
       <div className="flex flex-col gap-4">
         <Field
-          label="Что за дата"
+          label={t('dates.what')}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="День рождения Аминош"
+          placeholder={t('dates.placeholder')}
           autoFocus={!occasion}
         />
 
@@ -251,22 +256,22 @@ function Editor({ occasion, onClose }: { occasion: Occasion | null; onClose: () 
                 }`}
               >
                 <Icon size={15} aria-hidden />
-                {k.label}
+                {t(dynamicKey('occasion', k.id))}
               </button>
             )
           })}
         </div>
 
         <Field
-          label="Когда"
+          label={t('dates.when')}
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          hint="С годом: по нему считается, которая это годовщина"
+          hint={t('dates.whenHint')}
         />
 
         <label className="flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-3 ring-1 ring-line">
-          <span className="text-sm">Повторяется каждый год</span>
+          <span className="text-sm">{t('dates.yearly')}</span>
           <input
             type="checkbox"
             checked={yearly}
@@ -276,16 +281,16 @@ function Editor({ occasion, onClose }: { occasion: Occasion | null; onClose: () 
         </label>
 
         <Field
-          label="Заметка"
+          label={t('common.note')}
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="необязательно"
+          placeholder={t('common.optional')}
         />
 
         {error && <p className="text-sm text-danger">{error}</p>}
 
         <Button onClick={() => void submit()} loading={save.isPending}>
-          Сохранить
+          {t('common.save')}
         </Button>
 
         {occasion && (
@@ -295,7 +300,7 @@ function Editor({ occasion, onClose }: { occasion: Occasion | null; onClose: () 
             onClick={() => void remove.mutateAsync(occasion.id).then(onClose)}
           >
             <Trash2 size={18} aria-hidden />
-            Удалить
+            {t('common.delete')}
           </Button>
         )}
       </div>
