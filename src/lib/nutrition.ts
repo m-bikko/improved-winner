@@ -7,8 +7,15 @@
  */
 
 export type Sex = 'male' | 'female'
-export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active'
-export type GoalDirection = 'lose' | 'maintain' | 'gain'
+
+// Списками, а не объединениями: интерфейс перечисляет их в этом порядке -
+// от меньшего к большему, - и порядок должен быть записан там же, где сам
+// набор, иначе он разъедется при добавлении уровня
+export const ACTIVITY_LEVELS = ['sedentary', 'light', 'moderate', 'active', 'very_active'] as const
+export type ActivityLevel = (typeof ACTIVITY_LEVELS)[number]
+
+export const GOAL_DIRECTIONS = ['lose', 'maintain', 'gain'] as const
+export type GoalDirection = (typeof GOAL_DIRECTIONS)[number]
 
 export const ACTIVITY_FACTORS: Record<ActivityLevel, number> = {
   sedentary: 1.2,
@@ -16,20 +23,6 @@ export const ACTIVITY_FACTORS: Record<ActivityLevel, number> = {
   moderate: 1.55,
   active: 1.725,
   very_active: 1.9,
-}
-
-export const ACTIVITY_LABELS: Record<ActivityLevel, string> = {
-  sedentary: 'Сидячий образ жизни',
-  light: 'Лёгкая активность, 1-3 тренировки',
-  moderate: 'Умеренная, 3-5 тренировок',
-  active: 'Высокая, 6-7 тренировок',
-  very_active: 'Очень высокая, физическая работа',
-}
-
-export const GOAL_LABELS: Record<GoalDirection, string> = {
-  lose: 'Похудеть',
-  maintain: 'Держать вес',
-  gain: 'Набрать',
 }
 
 /** Поправка к суточной норме под цель. */

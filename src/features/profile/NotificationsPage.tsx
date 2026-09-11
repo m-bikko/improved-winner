@@ -51,7 +51,7 @@ export function NotificationsPage() {
 
       <section className="rounded-2xl bg-surface ring-1 ring-line">
         <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
-          <p className="text-sm font-medium">Что присылать</p>
+          <p className="text-sm font-medium">{t('notif.whatToSend')}</p>
           <div className="flex shrink-0 gap-3 text-muted">
             <Send size={15} aria-hidden />
             <Smartphone size={15} aria-hidden />
@@ -91,8 +91,7 @@ export function NotificationsPage() {
       {muted > 0 && (
         <p className="flex items-start gap-2 px-1 text-sm text-muted">
           <BellOff size={15} aria-hidden className="mt-0.5 shrink-0" />
-          Полностью выключено: {muted}. Всё, о чём молчат уведомления, остаётся
-          в приложении - ничего не теряется.
+          {t('notif.mutedCount', { n: muted })}
         </p>
       )}
     </div>
@@ -128,6 +127,7 @@ function Box({ on, label, onClick }: { on: boolean; label: string; onClick: () =
  * сообщений никто не читает.
  */
 function QuietHours({ quietFrom, quietTo }: { quietFrom: number | null; quietTo: number | null }) {
+  const t = useT()
   const save = useSaveQuietHours()
   const enabled = quietFrom !== null && quietTo !== null
   const [from, setFrom] = useState(quietFrom ?? 22)
@@ -144,26 +144,25 @@ function QuietHours({ quietFrom, quietTo }: { quietFrom: number | null; quietTo:
       <div className="flex items-center justify-between gap-3">
         <p className="flex items-center gap-2 text-sm font-medium">
           <Moon size={16} aria-hidden />
-          Тихие часы
+          {t('notif.quiet')}
         </p>
         <Box
           on={enabled}
-          label="Тихие часы"
+          label={t('notif.quiet')}
           onClick={() => (enabled ? save.mutate({ from: null, to: null }) : apply(from, to))}
         />
       </div>
 
       {enabled && (
         <div className="mt-3 flex items-center gap-2 text-sm">
-          <Hour value={from} onChange={(v) => apply(v, to)} label="Начало тихих часов" />
+          <Hour value={from} onChange={(v) => apply(v, to)} label={t('notif.quietFrom')} />
           <span className="text-muted">—</span>
-          <Hour value={to} onChange={(v) => apply(from, v)} label="Конец тихих часов" />
+          <Hour value={to} onChange={(v) => apply(from, v)} label={t('notif.quietTo')} />
         </div>
       )}
 
       <p className="mt-3 text-xs text-muted">
-        В эти часы уведомления не приходят вовсе - они не копятся и не придут
-        позже. Всё, что в них было, лежит в приложении.
+        {t('notif.quietHint')}
       </p>
     </section>
   )

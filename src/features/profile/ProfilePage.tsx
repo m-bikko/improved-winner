@@ -15,15 +15,15 @@ import {
 import { supabase } from '@/lib/supabase'
 import { todayLocal } from '@/lib/date'
 import {
-  ACTIVITY_LABELS,
-  GOAL_LABELS,
+  ACTIVITY_LEVELS,
+  GOAL_DIRECTIONS,
   computeGoals,
   type ActivityLevel,
   type GoalDirection,
   type Sex,
 } from '@/lib/nutrition'
 import { PIN_LENGTH } from '@/lib/accounts'
-import { useLang, useT } from '@/lib/i18n'
+import { dynamicKey, useLang, useT } from '@/lib/i18n'
 import { LANGS, LANG_NAMES } from '@/lib/i18n/lang'
 import { useSaveLang } from '@/lib/i18n/sync'
 import {
@@ -191,8 +191,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
         <p className="flex items-start gap-2 rounded-xl bg-raised px-4 py-3 text-sm">
           <Target size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
           <span>
-            Чтобы появилась дневная норма, не хватает: <b>{missing.join(', ')}</b>. По этим
-            данным считается норма под твою цель.
+            {t('profile.missing', { list: missing.join(', ') })}
           </span>
         </p>
       )}
@@ -203,7 +202,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
       >
         <span className="flex items-center gap-2 text-sm font-medium">
           <BellRing size={16} aria-hidden />
-          Уведомления
+          {t('profile.notifications')}
         </span>
         <ChevronRight size={18} aria-hidden className="text-muted" />
       </Link>
@@ -214,7 +213,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
       >
         <span className="flex items-center gap-2 text-sm font-medium">
           <Sparkles size={16} aria-hidden />
-          Год в цифрах
+          {t('profile.year')}
         </span>
         <ChevronRight size={18} aria-hidden className="text-muted" />
       </Link>
@@ -222,7 +221,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
       <div className="rounded-xl bg-surface px-4 py-4 ring-1 ring-line">
         <p className="mb-3 flex items-center gap-2 text-sm font-medium">
           <Scale size={16} aria-hidden />
-          Вес
+          {t('profile.weight')}
         </p>
         {weights.isSuccess ? <WeightChart points={weights.data} /> : <Loading />}
 
@@ -234,7 +233,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
               .map((p) => (
                 <li key={p.date} className="flex justify-between py-1 text-muted">
                   <span>{p.date}</span>
-                  <span>{p.weightKg.toFixed(1)} кг</span>
+                  <span>{t('profile.kgSuffix', { n: p.weightKg.toFixed(1) })}</span>
                 </li>
               ))}
           </ul>
@@ -271,47 +270,50 @@ function ProfileForm({ profile }: { profile: Profile }) {
         />
       </div>
 
-      <Group label="Пол">
+      <Group label={t('profile.sex')}>
         <Choice active={sex === 'male'} onClick={() => setSex('male')}>
-          Мужской
+          {t('profile.male')}
         </Choice>
         <Choice active={sex === 'female'} onClick={() => setSex('female')}>
-          Женский
+          {t('profile.female')}
         </Choice>
       </Group>
 
       <div>
-        <p className="mb-2 text-sm text-muted">Активность</p>
+        <p className="mb-2 text-sm text-muted">{t('profile.activity')}</p>
         <div className="flex flex-col gap-1.5">
-          {(Object.keys(ACTIVITY_LABELS) as ActivityLevel[]).map((level) => (
+          {ACTIVITY_LEVELS.map((level) => (
             <Row key={level} active={activity === level} onClick={() => setActivity(level)}>
-              {ACTIVITY_LABELS[level]}
+              {t(dynamicKey('activity', level))}
             </Row>
           ))}
         </div>
       </div>
 
-      <Group label="Цель">
-        {(Object.keys(GOAL_LABELS) as GoalDirection[]).map((g) => (
+      <Group label={t('profile.goal')}>
+        {GOAL_DIRECTIONS.map((g) => (
           <Choice key={g} active={goal === g} onClick={() => setGoal(g)}>
-            {GOAL_LABELS[g]}
+            {t(dynamicKey('goal', g))}
           </Choice>
         ))}
       </Group>
 
       <div className="rounded-xl bg-raised px-4 py-4">
-        <p className="text-sm font-medium">Дневная норма</p>
+        <p className="text-sm font-medium">{t('profile.daily')}</p>
 
         {effective ? (
           <>
-            <p className="mt-1 text-2xl font-semibold">{Math.round(effective.kcal)} ккал</p>
+            <p className="mt-1 text-2xl font-semibold">
+              {Math.round(effective.kcal)} {t('unit.kcal')}
+            </p>
             <p className="mt-1 text-sm text-muted">
-              Б {preview?.protein} · Ж {preview?.fat} · У {preview?.carbs} г
+              {t('macro.p')} {preview?.protein} · {t('macro.f')} {preview?.fat} ·{' '}
+              {t('macro.c')} {preview?.carbs} {t('unit.gram')}
             </p>
           </>
         ) : (
           <p className="mt-1 text-sm text-muted">
-            Заполни год рождения, пол, рост и вес - норма посчитается сама.
+            {t('profile.autoHint')}
           </p>
         )}
 
@@ -322,18 +324,18 @@ function ProfileForm({ profile }: { profile: Profile }) {
             onChange={(e) => setManual(e.target.checked)}
             className="size-4 accent-[var(--c-accent)]"
           />
-          Задать калории вручную
+          {t('profile.manual')}
         </label>
 
         {manual && (
           <div className="mt-2">
             <NumberField
-              label="Своя норма"
+              label={t('profile.ownGoal')}
               suffix={t('unit.kcal')}
               value={manualKcal}
               onValueChange={setManualKcal}
               max={10000}
-              hint="Белки, жиры и углеводы остаются расчётными."
+              hint={t('profile.manualHint')}
             />
           </div>
         )}
@@ -344,11 +346,10 @@ function ProfileForm({ profile }: { profile: Profile }) {
       <div className="rounded-xl bg-raised px-4 py-4">
         <p className="flex items-center gap-2 text-sm font-medium">
           <Send size={15} aria-hidden />
-          Уведомления в Telegram
+          {t('profile.telegram')}
         </p>
         <p className="mt-1 mb-3 text-xs text-muted">
-          Приходят партнёру, когда ты заводишь тему, отвечаешь в ней или закрываешь её.
-          Пусто - уведомления не шлём.
+          {t('profile.telegramAbout')}
         </p>
         <Field
           label="Chat ID"
@@ -356,9 +357,9 @@ function ProfileForm({ profile }: { profile: Profile }) {
           onChange={(e) => setChatId(e.target.value.replace(/[^\d-]/g, ''))}
           placeholder="123456789"
           inputMode="numeric"
-          hint={`Узнать: напиши @userinfobot в Telegram, он ответит твоим id. Затем открой ${BOT_LINK} и нажми «Старт» - без этого бот не сможет тебе написать.`}
+          hint={t('profile.chatIdHint', { link: BOT_LINK })}
         />
-        {chatIdInvalid && <p className="mt-1 text-xs text-danger">Chat ID - это только цифры.</p>}
+        {chatIdInvalid && <p className="mt-1 text-xs text-danger">{t('profile.chatIdDigits')}</p>}
       </div>
 
       {error && <p className="text-sm text-danger">{error}</p>}
@@ -369,12 +370,12 @@ function ProfileForm({ profile }: { profile: Profile }) {
         disabled={hasRangeError || chatIdInvalid}
       >
         {saved ? <Check size={18} aria-hidden /> : null}
-        {saved ? t('profile.saved') : 'Сохранить'}
+        {saved ? t('profile.saved') : t('common.save')}
       </Button>
 
       <Button variant="secondary" onClick={() => setPinOpen(true)}>
         <KeyRound size={18} aria-hidden />
-        Сменить PIN
+        {t('profile.changePinButton')}
       </Button>
 
       <ChangePinSheet open={pinOpen} onClose={() => setPinOpen(false)} />
@@ -493,7 +494,7 @@ function FaceIdRow() {
         <div className="min-w-0">
           <p className="flex items-center gap-2 text-sm font-medium">
             <ScanFace size={16} aria-hidden />
-            Вход по Face ID
+            {t('profile.faceId')}
           </p>
           <p className="mt-1 text-xs text-muted">
             {t('profile.faceIdHint')}
@@ -663,25 +664,24 @@ function PushToggle({ userId }: { userId: string }) {
 
   const hint: Record<PushState, string> = {
     unsupported: t('push.noSupport'),
-    'not-installed':
-      'Добавь приложение на экран «Домой» и открой уже оттуда - в обычной вкладке уведомления недоступны.',
+    'not-installed': t('push.installFirst'),
     unconfigured: t('push.notConfigured'),
     denied: t('push.blocked'),
-    off: 'Напоминания о завтраке, обеде и ужине, если приём пищи остался пустым.',
-    on: 'Включены. Напоминания приходят в 11:00, 14:00 и 21:00, если приём пищи пуст.',
+    off: t('push.offHint'),
+    on: t('push.onHint'),
   }
 
   return (
     <div className="rounded-xl bg-raised px-4 py-4">
       <p className="flex items-center gap-2 text-sm font-medium">
         <BellRing size={15} aria-hidden />
-        Уведомления на устройстве
+        {t('push.device')}
       </p>
       <p className="mt-1 mb-3 text-xs text-muted">{state ? hint[state] : t('push.checking')}</p>
 
       {(state === 'off' || state === 'on') && (
         <Button variant={state === 'on' ? 'secondary' : 'primary'} onClick={() => void toggle()} loading={busy}>
-          {state === 'on' ? 'Отключить' : 'Включить уведомления'}
+          {t(state === 'on' ? 'push.disable' : 'push.enable')}
         </Button>
       )}
 

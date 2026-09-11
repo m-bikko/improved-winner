@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { useDroppable } from '@dnd-kit/core'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -20,6 +21,7 @@ export function DraggableEntry({
   entry: DiaryEntry
   onOpen: () => void
 }) {
+  const t = useT()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: entry.id,
   })
@@ -41,15 +43,17 @@ export function DraggableEntry({
           <span className="block truncate text-sm">{entry.name}</span>
           <span className="text-xs text-muted">
             {entry.servingLabel ? `${entry.servingLabel} · ` : ''}
-            {trim(entry.grams)} г
+            {trim(entry.grams)} {t('unit.gram')}
           </span>
         </span>
-        <span className="shrink-0 text-sm text-muted">{Math.round(entry.kcal)} ккал</span>
+        <span className="shrink-0 text-sm text-muted">
+          {Math.round(entry.kcal)} {t('unit.kcal')}
+        </span>
       </button>
 
       <button
         type="button"
-        aria-label={`Перетащить «${entry.name}»`}
+        aria-label={t('diary.drag', { name: entry.name })}
         // touch-none обязателен: без него браузер считает жест прокруткой
         // и забирает его себе, так и не отдав библиотеке
         className="shrink-0 cursor-grab touch-none px-3 py-4 text-muted active:cursor-grabbing"
@@ -77,6 +81,7 @@ export function MealDropZone({
   children: React.ReactNode
   isEmpty: boolean
 }) {
+  const t = useT()
   const { setNodeRef, isOver } = useDroppable({ id: meal })
 
   return (
@@ -88,7 +93,7 @@ export function MealDropZone({
             isOver ? 'border-accent text-accent' : 'border-line text-muted'
           }`}
         >
-          {isOver ? 'Отпусти здесь' : 'Пусто'}
+          {t(isOver ? 'diary.dropHere' : 'common.nothingYet')}
         </p>
       )}
     </div>
