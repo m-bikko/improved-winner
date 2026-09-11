@@ -19,7 +19,7 @@ import { useCheckins, useStreaks } from '@/features/checkin/api'
 import { STATE_BY_ID } from '@/features/checkin/states'
 import { dynamicKey, useT } from '@/lib/i18n'
 import { DEFAULT_SETTINGS, useCycleSettings, useCycleShared, usePeriods } from '@/features/cycle/api'
-import { PHASE_LABELS, cycleDay } from '@/features/cycle/cycle'
+import { cycleDay } from '@/features/cycle/cycle'
 import { useOccasions } from '@/features/dates/api'
 import { useDiaryDay } from '@/features/diary/api'
 import { sumEntries } from '@/features/diary/types'
@@ -267,6 +267,7 @@ function Cycle({
   partnerId: string
   partnerName: string
 }) {
+  const t = useT()
   const settings = useCycleSettings()
   const shared = useCycleShared(partnerId)
   const mine = usePeriods(userId)
@@ -284,7 +285,7 @@ function Cycle({
   return (
     <Tile to="/cycle" icon={Droplet} title={own ? 'Цикл' : `Цикл · ${partnerName}`}>
       <p className="text-sm">
-        День {state.day} · {PHASE_LABELS[state.phase]}
+        {t('cyc.dayN', { n: state.day })} · {t(dynamicKey('phase', state.phase))}
       </p>
     </Tile>
   )

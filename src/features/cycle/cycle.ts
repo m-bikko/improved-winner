@@ -13,6 +13,7 @@
  * это сказано прямо, и убирать оттуда нельзя.
  */
 import { fromLocalISO, shiftDays } from '@/lib/date'
+import { tr, trPlural } from '@/lib/i18n'
 
 export type Period = {
   id: string
@@ -26,13 +27,6 @@ export type Period = {
 }
 
 export type Phase = 'menstrual' | 'follicular' | 'ovulation' | 'luteal'
-
-export const PHASE_LABELS: Record<Phase, string> = {
-  menstrual: 'Менструация',
-  follicular: 'Фолликулярная фаза',
-  ovulation: 'Овуляция',
-  luteal: 'Лютеиновая фаза',
-}
 
 /**
  * Нормы.
@@ -262,15 +256,15 @@ export function warnings(periods: Period[], today: string): Warning[] {
       out.push({
         id: 'cycle-short',
         level: 'attention',
-        title: `Средний цикл - ${avg} дней`,
-        body: `Обычно цикл держится в ${NORMS.cycleMin}-${NORMS.cycleMax} дней. Если так идёт не первый месяц, это стоит обсудить с врачом.`,
+        title: tr('warn.cycleAvg', { n: avg, unit: trPlural('unit.day', avg) }),
+        body: tr('warn.cycleRange', { min: NORMS.cycleMin, max: NORMS.cycleMax }),
       })
     } else if (avg > NORMS.cycleMax) {
       out.push({
         id: 'cycle-long',
         level: 'attention',
-        title: `Средний цикл - ${avg} дней`,
-        body: `Обычно цикл держится в ${NORMS.cycleMin}-${NORMS.cycleMax} дней. Если так идёт не первый месяц, это стоит обсудить с врачом.`,
+        title: tr('warn.cycleAvg', { n: avg, unit: trPlural('unit.day', avg) }),
+        body: tr('warn.cycleRange', { min: NORMS.cycleMin, max: NORMS.cycleMax }),
       })
     }
   }
@@ -279,8 +273,11 @@ export function warnings(periods: Period[], today: string): Warning[] {
     out.push({
       id: 'irregular',
       level: 'attention',
-      title: `Разброс между циклами - ${stats.spread} дней`,
-      body: `Разница больше ${NORMS.spreadMax} дней между соседними циклами считается нерегулярностью. Само по себе это не диагноз, но врачу об этом сказать стоит.`,
+      title: tr('warn.spread', {
+        n: stats.spread,
+        unit: trPlural('unit.day', stats.spread),
+      }),
+      body: tr('warn.spreadBody', { max: NORMS.spreadMax }),
     })
   }
 
@@ -290,15 +287,15 @@ export function warnings(periods: Period[], today: string): Warning[] {
       out.push({
         id: 'period-long',
         level: 'attention',
-        title: `Менструация в среднем ${avg} дней`,
-        body: `Дольше ${NORMS.periodMax} дней - повод показаться врачу, особенно если так каждый раз.`,
+        title: tr('warn.periodAvg', { n: avg, unit: trPlural('unit.day', avg) }),
+        body: tr('warn.periodLong', { max: NORMS.periodMax }),
       })
     } else if (avg < NORMS.periodMin) {
       out.push({
         id: 'period-short',
         level: 'note',
-        title: `Менструация в среднем ${avg} дня`,
-        body: `Короче ${NORMS.periodMin} дней бывает и в норме, но если это изменение по сравнению с прежним - стоит понаблюдать.`,
+        title: tr('warn.periodAvg', { n: avg, unit: trPlural('unit.day', avg) }),
+        body: tr('warn.periodShort', { min: NORMS.periodMin }),
       })
     }
   }
@@ -311,8 +308,8 @@ export function warnings(periods: Period[], today: string): Warning[] {
       out.push({
         id: 'bleeding-long',
         level: 'attention',
-        title: `Идёт ${going}-й день`,
-        body: `Кровотечение дольше ${NORMS.periodMax} дней - повод обратиться к врачу, не дожидаясь конца.`,
+        title: tr('warn.bleeding', { n: going }),
+        body: tr('warn.bleedingBody', { max: NORMS.periodMax }),
       })
     }
   }
@@ -323,15 +320,18 @@ export function warnings(periods: Period[], today: string): Warning[] {
       out.push({
         id: 'absent',
         level: 'attention',
-        title: `Без менструации ${since} дней`,
-        body: `Три месяца и дольше - повод обратиться к врачу. Если есть вероятность беременности, сначала имеет смысл сделать тест.`,
+        title: tr('warn.absent', { n: since, unit: trPlural('unit.day', since) }),
+        body: tr('warn.absentBody'),
       })
     } else if (stats.avgCycle !== null && since > Math.round(stats.avgCycle) + 7) {
       out.push({
         id: 'late',
         level: 'note',
-        title: `Задержка ${since - Math.round(stats.avgCycle)} дней`,
-        body: 'Задержка в несколько дней случается от стресса, болезни, перелёта или смены нагрузок. Если она затянулась - стоит сделать тест и показаться врачу.',
+        title: tr('warn.late', {
+          n: since - Math.round(stats.avgCycle),
+          unit: trPlural('unit.day', since - Math.round(stats.avgCycle)),
+        }),
+        body: tr('warn.lateBody'),
       })
     }
   }

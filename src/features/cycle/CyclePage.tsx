@@ -1,3 +1,4 @@
+import { dynamicKey, useT } from '@/lib/i18n'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
@@ -15,6 +16,7 @@ import { useUserId } from '@/auth/AuthProvider'
 import { useProfiles } from '@/features/profile/api'
 import { todayLocal, shiftDays, formatDayLabel } from '@/lib/date'
 import { Button } from '@/ui/Button'
+import { Loading } from '@/ui/States'
 import { Sheet } from '@/ui/Sheet'
 import {
   DEFAULT_SETTINGS,
@@ -32,7 +34,6 @@ import { DaySheet } from './DaySheet'
 import { Patterns } from './Patterns'
 import { emptyLog, type DayLog } from './dayLog'
 import {
-  PHASE_LABELS,
   cycleDay,
   cycleStats,
   forecast,
@@ -40,7 +41,7 @@ import {
   type CycleDay,
   type Period,
 } from './cycle'
-import { CATEGORY_LABELS, PHASE_SUMMARY, tipsByCategory } from './tips'
+import { tipsByCategory } from './tips'
 
 /**
  * Раздел цикла.
@@ -56,6 +57,7 @@ import { CATEGORY_LABELS, PHASE_SUMMARY, tipsByCategory } from './tips'
  * и что включение ничего никому не откроет само по себе.
  */
 export function CyclePage() {
+  const t = useT()
   const userId = useUserId()
   const profiles = useProfiles()
   const settings = useCycleSettings()
@@ -78,13 +80,13 @@ export function CyclePage() {
   const theirsShared = shared.data === true
 
   if (settings.isPending || profiles.isPending || shared.isPending) {
-    return <p className="px-4 py-10 text-center text-muted">Загрузка…</p>
+    return <Loading />
   }
 
   if (!tracking && !theirsShared) {
     return (
       <Intro
-        partnerName={partner?.nickname ?? 'Партнёр'}
+        partnerName={partner?.nickname ?? t('partner')}
         onEnable={() => setSettingsOpen(true)}
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
@@ -111,10 +113,10 @@ export function CyclePage() {
       {showTabs && (
         <div className="mb-4 flex gap-1 rounded-xl bg-raised p-1">
           <Tab active={active === 'mine'} onClick={() => setTab('mine')}>
-            Мой
+            {t('cyc.tabMine')}
           </Tab>
           <Tab active={active === 'theirs'} onClick={() => setTab('theirs')}>
-            {partner?.nickname ?? 'Партнёр'}
+            {partner?.nickname ?? t('partner')}
           </Tab>
         </div>
       )}
@@ -152,6 +154,7 @@ function CycleBody({
   onEdit: (p: Period) => void
   onSettings: () => void
 }) {
+  const t = useT()
   const today = todayLocal()
   const start = useStartPeriod()
   const save = useSavePeriod()
@@ -173,7 +176,7 @@ function CycleBody({
 
   // Сегодняшний день уже внутри какой-то записи?
   //
-  // Без этой проверки кнопка «Началась сегодня» предлагалась и в день, когда
+  // Без этой проверки кнопка «{t('cyc.startedToday')}» предлагалась и в день, когда
   // менструация только что отмечена завершившейся, - а вставка упёрлась бы
   // в ограничение пересечения и вернула человеку текст ошибки Postgres.
   // Инвариант держит база, и это правильно; но предлагать действие, которое
@@ -187,15 +190,13 @@ function CycleBody({
       <div className="flex flex-col gap-3">
         <div className="rounded-2xl bg-surface p-5 ring-1 ring-line">
           <p className="text-sm text-muted">
-            {owned
-              ? 'Записей пока нет. Отметьте день, когда началась менструация, - от него считается всё остальное.'
-              : 'Партнёр открыл вам раздел, но пока ничего не отметил. Как только появится первая запись, здесь будут фаза, прогноз и подсказки.'}
+            {t(owned ? 'cyc.emptyMine' : 'cyc.emptyTheirs')}
           </p>
           {owned && (
             <div className="mt-4">
               <Button onClick={() => void start.mutateAsync(today)} loading={start.isPending}>
                 <Droplet size={18} aria-hidden />
-                Началась сегодня
+                {t('cyc.startedToday')}
               </Button>
             </div>
           )}
@@ -210,7 +211,7 @@ function CycleBody({
             onClick={onSettings}
             className="self-start px-1 text-sm text-accent underline"
           >
-            Настройки раздела
+            {t('cyc.settings')}
           </button>
         )}
       </div>
@@ -254,16 +255,16 @@ function CycleBody({
               }
               loading={save.isPending}
             >
-              Закончилась сегодня
+              {t('cyc.endedToday')}
             </Button>
           ) : coversToday ? (
             <p className="rounded-2xl bg-surface px-4 py-3 text-sm text-muted ring-1 ring-line">
-              Сегодняшний день уже отмечен. Поправить даты можно в истории ниже.
+              {t('cyc.alreadyMarked')}
             </p>
           ) : (
             <Button onClick={() => void start.mutateAsync(today)} loading={start.isPending}>
               <Droplet size={18} aria-hidden />
-              Началась сегодня
+              {t('cyc.startedToday')}
             </Button>
           )}
         </div>
@@ -290,8 +291,7 @@ function CycleBody({
             </div>
           ))}
           <p className="px-1 text-xs text-muted">
-            Приложение сравнивает числа с общепринятыми границами. Диагнозов оно не ставит
-            и поставить не может.
+            {t('cyc.noDiagnosis')}
           </p>
         </section>
       )}
@@ -308,7 +308,7 @@ function CycleBody({
         >
           <span className="flex items-center gap-2 text-sm font-medium">
             <FileText size={16} aria-hidden />
-            Выписка для врача
+            {t('cyc.report')}
           </span>
           <ChevronRight size={18} aria-hidden className="text-muted" />
         </Link>
@@ -322,7 +322,7 @@ function CycleBody({
           onClick={onSettings}
           className="self-start px-1 text-sm text-accent underline"
         >
-          Настройки раздела
+          {t('cyc.settings')}
         </button>
       )}
     </div>
@@ -340,6 +340,7 @@ function CycleBody({
  * то, на что это влияет, и в конце то, что касается двоих.
  */
 function Tips({ state, owned }: { state: CycleDay; owned: boolean }) {
+  const t = useT()
   const groups = tipsByCategory(state, owned ? 'owner' : 'partner')
   // Открыта только первая тема про сегодня. Справочные - «Близость»
   // и «Что даёт близость» - свёрнуты всегда: их читают по желанию,
@@ -356,7 +357,7 @@ function Tips({ state, owned }: { state: CycleDay; owned: boolean }) {
 
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="px-1 text-sm text-muted">Сегодня стоит знать</h2>
+      <h2 className="px-1 text-sm text-muted">{t('cyc.tipsTitle')}</h2>
       {groups.map(({ category, tips }) => {
         const open = !closed.includes(category)
         return (
@@ -367,7 +368,7 @@ function Tips({ state, owned }: { state: CycleDay; owned: boolean }) {
               aria-expanded={open}
               className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
             >
-              <span className="font-medium">{CATEGORY_LABELS[category]}</span>
+              <span className="font-medium">{t(dynamicKey('tipCat', category))}</span>
               <span className="flex items-center gap-2 text-sm text-muted">
                 {tips.length}
                 <ChevronDown
@@ -395,40 +396,49 @@ function Tips({ state, owned }: { state: CycleDay; owned: boolean }) {
 }
 
 function Today({ state, stats }: { state: CycleDay; stats: ReturnType<typeof cycleStats> }) {
+  const t = useT()
   return (
     <section className="rounded-2xl bg-surface p-5 ring-1 ring-line">
-      <p className="text-sm text-muted">{PHASE_LABELS[state.phase]}</p>
+      <p className="text-sm text-muted">{t(dynamicKey('phase', state.phase))}</p>
       <p className="mt-1 flex items-baseline gap-2">
-        <span className="text-4xl font-semibold">День {state.day}</span>
-        <span className="text-sm text-muted">из ~{state.cycleLength}</span>
+        <span className="text-4xl font-semibold">{t('cyc.dayN', { n: state.day })}</span>
+        <span className="text-sm text-muted">{t('cyc.ofAbout', { n: state.cycleLength })}</span>
       </p>
-      <p className="mt-2 text-sm text-muted">{PHASE_SUMMARY[state.phase]}</p>
+      <p className="mt-2 text-sm text-muted">{t(dynamicKey('phaseSummary', state.phase))}</p>
 
       <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
         <div className="rounded-xl bg-raised px-3 py-2.5">
-          <dt className="text-xs text-muted">Следующая</dt>
+          <dt className="text-xs text-muted">{t('cyc.next')}</dt>
           <dd className="mt-0.5 font-medium">
             {state.daysToNext > 0
-              ? `через ${state.daysToNext} дн.`
+              ? t('cyc.inDays', {
+                  n: state.daysToNext,
+                  unit: t.plural('unit.day', state.daysToNext),
+                })
               : state.daysToNext === 0
-                ? 'сегодня'
-                : `задержка ${-state.daysToNext} дн.`}
+                ? t('cyc.todayLower')
+                : t('cyc.delay', {
+                    n: -state.daysToNext,
+                    unit: t.plural('unit.day', -state.daysToNext),
+                  })}
           </dd>
           <dd className="text-xs text-muted">{formatDayLabel(state.nextStart)}</dd>
         </div>
         <div className="rounded-xl bg-raised px-3 py-2.5">
-          <dt className="text-xs text-muted">Средний цикл</dt>
+          <dt className="text-xs text-muted">{t('cyc.avgCycle')}</dt>
           {/* usableCycle, а не avgCycle: показывать надо то число, которым
               приложение реально считает прогноз. Иначе в шапке стояло бы одно,
               а «Следующая» была бы посчитана из другого - и разойтись они
               могут ровно тогда, когда данные подозрительные. */}
           <dd className="mt-0.5 font-medium">
-            {stats.usableCycle === null ? 'нет данных' : `${Math.round(stats.usableCycle)} дн.`}
+            {stats.usableCycle === null
+              ? t('cyc.noData')
+              : `${Math.round(stats.usableCycle)} ${t.plural('unit.day', Math.round(stats.usableCycle))}`}
           </dd>
           <dd className="text-xs text-muted">
             {stats.usableCycle === null
-              ? 'нужен второй цикл'
-              : `по ${stats.cyclesCounted} посл.`}
+              ? t('cyc.needSecond')
+              : t('cyc.byLast', { n: stats.cyclesCounted })}
           </dd>
         </div>
       </dl>
@@ -445,6 +455,7 @@ function Today({ state, stats }: { state: CycleDay; stats: ReturnType<typeof cyc
  * заново весь набор ради оттенка, который ничего не добавляет.
  */
 function PhaseStrip({ state }: { state: CycleDay }) {
+  const t = useT()
   const firstDay = shiftDays(state.nextStart, -state.cycleLength)
   const days = Array.from({ length: state.cycleLength }, (_, i) => shiftDays(firstDay, i))
 
@@ -473,20 +484,22 @@ function PhaseStrip({ state }: { state: CycleDay }) {
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
         <span className="flex items-center gap-1.5">
           <span className="size-2.5 rounded-full bg-ink" aria-hidden />
-          сегодня
+          {t('cyc.todayLower')}
         </span>
         <span className="flex items-center gap-1.5">
           <span className="size-2.5 rounded-full bg-accent" aria-hidden />
-          менструация
+          {t('cyc.legendPeriod')}
         </span>
         <span className="flex items-center gap-1.5">
           <span className="size-2.5 rounded-full bg-carbs" aria-hidden />
-          фертильное окно, {formatDayLabel(state.fertileFrom)} - {formatDayLabel(state.fertileTo)}
+          {t('cyc.legendFertile', {
+            from: formatDayLabel(state.fertileFrom),
+            to: formatDayLabel(state.fertileTo),
+          })}
         </span>
       </div>
       <p className="mt-2 text-xs text-muted">
-        Окно посчитано по календарю и в реальном цикле сдвигается. Как способ
-        предохранения это не работает.
+        {t('cyc.fertileNote')}
       </p>
     </section>
   )
@@ -501,10 +514,11 @@ function History({
   owned: boolean
   onEdit: (p: Period) => void
 }) {
+  const t = useT()
   const sorted = [...periods].sort((a, b) => (a.startedOn < b.startedOn ? 1 : -1))
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="px-1 text-sm text-muted">История</h2>
+      <h2 className="px-1 text-sm text-muted">{t('cyc.history')}</h2>
       <ul className="overflow-hidden rounded-2xl bg-surface ring-1 ring-line">
         {sorted.map((p) => (
           <li key={p.id} className="border-b border-line last:border-0">
@@ -517,13 +531,14 @@ function History({
               <span className="min-w-0">
                 <span className="block text-sm">
                   {formatDayLabel(p.startedOn)}
-                  {p.endedOn ? ` - ${formatDayLabel(p.endedOn)}` : ' - идёт'}
+                  {p.endedOn ? ` - ${formatDayLabel(p.endedOn)}` : ` - ${t('cyc.ongoing')}`}
                 </span>
                 {p.note && <span className="block text-xs text-muted">{p.note}</span>}
               </span>
               <span className="shrink-0 text-sm text-muted">
-                {p.periodDays !== null && `${p.periodDays} дн.`}
-                {p.cycleDays !== null && ` · цикл ${p.cycleDays}`}
+                {p.periodDays !== null &&
+                  `${p.periodDays} ${t.plural('unit.day', p.periodDays)}`}
+                {p.cycleDays !== null && ` · ${t('cyc.cycleN', { n: p.cycleDays })}`}
               </span>
             </button>
           </li>
@@ -534,6 +549,7 @@ function History({
 }
 
 function PeriodSheet({ period, onClose }: { period: Period; onClose: () => void }) {
+  const t = useT()
   const save = useSavePeriod()
   const remove = useDeletePeriod()
   const [startedOn, setStartedOn] = useState(period.startedOn)
@@ -557,10 +573,10 @@ function PeriodSheet({ period, onClose }: { period: Period; onClose: () => void 
   }
 
   return (
-    <Sheet open onClose={onClose} title="Менструация">
+    <Sheet open onClose={onClose} title={t('phase.menstrual')}>
       <div className="flex min-w-0 flex-col gap-5">
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-muted">Началась</span>
+          <span className="text-sm text-muted">{t('cyc.startedOn')}</span>
           <input
             type="date"
             value={startedOn}
@@ -570,23 +586,23 @@ function PeriodSheet({ period, onClose }: { period: Period; onClose: () => void 
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-muted">Закончилась</span>
+          <span className="text-sm text-muted">{t('cyc.endedOn')}</span>
           <input
             type="date"
             value={endedOn}
             onChange={(e) => setEndedOn(e.target.value)}
             className="w-full min-w-0 rounded-xl bg-surface px-4 py-3 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
           />
-          <span className="text-xs text-muted">Пусто - значит идёт прямо сейчас.</span>
+          <span className="text-xs text-muted">{t('cyc.emptyMeansOngoing')}</span>
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-muted">Заметка</span>
+          <span className="text-sm text-muted">{t('day.note')}</span>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={2}
-            placeholder="самочувствие, что помогло"
+            placeholder={t('cyc.notePlaceholder')}
             className="w-full min-w-0 resize-none rounded-xl bg-surface px-4 py-3 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent placeholder:text-muted"
           />
         </label>
@@ -594,7 +610,7 @@ function PeriodSheet({ period, onClose }: { period: Period; onClose: () => void 
         {error && <p className="text-sm text-danger">{error}</p>}
 
         <Button onClick={() => void submit()} loading={save.isPending}>
-          Сохранить
+          {t('common.save')}
         </Button>
         <Button
           variant="danger"
@@ -602,7 +618,7 @@ function PeriodSheet({ period, onClose }: { period: Period; onClose: () => void 
           onClick={() => void remove.mutateAsync(period.id).then(onClose)}
         >
           <Trash2 size={18} aria-hidden />
-          Удалить
+          {t('common.delete')}
         </Button>
       </div>
     </Sheet>
@@ -610,6 +626,7 @@ function PeriodSheet({ period, onClose }: { period: Period; onClose: () => void 
 }
 
 function SettingsSheet({ onClose }: { onClose: () => void }) {
+  const t = useT()
   const settings = useCycleSettings()
   const save = useSaveCycleSettings()
   const current = settings.data ?? DEFAULT_SETTINGS
@@ -625,18 +642,18 @@ function SettingsSheet({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Sheet open onClose={onClose} title="Настройки раздела">
+    <Sheet open onClose={onClose} title={t('cyc.settings')}>
       <div className="flex min-w-0 flex-col gap-5">
         <Toggle
-          label="Вести цикл"
-          hint="Раздел появляется только у вас."
+          label={t('cyc.trackLabel')}
+          hint={t('cyc.trackHint')}
           checked={current.trackingEnabled}
           onChange={(v) => void update({ trackingEnabled: v })}
         />
 
         <Toggle
-          label="Показывать партнёру"
-          hint="Партнёр увидит даты, фазу и прогноз. Выключите - и он снова не увидит ничего. Это единственное место в приложении, где данные не общие по умолчанию."
+          label={t('cyc.shareLabel')}
+          hint={t('cyc.shareHint')}
           checked={current.shareWithPartner}
           disabled={!current.trackingEnabled}
           onChange={(v) => void update({ shareWithPartner: v })}
@@ -675,6 +692,7 @@ function LutealField({
   value: number
   onCommit: (days: number) => void
 }) {
+  const t = useT()
   const [text, setText] = useState(String(value))
 
   // Значение пришло снаружи (загрузились настройки, откатилась запись) -
@@ -700,7 +718,7 @@ function LutealField({
 
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-sm text-muted">Лютеиновая фаза, дней</span>
+      <span className="text-sm text-muted">{t('cyc.luteal')}</span>
       <input
         inputMode="numeric"
         value={text}
@@ -712,8 +730,7 @@ function LutealField({
         className="w-20 rounded-lg bg-surface px-3 py-2 text-center ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
       />
       <span className="text-xs text-muted">
-        От неё считается овуляция - назад от следующей менструации. У большинства
-        12-16 дней; 14 стоит по умолчанию. Сохраняется, когда уводите фокус.
+        {t('cyc.lutealHint')}
       </span>
     </label>
   )
@@ -742,6 +759,7 @@ function Intro({
   open: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const settings = useCycleSettings()
   const save = useSaveCycleSettings()
 
@@ -758,20 +776,18 @@ function Intro({
       <section className="rounded-2xl bg-surface p-5 ring-1 ring-line">
         <p className="flex items-center gap-2 text-base font-medium">
           <Droplet size={18} className="text-accent" aria-hidden />
-          Вести свой цикл
+          {t('cyc.introMineTitle')}
         </p>
         <p className="mt-2 text-sm text-muted">
-          Отмечаете даты менструаций - приложение считает фазу, среднюю длину цикла,
-          прогноз следующей и предупреждает, если числа выходят за общепринятые границы.
+          {t('cyc.introMineBody')}
         </p>
         <p className="mt-3 text-sm text-muted">
-          Раздел появится только у вас. {partnerName} не увидит ничего, даже того,
-          что он включён, пока вы сами не откроете доступ.
+          {t('cyc.introMineOwn', { name: partnerName })}
         </p>
         <div className="mt-4">
           <Button onClick={() => void enable()} loading={save.isPending}>
             <Plus size={18} aria-hidden />
-            Включить
+            {t('cyc.enable')}
           </Button>
         </div>
       </section>
@@ -779,17 +795,13 @@ function Intro({
       <section className="rounded-2xl bg-surface p-5 ring-1 ring-line">
         <p className="flex items-center gap-2 text-base font-medium">
           <ShieldCheck size={18} className="text-muted" aria-hidden />
-          Смотреть цикл партнёра
+          {t('cyc.introTheirsTitle')}
         </p>
         <p className="mt-2 text-sm text-muted">
-          Это единственное место в приложении, где данные не общие. Включить показ
-          за {partnerName} нельзя - ни кнопкой, ни настройкой: решение принимает тот,
-          чьё это тело.
+          {t('cyc.introTheirsBody', { name: partnerName })}
         </p>
         <p className="mt-3 text-sm text-muted">
-          Если {partnerName} откроет доступ у себя, её цикл появится здесь сам -
-          с фазой, прогнозом и подсказками о том, что сейчас происходит и что
-          с этим делать вам.
+          {t('cyc.introTheirsWait', { name: partnerName })}
         </p>
       </section>
 

@@ -166,10 +166,10 @@ export function CycleCalendar({
       </div>
 
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 px-1 text-xs text-muted">
-        <Legend className="bg-accent">была</Legend>
-        <Legend className="ring-1 ring-accent/60">ожидается</Legend>
-        <Legend className="bg-carbs">овуляция</Legend>
-        <Legend className="bg-ink/60">есть отметка</Legend>
+        <Legend className="bg-accent">{t('cal.was')}</Legend>
+        <Legend className="ring-1 ring-accent/60">{t('cal.expected')}</Legend>
+        <Legend className="bg-carbs">{t('cal.ovulation')}</Legend>
+        <Legend className="bg-ink/60">{t('cal.logged')}</Legend>
       </div>
     </section>
   )

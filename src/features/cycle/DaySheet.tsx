@@ -110,7 +110,7 @@ export function DaySheet({
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 rows={2}
-                placeholder="что помогло, что нет"
+                placeholder={t('day.notePlaceholder')}
                 className="w-full min-w-0 resize-none rounded-xl bg-surface px-4 py-3 ring-1
                            ring-line outline-none focus:ring-2 focus:ring-accent placeholder:text-muted"
               />
@@ -119,7 +119,7 @@ export function DaySheet({
             {error && <p className="text-sm text-danger">{error}</p>}
 
             <Button onClick={() => void submit()} loading={save.isPending || remove.isPending}>
-              Сохранить
+              {t('common.save')}
             </Button>
 
             {!isEmpty(log) && (
@@ -129,7 +129,7 @@ export function DaySheet({
                 onClick={() => void remove.mutateAsync(log.date).then(onClose)}
               >
                 <Trash2 size={18} aria-hidden />
-                Стереть отметку
+                {t('day.erase')}
               </Button>
             )}
           </>

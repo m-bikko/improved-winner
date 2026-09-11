@@ -33,17 +33,6 @@ export const TIP_CATEGORIES = [
 ] as const
 export type TipCategory = (typeof TIP_CATEGORIES)[number]
 
-export const CATEGORY_LABELS: Record<TipCategory, string> = {
-  body: 'Самочувствие',
-  hormones: 'Гормоны',
-  food: 'Питание',
-  training: 'Нагрузка',
-  together: 'Вдвоём',
-  intimacy: 'Близость',
-  practices: 'Виды близости',
-  benefits: 'Что даёт близость',
-}
-
 /**
  * Темы, которые не зависят от дня цикла.
  *
@@ -1124,9 +1113,3 @@ export function tipsByCategory(
 }
 
 /** Короткое описание фазы для шапки - одна строка, без советов. */
-export const PHASE_SUMMARY: Record<Phase, string> = {
-  menstrual: 'Первые дни цикла. Сил обычно меньше, и это нормально.',
-  follicular: 'Силы на подъёме - лучшая часть цикла для нагрузки и решений.',
-  ovulation: 'Середина цикла, пик самочувствия.',
-  luteal: 'Вторая половина. Возможны отёки, тяга к еде и перепады настроения.',
-}

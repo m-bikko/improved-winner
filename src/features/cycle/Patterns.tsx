@@ -1,11 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { Sparkles } from 'lucide-react'
 import { todayLocal } from '@/lib/date'
-import { plural } from '@/lib/plural'
 import { supabase } from '@/lib/supabase'
 import { STATE_BY_ID } from '@/features/checkin/states'
-import { dynamicKey, useT } from '@/lib/i18n'
-import { PHASE_LABELS, type Phase } from './cycle'
+import { dynamicKey, tr, trPlural, useT } from '@/lib/i18n'
+import { type Phase } from './cycle'
 
 type Pattern = {
   state: string
@@ -69,10 +68,10 @@ export function Patterns({ ownerId }: { ownerId: string }) {
     <section className="mt-5 rounded-2xl bg-surface p-4 ring-1 ring-line">
       <h2 className="flex items-center gap-2 font-medium">
         <Sparkles size={17} aria-hidden className="text-accent" />
-        Закономерности
+        {t('pat.title')}
       </h2>
       <p className="mt-1 text-sm text-muted">
-        По {observed} отмеченным {plural(observed, 'дню', 'дням', 'дням')} за полгода
+        {t('pat.observed', { n: observed, unit: t.plural('unit.dayDat', observed) })}
       </p>
 
       <ul className="mt-3 flex flex-col gap-3">
@@ -90,22 +89,30 @@ export function Patterns({ ownerId }: { ownerId: string }) {
       </ul>
 
       <p className="mt-4 border-t border-line pt-3 text-xs text-muted">
-        Это совпадения в отметках, а не диагноз. Совпадение может быть и случайным,
-        и общим следствием чего-то третьего.
+        {t('pat.disclaimer')}
       </p>
     </section>
   )
 }
 
 function phrase(p: Pattern): string {
-  const phase = PHASE_LABELS[p.phase].toLowerCase()
-  const share = `${p.hits} ${plural(p.hits, 'раз', 'раза', 'раз')} из ${p.daysInPhase}`
+  const phase = tr(dynamicKey('phase', p.phase)).toLowerCase()
+  const share = tr('pat.share', {
+    n: p.hits,
+    unit: trPlural('unit.time', p.hits),
+    total: p.daysInPhase,
+  })
 
   // Ноль за пределами фазы - это не «в 99 раз чаще», а «только здесь».
   // Отношение к нулю не имеет смысла, и показывать его числом нельзя
   if (p.otherRate === 0) {
-    return `отмечено только в эту фазу (${phase}), ${share}`
+    return tr('pat.onlyIn', { phase, share })
   }
   const times = p.ratio >= 10 ? Math.round(p.ratio) : Math.round(p.ratio * 10) / 10
-  return `в ${times} ${plural(Math.round(times), 'раз', 'раза', 'раз')} чаще в эту фазу (${phase}), ${share}`
+  return tr('pat.moreOften', {
+    times,
+    unit: trPlural('unit.time', Math.round(times)),
+    phase,
+    share,
+  })
 }

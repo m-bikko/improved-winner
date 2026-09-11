@@ -37,6 +37,21 @@ const ALLOWED = [
 ]
 
 const LITERAL = /(['"`])((?:(?!\1)[^\\]|\\.)*?[А-Яа-яЁё](?:(?!\1)[^\\]|\\.)*?)\1/g
+const ANY_LITERAL = /(['"`])(?:(?!\1)[^\\]|\\.)*?\1/g
+const CYRILLIC = /[А-Яа-яЁё][^<>{}()]*/g
+
+/**
+ * Текст прямо в разметке: `<button>Изменить</button>`.
+ *
+ * Кавычек вокруг него нет, и первая версия проверки его не видела - а это
+ * ровно половина интерфейса. Сначала выбрасываем строковые литералы (их
+ * считает LITERAL) и хвост строчного комментария, а кириллица в остатке
+ * и есть незамеченный текст.
+ */
+function inMarkup(line: string): string[] {
+  const code = (line.replace(ANY_LITERAL, '').split('//')[0] ?? '').trim()
+  return [...code.matchAll(CYRILLIC)].map((m) => m[0].trim()).filter((s) => s.length > 0)
+}
 
 /** Строковые литералы с кириллицей вне комментариев. */
 function untranslated(source: string): string[] {
@@ -48,12 +63,14 @@ function untranslated(source: string): string[] {
       if (trimmed.includes('*/')) inBlock = false
       continue
     }
-    if (trimmed.startsWith('/*')) {
+    // `{/* ... */}` - комментарий в разметке, такой же невидимый
+    if (trimmed.startsWith('/*') || trimmed.startsWith('{/*')) {
       if (!trimmed.includes('*/')) inBlock = true
       continue
     }
     if (trimmed.startsWith('//') || trimmed.startsWith('*')) continue
     for (const m of line.matchAll(LITERAL)) out.push(m[2] ?? '')
+    out.push(...inMarkup(line))
   }
   return out
 }

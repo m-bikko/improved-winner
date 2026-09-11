@@ -1,3 +1,4 @@
+import { tr, trPlural } from '@/lib/i18n'
 import { daysBetween, type Period } from './cycle'
 
 export type ReportCycle = {
@@ -76,7 +77,7 @@ export function buildReport(periods: Period[], today: string): Report | null {
   }
 }
 
-function ru(iso: string): string {
+function dmy(iso: string): string {
   const [y, m, d] = iso.split('-')
   return `${d}.${m}.${y}`
 }
@@ -94,44 +95,68 @@ function ru(iso: string): string {
  */
 export function reportToText(report: Report, warningTitles: string[], appName: string): string {
   const lines: string[] = []
-  lines.push('Дневник менструального цикла')
-  lines.push(`Период наблюдения: ${ru(report.from)} — ${ru(report.to)} (${report.observedDays} дн.)`)
-  lines.push(`Записано менструаций: ${report.cycles.length}`)
+  lines.push(tr('rep.title'))
+  lines.push(
+    tr('rep.observed', {
+      from: dmy(report.from),
+      to: dmy(report.to),
+      days: report.observedDays,
+      unit: trPlural('unit.day', report.observedDays),
+    }),
+  )
+  lines.push(tr('rep.recorded', { n: report.cycles.length }))
   lines.push('')
 
   if (report.cycleAvg !== null) {
     lines.push(
-      `Длина цикла: в среднем ${report.cycleAvg} дн. ` +
-        `(от ${report.cycleMin} до ${report.cycleMax})`,
+      tr('rep.cycleLen', {
+        avg: report.cycleAvg,
+        unit: trPlural('unit.day', report.cycleAvg),
+        min: report.cycleMin ?? 0,
+        max: report.cycleMax ?? 0,
+      }),
     )
   } else {
-    lines.push('Длина цикла: посчитать не из чего - записана одна менструация')
+    lines.push(tr('rep.cycleLenNone'))
   }
   if (report.periodAvg !== null) {
     lines.push(
-      `Длительность менструации: в среднем ${report.periodAvg} дн. ` +
-        `(от ${report.periodMin} до ${report.periodMax})`,
+      tr('rep.periodLen', {
+        avg: report.periodAvg,
+        unit: trPlural('unit.day', report.periodAvg),
+        min: report.periodMin ?? 0,
+        max: report.periodMax ?? 0,
+      }),
     )
   }
   lines.push('')
 
-  lines.push('История:')
+  lines.push(tr('rep.history'))
   for (const c of report.cycles) {
-    const period = c.periodDays === null ? 'длительность не отмечена' : `менструация ${c.periodDays} дн.`
-    const cycle = c.cycleDays === null ? 'цикл продолжается' : `цикл ${c.cycleDays} дн.`
-    lines.push(`  ${ru(c.startedOn)} — ${period}, ${cycle}`)
+    const period =
+      c.periodDays === null
+        ? tr('rep.periodUnknown')
+        : tr('rep.periodDays', {
+            n: c.periodDays,
+            unit: trPlural('unit.day', c.periodDays),
+          })
+    const cycle =
+      c.cycleDays === null
+        ? tr('rep.cycleOngoing')
+        : tr('rep.cycleDays', {
+            n: c.cycleDays,
+            unit: trPlural('unit.day', c.cycleDays),
+          })
+    lines.push(`  ${dmy(c.startedOn)} — ${period}, ${cycle}`)
   }
 
   if (warningTitles.length > 0) {
     lines.push('')
-    lines.push('На что обращало внимание приложение:')
+    lines.push(tr('rep.warnings'))
     for (const w of warningTitles) lines.push(`  — ${w}`)
   }
 
   lines.push('')
-  lines.push(
-    `Записи ведёт сам пациент в приложении «${appName}». ` +
-      'Это дневник наблюдений, а не медицинский документ.',
-  )
+  lines.push(tr('rep.footer', { app: appName }))
   return lines.join('\n')
 }

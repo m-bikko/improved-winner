@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Check, ChevronLeft, Copy } from 'lucide-react'
@@ -20,6 +21,7 @@ import { buildReport, reportToText } from './report'
  * в заметку, в печать. Врачу нужно содержимое, а не вид.
  */
 export function CycleReportPage() {
+  const t = useT()
   const userId = useUserId()
   const settings = useCycleSettings()
   const periods = usePeriods(userId)
@@ -34,10 +36,10 @@ export function CycleReportPage() {
     return (
       <div className="px-4 py-10 text-center">
         <p className="text-muted">
-          Выписку не из чего собрать: записей о менструациях пока нет.
+          {t('rep.nothing')}
         </p>
         <Link to="/cycle" className="mt-3 inline-block text-accent underline">
-          В раздел цикла
+          {t('rep.toCycle')}
         </Link>
       </div>
     )
@@ -61,12 +63,11 @@ export function CycleReportPage() {
     <div className="mx-auto max-w-2xl px-4 pt-3 pb-10">
       <Link to="/cycle" className="-ml-2 inline-flex items-center gap-1 p-2 text-sm text-muted">
         <ChevronLeft size={18} aria-hidden />
-        В раздел цикла
+        {t('rep.toCycle')}
       </Link>
 
       <p className="mt-2 text-sm text-muted">
-        Всё, что записано, одним текстом: средние, разброс и полная история.
-        Выбивающиеся циклы не отброшены - именно они и есть повод для разговора.
+        {t('rep.intro')}
       </p>
 
       {/* pre, а не набор блоков: текст на экране и текст в буфере должны
@@ -78,7 +79,7 @@ export function CycleReportPage() {
       <div className="mt-4">
         <Button onClick={() => void copy()}>
           {copied ? <Check size={18} aria-hidden /> : <Copy size={18} aria-hidden />}
-          {copied ? 'Скопировано' : 'Скопировать текст'}
+          {copied ? t('cycle.copied') : t('cycle.copy')}
         </Button>
       </div>
     </div>
