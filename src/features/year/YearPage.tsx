@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { todayLocal } from '@/lib/date'
-import { plural } from '@/lib/plural'
 import { STATE_BY_ID } from '@/features/checkin/states'
 import { dynamicKey, useT } from '@/lib/i18n'
 import { ErrorState, Loading } from '@/ui/States'
@@ -22,6 +21,7 @@ const FIRST_YEAR = 2026
  * не показывать.
  */
 export function YearPage() {
+  const t = useT()
   const thisYear = Number(todayLocal().slice(0, 4))
   const [year, setYear] = useState(thisYear)
   const summary = useYear(year)
@@ -38,7 +38,7 @@ export function YearPage() {
           disabled={year <= FIRST_YEAR}
           onClick={() => setYear((y) => y - 1)}
         />
-        <h1 className="text-2xl font-semibold">{year} в цифрах</h1>
+        <h1 className="text-2xl font-semibold">{t('year.title', { year })}</h1>
         <Arrow
           dir="next"
           disabled={year >= thisYear}
@@ -51,13 +51,13 @@ export function YearPage() {
       ) : (
         <>
           <section className="mt-5 rounded-2xl bg-surface p-4 ring-1 ring-line">
-            <h2 className="font-medium">Вместе</h2>
+            <h2 className="font-medium">{t('year.together')}</h2>
             <dl className="mt-3 grid grid-cols-2 gap-4">
-              <Stat n={summary.data.together.topicsOpened} label="тем завели" />
-              <Stat n={summary.data.together.topicsClosed} label="тем закрыли" />
-              <Stat n={summary.data.together.commentsWritten} label="ответов в темах" />
-              <Stat n={summary.data.together.tasksDone} label="задач сделали" />
-              <Stat n={summary.data.together.wishesAdded} label="желаний записали" />
+              <Stat n={summary.data.together.topicsOpened} label={t('year.topicsOpened')} />
+              <Stat n={summary.data.together.topicsClosed} label={t('year.topicsClosed')} />
+              <Stat n={summary.data.together.commentsWritten} label={t('year.comments')} />
+              <Stat n={summary.data.together.tasksDone} label={t('year.tasksDone')} />
+              <Stat n={summary.data.together.wishesAdded} label={t('year.wishes')} />
             </dl>
           </section>
 
@@ -79,13 +79,14 @@ function Arrow({
   disabled: boolean
   onClick: () => void
 }) {
+  const t = useT()
   const Icon = dir === 'prev' ? ChevronLeft : ChevronRight
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      aria-label={dir === 'prev' ? 'Предыдущий год' : 'Следующий год'}
+      aria-label={t(dir === 'prev' ? 'year.prev' : 'year.next')}
       className="flex size-10 shrink-0 items-center justify-center rounded-full
                  bg-raised text-muted ring-1 ring-line disabled:opacity-30"
     >
@@ -106,9 +107,16 @@ function Stat({ n, label }: { n: number; label: string }) {
 function Person({ person: p }: { person: PersonYear }) {
   const t = useT()
   const hours = Math.round(p.workoutMinutes / 60)
-  const delta =
+  // Одним объектом, а не тремя переменными: проверка `delta !== null`
+  // не сужает weightFrom и weightTo, и поля потом приходится разыменовывать
+  // с восклицательным знаком
+  const weight =
     p.weightFrom !== null && p.weightTo !== null
-      ? Math.round((p.weightTo - p.weightFrom) * 10) / 10
+      ? {
+          from: p.weightFrom,
+          to: p.weightTo,
+          delta: Math.round((p.weightTo - p.weightFrom) * 10) / 10,
+        }
       : null
 
   return (
@@ -116,13 +124,13 @@ function Person({ person: p }: { person: PersonYear }) {
       <h2 className="font-medium">{p.nickname}</h2>
 
       <dl className="mt-3 grid grid-cols-2 gap-4">
-        <Stat n={p.checkinDays} label="дней отметился" />
-        <Stat n={p.bestStreak} label="лучшая серия подряд" />
+        <Stat n={p.checkinDays} label={t('year.checkinDays')} />
+        <Stat n={p.bestStreak} label={t('year.bestStreak')} />
       </dl>
 
       {p.topStates.length > 0 && (
         <Line
-          title="Чаще всего чувствовал"
+          title={t('year.topStates')}
           items={p.topStates.map((s) => ({
             text: STATE_BY_ID[s.id] ? t(dynamicKey('state', s.id)) : s.id,
             n: s.n,
@@ -133,12 +141,12 @@ function Person({ person: p }: { person: PersonYear }) {
       {p.diaryDays > 0 && (
         <>
           <dl className="mt-4 grid grid-cols-2 gap-4">
-            <Stat n={p.diaryDays} label="дней в дневнике" />
-            {p.avgKcal !== null && <Stat n={p.avgKcal} label="ккал в среднем за день" />}
+            <Stat n={p.diaryDays} label={t('year.diaryDays')} />
+            {p.avgKcal !== null && <Stat n={p.avgKcal} label={t('year.avgKcal')} />}
           </dl>
           {p.topFoods.length > 0 && (
             <Line
-              title="Чаще всего ел"
+              title={t('year.topFoods')}
               items={p.topFoods.map((f) => ({ text: f.name, n: f.n }))}
             />
           )}
@@ -147,18 +155,18 @@ function Person({ person: p }: { person: PersonYear }) {
 
       {p.workouts > 0 && (
         <dl className="mt-4 grid grid-cols-2 gap-4">
-          <Stat n={p.workouts} label={plural(p.workouts, 'тренировка', 'тренировки', 'тренировок')} />
-          <Stat n={hours} label={`${plural(hours, 'час', 'часа', 'часов')} нагрузки`} />
-          <Stat n={p.workoutKcal} label="ккал потрачено" />
+          <Stat n={p.workouts} label={t.plural('year.workouts', p.workouts)} />
+          <Stat n={hours} label={t('year.hoursOfLoad', { unit: t.plural('unit.hour', hours) })} />
+          <Stat n={p.workoutKcal} label={t('year.workoutKcal')} />
         </dl>
       )}
 
-      {delta !== null && delta !== 0 && (
+      {weight !== null && weight.delta !== 0 && (
         <p className="mt-4 border-t border-line pt-3 text-sm">
-          Вес: {p.weightFrom} → {p.weightTo} кг{' '}
+          {t('year.weight', { from: weight.from, to: weight.to })}{' '}
           <span className="text-muted">
-            ({delta > 0 ? '+' : ''}
-            {delta})
+            ({weight.delta > 0 ? '+' : ''}
+            {weight.delta})
           </span>
         </p>
       )}

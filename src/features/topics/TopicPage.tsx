@@ -1,3 +1,4 @@
+import { activeLocale, tr, useT } from '@/lib/i18n'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, CircleCheck, RotateCcw, Send, Trash2 } from 'lucide-react'
@@ -40,6 +41,7 @@ export function TopicPage() {
 }
 
 function NewTopic() {
+  const t = useT()
   const navigate = useNavigate()
   const create = useCreateTopic()
   const [title, setTitle] = useState('')
@@ -58,12 +60,12 @@ function NewTopic() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 pb-16">
-      <Header title="Новая тема" />
+      <Header title={t('topic.new')} />
       <div className="flex flex-col gap-4">
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="О чём поговорить"
+          placeholder={t('topic.titlePlaceholder')}
           autoFocus
           className="w-full rounded-xl bg-surface px-4 py-3 text-lg ring-1 ring-line outline-none
                      focus:ring-2 focus:ring-accent placeholder:text-muted"
@@ -71,14 +73,14 @@ function NewTopic() {
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder="Что именно беспокоит, что хочется изменить"
+          placeholder={t('topic.bodyPlaceholder')}
           rows={6}
           className="w-full resize-none rounded-xl bg-surface px-4 py-3 ring-1 ring-line outline-none
                      focus:ring-2 focus:ring-accent placeholder:text-muted"
         />
         {error && <p className="text-sm text-danger">{error}</p>}
         <Button onClick={() => void submit()} disabled={!title.trim()} loading={create.isPending}>
-          Создать
+          {t('topic.create')}
         </Button>
       </div>
     </div>
@@ -97,6 +99,7 @@ function TopicDetail({
   comments: NonNullable<CommentData>
   nicknames: Map<string, string>
 }) {
+  const t = useT()
   const navigate = useNavigate()
   const { user } = useAuth()
   const userId = user?.id ?? ''
@@ -126,7 +129,7 @@ function TopicDetail({
   return (
     <div className="mx-auto flex max-w-2xl flex-col px-4 pb-4">
       <Header
-        title={topic.status === 'open' ? 'Обсуждение' : 'Закрыто'}
+        title={t(topic.status === 'open' ? 'topic.discussion' : 'topic.closed')}
         action={
           topic.createdBy === userId ? (
             <button
@@ -134,7 +137,7 @@ function TopicDetail({
               onClick={() => {
                 void remove.mutateAsync(topic.id).then(() => navigate('/topics', { replace: true }))
               }}
-              aria-label="Удалить тему"
+              aria-label={t('topic.delete')}
               className="p-2 text-muted"
             >
               <Trash2 size={18} aria-hidden />
@@ -146,19 +149,19 @@ function TopicDetail({
       <h1 className="text-xl font-semibold">{topic.title}</h1>
       {topic.body && <p className="mt-2 whitespace-pre-wrap text-ink/90">{topic.body}</p>}
       <p className="mt-2 text-xs text-muted">
-        {nicknames.get(topic.createdBy) ?? 'кто-то'} · {formatWhen(topic.createdAt)}
+        {nicknames.get(topic.createdBy) ?? t('topic.someone')} · {formatWhen(topic.createdAt)}
       </p>
 
       {topic.status === 'closed' && topic.resolution && (
         <div className="mt-4 rounded-xl bg-raised px-4 py-3">
           <p className="flex items-center gap-1.5 text-sm font-medium text-carbs">
             <CircleCheck size={15} aria-hidden />
-            Как решили
+            {t('topic.resolution')}
           </p>
           <p className="mt-1.5 whitespace-pre-wrap">{topic.resolution}</p>
           {topic.closedBy && (
             <p className="mt-2 text-xs text-muted">
-              {nicknames.get(topic.closedBy) ?? 'кто-то'}
+              {nicknames.get(topic.closedBy) ?? t('topic.someone')}
               {topic.closedAt && ` · ${formatWhen(topic.closedAt)}`}
             </p>
           )}
@@ -176,7 +179,7 @@ function TopicDetail({
               }`}
             >
               {!mine && (
-                <p className="text-xs text-muted">{nicknames.get(comment.authorId) ?? 'партнёр'}</p>
+                <p className="text-xs text-muted">{nicknames.get(comment.authorId) ?? t('topic.partner')}</p>
               )}
               <p className="whitespace-pre-wrap">{comment.body}</p>
               <p className={`mt-1 text-xs ${mine ? 'text-accent-ink/70' : 'text-muted'}`}>
@@ -193,7 +196,7 @@ function TopicDetail({
         <textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Написать"
+          placeholder={t('topic.writePlaceholder')}
           rows={1}
           onInput={(e) => {
             // Растёт под текст: фиксированная высота в разговоре на несколько
@@ -210,7 +213,7 @@ function TopicDetail({
           type="button"
           onClick={() => void send()}
           disabled={!draft.trim()}
-          aria-label="Отправить"
+          aria-label={t('topic.send')}
           className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-accent
                      text-accent-ink disabled:opacity-40"
         >
@@ -222,7 +225,7 @@ function TopicDetail({
         {topic.status === 'open' ? (
           <Button variant="secondary" onClick={() => setClosing(true)}>
             <CircleCheck size={18} aria-hidden />
-            Закрыть тему
+            {t('topic.close')}
           </Button>
         ) : (
           <Button
@@ -233,21 +236,20 @@ function TopicDetail({
             }
           >
             <RotateCcw size={18} aria-hidden />
-            Открыть заново
+            {t('topic.reopen')}
           </Button>
         )}
       </div>
 
-      <Sheet open={closing} onClose={() => setClosing(false)} title="Как решили">
+      <Sheet open={closing} onClose={() => setClosing(false)} title={t('topic.resolution')}>
         <div className="flex flex-col gap-4">
           <p className="text-sm text-muted">
-            Через полгода вы не вспомните, к чему пришли. Запишите так, чтобы было понятно
-            без контекста.
+            {t('topic.resolutionHint')}
           </p>
           <textarea
             value={resolution}
             onChange={(e) => setResolution(e.target.value)}
-            placeholder="Договорились, что…"
+            placeholder={t('topic.resolutionPlaceholder')}
             rows={5}
             autoFocus
             className="w-full resize-none rounded-xl bg-surface px-4 py-3 ring-1 ring-line
@@ -262,7 +264,7 @@ function TopicDetail({
                 .then(() => setClosing(false))
             }}
           >
-            Закрыть тему
+            {t('topic.close')}
           </Button>
         </div>
       </Sheet>
@@ -271,13 +273,14 @@ function TopicDetail({
 }
 
 function Header({ title, action }: { title: string; action?: React.ReactNode }) {
+  const t = useT()
   const navigate = useNavigate()
   return (
     <div className="flex items-center gap-1 py-2">
       <button
         type="button"
         onClick={() => navigate(-1)}
-        aria-label="Назад"
+        aria-label={t('food.back')}
         className="-ml-2 p-2 text-muted"
       >
         <ChevronLeft size={22} aria-hidden />
@@ -293,7 +296,10 @@ function formatWhen(iso: string): string {
   const date = new Date(iso)
   const now = new Date()
   const sameDay = date.toDateString() === now.toDateString()
-  const time = date.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })
-  if (sameDay) return `сегодня, ${time}`
-  return `${date.toLocaleDateString('ru', { day: 'numeric', month: 'long' })}, ${time}`
+  const time = date.toLocaleTimeString(activeLocale(), { hour: '2-digit', minute: '2-digit' })
+  if (sameDay) return tr('topic.todayAt', { time })
+  return tr('topic.dateAt', {
+    date: date.toLocaleDateString(activeLocale(), { day: 'numeric', month: 'long' }),
+    time,
+  })
 }

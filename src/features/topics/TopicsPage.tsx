@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CircleCheck, CircleDot, Plus } from 'lucide-react'
@@ -6,6 +7,7 @@ import { EmptyState, ErrorState, Loading } from '@/ui/States'
 import { useTopics, type TopicStatus } from './api'
 
 export function TopicsPage() {
+  const t = useT()
   const [tab, setTab] = useState<TopicStatus>('open')
   const [query, setQuery] = useState('')
   const topics = useTopics(query)
@@ -18,14 +20,14 @@ export function TopicsPage() {
           на телефоне - это боль, а статусов всего два */}
       <div className="mb-3 flex gap-1 rounded-xl bg-raised p-1">
         <Tab active={tab === 'open'} onClick={() => setTab('open')}>
-          Открыто
+          {t('topic.tabOpen')}
         </Tab>
         <Tab active={tab === 'closed'} onClick={() => setTab('closed')}>
-          Закрыто
+          {t('topic.tabClosed')}
         </Tab>
       </div>
 
-      <SearchInput value={query} onChange={setQuery} placeholder="Поиск по темам" />
+      <SearchInput value={query} onChange={setQuery} placeholder={t('topic.search')} />
 
       {topics.isPending && <Loading />}
       {topics.isError && <ErrorState error={topics.error} onRetry={() => void topics.refetch()} />}
@@ -34,17 +36,17 @@ export function TopicsPage() {
         <EmptyState
           title={
             query
-              ? 'Ничего не нашлось'
+              ? t('pick.nothingFound')
               : tab === 'open'
-                ? 'Открытых тем нет'
-                : 'Закрытых тем пока нет'
+                ? t('topic.noOpen')
+                : t('topic.noClosed')
           }
           hint={
             query
               ? undefined
               : tab === 'open'
-                ? 'Заведи тему, когда есть что обсудить, но не сейчас.'
-                : 'Сюда попадают темы, по которым вы к чему-то пришли.'
+                ? t('topic.hintOpen')
+                : t('topic.hintClosed')
           }
         />
       )}
@@ -81,7 +83,7 @@ export function TopicsPage() {
 
       <Link
         to="/topics/new"
-        aria-label="Новая тема"
+        aria-label={t('topic.new')}
         className="fixed right-5 bottom-6 z-20 flex size-14 items-center justify-center
                    rounded-full bg-accent text-accent-ink shadow-lg
                    transition-transform active:scale-95"

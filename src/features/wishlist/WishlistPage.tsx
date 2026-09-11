@@ -95,7 +95,7 @@ export function WishlistPage() {
   }
 
   const nick = (who: string): string =>
-    profiles.data?.find((p) => p.userId === who)?.nickname ?? 'Партнёр'
+    profiles.data?.find((p) => p.userId === who)?.nickname ?? t('partner')
 
   return (
     <div className="mx-auto max-w-2xl pt-3 pb-28">
@@ -105,7 +105,8 @@ export function WishlistPage() {
       <div className="overflow-x-auto px-4 pb-1">
         <div className="flex w-max gap-2">
           <Chip active={category === null} onClick={() => setCategory(null)}>
-            Все{all.length > 0 && ` · ${all.length}`}
+            {t('wish.all')}
+            {all.length > 0 && ` · ${all.length}`}
           </Chip>
           {CATEGORIES.map((c) => {
             const n = counts.get(c.id) ?? 0
@@ -129,12 +130,10 @@ export function WishlistPage() {
       {shown.length === 0 ? (
         <div className="px-4">
           <EmptyState
-            title={category === null ? 'Вишлист пуст' : 'В этой категории пусто'}
-            hint={
-              category === null
-                ? 'Всё, что хочется: съездить, купить, попробовать, посмотреть. С картинкой и подробностями.'
-                : 'Выберите «Все», чтобы увидеть остальные желания.'
-            }
+            title={t(category === null ? 'wish.emptyAll' : 'wish.emptyCategory')}
+            hint={t(
+              category === null ? 'wish.emptyHintAll' : 'wish.emptyHintCategory',
+            )}
           />
         </div>
       ) : (
@@ -159,7 +158,7 @@ export function WishlistPage() {
       <button
         type="button"
         onClick={() => setEditing('new')}
-        aria-label="Новое желание"
+        aria-label={t('wish.new')}
         className="fixed right-5 bottom-6 z-20 flex size-14 items-center justify-center
                    rounded-full bg-accent text-accent-ink shadow-lg
                    transition-transform active:scale-95"
@@ -242,7 +241,7 @@ function Row({
         type="button"
         onClick={() => url && onView(url)}
         disabled={!url}
-        aria-label={url ? `Посмотреть картинку: ${wish.title}` : wish.title}
+        aria-label={url ? t('wish.viewPhoto', { name: wish.title }) : wish.title}
         className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-raised ring-1 ring-line"
       >
         {url ? (
@@ -296,7 +295,7 @@ function Editor({
   const submit = async () => {
     setError(null)
     if (title.trim() === '') {
-      setError('Без названия желание не найти')
+      setError(t('wish.noTitle'))
       return
     }
     try {
@@ -308,30 +307,30 @@ function Editor({
   }
 
   return (
-    <Sheet open onClose={onClose} title={wish ? 'Желание' : 'Новое желание'}>
+    <Sheet open onClose={onClose} title={t(wish ? 'wish.title' : 'wish.new')}>
       <div className="flex flex-col gap-4">
         <Field
-          label="Что хочется"
+          label={t('wish.what')}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Поездка в Грузию"
+          placeholder={t('wish.placeholder')}
           autoFocus={!wish}
         />
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-muted">Подробности</span>
+          <span className="text-sm text-muted">{t('wish.details')}</span>
           <textarea
             value={details}
             onChange={(e) => setDetails(e.target.value)}
             rows={3}
-            placeholder="Ссылка, размер, цена, почему хочется"
+            placeholder={t('wish.detailsPlaceholder')}
             className="w-full min-w-0 resize-none rounded-xl bg-surface px-4 py-3 ring-1 ring-line
                        outline-none focus:ring-2 focus:ring-accent placeholder:text-muted"
           />
         </label>
 
         <div className="flex flex-col gap-2">
-          <span className="text-sm text-muted">Категория</span>
+          <span className="text-sm text-muted">{t('wish.category')}</span>
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((c) => {
               const Icon = c.icon
@@ -359,7 +358,7 @@ function Editor({
           savedId={savedId}
           onNeedSave={async () => {
             if (title.trim() === '') {
-              setError('Сначала впишите название - картинка привязывается к записи')
+              setError(t('wish.needTitleFirst'))
               return null
             }
             const id = await save.mutateAsync({
@@ -376,7 +375,7 @@ function Editor({
         {error && <p className="text-sm text-danger">{error}</p>}
 
         <Button onClick={() => void submit()} loading={save.isPending}>
-          Сохранить
+          {t('common.save')}
         </Button>
 
         {wish && (
@@ -386,7 +385,7 @@ function Editor({
             onClick={() => void remove.mutateAsync(wish.id).then(onClose)}
           >
             <Trash2 size={18} aria-hidden />
-            Удалить
+            {t('common.delete')}
           </Button>
         )}
       </div>
@@ -411,6 +410,7 @@ function Photo({
   savedId: string | null
   onNeedSave: () => Promise<string | null>
 }) {
+  const t = useT()
   const input = useRef<HTMLInputElement>(null)
   const upload = useUploadWishPhoto()
   const remove = useRemoveWishPhoto()
@@ -458,7 +458,7 @@ function Photo({
   if (bitmap) {
     return (
       <div className="flex flex-col gap-3">
-        <p className="text-sm text-muted">Выберите квадрат: тяните, щипком меняйте масштаб</p>
+        <p className="text-sm text-muted">{t('wish.cropHint')}</p>
         <SquareCropper
           bitmap={bitmap}
           busy={upload.isPending}
@@ -502,7 +502,7 @@ function Photo({
           onClick={() => input.current?.click()}
           className="text-sm text-accent underline"
         >
-          {path ? 'Заменить картинку' : 'Добавить картинку'}
+          {t(path ? 'wish.replacePhoto' : 'wish.addPhoto')}
         </button>
 
         {path && savedId && (
@@ -516,7 +516,7 @@ function Photo({
             }
             className="text-sm text-muted underline"
           >
-            Убрать
+            {t('wish.removePhoto')}
           </button>
         )}
 
