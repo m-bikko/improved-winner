@@ -3,8 +3,8 @@ title: profiles - профиль и цели
 type: entity
 tags: [database, profile, goals]
 created: 2026-09-03
-updated: 2026-09-03
-sources: [src/lib/nutrition.ts, src/features/profile/]
+updated: 2026-09-11
+sources: [src/lib/nutrition.ts, src/features/profile/, supabase/migrations/20260911120000_language.sql]
 ---
 
 # profiles - профиль и цели
@@ -45,6 +45,13 @@ sources: [src/lib/nutrition.ts, src/features/profile/]
 целей, а график строится по журналу. Одна таблица ценой в пять строк даёт
 динамику, которая держит мотивацию лучше всего остального в приложении.
 
+## language
+
+Язык интерфейса: `ru`, `kk` или `en`. В профиле, а не в localStorage, по трём
+причинам: у каждого из двоих он свой, переезжает вместе с аккаунтом на другое
+устройство и - главное - его спрашивает база. Рассылки собираются в plpgsql
+и без этой колонки навсегда остались бы русскими; см. [[i18n]].
+
 ## Создание строки
 
 Профиль создаёт `scripts/bootstrap-users.ts` вместе с аккаунтом. Триггер на
@@ -53,4 +60,4 @@ sources: [src/lib/nutrition.ts, src/features/profile/]
 
 ## См. также
 
-- [[auth]], [[diary-entries]]
+- [[auth]], [[diary-entries]], [[i18n]]
