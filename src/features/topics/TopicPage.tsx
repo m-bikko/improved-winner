@@ -1,4 +1,5 @@
-import { activeLocale, tr, useT } from '@/lib/i18n'
+import { formatDayMonth, formatTime } from '@/lib/date'
+import { tr, useT } from '@/lib/i18n'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, CircleCheck, RotateCcw, Send, Trash2 } from 'lucide-react'
@@ -296,10 +297,10 @@ function formatWhen(iso: string): string {
   const date = new Date(iso)
   const now = new Date()
   const sameDay = date.toDateString() === now.toDateString()
-  const time = date.toLocaleTimeString(activeLocale(), { hour: '2-digit', minute: '2-digit' })
+  const time = formatTime(date)
   if (sameDay) return tr('topic.todayAt', { time })
   return tr('topic.dateAt', {
-    date: date.toLocaleDateString(activeLocale(), { day: 'numeric', month: 'long' }),
+    date: formatDayMonth(date),
     time,
   })
 }

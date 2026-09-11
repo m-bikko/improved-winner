@@ -1,9 +1,9 @@
-import { activeLocale, dynamicKey, tr, trPlural, useT } from '@/lib/i18n'
+import { dynamicKey, tr, trPlural, useT } from '@/lib/i18n'
 import { useState } from 'react'
 import { Cake, CalendarHeart, Plus, Star, Trash2 } from 'lucide-react'
 import { useLocalFlag } from '@/lib/localFlag'
 import { LettersTab } from '@/features/letters/LettersTab'
-import { fromLocalISO, todayLocal } from '@/lib/date'
+import { formatDayMonth, fromLocalISO, todayLocal } from '@/lib/date'
 import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
 import { Sheet } from '@/ui/Sheet'
@@ -155,7 +155,7 @@ function countdown(days: number): string {
 }
 
 function dayMonth(iso: string): string {
-  return fromLocalISO(iso).toLocaleDateString(activeLocale(), { day: 'numeric', month: 'long' })
+  return formatDayMonth(fromLocalISO(iso))
 }
 
 function anniversary(o: Occasion): string | null {

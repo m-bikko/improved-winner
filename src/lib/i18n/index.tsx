@@ -95,7 +95,7 @@ export function dynamicKey(prefix: string, id: string): Key {
 
 export function useLang(): Ctx {
   const ctx = use(LangContext)
-  if (!ctx) throw new Error('LangProvider не подключён')
+  if (!ctx) throw new Error('useLang called outside LangProvider')
   return ctx
 }
 

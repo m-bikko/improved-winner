@@ -1,4 +1,4 @@
-import { useT } from '@/lib/i18n'
+import { tr } from '@/lib/i18n'
 import { useEffect } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { RefreshCw } from 'lucide-react'
@@ -14,9 +14,12 @@ import { RefreshCw } from 'lucide-react'
  * Плюс страховка: если ленивый чанк всё-таки не доехал (обновление приехало
  * между загрузкой страницы и переходом по разделу), перезагружаем страницу
  * сами - иначе раздел просто не откроется и выглядеть это будет как поломка.
+ *
+ * Текст берётся через tr(), а не через useT(): компонент рендерится СНАРУЖИ
+ * LangProvider - как и граница ошибок, и ровно по той же причине. Хук там
+ * роняет всё приложение в белый экран.
  */
 export function UpdatePrompt() {
-  const t = useT()
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
@@ -45,20 +48,20 @@ export function UpdatePrompt() {
       style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
     >
       <RefreshCw size={18} className="shrink-0 text-accent" aria-hidden />
-      <span className="flex-1 text-sm">{t('update.available')}</span>
+      <span className="flex-1 text-sm">{tr('update.available')}</span>
       <button
         type="button"
         onClick={() => void updateServiceWorker(true)}
         className="rounded-lg bg-accent px-3 py-2 text-sm text-accent-ink"
       >
-        {t('common.refresh')}
+        {tr('common.refresh')}
       </button>
       <button
         type="button"
         onClick={() => setNeedRefresh(false)}
         className="px-2 py-2 text-sm text-muted"
       >
-        {t('update.later')}
+        {tr('update.later')}
       </button>
     </div>
   )

@@ -12,11 +12,11 @@ import {
   TriangleAlert,
 } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
-import { fromLocalISO, todayLocal } from '@/lib/date'
+import { formatDayMonth, formatTime, formatWeekdayDate, fromLocalISO, todayLocal } from '@/lib/date'
 import { Loading } from '@/ui/States'
 import { useCheckins, useStreaks } from '@/features/checkin/api'
 import { STATE_BY_ID } from '@/features/checkin/states'
-import { activeLocale, dynamicKey, useT } from '@/lib/i18n'
+import { dynamicKey, useT } from '@/lib/i18n'
 import { DEFAULT_SETTINGS, useCycleSettings, useCycleShared, usePeriods } from '@/features/cycle/api'
 import { cycleDay } from '@/features/cycle/cycle'
 import { useOccasions } from '@/features/dates/api'
@@ -66,11 +66,7 @@ export function TodayPage() {
       {/* Не formatDayLabel: он вернёт «Сегодня», а так уже называется сам
           раздел - вышло бы слово «Сегодня» дважды подряд. Здесь нужна дата */}
       <p className="px-1 text-sm text-muted">
-        {fromLocalISO(today).toLocaleDateString('ru-RU', {
-          weekday: 'long',
-          day: 'numeric',
-          month: 'long',
-        })}
+        {formatWeekdayDate(fromLocalISO(today))}
       </p>
 
       <NudgeButton />
@@ -329,12 +325,8 @@ function Reply({
   const t = useT()
   if (!reply) return null
   const mine = reply.authorId === userId
-  const when = new Date(reply.createdAt).toLocaleString(activeLocale(), {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  const at = new Date(reply.createdAt)
+  const when = `${formatDayMonth(at)}, ${formatTime(at)}`
 
   return (
     <Tile to={`/topics/${reply.topicId}`} icon={MessagesSquare} title={t('today.lastReply')}>

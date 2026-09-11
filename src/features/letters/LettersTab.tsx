@@ -2,7 +2,7 @@ import { useT } from '@/lib/i18n'
 import { useMemo, useRef, useState } from 'react'
 import { Check, ImagePlus, Mail, MailOpen, Plus, X } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
-import { fromLocalISO, shiftDays, todayLocal } from '@/lib/date'
+import { formatDayMonthYear, fromLocalISO, shiftDays, todayLocal } from '@/lib/date'
 import { formatBytes, prepareImage, type PreparedImage } from '@/lib/image'
 import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
@@ -20,11 +20,7 @@ import {
 } from './api'
 
 function day(iso: string): string {
-  return fromLocalISO(iso).toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
+  return formatDayMonthYear(fromLocalISO(iso))
 }
 
 /**

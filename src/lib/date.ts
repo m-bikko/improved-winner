@@ -63,24 +63,90 @@ export function fromDateTimeInput(value: string): string | null {
 }
 
 /*
- * Месяцы и дни недели НЕ лежат в словарях: их знает Intl, и на всех трёх
- * языках он назовёт их правильнее, чем список, переписанный руками.
- * В словаре остаётся только то, чего в Intl нет, - «сегодня» и «вчера».
+ * Месяцы и дни недели знает Intl, и на языках, которые он знает, он назовёт
+ * их правильнее списка, переписанного руками. Словарь тут запасной вариант
+ * для языков, которых у Intl в этой сборке нет, - см. intlKnows().
+ *
+ * Форматирование дат живёт ТОЛЬКО здесь. Раньше каждый экран звал
+ * toLocaleDateString сам, и один из них так и остался с прибитой 'ru-RU':
+ * интерфейс переключился, а дата рядом - нет.
  */
 
 /** «Сегодня в 14:30», «Вчера в 9:00», «3 сентября, 14:30». */
 export function formatDueAt(iso: string): string {
   const date = new Date(iso)
   const day = toLocalISO(date)
-  const time = date.toLocaleTimeString(activeLocale(), { hour: '2-digit', minute: '2-digit' })
+  const time = formatTime(date)
   const today = todayLocal()
 
   if (day === today) return tr('date.todayAt', { time })
   if (day === shiftDays(today, -1)) return tr('date.yesterdayAt', { time })
   if (day === shiftDays(today, 1)) return tr('date.tomorrowAt', { time })
 
-  const dayMonth = date.toLocaleDateString(activeLocale(), { day: 'numeric', month: 'long' })
-  return `${dayMonth}, ${time}`
+  return `${formatDayMonth(date)}, ${time}`
+}
+
+/**
+ * Знает ли браузер эту локаль.
+ *
+ * Проверка не теоретическая: в Chromium без полного ICU данных по казахскому
+ * нет вовсе, и `toLocaleDateString('kk-KZ')` молча отдаёт английский -
+ * не ошибку, а «September» посреди казахского экрана. Хуже всего тут именно
+ * тишина: заметить это можно только глазами.
+ *
+ * Поэтому там, где Intl не знает языка, месяцы и дни берутся из словаря.
+ * Для русского и английского Intl остаётся - он и правильнее, и бесплатен.
+ */
+function intlKnows(locale: string): boolean {
+  return Intl.DateTimeFormat.supportedLocalesOf([locale]).length > 0
+}
+
+/** Месяц в форме, в которой он стоит внутри даты: «5 сентября». */
+function monthOf(month: number): string {
+  return tr(`month.of.${month + 1}` as Parameters<typeof tr>[0])
+}
+
+/** «3 сентября, среда» своими силами, когда Intl языка не знает. */
+function spellDate(date: Date, withWeekday: boolean): string {
+  const head = `${date.getDate()} ${monthOf(date.getMonth())}`
+  if (!withWeekday) return head
+  // getDay(): 0 - воскресенье, а ключи пронумерованы с понедельника
+  const weekday = ((date.getDay() + 6) % 7) + 1
+  return `${head}, ${tr(`weekday.name.${weekday}` as Parameters<typeof tr>[0])}`
+}
+
+/** «14:30». Круглые сутки: 12-часовой формат тут ниоткуда не следует. */
+export function formatTime(date: Date): string {
+  if (!intlKnows(activeLocale())) {
+    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+  }
+  return date.toLocaleTimeString(activeLocale(), { hour: '2-digit', minute: '2-digit' })
+}
+
+/** «5 сентября». */
+export function formatDayMonth(date: Date): string {
+  if (!intlKnows(activeLocale())) return spellDate(date, false)
+  return date.toLocaleDateString(activeLocale(), { day: 'numeric', month: 'long' })
+}
+
+/** «5 сентября 2026». */
+export function formatDayMonthYear(date: Date): string {
+  if (!intlKnows(activeLocale())) return `${spellDate(date, false)} ${date.getFullYear()}`
+  return date.toLocaleDateString(activeLocale(), {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+/** «пятница, 11 сентября» - день с днём недели, но без слова «сегодня». */
+export function formatWeekdayDate(date: Date): string {
+  if (!intlKnows(activeLocale())) return spellDate(date, true)
+  return date.toLocaleDateString(activeLocale(), {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
 }
 
 /** «Сегодня», «Вчера», «Завтра» или «3 сентября, среда». */
@@ -90,7 +156,9 @@ export function formatDayLabel(iso: string): string {
   if (iso === shiftDays(today, -1)) return tr('common.yesterday')
   if (iso === shiftDays(today, 1)) return tr('common.tomorrow')
 
-  return fromLocalISO(iso).toLocaleDateString(activeLocale(), {
+  const date = fromLocalISO(iso)
+  if (!intlKnows(activeLocale())) return spellDate(date, true)
+  return date.toLocaleDateString(activeLocale(), {
     day: 'numeric',
     month: 'long',
     weekday: 'long',
@@ -106,7 +174,9 @@ export function formatDayLabel(iso: string): string {
  * а не в дате.
  */
 export function monthName(month: number): string {
-  const name = new Date(2000, month, 1).toLocaleDateString(activeLocale(), { month: 'long' })
+  const name = intlKnows(activeLocale())
+    ? new Date(2000, month, 1).toLocaleDateString(activeLocale(), { month: 'long' })
+    : tr(`month.name.${month + 1}` as Parameters<typeof tr>[0])
   return name.charAt(0).toUpperCase() + name.slice(1)
 }
 
@@ -118,6 +188,8 @@ export function monthName(month: number): string {
  * в английской он воскресенье, и сетка разъехалась бы.
  */
 export function weekdayShortNames(): string[] {
+  const keys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+  if (!intlKnows(activeLocale())) return keys.map((k) => tr(`weekday.${k}`))
   // 2024-01-01 - понедельник
   return Array.from({ length: 7 }, (_, i) =>
     new Date(2024, 0, 1 + i).toLocaleDateString(activeLocale(), { weekday: 'short' }),
