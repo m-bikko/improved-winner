@@ -2,19 +2,12 @@ import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { fromLocalISO, toLocalISO, todayLocal } from '@/lib/date'
+import { fromLocalISO, monthName, toLocalISO, todayLocal, weekdayShortNames } from '@/lib/date'
 import type { Macros } from '@/lib/nutrition'
 import { Sheet } from '@/ui/Sheet'
 import { Loading } from '@/ui/States'
 
 type DaySummary = { kcal: number; protein: number; goalKcal: number | null; goalProtein: number | null }
-
-const MONTH_NAMES = [
-  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-  'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
-] as const
-
-const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] as const
 
 function useMonth(userId: string, year: number, month: number) {
   const from = toLocalISO(new Date(year, month, 1))
@@ -108,7 +101,7 @@ export function MonthCalendar({
             <ChevronLeft size={20} aria-hidden />
           </button>
           <span className="text-base font-medium">
-            {MONTH_NAMES[cursor.month]} {cursor.year}
+            {monthName(cursor.month)} {cursor.year}
           </span>
           <button type="button" onClick={() => shift(1)} aria-label="Следующий месяц" className="p-3 text-muted">
             <ChevronRight size={20} aria-hidden />
@@ -116,7 +109,7 @@ export function MonthCalendar({
         </div>
 
         <div className="mb-1 grid grid-cols-7 gap-1">
-          {WEEKDAYS.map((w) => (
+          {weekdayShortNames().map((w) => (
             <span key={w} className="py-1 text-center text-xs text-muted">
               {w}
             </span>

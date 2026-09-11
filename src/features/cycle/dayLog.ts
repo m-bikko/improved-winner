@@ -8,31 +8,9 @@
 
 export const FLOW = ['spotting', 'light', 'medium', 'heavy'] as const
 export type Flow = (typeof FLOW)[number]
-export const FLOW_LABELS: Record<Flow, string> = {
-  spotting: 'Мазня',
-  light: 'Слабо',
-  medium: 'Средне',
-  heavy: 'Обильно',
-}
-
 export const MOODS = ['great', 'ok', 'low', 'irritable', 'anxious'] as const
 export type Mood = (typeof MOODS)[number]
-export const MOOD_LABELS: Record<Mood, string> = {
-  great: 'Отлично',
-  ok: 'Нормально',
-  low: 'Упадок',
-  irritable: 'Раздражение',
-  anxious: 'Тревога',
-}
-
 /** Шкала боли в четыре ступени: различить больше человек через месяц не сможет. */
-export const PAIN_LABELS: Record<number, string> = {
-  0: 'Нет',
-  1: 'Слабая',
-  2: 'Средняя',
-  3: 'Сильная',
-}
-
 export const SYMPTOMS = [
   'cramps',
   'headache',
@@ -46,19 +24,6 @@ export const SYMPTOMS = [
   'cravings',
 ] as const
 export type Symptom = (typeof SYMPTOMS)[number]
-export const SYMPTOM_LABELS: Record<Symptom, string> = {
-  cramps: 'Спазмы',
-  headache: 'Голова',
-  bloating: 'Вздутие',
-  'breast-tenderness': 'Грудь',
-  acne: 'Кожа',
-  'back-pain': 'Поясница',
-  fatigue: 'Усталость',
-  insomnia: 'Сон',
-  nausea: 'Тошнота',
-  cravings: 'Тяга к еде',
-}
-
 export type DayLog = {
   date: string
   flow: Flow | null
@@ -82,3 +47,6 @@ export function isEmpty(log: DayLog): boolean {
     (log.note === null || log.note.trim() === '')
   )
 }
+
+/** Боль хранится числом 0-3 - ключи подписей по тому же порядку. */
+export const PAIN_KEYS = ['pain.none', 'pain.mild', 'pain.moderate', 'pain.severe'] as const

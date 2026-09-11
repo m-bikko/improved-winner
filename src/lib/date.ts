@@ -96,3 +96,30 @@ export function formatDayLabel(iso: string): string {
     weekday: 'long',
   })
 }
+
+/**
+ * Название месяца на текущем языке.
+ *
+ * Через Intl, а не списком: три календаря держали три копии одного и того же
+ * списка, и каждая новая локаль требовала бы трёх правок. Форма именительная
+ * («Сентябрь»), потому что в заголовке календаря месяц стоит сам по себе,
+ * а не в дате.
+ */
+export function monthName(month: number): string {
+  const name = new Date(2000, month, 1).toLocaleDateString(activeLocale(), { month: 'long' })
+  return name.charAt(0).toUpperCase() + name.slice(1)
+}
+
+/**
+ * Короткие дни недели, с понедельника.
+ *
+ * Понедельник первым задан жёстко: в приложении календари недельные
+ * и начинаются с него, а `Intl` определяет первый день по локали -
+ * в английской он воскресенье, и сетка разъехалась бы.
+ */
+export function weekdayShortNames(): string[] {
+  // 2024-01-01 - понедельник
+  return Array.from({ length: 7 }, (_, i) =>
+    new Date(2024, 0, 1 + i).toLocaleDateString(activeLocale(), { weekday: 'short' }),
+  )
+}

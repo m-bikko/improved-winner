@@ -2,7 +2,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { LoaderCircle } from 'lucide-react'
 import { AuthProvider, useAuth } from '@/auth/AuthProvider'
-import { LangProvider } from '@/lib/i18n'
+import { LangProvider, useT } from '@/lib/i18n'
 import { LoginScreen } from '@/auth/LoginScreen'
 import { CACHE_BUSTER, persister, queryClient } from '@/lib/queryClient'
 import { AppShell } from '@/shell/AppShell'
@@ -58,12 +58,13 @@ export default function App() {
  * мелькал бы PIN-пад у уже авторизованного человека.
  */
 function Gate() {
+  const t = useT()
   const { status } = useAuth()
 
   if (status === 'loading') {
     return (
       <div className="flex min-h-dvh items-center justify-center text-muted">
-        <LoaderCircle size={22} className="animate-spin" aria-label="Загрузка" />
+        <LoaderCircle size={22} className="animate-spin" aria-label={t('common.loading')} />
       </div>
     )
   }

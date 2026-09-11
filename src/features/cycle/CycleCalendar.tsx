@@ -1,15 +1,9 @@
+import { useT } from '@/lib/i18n'
 import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { fromLocalISO, toLocalISO, todayLocal } from '@/lib/date'
+import { fromLocalISO, monthName, toLocalISO, todayLocal, weekdayShortNames } from '@/lib/date'
 import type { CycleDay, Forecast, Period } from './cycle'
 import type { DayLog } from './dayLog'
-
-const MONTH_NAMES = [
-  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-  'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
-] as const
-
-const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] as const
 
 type Mark = {
   /** Менструация, которая уже была: отмечена руками. */
@@ -51,6 +45,7 @@ export function CycleCalendar({
   selected: string
   onSelect: (date: string) => void
 }) {
+  const t = useT()
   const anchor = fromLocalISO(selected)
   const [cursor, setCursor] = useState(() => ({
     year: anchor.getFullYear(),
@@ -117,19 +112,19 @@ export function CycleCalendar({
   return (
     <section className="rounded-2xl bg-surface p-3 ring-1 ring-line">
       <div className="mb-2 flex items-center justify-between px-1">
-        <button type="button" onClick={() => shift(-1)} aria-label="Прошлый месяц" className="p-2 text-muted">
+        <button type="button" onClick={() => shift(-1)} aria-label={t('cal.prevMonth')} className="p-2 text-muted">
           <ChevronLeft size={20} aria-hidden />
         </button>
         <span className="text-sm font-medium">
-          {MONTH_NAMES[cursor.month]} {cursor.year}
+          {monthName(cursor.month)} {cursor.year}
         </span>
-        <button type="button" onClick={() => shift(1)} aria-label="Следующий месяц" className="p-2 text-muted">
+        <button type="button" onClick={() => shift(1)} aria-label={t('cal.nextMonth')} className="p-2 text-muted">
           <ChevronRight size={20} aria-hidden />
         </button>
       </div>
 
       <div className="mb-1 grid grid-cols-7 gap-1">
-        {WEEKDAYS.map((w) => (
+        {weekdayShortNames().map((w) => (
           <span key={w} className="py-1 text-center text-xs text-muted">
             {w}
           </span>

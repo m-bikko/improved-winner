@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { Delete } from 'lucide-react'
 import { PIN_LENGTH } from '@/lib/accounts'
 
@@ -33,6 +34,7 @@ export function PinPad({
   disabled = false,
   footer,
 }: Props) {
+  const t = useT()
   const press = (digit: string) => {
     if (disabled || value.length >= PIN_LENGTH) return
     navigator.vibrate?.(8)
@@ -53,7 +55,7 @@ export function PinPad({
       </div>
 
       <div key={shakeKey} className={error ? 'animate-shake' : undefined}>
-        <div className="flex gap-3" role="status" aria-label={`Введено ${value.length} из ${PIN_LENGTH}`}>
+        <div className="flex gap-3" role="status" aria-label={t('pin.entered', { n: value.length, total: PIN_LENGTH })}>
           {Array.from({ length: PIN_LENGTH }, (_, i) => (
             <span
               key={i}

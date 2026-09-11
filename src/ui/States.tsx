@@ -1,10 +1,12 @@
 import type { ReactNode } from 'react'
 import { CircleAlert, LoaderCircle } from 'lucide-react'
+import { useT } from '@/lib/i18n'
 
-export function Loading({ label = 'Загрузка' }: { label?: string }) {
+export function Loading({ label }: { label?: string }) {
+  const t = useT()
   return (
     <div className="flex justify-center py-16 text-muted">
-      <LoaderCircle size={22} className="animate-spin" aria-label={label} />
+      <LoaderCircle size={22} className="animate-spin" aria-label={label ?? t('common.loading')} />
     </div>
   )
 }
@@ -37,6 +39,7 @@ export function EmptyState({
  * пошло не так» не даёт ни им, ни мне ни малейшей зацепки при разборе.
  */
 export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
+  const t = useT()
   const message = error instanceof Error ? error.message : String(error)
   return (
     <div className="flex flex-col items-center gap-3 px-8 py-16 text-center">
@@ -44,7 +47,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
       <p className="text-sm text-muted">{message}</p>
       {onRetry && (
         <button type="button" onClick={onRetry} className="text-sm text-accent underline">
-          Повторить
+          {t('common.retry')}
         </button>
       )}
     </div>

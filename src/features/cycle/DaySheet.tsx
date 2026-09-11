@@ -1,3 +1,4 @@
+import { dynamicKey, useT } from '@/lib/i18n'
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { formatDayLabel } from '@/lib/date'
@@ -6,17 +7,14 @@ import { Sheet } from '@/ui/Sheet'
 import { useDeleteCycleDay, useSaveCycleDay } from './api'
 import {
   FLOW,
-  FLOW_LABELS,
   MOODS,
-  MOOD_LABELS,
-  PAIN_LABELS,
   SYMPTOMS,
-  SYMPTOM_LABELS,
   isEmpty,
   type DayLog,
   type Flow,
   type Mood,
   type Symptom,
+  PAIN_KEYS,
 } from './dayLog'
 
 /**
@@ -38,6 +36,7 @@ export function DaySheet({
   readOnly: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const save = useSaveCycleDay()
   const remove = useDeleteCycleDay()
 
@@ -73,40 +72,40 @@ export function DaySheet({
           <ReadOnly log={log} />
         ) : (
           <>
-            <Group label="Обильность">
+            <Group label={t('day.flow')}>
               {FLOW.map((f) => (
                 <Chip key={f} active={flow === f} onClick={() => setFlow(flow === f ? null : f)}>
-                  {FLOW_LABELS[f]}
+                  {t(dynamicKey('flow', f))}
                 </Chip>
               ))}
             </Group>
 
-            <Group label="Боль">
+            <Group label={t('day.pain')}>
               {[0, 1, 2, 3].map((p) => (
                 <Chip key={p} active={pain === p} onClick={() => setPain(pain === p ? null : p)}>
-                  {PAIN_LABELS[p]}
+                  {t(PAIN_KEYS[p] ?? 'pain.none')}
                 </Chip>
               ))}
             </Group>
 
-            <Group label="Настроение">
+            <Group label={t('day.mood')}>
               {MOODS.map((m) => (
                 <Chip key={m} active={mood === m} onClick={() => setMood(mood === m ? null : m)}>
-                  {MOOD_LABELS[m]}
+                  {t(dynamicKey('mood', m))}
                 </Chip>
               ))}
             </Group>
 
-            <Group label="Симптомы">
+            <Group label={t('day.symptoms')}>
               {SYMPTOMS.map((s) => (
                 <Chip key={s} active={symptoms.includes(s)} onClick={() => toggleSymptom(s)}>
-                  {SYMPTOM_LABELS[s]}
+                  {t(dynamicKey('symptom', s))}
                 </Chip>
               ))}
             </Group>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm text-muted">Заметка</span>
+              <span className="text-sm text-muted">{t('day.note')}</span>
               <textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
@@ -141,16 +140,17 @@ export function DaySheet({
 }
 
 function ReadOnly({ log }: { log: DayLog }) {
-  if (isEmpty(log)) return <p className="text-sm text-muted">За этот день отметок нет.</p>
+  const t = useT()
+  if (isEmpty(log)) return <p className="text-sm text-muted">{t('day.empty')}</p>
   return (
     <dl className="flex flex-col gap-3 text-sm">
-      {log.flow && <Row label="Обильность" value={FLOW_LABELS[log.flow]} />}
-      {log.pain !== null && <Row label="Боль" value={PAIN_LABELS[log.pain] ?? '-'} />}
-      {log.mood && <Row label="Настроение" value={MOOD_LABELS[log.mood]} />}
+      {log.flow && <Row label={t('day.flow')} value={t(dynamicKey('flow', log.flow))} />}
+      {log.pain !== null && <Row label={t('day.pain')} value={t(PAIN_KEYS[log.pain] ?? 'pain.none')} />}
+      {log.mood && <Row label={t('day.mood')} value={t(dynamicKey('mood', log.mood))} />}
       {log.symptoms.length > 0 && (
-        <Row label="Симптомы" value={log.symptoms.map((s) => SYMPTOM_LABELS[s]).join(', ')} />
+        <Row label={t('day.symptoms')} value={log.symptoms.map((s) => t(dynamicKey('symptom', s))).join(', ')} />
       )}
-      {log.note && <Row label="Заметка" value={log.note} />}
+      {log.note && <Row label={t('day.note')} value={log.note} />}
     </dl>
   )
 }
