@@ -60,7 +60,9 @@ export function WeightChart({ points }: { points: WeightPoint[] }) {
   return (
     <div>
       <div className="flex items-baseline justify-between">
-        <span className="text-2xl font-semibold">{last?.weightKg.toFixed(1)} кг</span>
+        <span className="text-2xl font-semibold">
+          {t('weight.value', { n: last?.weightKg.toFixed(1) ?? '' })}
+        </span>
         <span className="text-sm text-muted">
           {delta === 0 ? t('weight.noChange') : t('weight.delta', { delta: `${delta > 0 ? '+' : ''}${delta.toFixed(1)}` })}
         </span>
@@ -70,7 +72,10 @@ export function WeightChart({ points }: { points: WeightPoint[] }) {
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         className="mt-2 w-full"
         role="img"
-        aria-label={`Динамика веса: с ${first?.weightKg.toFixed(1)} до ${last?.weightKg.toFixed(1)} кг`}
+        aria-label={t('weight.chart', {
+          from: first?.weightKg.toFixed(1) ?? '',
+          to: last?.weightKg.toFixed(1) ?? '',
+        })}
       >
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -101,8 +106,8 @@ export function WeightChart({ points }: { points: WeightPoint[] }) {
       </svg>
 
       <div className="flex justify-between text-xs text-muted">
-        <span>{min.toFixed(1)} кг</span>
-        <span>{max.toFixed(1)} кг</span>
+        <span>{t('weight.value', { n: min.toFixed(1) })}</span>
+        <span>{t('weight.value', { n: max.toFixed(1) })}</span>
       </div>
     </div>
   )

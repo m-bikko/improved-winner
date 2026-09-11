@@ -1,3 +1,4 @@
+import { tr } from '@/lib/i18n'
 import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
@@ -168,7 +169,7 @@ export function useReopenTopic() {
       if (input.previousResolution) {
         const { error } = await supabase.from('topic_comments').insert({
           topic_id: input.id,
-          body: `Тема открыта заново. В прошлый раз решили так: ${input.previousResolution}`,
+          body: tr('topic.reopened', { resolution: input.previousResolution }),
         })
         if (error) throw error
       }

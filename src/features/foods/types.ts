@@ -41,7 +41,7 @@ type ServingRow = Database['public']['Tables']['food_servings']['Row']
 
 export function foodFromRow(row: FoodRow): Food {
   if (!row.id || !row.name || (row.kind !== 'product' && row.kind !== 'dish')) {
-    throw new Error(`Строка foods_v повреждена: ${JSON.stringify(row)}`)
+    throw new Error(`Malformed foods_v row: ${JSON.stringify(row)}`)
   }
   return {
     id: row.id,

@@ -81,7 +81,7 @@ export function PinPad({
         <PadButton onClick={() => press('0')} disabled={disabled}>
           0
         </PadButton>
-        <PadButton onClick={backspace} disabled={disabled || value.length === 0} label="Стереть">
+        <PadButton onClick={backspace} disabled={disabled || value.length === 0} label={t('pin.erase')}>
           <Delete size={22} aria-hidden />
         </PadButton>
       </div>

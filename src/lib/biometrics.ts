@@ -1,3 +1,5 @@
+import { tr } from '@/lib/i18n'
+import { APP_NAME } from '@/lib/appName'
 import type { Account } from '@/lib/accounts'
 
 const STORE_KEY = 'love-promises-biometrics'
@@ -88,7 +90,7 @@ export async function enrollBiometrics(account: Account, pin: string): Promise<v
   const credential = (await navigator.credentials.create({
     publicKey: {
       challenge: challenge(),
-      rp: { name: 'Тандем' },
+      rp: { name: APP_NAME },
       user: {
         id: utf8(account.email),
         name: account.email,
@@ -107,7 +109,7 @@ export async function enrollBiometrics(account: Account, pin: string): Promise<v
     },
   })) as PublicKeyCredential | null
 
-  if (!credential) throw new Error('Ключ не создан')
+  if (!credential) throw new Error(tr('bio.noKey'))
 
   const store = read()
   store[account.email] = { credentialId: toBase64(credential.rawId), pin }
@@ -132,7 +134,7 @@ export async function unlockWithBiometrics(account: Account): Promise<string | n
       timeout: 60_000,
     },
   })
-  if (!assertion) throw new Error('Подтверждение не получено')
+  if (!assertion) throw new Error(tr('bio.noAssertion'))
   return saved.pin
 }
 

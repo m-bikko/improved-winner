@@ -1,4 +1,4 @@
-import { useT } from '@/lib/i18n'
+import { tr, useT } from '@/lib/i18n'
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { monthName, todayLocal } from '@/lib/date'
@@ -176,8 +176,8 @@ function Person({ person: p, elapsed }: { person: MonthPerson; elapsed: number }
  */
 function fmtKg(value: number | null): string {
   if (value === null) return '—'
-  if (value === 0) return '0 кг'
-  return `${value > 0 ? '+' : '−'}${Math.abs(value)} кг`
+  if (value === 0) return tr('month.kgZero')
+  return tr('month.kgDelta', { sign: value > 0 ? '+' : '−', n: Math.abs(value) })
 }
 
 /** Вес всегда с одним знаком после запятой: «98.35 → 95.3» выглядит опечаткой. */

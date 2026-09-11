@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { useEffect, useState } from 'react'
 import { Heart } from 'lucide-react'
 import { NUDGE_COOLDOWN_MS, useLastNudge, useSendNudge } from './nudge'
@@ -14,6 +15,7 @@ import { NUDGE_COOLDOWN_MS, useLastNudge, useSendNudge } from './nudge'
  * перезагрузкой страницы.
  */
 export function NudgeButton() {
+  const t = useT()
   const last = useLastNudge()
   const send = useSendNudge()
   const [now, setNow] = useState(() => Date.now())
@@ -47,7 +49,7 @@ export function NudgeButton() {
       <Heart size={17} aria-hidden className={cooling ? '' : 'fill-current'} />
       {/* Без имени: склонять ник по падежам - «думаю о Аминош» - хуже,
           чем не склонять вовсе, а правил тут не напасёшься */}
-      {cooling ? `Отправлено — ещё ${minutes} мин` : 'Думаю о тебе'}
+      {cooling ? t('nudge.cooling', { n: minutes }) : t('nudge.send')}
     </button>
   )
 }

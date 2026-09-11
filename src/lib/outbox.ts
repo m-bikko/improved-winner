@@ -149,7 +149,7 @@ export async function flushOutbox(send?: Send): Promise<number> {
     // Лечить повтором отказ политики или битые данные бессмысленно - такие
     // записи надо выбросить, иначе очередь застрянет навсегда
     if (!isRetriable(error)) {
-      console.error(`Очередь ${table} отброшена:`, error.message)
+      console.error(`Outbox for ${table} dropped:`, error.message)
       for (const i of items) dropped.add(i.key)
     }
   }

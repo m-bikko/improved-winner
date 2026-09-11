@@ -9,8 +9,8 @@
 function required(name: string, value: string | undefined): string {
   if (!value) {
     throw new Error(
-      `Не задана переменная окружения ${name}. Локально: скопируй .env.example в .env. ` +
-        `На Vercel: Settings → Environment Variables.`,
+      `Missing environment variable ${name}. Locally: copy .env.example to .env. ` +
+        `On Vercel: Settings → Environment Variables.`,
     )
   }
   return value

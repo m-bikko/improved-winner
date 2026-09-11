@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { useEffect } from 'react'
 import { X } from 'lucide-react'
 
@@ -17,6 +18,7 @@ export function PhotoViewer({
   alt: string
   onClose: () => void
 }) {
+  const t = useT()
   useEffect(() => {
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
@@ -49,7 +51,7 @@ export function PhotoViewer({
       <button
         type="button"
         onClick={onClose}
-        aria-label="Закрыть"
+        aria-label={t('common.close')}
         className="absolute top-4 right-4 rounded-full bg-black/50 p-2.5 text-white pt-safe"
       >
         <X size={22} aria-hidden />

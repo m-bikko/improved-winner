@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { useEffect, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { useKeyboardInset } from '@/lib/keyboardInset'
@@ -38,6 +39,7 @@ type Props = {
  * а отказ от них выражается явным `bleed`.
  */
 export function Sheet({ open, onClose, title, children, bleed = false }: Props) {
+  const t = useT()
   const { keyboard, visible } = useKeyboardInset(open)
 
   useEffect(() => {
@@ -80,7 +82,7 @@ export function Sheet({ open, onClose, title, children, bleed = false }: Props) 
       >
         <div className="flex shrink-0 items-center justify-between border-b border-line px-4 py-3">
           <span className="text-base font-medium">{title}</span>
-          <button type="button" onClick={onClose} aria-label="Закрыть" className="-mr-2 p-2 text-muted">
+          <button type="button" onClick={onClose} aria-label={t('common.close')} className="-mr-2 p-2 text-muted">
             <X size={20} aria-hidden />
           </button>
         </div>

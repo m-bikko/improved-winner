@@ -53,9 +53,9 @@ if (import.meta.env.DEV) {
       data instanceof Map ? 'Map' : data instanceof Set ? 'Set' : data instanceof Date ? 'Date' : null
     if (bad) {
       console.error(
-        `Запрос ${JSON.stringify(event.query.queryKey)} вернул ${bad}. ` +
-          'Кэш сериализуется в IndexedDB, и после перезагрузки это придёт битым. ' +
-          'Верни массив или обычный объект, а структуру собирай в useMemo.',
+        `Query ${JSON.stringify(event.query.queryKey)} returned ${bad}. ` +
+          'The cache is serialised into IndexedDB, so after a reload this comes back broken. ' +
+          'Return an array or a plain object and build the structure in useMemo.',
       )
     }
   })

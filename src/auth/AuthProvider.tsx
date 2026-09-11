@@ -110,13 +110,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth(): AuthValue {
   const value = use(AuthContext)
-  if (!value) throw new Error('useAuth вызван вне AuthProvider')
+  if (!value) throw new Error('useAuth called outside AuthProvider')
   return value
 }
 
 /** id текущего пользователя. Бросает, если сессии нет - вызывать только за guard'ом. */
 export function useUserId(): string {
   const { user } = useAuth()
-  if (!user) throw new Error('useUserId вызван без активной сессии')
+  if (!user) throw new Error('useUserId called without an active session')
   return user.id
 }

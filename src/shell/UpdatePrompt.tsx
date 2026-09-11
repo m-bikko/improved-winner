@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { useEffect } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { RefreshCw } from 'lucide-react'
@@ -15,11 +16,12 @@ import { RefreshCw } from 'lucide-react'
  * сами - иначе раздел просто не откроется и выглядеть это будет как поломка.
  */
 export function UpdatePrompt() {
+  const t = useT()
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({
-    onRegisterError: (error) => console.error('Service Worker не зарегистрирован:', error),
+    onRegisterError: (error) => console.error('Service Worker registration failed:', error),
   })
 
   useEffect(() => {
@@ -43,20 +45,20 @@ export function UpdatePrompt() {
       style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
     >
       <RefreshCw size={18} className="shrink-0 text-accent" aria-hidden />
-      <span className="flex-1 text-sm">Доступна новая версия</span>
+      <span className="flex-1 text-sm">{t('update.available')}</span>
       <button
         type="button"
         onClick={() => void updateServiceWorker(true)}
         className="rounded-lg bg-accent px-3 py-2 text-sm text-accent-ink"
       >
-        Обновить
+        {t('common.refresh')}
       </button>
       <button
         type="button"
         onClick={() => setNeedRefresh(false)}
         className="px-2 py-2 text-sm text-muted"
       >
-        Позже
+        {t('update.later')}
       </button>
     </div>
   )

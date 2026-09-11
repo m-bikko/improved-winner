@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { Search, X } from 'lucide-react'
 
 type Props = {
@@ -7,7 +8,8 @@ type Props = {
   autoFocus?: boolean
 }
 
-export function SearchInput({ value, onChange, placeholder = 'Поиск', autoFocus }: Props) {
+export function SearchInput({ value, onChange, placeholder, autoFocus }: Props) {
+  const t = useT()
   return (
     <div className="relative flex items-center">
       <Search size={18} className="absolute left-3.5 text-muted" aria-hidden />
@@ -32,7 +34,7 @@ export function SearchInput({ value, onChange, placeholder = 'Поиск', autoF
         <button
           type="button"
           onClick={() => onChange('')}
-          aria-label="Очистить"
+          aria-label={t('common.clear')}
           className="absolute right-2 p-2 text-muted"
         >
           <X size={18} aria-hidden />

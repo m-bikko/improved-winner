@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Check, ZoomIn } from 'lucide-react'
 import { sourcePerScreenPx, squareCrop, type SquareCrop } from '@/lib/image'
@@ -30,6 +31,7 @@ export function SquareCropper({
   onConfirm: (crop: SquareCrop) => void
   onCancel: () => void
 }) {
+  const t = useT()
   const canvas = useRef<HTMLCanvasElement>(null)
   const pointers = useRef(new Map<number, { x: number; y: number }>())
   const pinch = useRef<number | null>(null)
@@ -117,7 +119,7 @@ export function SquareCropper({
         // touch-action: none - иначе браузер заберёт себе и перетаскивание,
         // и щипок, а до обработчиков доедут одиночные дёрганья
         className="aspect-square w-full touch-none rounded-xl bg-raised"
-        aria-label="Кадрирование: тяните, чтобы сдвинуть, щипком меняйте масштаб"
+        aria-label={t('crop.hint')}
       />
 
       <label className="flex items-center gap-3">
@@ -129,18 +131,18 @@ export function SquareCropper({
           step={0.01}
           value={zoom}
           onChange={(e) => setZoom(Number(e.target.value))}
-          aria-label="Масштаб"
+          aria-label={t('crop.zoom')}
           className="w-full accent-[var(--color-accent)]"
         />
       </label>
 
       <Button onClick={() => onConfirm(crop())} loading={busy}>
         <Check size={18} aria-hidden />
-        Готово
+        {t('common.done')}
       </Button>
 
       <button type="button" onClick={onCancel} className="text-sm text-muted underline">
-        Отмена
+        {t('common.cancel')}
       </button>
     </div>
   )
