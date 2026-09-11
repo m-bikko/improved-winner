@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { useId } from 'react'
 import { fromLocalISO } from '@/lib/date'
 import type { WeightPoint } from './api'
@@ -22,14 +23,15 @@ const PAD_Y = 14
  * представление тех же данных: точные числа для тех, кому линия не читается.
  */
 export function WeightChart({ points }: { points: WeightPoint[] }) {
+  const t = useT()
   const gradientId = useId()
 
   if (points.length < 2) {
     return (
       <p className="py-6 text-center text-sm text-muted">
         {points.length === 0
-          ? 'Отмечай вес - здесь появится динамика.'
-          : 'Ещё одно взвешивание, и появится график.'}
+          ? t('weight.empty')
+          : t('weight.needMore')}
       </p>
     )
   }
@@ -60,7 +62,7 @@ export function WeightChart({ points }: { points: WeightPoint[] }) {
       <div className="flex items-baseline justify-between">
         <span className="text-2xl font-semibold">{last?.weightKg.toFixed(1)} кг</span>
         <span className="text-sm text-muted">
-          {delta === 0 ? 'без изменений' : `${delta > 0 ? '+' : ''}${delta.toFixed(1)} кг за период`}
+          {delta === 0 ? t('weight.noChange') : t('weight.delta', { delta: `${delta > 0 ? '+' : ''}${delta.toFixed(1)}` })}
         </span>
       </div>
 

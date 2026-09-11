@@ -60,6 +60,7 @@ import { WeightChart } from './WeightChart'
 const BOT_LINK = '@improved_winner_nine_bot'
 
 export function ProfilePage() {
+  const t = useT()
   const { user } = useAuth()
   const userId = user?.id ?? ''
   const profiles = useProfiles()
@@ -70,12 +71,13 @@ export function ProfilePage() {
   if (!profiles.isSuccess) return <Loading />
 
   const me = profiles.data.find((p) => p.userId === userId)
-  if (!me) return <ErrorState error={new Error('Профиль не найден')} />
+  if (!me) return <ErrorState error={new Error(t('profile.notFound'))} />
 
   return <ProfileForm profile={me} />
 }
 
 function ProfileForm({ profile }: { profile: Profile }) {
+  const t = useT()
   const save = useSaveProfile()
   const weights = useWeightLog(profile.userId)
   const logWeight = useLogWeight()
@@ -160,12 +162,12 @@ function ProfileForm({ profile }: { profile: Profile }) {
   // по минимуму - значит запретить ввод вовсе, потому что первая набранная
   // цифра года заведомо меньше 1900. Границы совпадают с CHECK в схеме.
   const outOfRange = (v: number | '', lo: number, hi: number, unit: string) =>
-    v !== '' && (v < lo || v > hi) ? `Ожидается от ${lo} до ${hi} ${unit}` : null
+    v !== '' && (v < lo || v > hi) ? t('profile.expected', { lo, hi, unit }) : null
 
   const range = {
-    birthYear: outOfRange(birthYear, 1900, 2100, 'года'),
-    heightCm: outOfRange(heightCm, 100, 250, 'см'),
-    weightKg: outOfRange(weightKg, 20, 400, 'кг'),
+    birthYear: outOfRange(birthYear, 1900, 2100, t('profile.unit.years')),
+    heightCm: outOfRange(heightCm, 100, 250, t('profile.unit.cm')),
+    weightKg: outOfRange(weightKg, 20, 400, t('unit.kg')),
   }
   const hasRangeError = Object.values(range).some((r) => r !== null)
 
@@ -177,10 +179,10 @@ function ProfileForm({ profile }: { profile: Profile }) {
   // «заполните профиль»: человек должен видеть, какие два поля осталось ввести,
   // а не искать пустое среди семи.
   const missing = [
-    birthYear === '' && 'год рождения',
-    sex === null && 'пол',
-    heightCm === '' && 'рост',
-    weightKg === '' && 'вес',
+    birthYear === '' && t('profile.birthYearLow'),
+    sex === null && t('profile.sexLow'),
+    heightCm === '' && t('profile.heightLow'),
+    weightKg === '' && t('profile.weightLow'),
   ].filter((x): x is string => typeof x === 'string')
 
   return (
@@ -241,7 +243,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
 
       <div className="grid grid-cols-2 gap-3">
         <NumberField
-          label="Год рождения"
+          label={t('profile.birthYear')}
           value={birthYear}
           onValueChange={setBirthYear}
           max={2100}
@@ -250,8 +252,8 @@ function ProfileForm({ profile }: { profile: Profile }) {
           hint={range.birthYear ?? undefined}
         />
         <NumberField
-          label="Рост"
-          suffix="см"
+          label={t('profile.height')}
+          suffix={t('profile.unit.cm')}
           value={heightCm}
           onValueChange={setHeightCm}
           max={250}
@@ -259,8 +261,8 @@ function ProfileForm({ profile }: { profile: Profile }) {
           hint={range.heightCm ?? undefined}
         />
         <NumberField
-          label="Вес"
-          suffix="кг"
+          label={t('profile.weight')}
+          suffix={t('unit.kg')}
           value={weightKg}
           onValueChange={setWeightKg}
           max={400}
@@ -327,7 +329,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
           <div className="mt-2">
             <NumberField
               label="Своя норма"
-              suffix="ккал"
+              suffix={t('unit.kcal')}
               value={manualKcal}
               onValueChange={setManualKcal}
               max={10000}
@@ -367,7 +369,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
         disabled={hasRangeError || chatIdInvalid}
       >
         {saved ? <Check size={18} aria-hidden /> : null}
-        {saved ? 'Сохранено' : 'Сохранить'}
+        {saved ? t('profile.saved') : 'Сохранить'}
       </Button>
 
       <Button variant="secondary" onClick={() => setPinOpen(true)}>
@@ -434,6 +436,7 @@ function LanguageRow() {
  * а не добавляет защиту, и делать вид, что добавляет, нельзя.
  */
 function FaceIdRow() {
+  const t = useT()
   const { account, signIn } = useAuth()
   const [available, setAvailable] = useState(false)
   const [on, setOn] = useState(false)
@@ -464,7 +467,7 @@ function FaceIdRow() {
     setError(null)
     const failure = await signIn(account, value)
     if (failure) {
-      setError(failure.kind === 'wrong-pin' ? 'Неверный PIN' : 'Не удалось проверить PIN')
+      setError(failure.kind === 'wrong-pin' ? t('login.wrongPin') : t('profile.pinCheckFailed'))
       setShake((k) => k + 1)
       setPin('')
       setBusy(false)
@@ -476,7 +479,7 @@ function FaceIdRow() {
       setAsking(false)
       setPin('')
     } catch {
-      setError('Устройство не создало ключ')
+      setError(t('profile.noKey'))
       setShake((k) => k + 1)
       setPin('')
     } finally {
@@ -493,15 +496,14 @@ function FaceIdRow() {
             Вход по Face ID
           </p>
           <p className="mt-1 text-xs text-muted">
-            Заменяет набор PIN, но не усиливает защиту: проверка идёт на устройстве,
-            а PIN хранится рядом с уже сохранённым входом.
+            {t('profile.faceIdHint')}
           </p>
         </div>
         <button
           type="button"
           role="switch"
           aria-checked={on}
-          aria-label="Вход по Face ID"
+          aria-label={t('profile.faceId')}
           onClick={() => {
             if (on) {
               forgetBiometrics(account)
@@ -518,11 +520,11 @@ function FaceIdRow() {
         />
       </div>
 
-      <Sheet open={asking} onClose={() => setAsking(false)} title="Вход по Face ID">
+      <Sheet open={asking} onClose={() => setAsking(false)} title={t('profile.faceId')}>
         <div className="flex flex-col items-center py-2">
           <PinPad
-            title="Подтверди PIN"
-            subtitle="Чтобы запомнить его для Face ID"
+            title={t('profile.confirmPin')}
+            subtitle={t('profile.confirmPinHint')}
             value={pin}
             onChange={(next) => {
               setPin(next)
@@ -546,6 +548,7 @@ function FaceIdRow() {
  * запустить скрипт с ноутбука.
  */
 function ChangePinSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const t = useT()
   const [pin, setPin] = useState('')
   const [confirm, setConfirm] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -572,7 +575,7 @@ function ChangePinSheet({ open, onClose }: { open: boolean; onClose: () => void 
     }
 
     if (next !== confirm) {
-      setError('PIN-коды не совпали')
+      setError(t('profile.pinMismatch'))
       setShake((s) => s + 1)
       setPin('')
       setConfirm(null)
@@ -600,21 +603,21 @@ function ChangePinSheet({ open, onClose }: { open: boolean; onClose: () => void 
         reset()
         onClose()
       }}
-      title="Смена PIN"
+      title={t('profile.changePin')}
     >
       <div className="flex flex-col items-center py-2">
         {done ? (
           <div className="flex flex-col items-center gap-3 py-8 text-center">
             <Check size={28} className="text-carbs" aria-hidden />
-            <p>PIN изменён</p>
+            <p>{t('profile.pinChanged')}</p>
             <p className="text-sm text-muted">
-              На других устройствах, возможно, придётся войти заново.
+              {t('profile.pinChangedHint')}
             </p>
           </div>
         ) : (
           <PinPad
-            title={confirm === null ? 'Новый PIN' : 'Повтори PIN'}
-            subtitle={confirm === null ? `${PIN_LENGTH} цифр` : 'ещё раз, чтобы не ошибиться'}
+            title={confirm === null ? t('profile.newPin') : t('profile.repeatPin')}
+            subtitle={confirm === null ? t('profile.pinDigits', { n: PIN_LENGTH }) : t('profile.onceMore')}
             value={pin}
             onChange={(next) => void handle(next)}
             error={error}
@@ -637,6 +640,7 @@ function ChangePinSheet({ open, onClose }: { open: boolean; onClose: () => void 
  * значит оставить человека гадать.
  */
 function PushToggle({ userId }: { userId: string }) {
+  const t = useT()
   const [state, setState] = useState<PushState | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -658,11 +662,11 @@ function PushToggle({ userId }: { userId: string }) {
   }
 
   const hint: Record<PushState, string> = {
-    unsupported: 'Этот браузер не умеет push-уведомления.',
+    unsupported: t('push.noSupport'),
     'not-installed':
       'Добавь приложение на экран «Домой» и открой уже оттуда - в обычной вкладке уведомления недоступны.',
-    unconfigured: 'Push не настроен на сервере.',
-    denied: 'Уведомления запрещены в настройках браузера. Включить можно только там.',
+    unconfigured: t('push.notConfigured'),
+    denied: t('push.blocked'),
     off: 'Напоминания о завтраке, обеде и ужине, если приём пищи остался пустым.',
     on: 'Включены. Напоминания приходят в 11:00, 14:00 и 21:00, если приём пищи пуст.',
   }
@@ -673,7 +677,7 @@ function PushToggle({ userId }: { userId: string }) {
         <BellRing size={15} aria-hidden />
         Уведомления на устройстве
       </p>
-      <p className="mt-1 mb-3 text-xs text-muted">{state ? hint[state] : 'Проверяю…'}</p>
+      <p className="mt-1 mb-3 text-xs text-muted">{state ? hint[state] : t('push.checking')}</p>
 
       {(state === 'off' || state === 'on') && (
         <Button variant={state === 'on' ? 'secondary' : 'primary'} onClick={() => void toggle()} loading={busy}>

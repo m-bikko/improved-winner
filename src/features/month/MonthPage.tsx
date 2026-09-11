@@ -1,14 +1,9 @@
+import { useT } from '@/lib/i18n'
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { todayLocal } from '@/lib/date'
-import { plural } from '@/lib/plural'
+import { monthName, todayLocal } from '@/lib/date'
 import { ErrorState, Loading } from '@/ui/States'
 import { useMonthSummary, type MonthPerson } from './api'
-
-const MONTHS = [
-  'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
-  'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь',
-]
 
 /** Приложение появилось в 2026-м, раньше данных нет. */
 const FIRST = { year: 2026, month: 1 }
@@ -59,7 +54,7 @@ export function MonthPage() {
       <div className="flex items-center justify-between gap-3">
         <Arrow dir="prev" disabled={atStart} onClick={() => shift(-1)} />
         <h1 className="text-xl font-semibold">
-          {MONTHS[month - 1]} {year}
+          {monthName(month - 1)} {year}
         </h1>
         <Arrow dir="next" disabled={isNow} onClick={() => shift(1)} />
       </div>
@@ -84,13 +79,14 @@ function Arrow({
   disabled: boolean
   onClick: () => void
 }) {
+  const t = useT()
   const Icon = dir === 'prev' ? ChevronLeft : ChevronRight
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      aria-label={dir === 'prev' ? 'Предыдущий месяц' : 'Следующий месяц'}
+      aria-label={dir === 'prev' ? t('cal.prevMonth') : t('cal.nextMonth')}
       className="flex size-10 shrink-0 items-center justify-center rounded-full
                  bg-raised text-muted ring-1 ring-line disabled:opacity-30"
     >
@@ -100,6 +96,7 @@ function Arrow({
 }
 
 function Person({ person: p, elapsed }: { person: MonthPerson; elapsed: number }) {
+  const t = useT()
   // Пара «было - стало» как одно значение: иначе TypeScript не сужает
   // weightFrom и weightTo по факту того, что посчиталась разница
   const weight =
@@ -117,36 +114,39 @@ function Person({ person: p, elapsed }: { person: MonthPerson; elapsed: number }
       <h2 className="font-medium">{p.nickname}</h2>
 
       {p.days === 0 ? (
-        <p className="mt-2 text-sm text-muted">За этот месяц записей нет.</p>
+        <p className="mt-2 text-sm text-muted">{t('month.noRecords')}</p>
       ) : (
         <>
           <dl className="mt-3 grid grid-cols-2 gap-4">
-            <Stat value={`${p.avgKcal}`} label="ккал в среднем за день" />
-            <Stat value={`${p.avgGoal}`} label="норма в среднем" />
+            <Stat value={`${p.avgKcal}`} label={t('month.avgKcal')} />
+            <Stat value={`${p.avgGoal}`} label={t('month.avgGoal')} />
           </dl>
 
           <p className="mt-3 text-sm text-muted">
-            Записано {p.days} {plural(p.days, 'день', 'дня', 'дней')} из {elapsed}
-            {p.days < elapsed && ' — в незаписанные дни съеденное не учтено'}
+            {t('month.logged', { n: p.days, unit: t.plural('unit.day', p.days), total: elapsed })}
+            {p.days < elapsed && t('month.gapsNote')}
           </p>
 
           {p.deficit !== null && (
             <p className="mt-3 border-t border-line pt-3 text-sm">
-              {p.deficit >= 0 ? 'Дефицит' : 'Профицит'} за месяц{' '}
-              <span className="font-medium">{Math.abs(p.deficit)} ккал</span>
-              <span className="text-muted"> — это {fmtKg(p.expectedKg)}</span>
+              {t('month.forMonth', {
+                kind: p.deficit >= 0 ? t('month.deficit') : t('month.surplus'),
+                n: Math.abs(p.deficit),
+              })}
+              <span className="text-muted"> — {t('month.thatIs', { kg: fmtKg(p.expectedKg) })}</span>
             </p>
           )}
 
           {weight ? (
             <p className="mt-1 text-sm">
-              По весам: {fmtWeight(weight.from)} → {fmtWeight(weight.to)} кг
+              {t('month.byScales', { from: fmtWeight(weight.from), to: fmtWeight(weight.to) })}
               <span className="text-muted"> — {fmtKg(weight.delta)}</span>
             </p>
           ) : (
             <p className="mt-1 text-sm text-muted">
-              Взвешиваний за месяц {p.weightPoints === 0 ? 'не было' : 'меньше двух'} — сравнить
-              не с чем.
+              {t('month.nothingToCompare', {
+                what: p.weightPoints === 0 ? t('month.noWeighIns') : t('month.fewWeighIns'),
+              })}
             </p>
           )}
 
@@ -154,9 +154,12 @@ function Person({ person: p, elapsed }: { person: MonthPerson; elapsed: number }
 
           {p.workouts > 0 && (
             <p className="mt-3 border-t border-line pt-3 text-sm text-muted">
-              Тренировок {p.workouts} · {Math.round(p.workoutMinutes / 60)}{' '}
-              {plural(Math.round(p.workoutMinutes / 60), 'час', 'часа', 'часов')} ·{' '}
-              {p.workoutKcal} ккал. В дефицит не входят: коэффициент активности уже в норме.
+              {t('month.workouts', {
+                n: p.workouts,
+                hours: Math.round(p.workoutMinutes / 60),
+                unit: t.plural('unit.hour', Math.round(p.workoutMinutes / 60)),
+                kcal: p.workoutKcal,
+              })}
             </p>
           )}
         </>
@@ -199,10 +202,11 @@ function Verdict({
   actual: number | null
   elapsed: number
 }) {
+  const t = useT()
   if (p.days < 5) {
     return (
       <p className="mt-3 text-sm text-muted">
-        Записей мало — на таком числе дней судить не о чем.
+        {t('month.tooFew')}
       </p>
     )
   }
@@ -214,7 +218,7 @@ function Verdict({
   if (Math.abs(diff) <= 1) {
     return (
       <p className="mt-3 rounded-xl bg-raised px-3 py-2 text-sm">
-        Сходится: вес идёт туда же, куда и дефицит.
+        {t('month.matches')}
       </p>
     )
   }
@@ -222,14 +226,14 @@ function Verdict({
   return (
     <p className="mt-3 rounded-xl bg-raised px-3 py-2 text-sm">
       {actual < p.expectedKg
-        ? 'Вес падает быстрее, чем объясняет дефицит.'
-        : 'Вес меняется медленнее, чем объясняет дефицит.'}
+        ? t('month.faster')
+        : t('month.slower')}
       <span className="text-muted">
         {' '}
-        Расхождение {fmtKg(diff)}.{' '}
+        {t('month.gapDiff', { kg: fmtKg(diff) })}{' '}
         {gaps > 0
-          ? `Вероятнее всего, дело в ${gaps} ${plural(gaps, 'незаписанном дне', 'незаписанных днях', 'незаписанных днях')}: съеденное в них не учтено.`
-          : 'На месяце такое даёт вода и гликоген — килограмм в любую сторону здесь норма.'}
+          ? t('month.blameGaps', { n: gaps, unit: t.plural('month.gapDay', gaps) })
+          : t('month.blameWater')}
       </span>
     </p>
   )
