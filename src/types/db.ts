@@ -879,6 +879,24 @@ export type Database = {
         }
         Relationships: []
       }
+      texts: {
+        Row: {
+          key: string
+          lang: string
+          value: string
+        }
+        Insert: {
+          key: string
+          lang: string
+          value: string
+        }
+        Update: {
+          key?: string
+          lang?: string
+          value?: string
+        }
+        Relationships: []
+      }
       topic_comments: {
         Row: {
           author_id: string
@@ -1135,7 +1153,7 @@ export type Database = {
           phase: string
         }[]
       }
-      cycle_tip: { Args: { day: number; phase: string }; Returns: string }
+      cycle_tip_key: { Args: { day: number; phase: string }; Returns: string }
       deliver_letters: { Args: never; Returns: number }
       diary_month: {
         Args: { p_from: string; p_to: string; p_user: string }
@@ -1149,6 +1167,7 @@ export type Database = {
       }
       in_quiet_hours: { Args: { target: string }; Returns: boolean }
       is_member: { Args: never; Returns: boolean }
+      lang_of: { Args: { person: string }; Returns: string }
       last_nudge: { Args: never; Returns: string }
       letter_delivered_to_me: { Args: { letter: string }; Returns: boolean }
       letter_recipients: { Args: { letter: string }; Returns: string[] }
@@ -1246,6 +1265,18 @@ export type Database = {
       tg_send_raw: {
         Args: { chat_id: string; message: string }
         Returns: number
+      }
+      tx: {
+        Args: { args?: string[]; key: string; target: string }
+        Returns: string
+      }
+      tx_plural: {
+        Args: { key: string; n: number; target: string }
+        Returns: string
+      }
+      tx_sex: {
+        Args: { actor: string; key: string; target: string }
+        Returns: string
       }
       year_in_numbers: { Args: { year: number }; Returns: Json }
     }
