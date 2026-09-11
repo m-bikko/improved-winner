@@ -382,8 +382,12 @@ function Tips({ state, owned }: { state: CycleDay; owned: boolean }) {
               <div className="flex flex-col gap-3 border-t border-line px-4 py-3">
                 {tips.map((tip) => (
                   <div key={tip.id}>
-                    <p className="text-sm font-medium">{tip.title}</p>
-                    <p className="mt-1 text-sm text-muted">{tip.body}</p>
+                    <p className="text-sm font-medium">
+                      {tip.title ?? t(dynamicKey('tip', `${tip.id}.title`))}
+                    </p>
+                    <p className="mt-1 text-sm text-muted">
+                      {t(dynamicKey('tip', `${tip.id}.body`))}
+                    </p>
                   </div>
                 ))}
               </div>

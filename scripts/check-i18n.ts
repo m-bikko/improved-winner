@@ -17,6 +17,11 @@
  * не подвергся. Комментарии не в счёт - они для того, кто читает код,
  * а не для того, кто пользуется приложением.
  *
+ * Подсказки цикла. У них нет текста в коде вовсе - только идентификатор,
+ * а заголовок и тело берутся из словаря по нему. Промах тут не падает
+ * и не пустеет: на экране появится строка «tip.cramps.body». Поэтому
+ * соответствие проверяется отдельно.
+ *
  * Локали. Отдельный вопрос, потому что кириллицы в 'ru-RU' нет и первым
  * контролем такое не ловится. Прибитая локаль в toLocaleDateString даёт
  * самый неприятный вид ошибки: интерфейс переключился, а дата рядом с ним
@@ -28,6 +33,9 @@ import { globSync } from 'node:fs'
 import { ru } from '../src/lib/i18n/ru.ts'
 import { kk } from '../src/lib/i18n/kk.ts'
 import { en } from '../src/lib/i18n/en.ts'
+import { LANGS, setActiveLang } from '../src/lib/i18n/lang.ts'
+import { tr } from '../src/lib/i18n/index.tsx'
+import { tipsByCategory } from '../src/features/cycle/tips.ts'
 
 let failed = 0
 function check(ok: boolean, name: string, detail: string): void {
@@ -48,8 +56,6 @@ function check(ok: boolean, name: string, detail: string): void {
  */
 const ALLOWED = [
   'src/lib/i18n/',
-  // Библиотеки прозы: переводятся отдельно и не машинно
-  'src/features/cycle/tips.ts',
   // Имена владельцев - данные, а не интерфейс
   'src/lib/accounts.ts',
   // Название по умолчанию: его задаёт сборка, и оно одно на все языки
@@ -151,6 +157,70 @@ check(
         .slice(0, 25)
         .map(([f, n]) => `           ${String(n).padStart(3)}  ${f}`)
         .join('\n'),
+)
+
+// Подсказки цикла: у каждой должны быть и заголовок, и тело
+const tipsSource = readFileSync('src/features/cycle/tips.ts', 'utf8')
+const tipIds = [...new Set([...tipsSource.matchAll(/id: '([^']+)'/g)].map((m) => m[1] ?? ''))]
+
+// Две подсказки собирают заголовок из состояния цикла и задают title сами -
+// у таких ключа title быть и не должно
+const ownTitle = new Set(
+  [...tipsSource.matchAll(/id: '([^']+)',[\s\S]{0,120}?\btitle:/g)].map((m) => m[1] ?? ''),
+)
+const tipGaps = tipIds.flatMap((id) =>
+  (['title', 'body'] as const)
+    .filter((part) => !(part === 'title' && ownTitle.has(id)))
+    .filter((part) => !(`tip.${id}.${part}` in ru))
+    .map((part) => `tip.${id}.${part}`),
+)
+check(
+  tipGaps.length === 0 && tipIds.length > 0,
+  'У каждой подсказки цикла есть заголовок и тело',
+  tipGaps.length === 0
+    ? `подсказок ${tipIds.length}, из них со своим заголовком ${ownTitle.size}`
+    : `нет в словаре: ${tipGaps.join(', ')}`,
+)
+
+// И то же самое, но не по списку ключей, а тем же путём, каким текст
+// достаётся на экране: через tipsByCategory() и tr(). Так проверяется
+// не только наличие ключа, но и то, что компонент соберёт именно его
+const PHASES = ['menstrual', 'follicular', 'ovulation', 'luteal'] as const
+const unresolved: string[] = []
+let resolved = 0
+for (const lang of LANGS) {
+  setActiveLang(lang)
+  for (const phase of PHASES) {
+    for (const audience of ['owner', 'partner'] as const) {
+      const state = {
+        day: 3,
+        phase,
+        cycleLength: 28,
+        nextStart: '2026-10-01',
+        daysToNext: 5,
+        fertileFrom: '2026-09-14',
+        fertileTo: '2026-09-19',
+      }
+      for (const group of tipsByCategory(state as never, audience)) {
+        for (const tip of group.tips) {
+          const title = tip.title ?? tr(`tip.${tip.id}.title` as never)
+          const body = tr(`tip.${tip.id}.body` as never)
+          resolved += 2
+          // Промах tr() возвращает сам ключ - он и начинается с «tip.»
+          if (title.startsWith('tip.')) unresolved.push(`${lang}/${tip.id}/title`)
+          if (body.startsWith('tip.')) unresolved.push(`${lang}/${tip.id}/body`)
+        }
+      }
+    }
+  }
+}
+setActiveLang('ru')
+check(
+  unresolved.length === 0 && resolved > 0,
+  'Подсказки цикла разворачиваются на всех языках',
+  unresolved.length === 0
+    ? `разрешено строк: ${resolved}`
+    : `остались ключами: ${unresolved.slice(0, 5).join(', ')}`,
 )
 
 check(
