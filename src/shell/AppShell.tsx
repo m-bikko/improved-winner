@@ -35,7 +35,9 @@ function Chrome({ children }: { children: ReactNode }) {
       ? 'Год в цифрах'
       : pathname.startsWith('/notifications')
         ? 'Уведомления'
-        : APP_NAME)
+        : pathname.startsWith('/month')
+          ? 'Итоги месяца'
+          : APP_NAME)
   const action = useHeaderActionSlot()
 
   return (

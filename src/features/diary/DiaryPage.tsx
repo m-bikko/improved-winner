@@ -14,6 +14,7 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  ChartNoAxesColumn,
   ChevronDown,
   ChevronUp,
   CircleQuestionMark,
@@ -303,7 +304,23 @@ export function DiaryPage() {
       )}
 
       {!compare && (
-        <WorkoutsSection date={date} eatenKcal={totals.kcal} goalKcal={goals?.kcal ?? null} />
+        <>
+          <WorkoutsSection date={date} eatenKcal={totals.kcal} goalKcal={goals?.kcal ?? null} />
+
+          {/* Ссылка внизу дня, а не пункт меню: итоги месяца смотрят
+              из дневника и редко */}
+          <Link
+            to="/month"
+            className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-surface
+                       px-4 py-4 ring-1 ring-line"
+          >
+            <span className="flex items-center gap-2 text-sm font-medium">
+              <ChartNoAxesColumn size={16} aria-hidden />
+              Итоги месяца
+            </span>
+            <ChevronRight size={18} aria-hidden className="text-muted" />
+          </Link>
+        </>
       )}
 
       <MacroInfoSheet

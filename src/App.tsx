@@ -10,6 +10,7 @@ import { UpdatePrompt } from '@/shell/UpdatePrompt'
 import { FoodsPage } from '@/features/foods/FoodsPage'
 import { FoodEditPage } from '@/features/foods/FoodEditPage'
 import { DiaryPage } from '@/features/diary/DiaryPage'
+import { MonthPage } from '@/features/month/MonthPage'
 import { ProfilePage } from '@/features/profile/ProfilePage'
 import { NotificationsPage } from '@/features/profile/NotificationsPage'
 import { CheckinPage } from '@/features/checkin/CheckinPage'
@@ -77,6 +78,7 @@ function Gate() {
         <Route path="/year" element={<YearPage />} />
         <Route path="/checkin" element={<CheckinPage />} />
         <Route path="/diary" element={<DiaryPage />} />
+        <Route path="/month" element={<MonthPage />} />
         <Route path="/foods" element={<FoodsPage />} />
         <Route path="/foods/new" element={<FoodEditPage />} />
         <Route path="/foods/:id" element={<FoodEditPage />} />

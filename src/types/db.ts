@@ -1131,6 +1131,7 @@ export type Database = {
       letter_delivered_to_me: { Args: { letter: string }; Returns: boolean }
       letter_recipients: { Args: { letter: string }; Returns: string[] }
       letters_in_flight: { Args: never; Returns: number }
+      month_summary: { Args: { month: number; year: number }; Returns: Json }
       next_occurrence: {
         Args: { from_ts: string; rule: Json }
         Returns: string
