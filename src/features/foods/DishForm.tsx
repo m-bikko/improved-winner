@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Archive, ChevronLeft, Plus, Trash2 } from 'lucide-react'
@@ -28,6 +29,7 @@ export function DishForm({
   existingItems: DishItem[]
   existingServings: Serving[]
 }) {
+  const t = useT()
   const navigate = useNavigate()
   const foods = useFoods()
   const saveDish = useSaveDish()
@@ -107,43 +109,43 @@ export function DishForm({
         <button
           type="button"
           onClick={() => navigate(-1)}
-          aria-label="Назад"
+          aria-label={t('food.back')}
           className="-ml-2 p-2 text-muted"
         >
           <ChevronLeft size={22} aria-hidden />
         </button>
-        <span className="truncate text-base font-medium">{existing?.name ?? 'Новое блюдо'}</span>
+        <span className="truncate text-base font-medium">{existing?.name ?? t('food.newDish')}</span>
       </div>
 
       <div className="flex flex-col gap-4">
         <Field
-          label="Название"
+          label={t('food.name')}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Плов"
+          placeholder={t('food.namePlaceholderDish')}
           autoFocus={!existing}
         />
 
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium">Состав</p>
+          <p className="text-sm font-medium">{t('food.composition')}</p>
 
           {items.map((item, i) => {
             const food = byId.get(item.foodId)
             return (
               <div key={item.key} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2 ring-1 ring-line">
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm">{food?.name ?? 'продукт удалён'}</span>
+                  <span className="block truncate text-sm">{food?.name ?? t('food.removed')}</span>
                   {food && (
                     <span className="text-xs text-muted">
-                      {Math.round(food.kcal100)} ккал на 100 г
+                      {t('food.per100kcal', { n: Math.round(food.kcal100) })}
                     </span>
                   )}
                 </span>
                 <span className="w-24 shrink-0">
                   <NumberField
-                    label={`Граммы: ${food?.name ?? 'ингредиент'}`}
+                    label={t('food.gramsOf', { name: food?.name ?? t('food.ingredient') })}
                     hideLabel
-                    suffix="г"
+                    suffix={t('unit.gram')}
                     value={item.grams}
                     onValueChange={(g) => {
                       const next = [...items]
@@ -155,7 +157,7 @@ export function DishForm({
                 <button
                   type="button"
                   onClick={() => setItems(items.filter((_, j) => j !== i))}
-                  aria-label="Убрать ингредиент"
+                  aria-label={t('food.removeIngredient')}
                   className="p-2 text-muted"
                 >
                   <Trash2 size={16} aria-hidden />
@@ -166,31 +168,39 @@ export function DishForm({
 
           <Button variant="secondary" onClick={() => setPicking(true)}>
             <Plus size={18} aria-hidden />
-            Добавить продукт
+            {t('food.addProduct')}
           </Button>
         </div>
 
         <NumberField
-          label="Готовый вес"
-          suffix="г"
+          label={t('food.yield')}
+          suffix={t('unit.gram')}
           value={yieldGrams}
           onValueChange={setYieldGrams}
           placeholder={String(Math.round(computed.rawGrams) || '')}
           hint={
             computed.rawGrams > 0
-              ? `Сырых ингредиентов ${Math.round(computed.rawGrams)} г. Взвесь готовое блюдо: при варке вес меняется, и без этого КБЖУ на 100 г будет врать. Пусто - возьмём сырой вес.`
-              : 'Вес готового блюда после приготовления.'
+              ? t('food.yieldHint', { n: Math.round(computed.rawGrams) })
+              : t('food.yieldHintEmpty')
           }
         />
 
         {computed.per100 && (
           <div className="rounded-xl bg-raised px-4 py-3">
-            <p className="text-sm text-muted">На 100 г готового блюда</p>
-            <p className="mt-1 text-2xl font-semibold">{Math.round(computed.per100.kcal)} ккал</p>
+            <p className="text-sm text-muted">{t('food.per100dish')}</p>
+            <p className="mt-1 text-2xl font-semibold">
+              {Math.round(computed.per100.kcal)} {t('unit.kcal')}
+            </p>
             <p className="mt-1 text-sm">
-              <span className="text-protein">Б {trim(computed.per100.protein)}</span>{' '}
-              <span className="text-fat">Ж {trim(computed.per100.fat)}</span>{' '}
-              <span className="text-carbs">У {trim(computed.per100.carbs)}</span>
+              <span className="text-protein">
+                {t('macro.p')} {trim(computed.per100.protein)}
+              </span>{' '}
+              <span className="text-fat">
+                {t('macro.f')} {trim(computed.per100.fat)}
+              </span>{' '}
+              <span className="text-carbs">
+                {t('macro.c')} {trim(computed.per100.carbs)}
+              </span>
             </p>
           </div>
         )}
@@ -199,30 +209,29 @@ export function DishForm({
 
         <div className="flex flex-col gap-2">
           <div>
-            <p className="text-sm font-medium">Готовые меры</p>
+            <p className="text-sm font-medium">{t('food.servings')}</p>
             <p className="text-xs text-muted">
-              «1 тарелка», «1 порция». В дневнике блюдо это одна строка, поэтому без меры придётся
-              прикидывать граммы на глаз.
+              {t('food.servingsHintDish')}
             </p>
           </div>
           {servings.map((s, i) => (
             <div key={s.key} className="flex items-end gap-2">
               <div className="flex-1">
                 <Field
-                  label="Мера"
+                  label={t('food.serving')}
                   value={s.label}
                   onChange={(e) => {
                     const next = [...servings]
                     next[i] = { ...s, label: e.target.value }
                     setServings(next)
                   }}
-                  placeholder="1 тарелка"
+                  placeholder={t('food.servingPlaceholderDish')}
                 />
               </div>
               <div className="w-28">
                 <NumberField
-                  label="Вес"
-                  suffix="г"
+                  label={t('portion.weight')}
+                  suffix={t('unit.gram')}
                   value={s.grams}
                   onValueChange={(g) => {
                     const next = [...servings]
@@ -234,7 +243,7 @@ export function DishForm({
               <button
                 type="button"
                 onClick={() => setServings(servings.filter((_, j) => j !== i))}
-                aria-label="Удалить меру"
+                aria-label={t('food.deleteServing')}
                 className="mb-1.5 p-3 text-muted"
               >
                 <Trash2 size={18} aria-hidden />
@@ -248,14 +257,14 @@ export function DishForm({
             }
           >
             <Plus size={18} aria-hidden />
-            Добавить меру
+            {t('food.addServing')}
           </Button>
         </div>
 
         {error && <p className="text-sm text-danger">{error}</p>}
 
         <Button onClick={() => void submit()} disabled={!canSave} loading={saveDish.isPending}>
-          Сохранить
+          {t('common.save')}
         </Button>
 
         {existing && (
@@ -267,7 +276,7 @@ export function DishForm({
             }}
           >
             <Archive size={18} aria-hidden />
-            В архив
+            {t('food.archive')}
           </Button>
         )}
       </div>

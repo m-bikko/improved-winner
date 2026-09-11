@@ -11,6 +11,8 @@
  * фотографировали свой холодильник, уезжали бы в хранилище вместе с картинкой.
  */
 
+import { tr } from '@/lib/i18n'
+
 /** Длинная сторона. 512 хватает карточке на экране с тройной плотностью. */
 const MAX_SIDE = 512
 
@@ -49,7 +51,7 @@ function encode(canvas: HTMLCanvasElement, type: string, quality: number): Promi
  */
 export async function loadBitmap(file: File): Promise<ImageBitmap> {
   if (!file.type.startsWith('image/')) {
-    throw new Error('Это не изображение')
+    throw new Error(tr('img.notImage'))
   }
   return createImageBitmap(file, { imageOrientation: 'from-image' })
 }
@@ -79,7 +81,7 @@ async function encodeWithinBudget(
   // Берём самое низкое: лучше зернистая картинка, чем отказ загрузить.
   const fallback =
     (await encode(canvas, 'image/webp', 0.35)) ?? (await encode(canvas, 'image/jpeg', 0.35))
-  if (!fallback) throw new Error('Не удалось сжать изображение')
+  if (!fallback) throw new Error(tr('img.compressFailed'))
   return { blob: fallback, extension: fallback.type === 'image/webp' ? 'webp' : 'jpg' }
 }
 
@@ -140,7 +142,7 @@ export async function prepareSquare(bitmap: ImageBitmap, crop: SquareCrop): Prom
   canvas.height = side
 
   const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('Браузер не дал холст для обработки картинки')
+  if (!ctx) throw new Error(tr('img.noCanvas'))
   ctx.drawImage(bitmap, crop.x, crop.y, crop.side, crop.side, 0, 0, side, side)
 
   const { blob, extension } = await encodeWithinBudget(canvas)
@@ -157,7 +159,7 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
     canvas.height = size.height
 
     const ctx = canvas.getContext('2d')
-    if (!ctx) throw new Error('Браузер не дал холст для обработки картинки')
+    if (!ctx) throw new Error(tr('img.noCanvas'))
     ctx.drawImage(bitmap, 0, 0, size.width, size.height)
 
     const { blob, extension } = await encodeWithinBudget(canvas)
@@ -168,7 +170,7 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
 }
 
 export function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} Б`
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} КБ`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`
+  if (bytes < 1024) return `${bytes} ${tr('unit.byte')}`
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} ${tr('unit.kb')}`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} ${tr('unit.mb')}`
 }

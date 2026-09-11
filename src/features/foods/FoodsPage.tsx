@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ChevronRight, Plus } from 'lucide-react'
@@ -9,6 +10,7 @@ import { FoodThumb } from './FoodPhoto'
 import type { Food, FoodKind } from './types'
 
 export function FoodsPage() {
+  const t = useT()
   const [tab, setTab] = useState<FoodKind>('product')
   const [query, setQuery] = useState('')
   const foods = useFoods()
@@ -35,26 +37,28 @@ export function FoodsPage() {
     <div className="mx-auto max-w-2xl px-4 pt-3 pb-28">
       <div className="mb-3 flex gap-1 rounded-xl bg-raised p-1">
         <Tab active={tab === 'product'} onClick={() => setTab('product')}>
-          Продукты
+          {t('food.tabProducts')}
         </Tab>
         <Tab active={tab === 'dish'} onClick={() => setTab('dish')}>
-          Блюда
+          {t('food.tabDishes')}
         </Tab>
       </div>
 
-      <SearchInput value={query} onChange={setQuery} placeholder="Название или бренд" />
+      <SearchInput value={query} onChange={setQuery} placeholder={t('food.searchPlaceholder')} />
 
       {foods.isPending && <Loading />}
       {foods.isError && <ErrorState error={foods.error} onRetry={() => void foods.refetch()} />}
 
       {foods.isSuccess && visible.length === 0 && (
         <EmptyState
-          title={query ? 'Ничего не нашлось' : tab === 'dish' ? 'Блюд пока нет' : 'Продуктов нет'}
+          title={t(
+            query ? 'pick.nothingFound' : tab === 'dish' ? 'food.noDishes' : 'food.noProducts',
+          )}
           hint={
             query
-              ? 'Проверь написание или заведи новый продукт'
+              ? t('pick.nothingHint')
               : tab === 'dish'
-                ? 'Блюдо - это несколько продуктов с граммовками. КБЖУ посчитается само.'
+                ? t('food.dishHint')
                 : undefined
           }
         />
@@ -77,7 +81,7 @@ export function FoodsPage() {
       <button
         type="button"
         onClick={() => navigate(tab === 'dish' ? '/foods/new?kind=dish' : '/foods/new')}
-        aria-label={tab === 'dish' ? 'Новое блюдо' : 'Новый продукт'}
+        aria-label={t(tab === 'dish' ? 'food.newDish' : 'food.newProduct')}
         className="fixed right-5 bottom-6 z-20 flex size-14 items-center justify-center
                    rounded-full bg-accent text-accent-ink shadow-lg
                    transition-transform active:scale-95"
@@ -122,6 +126,7 @@ export function FoodRow({
   to: string
   photoUrl?: string | undefined
 }) {
+  const t = useT()
   return (
     <Link to={to} className="flex items-center gap-3 bg-surface px-4 py-3 active:bg-raised">
       <FoodThumb url={photoUrl} />
@@ -131,11 +136,17 @@ export function FoodRow({
           {food.brand && <span className="text-muted"> · {food.brand}</span>}
         </span>
         <span className="mt-0.5 block text-xs text-muted">
-          {Math.round(food.kcal100)} ккал ·{' '}
-          <span className="text-protein">Б {trim(food.protein100)}</span>{' '}
-          <span className="text-fat">Ж {trim(food.fat100)}</span>{' '}
-          <span className="text-carbs">У {trim(food.carbs100)}</span>
-          <span className="text-muted"> на 100 г</span>
+          {Math.round(food.kcal100)} {t('unit.kcal')} ·{' '}
+          <span className="text-protein">
+            {t('macro.p')} {trim(food.protein100)}
+          </span>{' '}
+          <span className="text-fat">
+            {t('macro.f')} {trim(food.fat100)}
+          </span>{' '}
+          <span className="text-carbs">
+            {t('macro.c')} {trim(food.carbs100)}
+          </span>
+          <span className="text-muted"> {t('pick.per100')}</span>
         </span>
       </span>
       <ChevronRight size={18} className="shrink-0 text-muted" aria-hidden />

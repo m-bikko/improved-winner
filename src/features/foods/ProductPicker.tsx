@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { useMemo, useState } from 'react'
 import { searchItems } from '@/lib/search'
 import { SearchInput } from '@/ui/SearchInput'
@@ -25,6 +26,7 @@ export function ProductPicker({
   onPick: (food: Food) => void
   excludeIds?: string[]
 }) {
+  const t = useT()
   const [query, setQuery] = useState('')
   const foods = useFoods()
 
@@ -36,12 +38,12 @@ export function ProductPicker({
   }, [foods.data, query, excludeIds])
 
   return (
-    <Sheet open={open} onClose={onClose} title="Ингредиент" bleed>
+    <Sheet open={open} onClose={onClose} title={t('food.ingredientTitle')} bleed>
       <div className="sticky top-0 z-10 bg-bg px-4 pt-3 pb-2">
-        <SearchInput value={query} onChange={setQuery} placeholder="Название продукта" autoFocus />
+        <SearchInput value={query} onChange={setQuery} placeholder={t('food.productNamePlaceholder')} autoFocus />
       </div>
 
-      {results.length === 0 && <EmptyState title="Ничего не нашлось" />}
+      {results.length === 0 && <EmptyState title={t('pick.nothingFound')} />}
 
       <ul className="px-2 pb-4">
         {results.map((food) => (
@@ -53,8 +55,9 @@ export function ProductPicker({
             >
               <span className="block truncate">{food.name}</span>
               <span className="text-xs text-muted">
-                {Math.round(food.kcal100)} ккал · Б {trim(food.protein100)} Ж {trim(food.fat100)} У{' '}
-                {trim(food.carbs100)} на 100 г
+                {Math.round(food.kcal100)} {t('unit.kcal')} · {t('macro.p')}{' '}
+                {trim(food.protein100)} {t('macro.f')} {trim(food.fat100)} {t('macro.c')}{' '}
+                {trim(food.carbs100)} {t('pick.per100')}
               </span>
             </button>
           </li>

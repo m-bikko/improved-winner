@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { useRef, useState } from 'react'
 import { Camera, ImageOff, LoaderCircle, Trash2 } from 'lucide-react'
 import { formatBytes } from '@/lib/image'
@@ -18,6 +19,7 @@ export function FoodPhotoEditor({
   foodId: string | undefined
   imagePath: string | null
 }) {
+  const t = useT()
   const input = useRef<HTMLInputElement>(null)
   const upload = useUploadFoodPhoto()
   const remove = useRemoveFoodPhoto()
@@ -30,7 +32,7 @@ export function FoodPhotoEditor({
   if (!foodId) {
     return (
       <p className="rounded-xl bg-raised px-4 py-3 text-sm text-muted">
-        Фотографию можно добавить после сохранения продукта.
+        {t('food.photoAfterSave')}
       </p>
     )
   }
@@ -48,7 +50,7 @@ export function FoodPhotoEditor({
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-sm font-medium">Фотография</p>
+      <p className="text-sm font-medium">{t('food.photo')}</p>
 
       <div className="flex items-center gap-3">
         <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-raised ring-1 ring-line">
@@ -64,7 +66,7 @@ export function FoodPhotoEditor({
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <Button variant="secondary" onClick={() => input.current?.click()} loading={upload.isPending}>
             <Camera size={18} aria-hidden />
-            {imagePath ? 'Заменить' : 'Добавить фото'}
+            {t(imagePath ? 'food.replacePhoto' : 'food.addPhoto')}
           </Button>
 
           {imagePath && (
@@ -74,7 +76,7 @@ export function FoodPhotoEditor({
               className="flex items-center gap-1.5 self-start px-1 py-1 text-sm text-muted"
             >
               <Trash2 size={15} aria-hidden />
-              Удалить
+              {t('common.delete')}
             </button>
           )}
         </div>
@@ -82,8 +84,10 @@ export function FoodPhotoEditor({
 
       {savedSize && (
         <p className="text-xs text-muted">
-          {formatBytes(savedSize.from)} → {formatBytes(savedSize.to)}. Картинка ужимается
-          до 512 пикселей и перекодируется, попутно теряя метаданные съёмки.
+          {t('food.shrunk', {
+            from: formatBytes(savedSize.from),
+            to: formatBytes(savedSize.to),
+          })}
         </p>
       )}
       {error && <p className="text-xs text-danger">{error}</p>}

@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Archive, ChevronLeft, Plus, Trash2, TriangleAlert } from 'lucide-react'
@@ -23,6 +24,7 @@ import type { Food, Serving } from './types'
  * получилось бы условное использование хуков.
  */
 export function FoodEditPage() {
+  const t = useT()
   const { id } = useParams<{ id: string }>()
   const [params] = useSearchParams()
   const foods = useFoods()
@@ -35,7 +37,7 @@ export function FoodEditPage() {
   if (!foods.isSuccess || !servings.isSuccess) return <Loading />
 
   const existing = isNew ? undefined : foods.data.find((f) => f.id === id)
-  if (!isNew && !existing) return <ErrorState error={new Error('Продукт не найден')} />
+  if (!isNew && !existing) return <ErrorState error={new Error(t('food.notFound'))} />
 
   // Для существующей записи тип берём из неё самой, для новой - из ссылки
   const isDish = existing ? existing.kind === 'dish' : params.get('kind') === 'dish'
@@ -80,6 +82,7 @@ function FoodForm({
   existingServings: Serving[]
   isDish: boolean
 }) {
+  const t = useT()
   const navigate = useNavigate()
   const saveFood = useSaveFood()
   const saveServings = useSaveServings()
@@ -160,67 +163,66 @@ function FoodForm({
         <button
           type="button"
           onClick={() => navigate(-1)}
-          aria-label="Назад"
+          aria-label={t('food.back')}
           className="-ml-2 p-2 text-muted"
         >
           <ChevronLeft size={22} aria-hidden />
         </button>
         <span className="truncate text-base font-medium">
-          {existing ? existing.name : isDish ? 'Новое блюдо' : 'Новый продукт'}
+          {existing ? existing.name : t(isDish ? 'food.newDish' : 'food.newProduct')}
         </span>
       </div>
 
       <div className="flex flex-col gap-4">
         <Field
-          label="Название"
+          label={t('food.name')}
           value={form.name}
           onChange={(e) => patch({ name: e.target.value })}
-          placeholder="Куриная грудка"
+          placeholder={t('food.namePlaceholder')}
           autoFocus={!existing}
         />
 
         {duplicate && (
           <p className="flex items-start gap-2 rounded-xl bg-raised px-3 py-2.5 text-sm text-muted">
             <TriangleAlert size={16} className="mt-0.5 shrink-0 text-fat" aria-hidden />
-            Такое название уже есть: «{duplicate}». Если это другой продукт, добавь бренд -
-            иначе в дневнике их будет не различить.
+            {t('food.duplicate', { name: duplicate })}
           </p>
         )}
 
         <Field
-          label="Бренд"
+          label={t('food.brand')}
           value={form.brand}
           onChange={(e) => patch({ brand: e.target.value })}
-          placeholder="необязательно"
+          placeholder={t('common.optional')}
         />
 
         <div className="rounded-xl bg-raised p-3">
-          <p className="mb-3 text-sm font-medium">На 100 грамм</p>
+          <p className="mb-3 text-sm font-medium">{t('food.per100title')}</p>
           <div className="grid grid-cols-2 gap-3">
             <NumberField
-              label="Калории"
-              suffix="ккал"
+              label={t('food.kcal')}
+              suffix={t('unit.kcal')}
               max={900}
               value={form.kcal}
               onValueChange={(v) => patch({ kcal: v })}
             />
             <NumberField
-              label="Белки"
-              suffix="г"
+              label={t('food.protein')}
+              suffix={t('unit.gram')}
               max={100}
               value={form.protein}
               onValueChange={(v) => patch({ protein: v })}
             />
             <NumberField
-              label="Жиры"
-              suffix="г"
+              label={t('food.fat')}
+              suffix={t('unit.gram')}
               max={100}
               value={form.fat}
               onValueChange={(v) => patch({ fat: v })}
             />
             <NumberField
-              label="Углеводы"
-              suffix="г"
+              label={t('food.carbs')}
+              suffix={t('unit.gram')}
               max={100}
               value={form.carbs}
               onValueChange={(v) => patch({ carbs: v })}
@@ -236,13 +238,13 @@ function FoodForm({
         {error && <p className="text-sm text-danger">{error}</p>}
 
         <Button onClick={() => void submit()} disabled={!canSave} loading={busy}>
-          Сохранить
+          {t('common.save')}
         </Button>
 
         {existing && (
           <Button variant="danger" onClick={() => void doArchive()} loading={archive.isPending}>
             <Archive size={18} aria-hidden />
-            В архив
+            {t('food.archive')}
           </Button>
         )}
       </div>
@@ -269,14 +271,14 @@ function AtwaterHint({
   fat: number | ''
   carbs: number | ''
 }) {
+  const t = useT()
   if (kcal === '' || kcal < 20) return null
   const computed = 4 * (protein || 0) + 9 * (fat || 0) + 4 * (carbs || 0)
   if (Math.abs(kcal - computed) / kcal < 0.25) return null
 
   return (
     <p className="mt-3 text-xs text-muted">
-      По белкам, жирам и углеводам выходит {Math.round(computed)} ккал, а указано {kcal}. Проверь,
-      не потерялась ли цифра. Для алкоголя и продуктов с клетчаткой расхождение нормально.
+      {t('food.mismatch', { computed: Math.round(computed), kcal })}
     </p>
   )
 }
@@ -288,12 +290,13 @@ function ServingsEditor({
   value: ServingDraft[]
   onChange: (next: ServingDraft[]) => void
 }) {
+  const t = useT()
   return (
     <div className="flex flex-col gap-2">
       <div>
-        <p className="text-sm font-medium">Готовые меры</p>
+        <p className="text-sm font-medium">{t('food.servings')}</p>
         <p className="text-xs text-muted">
-          «1 шт», «1 стакан 250 мл», «1 тарелка». Чтобы не прикидывать граммы каждый раз.
+          {t('food.servingsHintProduct')}
         </p>
       </div>
 
@@ -301,20 +304,20 @@ function ServingsEditor({
         <div key={s.key} className="flex items-end gap-2">
           <div className="flex-1">
             <Field
-              label="Мера"
+              label={t('food.serving')}
               value={s.label}
               onChange={(e) => {
                 const next = [...value]
                 next[i] = { ...s, label: e.target.value }
                 onChange(next)
               }}
-              placeholder="1 шт"
+              placeholder={t('food.servingPlaceholder')}
             />
           </div>
           <div className="w-28">
             <NumberField
-              label="Вес"
-              suffix="г"
+              label={t('portion.weight')}
+              suffix={t('unit.gram')}
               value={s.grams}
               onValueChange={(g) => {
                 const next = [...value]
@@ -326,7 +329,7 @@ function ServingsEditor({
           <button
             type="button"
             onClick={() => onChange(value.filter((_, j) => j !== i))}
-            aria-label="Удалить меру"
+            aria-label={t('food.deleteServing')}
             className="mb-1.5 p-3 text-muted"
           >
             <Trash2 size={18} aria-hidden />
@@ -339,7 +342,7 @@ function ServingsEditor({
         onClick={() => onChange([...value, { key: crypto.randomUUID(), label: '', grams: '' }])}
       >
         <Plus size={18} aria-hidden />
-        Добавить меру
+        {t('food.addServing')}
       </Button>
     </div>
   )
