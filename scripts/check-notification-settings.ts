@@ -45,25 +45,6 @@ async function main(): Promise<void> {
     const [a, b] = members
     if (!a || !b) throw new Error('Нужны два участника')
 
-    // --- ни одна рассылка не проходит мимо -------------------------------
-    const silent = await q<{ proname: string }>(
-      `select p.proname
-         from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-        where n.nspname = 'public'
-          and pg_get_functiondef(p.oid) like '%public.tg_notify%'
-          and p.proname not in
-              ('tg_notify_self','tg_notify_partner','tg_notify_both','push_notify')
-          and pg_get_functiondef(p.oid) !~
-              '''(meals|tasks|topics|cycle|cycle_tips|love_notes|checkin|checkin_partner|dates|letters|wishlist)'''`,
-    )
-    check(
-      silent.length === 0,
-      'Каждая рассылка называет свой вид',
-      silent.length === 0
-        ? 'мимо настроек не проходит ничего'
-        : `без вида: ${silent.map((s) => s.proname).join(', ')}`,
-    )
-
     // Словарь видов в базе и в интерфейсе - один
     const def = await one(
       `select pg_get_constraintdef(oid) as v from pg_constraint
@@ -80,6 +61,32 @@ async function main(): Promise<void> {
       `в базе ${dbKinds.length}, в форме ${uiKinds.length}` +
         (onlyDb.length ? `, только в базе: ${onlyDb.join(', ')}` : '') +
         (onlyUi.length ? `, только в форме: ${onlyUi.join(', ')}` : ''),
+    )
+
+    /*
+     * Ни одна рассылка не проходит мимо настроек.
+     *
+     * Список видов берётся из ТОГО ЖЕ ограничения, что разобран выше,
+     * а не вписывается в запрос руками: вписанный устареет на первом же
+     * новом виде, и проверка начнёт ругаться на исправную рассылку.
+     * Ровно это и случилось, когда появился «nudge».
+     */
+    const silent = await q<{ proname: string }>(
+      `select p.proname
+         from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+        where n.nspname = 'public'
+          and pg_get_functiondef(p.oid) like '%public.tg_notify%'
+          and p.proname not in
+              ('tg_notify_self','tg_notify_partner','tg_notify_both','push_notify')
+          and pg_get_functiondef(p.oid) !~ ('''(' || $1 || ')''')`,
+      [dbKinds.join('|')],
+    )
+    check(
+      silent.length === 0,
+      'Каждая рассылка называет свой вид',
+      silent.length === 0
+        ? `мимо настроек не проходит ничего (видов ${dbKinds.length})`
+        : `без вида: ${silent.map((s) => s.proname).join(', ')}`,
     )
 
     const allowed = async (kind: string, channel: string, who = a.user_id): Promise<boolean> =>

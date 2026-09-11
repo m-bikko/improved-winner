@@ -1,28 +1,58 @@
 import type { Database } from '@/types/db'
-import { supabase } from './supabase'
 
 type DiaryInsert = Database['public']['Tables']['diary_entries']['Insert']
 
 const KEY = 'love-promises-outbox'
 
+/** Таблицы, в которые очередь умеет досылать. */
+export type OutboxTable = 'diary_entries' | 'checkins' | 'weight_log'
+
+export type Pending = {
+  table: OutboxTable
+  /** Колонки, по которым идёт upsert. */
+  onConflict: string
+  row: Record<string, unknown>
+  /** Ключ внутри очереди: повторная правка того же заменяет прежнюю. */
+  key: string
+}
+
 /**
- * Очередь неотправленных записей дневника.
+ * Очередь неотправленного.
  *
- * Еду вносят сразу после еды - в кафе, в зале, в дороге, то есть ровно там,
- * где связь хуже всего. Потерять уже набранную запись из-за таймаута обиднее
- * всего, потому что повторить её по памяти к вечеру уже не получится.
+ * Записи вносят там, где связь хуже всего: еду - в кафе и в зале,
+ * самочувствие - в дороге, вес - утром в ванной, куда вайфай не добивает.
+ * Потерять уже набранное из-за таймаута обиднее всего, потому что повторить
+ * по памяти к вечеру уже не получится.
  *
- * Очередь только на вставку записей дневника и только вперёд. Полноценная
- * двусторонняя синхронизация - совсем другая задача, и она здесь не нужна:
- * id генерирует клиент, поэтому повторная отправка идемпотентна, а конфликтов
- * между двумя людьми в личном дневнике не бывает по определению.
+ * ТОЛЬКО ИДЕМПОТЕНТНЫЕ ОПЕРАЦИИ - upsert по известному ключу, и только
+ * вперёд. Это не «офлайн везде», и притворяться им нельзя: общая очередь
+ * «повторить любую правку» ломается на порядке, на конфликтах и на вставках
+ * без ключа, которые при повторе дают дубль. Здесь у каждой записи есть
+ * ключ - id у дневника, пара (человек, дата) у самочувствия и веса, -
+ * поэтому повтор безопасен по построению.
+ *
+ * Удаления в очередь не идут: «удалить то, чего на сервере ещё нет»
+ * не имеет смысла, а «удалить то, что партнёр успел поправить» имеет,
+ * но не тот.
  */
-export function readQueue(): DiaryInsert[] {
+export function readQueue(): Pending[] {
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return []
     const parsed: unknown = JSON.parse(raw)
-    return Array.isArray(parsed) ? (parsed as DiaryInsert[]) : []
+    if (!Array.isArray(parsed)) return []
+    // Записи прежнего формата - голые строки дневника. Приводим их к общему
+    // виду, а не выбрасываем: в очереди может лежать несохранённый обед
+    return parsed.map((item) => {
+      const value = item as Partial<Pending> & DiaryInsert
+      if (value.table) return value as Pending
+      return {
+        table: 'diary_entries' as const,
+        onConflict: 'id',
+        row: value as Record<string, unknown>,
+        key: String(value.id),
+      }
+    })
   } catch {
     // Приватный режим, забитое хранилище, битый JSON - очередь это удобство,
     // а не то, ради чего стоит ронять приложение
@@ -30,17 +60,17 @@ export function readQueue(): DiaryInsert[] {
   }
 }
 
-function writeQueue(entries: DiaryInsert[]): void {
+function writeQueue(items: Pending[]): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(entries))
+    localStorage.setItem(KEY, JSON.stringify(items))
   } catch {
     /* см. выше */
   }
 }
 
-export function enqueue(entry: DiaryInsert): void {
-  const queue = readQueue().filter((e) => e.id !== entry.id)
-  queue.push(entry)
+export function enqueue(item: Pending): void {
+  const queue = readQueue().filter((e) => e.key !== item.key)
+  queue.push(item)
   writeQueue(queue)
 }
 
@@ -48,31 +78,83 @@ export function queueSize(): number {
   return readQueue().length
 }
 
+/** Сетевой сбой стоит повторить, отказ политики или битые данные - нет. */
+export function isRetriable(error: { code?: string | undefined } | null): boolean {
+  if (!error) return false
+  return !error.code || error.code === 'PGRST000'
+}
+
+/** Отправка наружу. Внедряется, чтобы очередь можно было проверить без сети. */
+export type Send = (
+  table: OutboxTable,
+  onConflict: string,
+  rows: unknown[],
+) => Promise<{ error: { code?: string | undefined; message: string } | null }>
+
+/**
+ * Настоящая отправка.
+ *
+ * Импорт динамический: модуль очереди не должен тянуть за собой клиент
+ * Supabase просто фактом загрузки - иначе его нельзя запустить вне сборки,
+ * а значит нечем проверить.
+ */
+async function supabaseSend(): Promise<Send> {
+  const { supabase } = await import('./supabase')
+  // await, а не возврат построителя: supabase-js отдаёт thenable-объект,
+  // а не промис, и типу Send он не подходит
+  return async (table, onConflict, rows) => {
+    const { error } = await supabase.from(table).upsert(rows as never, { onConflict })
+    return { error }
+  }
+}
+
 /**
  * Пробует отправить всё накопленное.
  *
- * upsert по id, а не insert: если запись на самом деле долетела, а ответ
- * потерялся, повтор не должен давать ни дубля, ни ошибки.
+ * Группируем по таблице и шлём upsert: если запись на самом деле долетела,
+ * а ответ потерялся, повтор не должен давать ни дубля, ни ошибки.
+ *
+ * Успешно ушедшее убираем поимённо, а не очищаем очередь целиком: пока шла
+ * отправка, в неё могла лечь новая запись, и `writeQueue([])` стёр бы её,
+ * так и не отправив.
  */
-export async function flushOutbox(): Promise<number> {
+export async function flushOutbox(send?: Send): Promise<number> {
   const queue = readQueue()
   if (queue.length === 0) return 0
+  const sender = send ?? (await supabaseSend())
 
-  const { error } = await supabase
-    .from('diary_entries')
-    .upsert(queue, { onConflict: 'id', ignoreDuplicates: true })
+  const sent = new Set<string>()
+  const dropped = new Set<string>()
 
-  if (error) {
-    // Отказ политики или битые данные лечить повтором бессмысленно - такие
-    // записи надо выбросить, иначе очередь застрянет навсегда
-    const permanent = typeof error.code === 'string' && error.code.startsWith('42')
-    if (permanent) {
-      console.error('Очередь отброшена, запись невалидна:', error.message)
-      writeQueue([])
-    }
-    return 0
+  const groups = new Map<string, Pending[]>()
+  for (const item of queue) {
+    const id = `${item.table}|${item.onConflict}`
+    const bucket = groups.get(id)
+    if (bucket) bucket.push(item)
+    else groups.set(id, [item])
   }
 
-  writeQueue([])
-  return queue.length
+  for (const [id, items] of groups) {
+    const [table, onConflict] = id.split('|') as [OutboxTable, string]
+    const { error } = await sender(
+      table,
+      onConflict,
+      items.map((i) => i.row),
+    )
+
+    if (!error) {
+      for (const i of items) sent.add(i.key)
+      continue
+    }
+    // Лечить повтором отказ политики или битые данные бессмысленно - такие
+    // записи надо выбросить, иначе очередь застрянет навсегда
+    if (!isRetriable(error)) {
+      console.error(`Очередь ${table} отброшена:`, error.message)
+      for (const i of items) dropped.add(i.key)
+    }
+  }
+
+  const done = new Set([...sent, ...dropped])
+  writeQueue(readQueue().filter((i) => !done.has(i.key)))
+  return sent.size
 }

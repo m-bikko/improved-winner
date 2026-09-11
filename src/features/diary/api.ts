@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import { enqueue, flushOutbox } from '@/lib/outbox'
+import { enqueue, flushOutbox, isRetriable } from '@/lib/outbox'
 import type { GoalDirection, Macros } from '@/lib/nutrition'
 import type { Food } from '@/features/foods/types'
 import { entryFromRow, type DiaryEntry, type Meal } from './types'
@@ -168,9 +168,8 @@ export function useAddEntry() {
         // Сетевую ошибку кладём в очередь и считаем успехом: запись у человека
         // «есть», уйдёт при первой же связи. Отказ политики или битые данные
         // очередь не спасёт - такое показываем сразу
-        const retriable = !error.code || error.code === 'PGRST000'
-        if (!retriable) throw error
-        enqueue(row)
+        if (!isRetriable(error)) throw error
+        enqueue({ table: 'diary_entries', onConflict: 'id', row, key: row.id })
       }
       return row.id
     },
@@ -273,7 +272,12 @@ export function useOutboxFlush(): void {
   useEffect(() => {
     const flush = () => {
       void flushOutbox().then((sent) => {
-        if (sent > 0) void qc.invalidateQueries({ queryKey: ['diary'] })
+        if (sent === 0) return
+        // Очередь общая, и что именно ушло, здесь уже неизвестно -
+        // обновляем всё, чего она касается
+        void qc.invalidateQueries({ queryKey: ['diary'] })
+        void qc.invalidateQueries({ queryKey: ['checkins'] })
+        void qc.invalidateQueries({ queryKey: ['weight'] })
       })
     }
     flush()

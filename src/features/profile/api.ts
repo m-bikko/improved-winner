@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { enqueue, isRetriable } from '@/lib/outbox'
 import { supabase } from '@/lib/supabase'
 import { computeGoals, type ActivityLevel, type GoalDirection, type Macros, type Sex } from '@/lib/nutrition'
 
@@ -114,13 +115,22 @@ export function useLogWeight() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (input: { userId: string; date: string; weightKg: number }) => {
+      const row = { user_id: input.userId, date: input.date, weight_kg: input.weightKg }
       const { error } = await supabase
         .from('weight_log')
-        .upsert(
-          { user_id: input.userId, date: input.date, weight_kg: input.weightKg },
-          { onConflict: 'user_id,date' },
-        )
-      if (error) throw error
+        .upsert(row, { onConflict: 'user_id,date' })
+      if (error) {
+        if (!isRetriable(error)) throw error
+        enqueue({
+          table: 'weight_log',
+          onConflict: 'user_id,date',
+          row,
+          key: `weight_log:${input.date}`,
+        })
+        // Профиль без связи не обновить, но это и не потеря: weight_kg
+        // в нём - последнее известное значение, и оно догонит при досылке
+        return
+      }
 
       const { error: profileError } = await supabase
         .from('profiles')

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useUserId } from '@/auth/AuthProvider'
+import { enqueue, isRetriable } from '@/lib/outbox'
 import { supabase } from '@/lib/supabase'
 import type { Database } from '@/types/db'
 import type { Checkin } from './states'
@@ -42,14 +43,26 @@ export function useSaveCheckin() {
   const userId = useUserId()
   return useMutation({
     mutationFn: async (input: { date: string; states: string[]; note: string | null }) => {
-      const { error } = await supabase.from('checkins').upsert({
+      const row = {
         user_id: userId,
         date: input.date,
         states: input.states,
         note: input.note?.trim() || null,
         updated_at: new Date().toISOString(),
-      })
-      if (error) throw error
+      }
+      const { error } = await supabase.from('checkins').upsert(row)
+      if (error) {
+        // Сетевой сбой кладём в очередь и считаем успехом: отметка
+        // у человека «есть» и уйдёт при первой связи. Ключ - пара
+        // (человек, дата), поэтому повтор безопасен
+        if (!isRetriable(error)) throw error
+        enqueue({
+          table: 'checkins',
+          onConflict: 'user_id,date',
+          row,
+          key: `checkins:${input.date}`,
+        })
+      }
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['checkins'] })
