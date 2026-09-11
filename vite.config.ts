@@ -5,18 +5,18 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 /**
- * Подстановка названия в index.html.
+ * Подстановка названия и языка в index.html.
  *
  * Родная замена `%VITE_*%` в Vite не умеет значений по умолчанию: если
  * переменной нет, в заголовке останется буквальное «%VITE_PUBLIC_APP_NAME%».
  * Поэтому подставляем сами - здесь имя уже посчитано вместе с манифестом,
  * и оба берут его из одного источника.
  */
-function appNameInHtml(name: string, shortName: string): Plugin {
+function shellValues(values: Record<string, string>): Plugin {
   return {
-    name: 'app-name-in-html',
+    name: 'shell-values',
     transformIndexHtml: (html) =>
-      html.replaceAll('__APP_NAME__', name).replaceAll('__APP_SHORT_NAME__', shortName),
+      Object.entries(values).reduce((out, [key, value]) => out.replaceAll(key, value), html),
   }
 }
 
@@ -27,6 +27,19 @@ export default defineConfig(({ mode }) => {
   const appName = env.VITE_PUBLIC_APP_NAME || 'Тандем'
   const appShortName = env.VITE_PUBLIC_APP_SHORT_NAME || appName
 
+  // Язык оболочки и манифеста.
+  //
+  // Он ОДИН на сборку и не следует за профилем: заголовок вкладки, описание
+  // в окне установки и `<html lang>` читаются системой до того, как приложение
+  // запустится и узнает, кто пришёл. Внутри приложения язык у каждого свой -
+  // LangProvider переставляет `<html lang>` на своё сразу после монтирования.
+  //
+  // Отсюда и то, что описание берётся из переменной, а не лежит строкой:
+  // сборка под другой язык не должна требовать правки конфига.
+  const appLang = env.VITE_PUBLIC_APP_LANG || 'ru'
+  const appDescription =
+    env.VITE_PUBLIC_APP_DESCRIPTION || 'Темы, дневник питания и задачи - на двоих'
+
   return {
     resolve: {
       alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
@@ -34,7 +47,12 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
-      appNameInHtml(appName, appShortName),
+      shellValues({
+        __APP_NAME__: appName,
+        __APP_SHORT_NAME__: appShortName,
+        __APP_LANG__: appLang,
+        __APP_DESCRIPTION__: appDescription,
+      }),
       VitePWA({
         // 'autoUpdate', а не 'prompt'.
         //
@@ -48,8 +66,8 @@ export default defineConfig(({ mode }) => {
         manifest: {
           name: appName,
           short_name: appShortName,
-          description: 'Темы, дневник питания и задачи - на двоих',
-          lang: 'ru',
+          description: appDescription,
+          lang: appLang,
           start_url: '/',
           scope: '/',
           display: 'standalone',

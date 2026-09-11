@@ -37,7 +37,7 @@ type Payload = {
 
 function env(name: string): string {
   const value = process.env[name]
-  if (!value) throw new Error(`Не задана переменная окружения ${name}`)
+  if (!value) throw new Error(`Missing environment variable ${name}`)
   return value
 }
 
@@ -80,15 +80,17 @@ export default async function handler(req: Request, res: Response): Promise<void
     return
   }
   if (!subscriptions?.length) {
-    res.status(200).json({ sent: 0, reason: 'нет подписок' })
+    res.status(200).json({ sent: 0, reason: 'no subscriptions' })
     return
   }
 
   const notification = JSON.stringify({
-    // Запасной заголовок, а не название приложения: имя PWA систему и так
-    // подписывает сама, а сюда мы попадаем только если вызывающий заголовок
-    // не передал - то есть когда сказать «о чём» уже нечего
-    title: payload.title ?? 'Напоминание',
+    // Пустой заголовок, а не слово. Сюда мы попадаем, только если вызывающий
+    // его не передал, - а база передаёт всегда. Любое слово на этом месте
+    // было бы словом на ОДНОМ языке: ни у обработчика, ни у воркера нет
+    // ни сессии, ни языка получателя. Имя приложения система подписывает
+    // сама, так что пустой заголовок неотличим от отсутствующего.
+    title: payload.title ?? '',
     body: payload.body,
     url: payload.url ?? '/diary',
     // Проходит насквозь: считать это здесь значило бы вторым запросом

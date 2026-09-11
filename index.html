@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="__APP_LANG__">
   <head>
     <meta charset="UTF-8" />
     <!-- viewport-fit=cover обязателен, иначе safe-area insets в standalone-режиме равны нулю -->
@@ -12,8 +12,12 @@
     <meta name="color-scheme" content="light dark" />
     <meta name="robots" content="noindex, nofollow" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <!-- __APP_NAME__ и __APP_SHORT_NAME__ подставляет плагин из vite.config.ts -->
+    <!-- __APP_NAME__, __APP_SHORT_NAME__, __APP_LANG__ и __APP_DESCRIPTION__
+         подставляет плагин из vite.config.ts. Язык здесь один на сборку:
+         систему он интересует до запуска приложения, а внутри его переставляет
+         LangProvider под того, кто вошёл. -->
     <meta name="apple-mobile-web-app-title" content="__APP_SHORT_NAME__" />
+    <meta name="description" content="__APP_DESCRIPTION__" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>__APP_NAME__</title>

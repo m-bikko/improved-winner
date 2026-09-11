@@ -29,19 +29,27 @@ self.addEventListener('push', (event) => {
   if (!event.data) return
 
   let payload
+  // Запасной заголовок ПУСТОЙ, а не «Напоминание».
+  //
   // Название приложения сюда не подставить: файл лежит в public/ и копируется
-  // как есть, переменные сборки до него не доходят. Поэтому запасной заголовок
-  // нейтральный - тем более что имя PWA систему подписывает сама.
+  // как есть, переменные сборки до него не доходят. Словаря здесь тоже нет -
+  // у воркера нет ни сессии, ни языка получателя.
+  //
+  // Любое слово на этом месте было бы словом на ОДНОМ языке, и на чужом
+  // экране оно так и осталось бы русским. Пустой заголовок неотличим от
+  // отсутствующего: систему всё равно подписывает именем приложения, а текст
+  // несёт тело. Срабатывает это только на непарсящейся нагрузке, то есть
+  // почти никогда.
   try {
     payload = event.data.json()
   } catch {
-    payload = { title: 'Напоминание', body: event.data.text() }
+    payload = { title: '', body: event.data.text() }
   }
 
   event.waitUntil(
     Promise.all([
       applyBadge(payload.badge),
-      self.registration.showNotification(payload.title || 'Напоминание', {
+      self.registration.showNotification(payload.title || '', {
       body: payload.body,
       icon: '/icon-192.png',
       badge: '/icon-192.png',

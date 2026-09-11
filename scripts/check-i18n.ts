@@ -22,6 +22,11 @@
  * и не пустеет: на экране появится строка «tip.cramps.body». Поэтому
  * соответствие проверяется отдельно.
  *
+ * Оболочка. Проверка долго смотрела только внутрь src/, и за её пределами
+ * нашлось три места с русским текстом на виду: запасной заголовок push
+ * в public/push-sw.js, описание в манифесте и `<html lang>`. Ни одно из них
+ * не импортируется из src/ - и ни одно поэтому не проверялось.
+ *
  * Локали. Отдельный вопрос, потому что кириллицы в 'ru-RU' нет и первым
  * контролем такое не ловится. Прибитая локаль в toLocaleDateString даёт
  * самый неприятный вид ошибки: интерфейс переключился, а дата рядом с ним
@@ -115,6 +120,17 @@ function untranslated(source: string): string[] {
 /** Прибитая локаль: 'ru-RU' в toLocale*, минуя activeLocale(). */
 const HARDCODED_LOCALE = /toLocale\w*\(\s*(['"])(?!\1)[a-z]{2}(-[A-Z]{2})?\1/g
 
+/**
+ * Файлы вне src/, которые видит человек.
+ *
+ * Оболочка, Service Worker и серверный обработчик push. Собираются не бандлом
+ * и в src/ не входят, но текст в них попадает на экран так же.
+ */
+// vite.config.ts сюда не входит: там лежат значения ПО УМОЛЧАНИЮ для сборки -
+// название и описание, - и они по той же причине, что и src/lib/appName.ts,
+// одни на развёртывание. Переопределяются переменными окружения.
+const OUTSIDE = ['index.html', 'public/push-sw.js', 'api/push.ts']
+
 const files = globSync('src/**/*.{ts,tsx}').filter(
   (f) => !ALLOWED.some((a) => f.replace(/\\/g, '/').includes(a)),
 )
@@ -127,6 +143,20 @@ for (const file of files) {
     left.set(file, found.length)
     total += found.length
   }
+}
+
+// Оболочка: тут ищем любую кириллицу вне комментариев. Текста, зависящего
+// от языка, в этих файлах быть не должно вовсе - он либо приходит переменной
+// сборки, либо его нет
+const shell = new Map<string, string[]>()
+for (const file of OUTSIDE) {
+  // Комментарии HTML бывают многострочными, и построчная чистка их не берёт:
+  // снимаем их со всего текста, а уже потом разбираем построчно
+  const source = readFileSync(file, 'utf8').replace(/<!--[\s\S]*?-->/g, '')
+  const found = code(source)
+    .filter((line) => /[А-Яа-яЁё]/.test(line))
+    .map((line) => line.trim())
+  if (found.length > 0) shell.set(file, found)
 }
 
 const locales = new Map<string, number>()
@@ -221,6 +251,14 @@ check(
   unresolved.length === 0
     ? `разрешено строк: ${resolved}`
     : `остались ключами: ${unresolved.slice(0, 5).join(', ')}`,
+)
+
+check(
+  shell.size === 0,
+  'В оболочке и воркере нет текста на одном языке',
+  shell.size === 0
+    ? `проверено: ${OUTSIDE.join(', ')}`
+    : [...shell.entries()].map(([f, v]) => `${f}: ${v[0]}`).join('; '),
 )
 
 check(
