@@ -1,5 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronDown, Droplet, Info, Plus, ShieldCheck, Trash2, TriangleAlert } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import {
+  ChevronDown,
+  ChevronRight,
+  Droplet,
+  FileText,
+  Info,
+  Plus,
+  ShieldCheck,
+  Trash2,
+  TriangleAlert,
+} from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
 import { useProfiles } from '@/features/profile/api'
 import { todayLocal, shiftDays, formatDayLabel } from '@/lib/date'
@@ -288,6 +299,20 @@ function CycleBody({
       <Patterns ownerId={ownerId} />
 
       <Tips state={state} owned={owned} />
+
+      {owned && (
+        <Link
+          to="/cycle/report"
+          className="mt-5 flex items-center justify-between gap-3 rounded-2xl bg-surface
+                     px-4 py-4 ring-1 ring-line"
+        >
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <FileText size={16} aria-hidden />
+            Выписка для врача
+          </span>
+          <ChevronRight size={18} aria-hidden className="text-muted" />
+        </Link>
+      )}
 
       <History periods={periods} owned={owned} onEdit={onEdit} />
 

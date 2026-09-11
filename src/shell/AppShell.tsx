@@ -27,17 +27,19 @@ function Chrome({ children }: { children: ReactNode }) {
   useAppBadge(true)
   const [menuOpen, setMenuOpen] = useState(false)
   const { pathname } = useLocation()
-  // Разделы вне меню: попасть в них можно только ссылкой изнутри, но
-  // заголовок им всё равно нужен - иначе в шапке висит название приложения
+  // Частные маршруты проверяются ДО меню: «/cycle/report» начинается
+  // с «/cycle» и без этого показывал бы заголовок раздела
+  const EXTRA: [string, string][] = [
+    ['/cycle/report', 'Выписка'],
+    ['/notifications', 'Уведомления'],
+    ['/month', 'Итоги месяца'],
+    ['/year', 'Год в цифрах'],
+  ]
   const title =
+    EXTRA.find(([path]) => pathname.startsWith(path))?.[1] ??
     NAV.find((n) => pathname.startsWith(n.to))?.label ??
-    (pathname.startsWith('/year')
-      ? 'Год в цифрах'
-      : pathname.startsWith('/notifications')
-        ? 'Уведомления'
-        : pathname.startsWith('/month')
-          ? 'Итоги месяца'
-          : APP_NAME)
+    APP_NAME
+
   const action = useHeaderActionSlot()
 
   return (
