@@ -616,6 +616,24 @@ export type Database = {
         }
         Relationships: []
       }
+      nudges: {
+        Row: {
+          created_at: string
+          from_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          from_id?: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          from_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       occasion_notices: {
         Row: {
           created_at: string
@@ -1128,6 +1146,7 @@ export type Database = {
       }
       in_quiet_hours: { Args: { target: string }; Returns: boolean }
       is_member: { Args: never; Returns: boolean }
+      last_nudge: { Args: never; Returns: string }
       letter_delivered_to_me: { Args: { letter: string }; Returns: boolean }
       letter_recipients: { Args: { letter: string }; Returns: string[] }
       letters_in_flight: { Args: never; Returns: number }
@@ -1207,6 +1226,7 @@ export type Database = {
       send_cycle_notices: { Args: never; Returns: number }
       send_love_notes: { Args: never; Returns: number }
       send_meal_reminders: { Args: never; Returns: number }
+      send_nudge: { Args: never; Returns: string }
       tg_escape: { Args: { input: string }; Returns: string }
       tg_notify_both: {
         Args: { kind: string; message: string }

@@ -24,4 +24,5 @@ export const NOTIFICATION_KINDS: NotificationKind[] = [
   { id: 'dates', label: 'Важные даты', hint: 'За неделю и в день' },
   { id: 'letters', label: 'Письма из прошлого', hint: 'Утром выбранного дня' },
   { id: 'wishlist', label: 'Вишлисты', hint: 'Любое изменение на общей доске' },
+  { id: 'nudge', label: '«Думаю о тебе»', hint: 'Когда партнёр нажал кнопку' },
 ]

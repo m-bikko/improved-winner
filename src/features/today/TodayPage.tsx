@@ -26,6 +26,7 @@ import { goalsFor, useProfiles } from '@/features/profile/api'
 import { useTasks } from '@/features/tasks/api'
 import { occurrencesOn } from '@/features/tasks/TasksCalendar'
 import { useLastReply } from './api'
+import { NudgeButton } from './NudgeButton'
 
 /**
  * «Сегодня» - первый экран приложения.
@@ -70,6 +71,8 @@ export function TodayPage() {
           month: 'long',
         })}
       </p>
+
+      <NudgeButton />
 
       <Mood
         today={today}
