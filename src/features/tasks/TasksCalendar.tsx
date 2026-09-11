@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { fromLocalISO, monthName, toLocalISO, todayLocal, weekdayShortNames } from '@/lib/date'
@@ -23,6 +24,7 @@ export function TasksCalendar({
   selected: string
   onSelect: (date: string) => void
 }) {
+  const t = useT()
   const anchor = fromLocalISO(selected)
   const [cursor, setCursor] = useState(() => ({
     year: anchor.getFullYear(),
@@ -79,7 +81,7 @@ export function TasksCalendar({
   return (
     <div>
       <div className="flex items-center justify-between">
-        <button type="button" onClick={() => shift(-1)} aria-label="Предыдущий месяц" className="p-3 text-muted">
+        <button type="button" onClick={() => shift(-1)} aria-label={t('cal.prevMonth')} className="p-3 text-muted">
           <ChevronLeft size={20} aria-hidden />
         </button>
         <button
@@ -93,7 +95,7 @@ export function TasksCalendar({
         >
           {monthName(cursor.month)} {cursor.year}
         </button>
-        <button type="button" onClick={() => shift(1)} aria-label="Следующий месяц" className="p-3 text-muted">
+        <button type="button" onClick={() => shift(1)} aria-label={t('cal.nextMonth')} className="p-3 text-muted">
           <ChevronRight size={20} aria-hidden />
         </button>
       </div>
@@ -120,7 +122,7 @@ export function TasksCalendar({
               key={iso}
               type="button"
               onClick={() => onSelect(iso)}
-              aria-label={`${day} число, задач: ${items.length}`}
+              aria-label={t('cal.dayLabel', { day, n: items.length })}
               aria-pressed={isSelected}
               className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-xl
                           transition-colors ${

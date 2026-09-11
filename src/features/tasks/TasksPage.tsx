@@ -1,3 +1,4 @@
+import { useT } from '@/lib/i18n'
 import { useMemo, useState } from 'react'
 import {
   Bell,
@@ -9,7 +10,7 @@ import {
   Repeat,
   TriangleAlert,
 } from 'lucide-react'
-import { formatDueAt, todayLocal } from '@/lib/date'
+import { formatDayLabel, formatDueAt, todayLocal } from '@/lib/date'
 import { useLocalFlag } from '@/lib/localFlag'
 import { useAuth } from '@/auth/AuthProvider'
 import { EmptyState, ErrorState, Loading } from '@/ui/States'
@@ -20,6 +21,7 @@ import { TasksCalendar, occurrencesOn } from './TasksCalendar'
 import { describeRecurrence } from './recurrence'
 
 export function TasksPage() {
+  const t = useT()
   const { user } = useAuth()
   const userId = user?.id ?? ''
 
@@ -65,11 +67,11 @@ export function TasksPage() {
       <div className="mb-3 flex gap-1 rounded-xl bg-raised p-1">
         <ViewTab active={asCalendar} onClick={() => setAsCalendar(true)}>
           <CalendarDays size={15} aria-hidden />
-          Календарь
+          {t('task.calendar')}
         </ViewTab>
         <ViewTab active={!asCalendar} onClick={() => setAsCalendar(false)}>
           <List size={15} aria-hidden />
-          Список
+          {t('task.list')}
         </ViewTab>
       </div>
 
@@ -79,11 +81,11 @@ export function TasksPage() {
         <>
           <TasksCalendar tasks={all} selected={selected} onSelect={setSelected} />
 
-          <p className="mt-5 mb-2 text-sm text-muted">{formatDayHeading(selected)}</p>
+          <p className="mt-5 mb-2 text-sm text-muted">{formatDayLabel(selected)}</p>
 
           {dayItems.length === 0 ? (
             <p className="rounded-xl bg-surface px-4 py-6 text-center text-sm text-muted ring-1 ring-line">
-              На этот день ничего не запланировано
+              {t('task.dayEmpty')}
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
@@ -102,7 +104,7 @@ export function TasksPage() {
 
           {undated.length > 0 && (
             <>
-              <p className="mt-6 mb-2 text-sm text-muted">Без срока</p>
+              <p className="mt-6 mb-2 text-sm text-muted">{t('task.undated')}</p>
               <ul className="flex flex-col gap-2">
                 {undated.map((task) => (
                   <li key={task.id}>
@@ -122,8 +124,8 @@ export function TasksPage() {
         <>
           {tasks.isSuccess && all.length === 0 && (
             <EmptyState
-              title="Задач нет"
-              hint="Заведи задачу со сроком - напоминания придут вам обоим."
+              title={t('task.emptyTitle')}
+              hint={t('task.emptyHint')}
             />
           )}
 
@@ -144,7 +146,7 @@ export function TasksPage() {
 
           {done.length > 0 && (
             <>
-              <p className="mt-6 mb-2 text-sm text-muted">Выполнено</p>
+              <p className="mt-6 mb-2 text-sm text-muted">{t('task.doneSection')}</p>
               <ul className="flex flex-col gap-2">
                 {done.map((task) => (
                   <li key={task.id}>
@@ -165,7 +167,7 @@ export function TasksPage() {
       <button
         type="button"
         onClick={() => setEditing('new')}
-        aria-label="Новая задача"
+        aria-label={t('task.new')}
         className="fixed right-5 bottom-6 z-20 flex size-14 items-center justify-center
                    rounded-full bg-accent text-accent-ink shadow-lg
                    transition-transform active:scale-95"
@@ -188,13 +190,6 @@ export function TasksPage() {
   )
 }
 
-function formatDayHeading(iso: string): string {
-  const today = todayLocal()
-  if (iso === today) return 'Сегодня'
-  const date = new Date(`${iso}T12:00:00`)
-  return date.toLocaleDateString('ru', { day: 'numeric', month: 'long', weekday: 'long' })
-}
-
 function TaskRow({
   occurrence,
   nicknames,
@@ -206,6 +201,7 @@ function TaskRow({
   onToggle: () => void
   onOpen: () => void
 }) {
+  const t = useT()
   const { task, at } = occurrence
   const isDone = task.doneAt !== null
   // Просрочка считается только у невыполненных: закрытая вчера задача
@@ -221,7 +217,7 @@ function TaskRow({
       <button
         type="button"
         onClick={onToggle}
-        aria-label={isDone ? 'Вернуть в работу' : 'Выполнено'}
+        aria-label={t(isDone ? 'task.reopen' : 'task.doneSection')}
         className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md ring-1 transition-colors ${
           isDone ? 'bg-carbs text-white ring-carbs' : 'ring-line'
         }`}
@@ -241,7 +237,7 @@ function TaskRow({
             {at && (
               <span className={`flex items-center gap-1 ${overdue ? 'text-danger' : 'text-muted'}`}>
                 {overdue ? <TriangleAlert size={12} aria-hidden /> : <CalendarClock size={12} aria-hidden />}
-                {overdue ? 'Срок вышел: ' : ''}
+                {overdue ? t('task.overdue') : ''}
                 {formatDueAt(at.toISOString())}
               </span>
             )}
@@ -262,7 +258,7 @@ function TaskRow({
 
         {isDone && task.doneBy && (
           <span className="mt-0.5 block text-xs text-muted">
-            {nicknames.get(task.doneBy) ?? 'кто-то'}
+            {nicknames.get(task.doneBy) ?? t('task.someone')}
           </span>
         )}
       </button>

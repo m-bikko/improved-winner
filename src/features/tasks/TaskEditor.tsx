@@ -1,4 +1,4 @@
-import { useT } from '@/lib/i18n'
+import { useT, type Key } from '@/lib/i18n'
 import { useState } from 'react'
 import { Bell, Plus, Repeat, Trash2, X } from 'lucide-react'
 import { fromDateTimeInput, toDateTimeInput } from '@/lib/date'
@@ -22,19 +22,19 @@ import {
  * в CHECK на колонке, и совпадение здесь не случайно - интерфейс не должен
  * предлагать то, что база откажется принять.
  */
-const REMINDER_OPTIONS: { minutes: number; label: string }[] = [
-  { minutes: 0, label: 'В момент' },
-  { minutes: 5, label: '5 мин' },
-  { minutes: 10, label: '10 мин' },
-  { minutes: 15, label: '15 мин' },
-  { minutes: 30, label: '30 мин' },
-  { minutes: 60, label: '1 час' },
-  { minutes: 120, label: '2 часа' },
-  { minutes: 180, label: '3 часа' },
-  { minutes: 720, label: '12 часов' },
-  { minutes: 1440, label: '1 день' },
-  { minutes: 2880, label: '2 дня' },
-  { minutes: 10080, label: 'Неделя' },
+const REMINDER_OPTIONS: { minutes: number; key: Key }[] = [
+  { minutes: 0, key: 'remind.atTime' },
+  { minutes: 5, key: 'remind.5m' },
+  { minutes: 10, key: 'remind.10m' },
+  { minutes: 15, key: 'remind.15m' },
+  { minutes: 30, key: 'remind.30m' },
+  { minutes: 60, key: 'remind.1h' },
+  { minutes: 120, key: 'remind.2h' },
+  { minutes: 180, key: 'remind.3h' },
+  { minutes: 720, key: 'remind.12h' },
+  { minutes: 1440, key: 'remind.1d' },
+  { minutes: 2880, key: 'remind.2d' },
+  { minutes: 10080, key: 'remind.1w' },
 ]
 
 const MAX_REMINDERS = 5
@@ -133,23 +133,23 @@ export function TaskEditor({
   }
 
   return (
-    <Sheet open onClose={onClose} title={task ? 'Задача' : 'Новая задача'}>
+    <Sheet open onClose={onClose} title={t(task ? 'task.title' : 'task.new')}>
       <div className="flex min-w-0 flex-col gap-5">
         <Field
-          label="Что сделать"
+          label={t('task.what')}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Записаться к врачу"
+          placeholder={t('task.placeholder')}
           autoFocus={!task}
         />
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-muted">Заметка</span>
+          <span className="text-sm text-muted">{t('common.note')}</span>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={2}
-            placeholder="необязательно"
+            placeholder={t('common.optional')}
             className="w-full min-w-0 resize-none rounded-xl bg-surface px-4 py-3 ring-1
                        ring-line outline-none focus:ring-2 focus:ring-accent
                        placeholder:text-muted"
@@ -157,7 +157,7 @@ export function TaskEditor({
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-muted">Срок</span>
+          <span className="text-sm text-muted">{t('task.due')}</span>
           {/* Системный datetime-local: на телефоне он даёт родной выбор даты
               и времени, который своим компонентом не переплюнуть */}
           <input
@@ -176,11 +176,11 @@ export function TaskEditor({
               }}
               className="self-start text-xs text-muted underline"
             >
-              Убрать срок
+              {t('task.clearDue')}
             </button>
           ) : (
             <span className="text-xs text-muted">
-              Без срока не будет ни напоминаний, ни повторения.
+              {t('task.noDueHint')}
             </span>
           )}
         </label>
@@ -190,11 +190,11 @@ export function TaskEditor({
             <div className="flex flex-col gap-2">
               <p className="flex items-center gap-2 text-sm font-medium">
                 <Bell size={15} aria-hidden />
-                Напоминания
+                {t('task.reminders')}
               </p>
 
               {reminders.length === 0 && (
-                <p className="text-xs text-muted">Не напоминать.</p>
+                <p className="text-xs text-muted">{t('task.noReminders')}</p>
               )}
 
               <div className="flex flex-wrap gap-2">
@@ -205,11 +205,14 @@ export function TaskEditor({
                       key={minutes}
                       className="flex items-center gap-1 rounded-full bg-raised py-1.5 pr-1.5 pl-3 text-sm ring-1 ring-line"
                     >
-                      {REMINDER_OPTIONS.find((o) => o.minutes === minutes)?.label ?? minutes}
+                      {(() => {
+                        const found = REMINDER_OPTIONS.find((o) => o.minutes === minutes)
+                        return found ? t(found.key) : minutes
+                      })()}
                       <button
                         type="button"
                         onClick={() => setReminders(reminders.filter((m) => m !== minutes))}
-                        aria-label="Убрать напоминание"
+                        aria-label={t('task.clearReminder')}
                         className="p-1 text-muted"
                       >
                         <X size={13} aria-hidden />
@@ -224,7 +227,7 @@ export function TaskEditor({
                     className="flex items-center gap-1 rounded-full px-3 py-1.5 text-sm text-accent ring-1 ring-accent/40"
                   >
                     <Plus size={14} aria-hidden />
-                    Добавить
+                    {t('common.add')}
                   </button>
                 )}
               </div>
@@ -241,7 +244,7 @@ export function TaskEditor({
                       }}
                       className="rounded-full bg-surface px-3 py-1.5 text-sm ring-1 ring-line"
                     >
-                      {option.label}
+                      {t(option.key)}
                     </button>
                   ))}
                   <button
@@ -249,7 +252,7 @@ export function TaskEditor({
                     onClick={() => setPickingReminder(false)}
                     className="px-2 py-1.5 text-sm text-muted"
                   >
-                    Отмена
+                    {t('common.cancel')}
                   </button>
                 </div>
               )}
@@ -258,12 +261,12 @@ export function TaskEditor({
             <div className="flex flex-col gap-2">
               <p className="flex items-center gap-2 text-sm font-medium">
                 <Repeat size={15} aria-hidden />
-                Повторение
+                {t('task.repeat')}
               </p>
 
               <div className="flex flex-wrap gap-2">
                 <Chip active={recurrence === null} onClick={() => setFreq(null)}>
-                  Не повторять
+                  {t('task.noRepeat')}
                 </Chip>
                 {(Object.keys(FREQ_KEYS) as Freq[]).map((freq) => (
                   <Chip key={freq} active={recurrence?.freq === freq} onClick={() => setFreq(freq)}>
@@ -275,7 +278,7 @@ export function TaskEditor({
               {recurrence && (
                 <>
                   <label className="mt-1 flex items-center gap-2 text-sm">
-                    <span className="text-muted">Каждые</span>
+                    <span className="text-muted">{t('task.everyN')}</span>
                     <input
                       inputMode="numeric"
                       value={String(recurrence.interval)}
@@ -312,7 +315,7 @@ export function TaskEditor({
                   )}
 
                   <label className="flex flex-col gap-1.5">
-                    <span className="text-sm text-muted">Повторять до</span>
+                    <span className="text-sm text-muted">{t('task.until')}</span>
                     <input
                       type="date"
                       value={until}
@@ -320,7 +323,9 @@ export function TaskEditor({
                       className="w-full min-w-0 rounded-xl bg-surface px-4 py-3 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
                     />
                     <span className="text-xs text-muted">
-                      {until ? describeRecurrence(recurrence) : `${describeRecurrence(recurrence)}, без конца`}
+                      {until
+                        ? describeRecurrence(recurrence)
+                        : t('task.noEnd', { rule: describeRecurrence(recurrence) })}
                     </span>
                   </label>
                 </>
@@ -336,7 +341,7 @@ export function TaskEditor({
           disabled={!title.trim()}
           loading={save.isPending}
         >
-          Сохранить
+          {t('common.save')}
         </Button>
 
         {canDelete && task && (
@@ -346,7 +351,7 @@ export function TaskEditor({
             onClick={() => void remove.mutateAsync(task.id).then(onClose)}
           >
             <Trash2 size={18} aria-hidden />
-            Удалить
+            {t('common.delete')}
           </Button>
         )}
       </div>
@@ -379,26 +384,15 @@ function ScopeSheet({
   onPick: (scope: EditScope) => void
   onClose: () => void
 }) {
-  const options: { scope: EditScope; label: string; hint: string }[] = [
-    {
-      scope: 'one',
-      label: 'Только это событие',
-      hint: 'Остальные вхождения останутся как были.',
-    },
-    {
-      scope: 'following',
-      label: 'Это и дальнейшие',
-      hint: 'Прошедшие вхождения не изменятся.',
-    },
-    {
-      scope: 'all',
-      label: 'Все события',
-      hint: 'Изменит и прошедшие тоже.',
-    },
+  const t = useT()
+  const options: { scope: EditScope; label: Key; hint: Key }[] = [
+    { scope: 'one', label: 'task.scope.one', hint: 'task.scope.one.hint' },
+    { scope: 'following', label: 'task.scope.future', hint: 'task.scope.future.hint' },
+    { scope: 'all', label: 'task.scope.all', hint: 'task.scope.all.hint' },
   ]
 
   return (
-    <Sheet open onClose={onClose} title="Что изменить">
+    <Sheet open onClose={onClose} title={t('task.scope.title')}>
       <div className="flex flex-col gap-2">
         {options.map((o) => (
           <button
@@ -408,8 +402,8 @@ function ScopeSheet({
             onClick={() => onPick(o.scope)}
             className="rounded-xl bg-surface px-4 py-3.5 text-left ring-1 ring-line disabled:opacity-60"
           >
-            <span className="block font-medium">{o.label}</span>
-            <span className="mt-0.5 block text-sm text-muted">{o.hint}</span>
+            <span className="block font-medium">{t(o.label)}</span>
+            <span className="mt-0.5 block text-sm text-muted">{t(o.hint)}</span>
           </button>
         ))}
       </div>

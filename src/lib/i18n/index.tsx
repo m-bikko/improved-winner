@@ -1,6 +1,10 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { activeLang, isLang, pluralFor, setActiveLang, type Lang } from './lang'
 import { ru, type Key } from './ru'
+
+// Ключ реэкспортируем: в компонентах встречаются таблицы, где ключ лежит
+// полем, и без типа они становятся просто строками
+export type { Key }
 import { kk } from './kk'
 import { en } from './en'
 
