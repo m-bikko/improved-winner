@@ -2,6 +2,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { LoaderCircle } from 'lucide-react'
 import { AuthProvider, useAuth } from '@/auth/AuthProvider'
+import { LangProvider } from '@/lib/i18n'
 import { LoginScreen } from '@/auth/LoginScreen'
 import { CACHE_BUSTER, persister, queryClient } from '@/lib/queryClient'
 import { AppShell } from '@/shell/AppShell'
@@ -31,11 +32,14 @@ export default function App() {
       persistOptions={{ persister, buster: CACHE_BUSTER }}
     >
       <ErrorBoundary>
-        <AuthProvider>
-          <BrowserRouter>
-            <Gate />
-          </BrowserRouter>
-        </AuthProvider>
+        {/* Язык снаружи авторизации: экран входа рисуется раньше профиля */}
+        <LangProvider>
+          <AuthProvider>
+            <BrowserRouter>
+              <Gate />
+            </BrowserRouter>
+          </AuthProvider>
+        </LangProvider>
       </ErrorBoundary>
       {/* СНАРУЖИ границы ошибок, а не внутри. Внутри она рендерит экран ошибки
           вместо детей, и тост об обновлении на этом экране не появлялся бы -

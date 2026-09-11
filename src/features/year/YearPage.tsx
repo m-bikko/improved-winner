@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { todayLocal } from '@/lib/date'
 import { plural } from '@/lib/plural'
 import { STATE_BY_ID } from '@/features/checkin/states'
+import { dynamicKey, useT } from '@/lib/i18n'
 import { ErrorState, Loading } from '@/ui/States'
 import { useYear, type PersonYear } from './api'
 
@@ -103,6 +104,7 @@ function Stat({ n, label }: { n: number; label: string }) {
 }
 
 function Person({ person: p }: { person: PersonYear }) {
+  const t = useT()
   const hours = Math.round(p.workoutMinutes / 60)
   const delta =
     p.weightFrom !== null && p.weightTo !== null
@@ -122,7 +124,7 @@ function Person({ person: p }: { person: PersonYear }) {
         <Line
           title="Чаще всего чувствовал"
           items={p.topStates.map((s) => ({
-            text: STATE_BY_ID[s.id]?.label ?? s.id,
+            text: STATE_BY_ID[s.id] ? t(dynamicKey('state', s.id)) : s.id,
             n: s.n,
           }))}
         />

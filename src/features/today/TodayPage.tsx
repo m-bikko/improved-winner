@@ -17,6 +17,7 @@ import { plural } from '@/lib/plural'
 import { Loading } from '@/ui/States'
 import { useCheckins, useStreaks } from '@/features/checkin/api'
 import { STATE_BY_ID } from '@/features/checkin/states'
+import { dynamicKey, useT } from '@/lib/i18n'
 import { DEFAULT_SETTINGS, useCycleSettings, useCycleShared, usePeriods } from '@/features/cycle/api'
 import { PHASE_LABELS, cycleDay } from '@/features/cycle/cycle'
 import { useOccasions } from '@/features/dates/api'
@@ -142,6 +143,7 @@ function Mood({
   checkins: { userId: string; date: string; states: string[]; note: string | null }[]
   streaks: Record<string, number>
 }) {
+  const t = useT()
   const mine = checkins.find((c) => c.userId === userId && c.date === today)
   const theirs = checkins.find((c) => c.userId === partnerId && c.date === today)
 
@@ -158,7 +160,10 @@ function Mood({
       </p>
       {entry ? (
         <p className="mt-1 truncate text-sm text-muted">
-          {entry.states.map((id) => STATE_BY_ID[id]?.label).filter(Boolean).join(', ') ||
+          {entry.states
+            .map((id) => (STATE_BY_ID[id] ? t(dynamicKey('state', id)) : null))
+            .filter(Boolean)
+            .join(', ') ||
             entry.note ||
             '-'}
         </p>

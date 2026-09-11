@@ -13,6 +13,8 @@ export type Profile = {
   /** Тихие часы по местному времени. null - выключены. */
   quietFrom: number | null
   quietTo: number | null
+  /** Язык интерфейса. Его же спрашивают рассылки. */
+  language: string
   activityLevel: ActivityLevel
   goalDirection: GoalDirection
   goalsMode: 'auto' | 'manual'
@@ -43,6 +45,7 @@ export function useProfiles() {
         weightKg: row.weight_kg,
         quietFrom: row.quiet_from,
         quietTo: row.quiet_to,
+        language: row.language,
         activityLevel: row.activity_level as ActivityLevel,
         goalDirection: row.goal_direction as GoalDirection,
         goalsMode: row.goals_mode as 'auto' | 'manual',

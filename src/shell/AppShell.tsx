@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { APP_NAME } from '@/lib/appName'
+import { useT } from '@/lib/i18n'
 import { useAppBadge } from '@/lib/badge'
 import { BurgerMenu, NAV } from './BurgerMenu'
 import { HeaderActionProvider, useHeaderActionSlot } from './HeaderAction'
@@ -23,22 +24,22 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 function Chrome({ children }: { children: ReactNode }) {
+  const t = useT()
   // Здесь, а не в отдельном экране: бейдж относится ко всему приложению
   useAppBadge(true)
   const [menuOpen, setMenuOpen] = useState(false)
   const { pathname } = useLocation()
   // Частные маршруты проверяются ДО меню: «/cycle/report» начинается
   // с «/cycle» и без этого показывал бы заголовок раздела
-  const EXTRA: [string, string][] = [
-    ['/cycle/report', 'Выписка'],
-    ['/notifications', 'Уведомления'],
-    ['/month', 'Итоги месяца'],
-    ['/year', 'Год в цифрах'],
-  ]
-  const title =
-    EXTRA.find(([path]) => pathname.startsWith(path))?.[1] ??
-    NAV.find((n) => pathname.startsWith(n.to))?.label ??
-    APP_NAME
+  const EXTRA = [
+    ['/cycle/report', 'title.cycleReport'],
+    ['/notifications', 'title.notifications'],
+    ['/month', 'title.month'],
+    ['/year', 'title.year'],
+  ] as const
+  const extra = EXTRA.find(([path]) => pathname.startsWith(path))?.[1]
+  const nav = NAV.find((n) => pathname.startsWith(n.to))?.key
+  const title = extra ? t(extra) : nav ? t(nav) : APP_NAME
 
   const action = useHeaderActionSlot()
 
@@ -49,7 +50,7 @@ function Chrome({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
-            aria-label="Открыть меню"
+            aria-label={t('common.openMenu')}
             className="p-3 text-ink"
           >
             <Menu size={22} aria-hidden />

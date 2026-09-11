@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ScanFace } from 'lucide-react'
 import { ACCOUNTS, PIN_LENGTH, type Account } from '@/lib/accounts'
+import { useT, type Translate } from '@/lib/i18n'
 import { biometricsAvailable, hasBiometrics, unlockWithBiometrics } from '@/lib/biometrics'
 import { useAuth, type SignInFailure } from './AuthProvider'
 import { PinPad } from './PinPad'
@@ -12,20 +13,23 @@ function lockFor(attempts: number): number {
   return LOCK_SECONDS[Math.min(attempts, LOCK_SECONDS.length - 1)] ?? 60
 }
 
-function messageFor(failure: SignInFailure): string {
+function messageFor(failure: SignInFailure, t: Translate): string {
   switch (failure.kind) {
     case 'wrong-pin':
-      return 'Неверный PIN'
+      return t('login.wrongPin')
     case 'rate-limited':
-      return 'Слишком много попыток. Подожди минуту.'
+      return t('login.rateLimited')
     case 'offline':
-      return 'Нет связи с сервером'
+      return t('login.offline')
     case 'other':
+      // Сообщение приходит от Supabase и переводу не подлежит - зато
+      // оно точное, а выдуманная замена скрыла бы настоящую причину
       return failure.message
   }
 }
 
 export function LoginScreen() {
+  const t = useT()
   const { signIn } = useAuth()
   const [account, setAccount] = useState<Account | null>(null)
   const [pin, setPin] = useState('')
@@ -69,7 +73,7 @@ export function LoginScreen() {
         const wait = failure.kind === 'rate-limited' ? 60 : lockFor(next)
         if (wait > 0) setLockUntil(Date.now() + wait * 1000)
 
-        setError(messageFor(failure))
+        setError(messageFor(failure, t))
         setShakeKey((k) => k + 1)
         setPin('')
         navigator.vibrate?.([40, 60, 40])
@@ -78,7 +82,7 @@ export function LoginScreen() {
         submitting.current = false
         setBusy(false)
       })
-  }, [pin, account, signIn, attempts, lockLeft])
+  }, [pin, account, signIn, attempts, lockLeft, t])
 
   // Есть ли чем разблокировать этот аккаунт
   useEffect(() => {
@@ -108,7 +112,7 @@ export function LoginScreen() {
       const saved = await unlockWithBiometrics(target)
       if (saved) setPin(saved)
     } catch {
-      if (!silent) setError('Не удалось подтвердить — введи PIN')
+      if (!silent) setError(t('login.faceIdFailed'))
     } finally {
       setBusy(false)
     }
@@ -126,7 +130,7 @@ export function LoginScreen() {
   if (!account) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-10 px-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Кто заходит?</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t('login.who')}</h1>
         <div className="flex w-full max-w-xs flex-col gap-3">
           {ACCOUNTS.map((a) => (
             <button
@@ -152,7 +156,7 @@ export function LoginScreen() {
     <main className="flex min-h-dvh flex-col items-center justify-center px-6 py-10">
       <PinPad
         title={account.nickname}
-        subtitle={lockLeft > 0 ? `Подожди ${lockLeft} с` : 'Введи PIN'}
+        subtitle={lockLeft > 0 ? t('login.wait', { n: lockLeft }) : t('login.enterPin')}
         value={pin}
         onChange={setPin}
         error={error}
@@ -168,7 +172,7 @@ export function LoginScreen() {
                 className="flex items-center gap-2 py-2 text-sm text-accent disabled:opacity-50"
               >
                 <ScanFace size={17} aria-hidden />
-                Войти по Face ID
+                {t('login.faceId')}
               </button>
             )}
             <button
@@ -181,7 +185,7 @@ export function LoginScreen() {
               className="flex items-center gap-1 py-2 text-sm text-muted"
             >
               <ChevronLeft size={16} aria-hidden />
-              Сменить пользователя
+              {t('login.switchUser')}
             </button>
           </div>
         }

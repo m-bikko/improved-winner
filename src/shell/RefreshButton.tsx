@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { RotateCw } from 'lucide-react'
+import { useT } from '@/lib/i18n'
 
 /** Минимальная длительность вращения, мс. */
 const MIN_SPIN = 450
@@ -18,6 +19,7 @@ const MIN_SPIN = 450
  * ассеты под работающей сессией без спроса нельзя.
  */
 export function RefreshButton() {
+  const t = useT()
   const qc = useQueryClient()
   const [spinning, setSpinning] = useState(false)
 
@@ -48,7 +50,7 @@ export function RefreshButton() {
     <button
       type="button"
       onClick={() => void refresh()}
-      aria-label="Обновить"
+      aria-label={t('common.refresh')}
       aria-busy={spinning}
       className="p-3 text-muted transition-colors active:text-ink"
     >

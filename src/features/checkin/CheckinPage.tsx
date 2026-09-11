@@ -4,6 +4,7 @@ import { useUserId } from '@/auth/AuthProvider'
 import { useProfiles } from '@/features/profile/api'
 import { formatDayLabel, todayLocal } from '@/lib/date'
 import { plural } from '@/lib/plural'
+import { dynamicKey, useT } from '@/lib/i18n'
 import { Button } from '@/ui/Button'
 import {
   useCheckins,
@@ -15,7 +16,6 @@ import {
 } from './api'
 import type { Restorable } from './api'
 import {
-  GROUP_LABELS,
   STATES,
   STATE_BY_ID,
   STATE_GROUPS,
@@ -103,6 +103,7 @@ function Card({
   streak: number
   onEdit: (() => void) | null
 }) {
+  const t = useT()
   return (
     <section className="rounded-2xl bg-surface p-4 ring-1 ring-line">
       <div className="flex items-baseline justify-between gap-3">
@@ -132,7 +133,7 @@ function Card({
                   className="flex items-center gap-1.5 rounded-full bg-raised px-3 py-1.5 text-sm ring-1 ring-line"
                 >
                   <Icon size={15} aria-hidden />
-                  {def.label}
+                  {t(dynamicKey('state', id))}
                 </span>
               )
             })}
@@ -228,6 +229,7 @@ function Editor({
   onDone: () => void
   onCancel: (() => void) | null
 }) {
+  const t = useT()
   const save = useSaveCheckin()
   const remove = useDeleteCheckin()
   const [states, setStates] = useState<string[]>(current?.states ?? [])
@@ -264,7 +266,7 @@ function Editor({
 
       {STATE_GROUPS.map((group) => (
         <div key={group} className="flex flex-col gap-2">
-          <p className="text-sm text-muted">{GROUP_LABELS[group]}</p>
+          <p className="text-sm text-muted">{t(dynamicKey('checkinGroup', group))}</p>
           <div className="flex flex-wrap gap-2">
             {STATES.filter((s) => s.group === group).map((s) => {
               const active = states.includes(s.id)
@@ -280,7 +282,7 @@ function Editor({
                   }`}
                 >
                   <Icon size={15} aria-hidden />
-                  {s.label}
+                  {t(dynamicKey('state', s.id))}
                 </button>
               )
             })}
@@ -369,6 +371,7 @@ function History({
 }
 
 function Row({ label, checkin }: { label: string; checkin: Checkin | null }) {
+  const t = useT()
   return (
     <div className="mt-2">
       <p className="text-xs text-muted">{label}</p>
@@ -376,7 +379,7 @@ function Row({ label, checkin }: { label: string; checkin: Checkin | null }) {
         <p className="text-sm text-muted">-</p>
       ) : (
         <p className="text-sm">
-          {checkin.states.map((id) => STATE_BY_ID[id]?.label).filter(Boolean).join(', ') || '-'}
+          {checkin.states.map((id) => (STATE_BY_ID[id] ? t(dynamicKey('state', id)) : null)).filter(Boolean).join(', ') || '-'}
           {checkin.note && <span className="text-muted"> · {checkin.note}</span>}
         </p>
       )}

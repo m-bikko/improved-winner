@@ -744,6 +744,7 @@ export type Database = {
           goal_protein: number | null
           goals_mode: string
           height_cm: number | null
+          language: string
           nickname: string
           quiet_from: number | null
           quiet_to: number | null
@@ -765,6 +766,7 @@ export type Database = {
           goal_protein?: number | null
           goals_mode?: string
           height_cm?: number | null
+          language?: string
           nickname: string
           quiet_from?: number | null
           quiet_to?: number | null
@@ -786,6 +788,7 @@ export type Database = {
           goal_protein?: number | null
           goals_mode?: string
           height_cm?: number | null
+          language?: string
           nickname?: string
           quiet_from?: number | null
           quiet_to?: number | null

@@ -4,6 +4,7 @@ import { todayLocal } from '@/lib/date'
 import { plural } from '@/lib/plural'
 import { supabase } from '@/lib/supabase'
 import { STATE_BY_ID } from '@/features/checkin/states'
+import { dynamicKey, useT } from '@/lib/i18n'
 import { PHASE_LABELS, type Phase } from './cycle'
 
 type Pattern = {
@@ -55,6 +56,7 @@ function usePatterns(ownerId: string) {
 }
 
 export function Patterns({ ownerId }: { ownerId: string }) {
+  const t = useT()
   const found = usePatterns(ownerId)
 
   // Молча ничего не показываем: и пока данных мало, и если доступ закрыт.
@@ -76,7 +78,9 @@ export function Patterns({ ownerId }: { ownerId: string }) {
       <ul className="mt-3 flex flex-col gap-3">
         {found.data.map((p) => (
           <li key={`${p.state}-${p.phase}`} className="text-sm">
-            <span className="font-medium">{STATE_BY_ID[p.state]?.label ?? p.state}</span>
+            <span className="font-medium">
+              {STATE_BY_ID[p.state] ? t(dynamicKey('state', p.state)) : p.state}
+            </span>
             <span className="text-muted">
               {' — '}
               {phrase(p)}

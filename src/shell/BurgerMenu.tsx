@@ -15,23 +15,25 @@ import {
   X,
 } from 'lucide-react'
 import { useAuth } from '@/auth/AuthProvider'
+import { useT } from '@/lib/i18n'
 import { APP_NAME } from '@/lib/appName'
 
 export const NAV = [
-  { to: '/today', label: 'Сегодня', icon: Sun },
-  { to: '/checkin', label: 'Как ты', icon: Smile },
-  { to: '/topics', label: 'Темы', icon: MessagesSquare },
-  { to: '/tasks', label: 'Задачи', icon: ListChecks },
-  { to: '/diary', label: 'Дневник', icon: NotebookPen },
-  { to: '/foods', label: 'Продукты', icon: Apple },
-  { to: '/cycle', label: 'Цикл', icon: Droplet },
-  { to: '/dates', label: 'Даты', icon: CalendarHeart },
-  { to: '/wishlist', label: 'Вишлист', icon: Gift },
-  { to: '/profile', label: 'Профиль', icon: User },
+  { to: '/today', key: 'nav.today', icon: Sun },
+  { to: '/checkin', key: 'nav.checkin', icon: Smile },
+  { to: '/topics', key: 'nav.topics', icon: MessagesSquare },
+  { to: '/tasks', key: 'nav.tasks', icon: ListChecks },
+  { to: '/diary', key: 'nav.diary', icon: NotebookPen },
+  { to: '/foods', key: 'nav.foods', icon: Apple },
+  { to: '/cycle', key: 'nav.cycle', icon: Droplet },
+  { to: '/dates', key: 'nav.dates', icon: CalendarHeart },
+  { to: '/wishlist', key: 'nav.wishlist', icon: Gift },
+  { to: '/profile', key: 'nav.profile', icon: User },
 ] as const
 
 export function BurgerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { account, signOut } = useAuth()
+  const t = useT()
 
   // Пока меню открыто, фон скроллиться не должен - иначе на телефоне
   // страница уезжает под шторкой и возвращается не туда
@@ -64,7 +66,7 @@ export function BurgerMenu({ open, onClose }: { open: boolean; onClose: () => vo
       />
 
       <nav
-        aria-label="Разделы"
+        aria-label={t('nav.sections')}
         aria-hidden={!open}
         className={`fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col
                     bg-surface pt-safe pb-safe shadow-xl transition-transform duration-200
@@ -72,13 +74,13 @@ export function BurgerMenu({ open, onClose }: { open: boolean; onClose: () => vo
       >
         <div className="flex items-center justify-between px-5 py-4">
           <span className="text-lg font-semibold">{account?.nickname ?? APP_NAME}</span>
-          <button type="button" onClick={onClose} aria-label="Закрыть меню" className="p-2 text-muted">
+          <button type="button" onClick={onClose} aria-label={t('nav.closeMenu')} className="p-2 text-muted">
             <X size={22} aria-hidden />
           </button>
         </div>
 
         <ul className="flex-1 px-3">
-          {NAV.map(({ to, label, icon: Icon }) => (
+          {NAV.map(({ to, key, icon: Icon }) => (
             <li key={to}>
               <NavLink
                 to={to}
@@ -91,7 +93,7 @@ export function BurgerMenu({ open, onClose }: { open: boolean; onClose: () => vo
                 }
               >
                 <Icon size={20} aria-hidden />
-                {label}
+                {t(key)}
               </NavLink>
             </li>
           ))}
@@ -104,7 +106,7 @@ export function BurgerMenu({ open, onClose }: { open: boolean; onClose: () => vo
           className="mx-3 mb-3 flex items-center gap-3 rounded-xl px-4 py-3.5 text-base text-muted"
         >
           <LogOut size={20} aria-hidden />
-          Выйти
+          {t('nav.signOut')}
         </button>
       </nav>
     </>
