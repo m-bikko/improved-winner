@@ -540,14 +540,17 @@ export type Database = {
       }
       love_notes: {
         Row: {
+          lang: string
           message: string
           on_date: string
         }
         Insert: {
+          lang?: string
           message: string
           on_date: string
         }
         Update: {
+          lang?: string
           message?: string
           on_date?: string
         }

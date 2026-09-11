@@ -7,10 +7,16 @@
  * текст, без повторов», и нарушение видно не сразу. Человек заметит повтор
  * только когда получит его второй раз, то есть спустя месяцы.
  *
+ * С тех пор как записка переводится, к этому добавилось второе покрытие -
+ * по языкам. Дыра в нём не ломает отправку: запасной вариант отдаст русский,
+ * и человек получит записку на чужом языке, ничего не заподозрив. Поэтому
+ * полноту проверяет скрипт, а не поведение.
+ *
  * Всё в транзакции и откатывается.
  */
 import { Client } from 'pg'
 import { pgConfig } from './env.ts'
+import { LANGS } from '../src/lib/i18n/lang.ts'
 
 let failed = 0
 
@@ -25,31 +31,54 @@ async function main(): Promise<void> {
   try {
     await client.query('begin')
 
+    // Уникальность и пропуски считаются ВНУТРИ языка: между языками один
+    // и тот же день - это перевод, а не повтор
     const { rows: cover } = await client.query<{
+      lang: string
       total: string
       uniq: string
       first: string
       last: string
       gaps: string
     }>(
-      `select count(*)::text as total,
+      `select lang,
+              count(*)::text as total,
               count(distinct message)::text as uniq,
               min(on_date)::text as first,
               max(on_date)::text as last,
               ((max(on_date) - min(on_date) + 1) - count(*))::text as gaps
-         from public.love_notes`,
+         from public.love_notes group by lang order by lang`,
     )
-    const c = cover[0]
     check(
-      c !== undefined && c.total === c.uniq,
-      'Все тексты уникальны',
-      `${c?.total} строк, ${c?.uniq} разных`,
+      cover.length === LANGS.length && cover.every((r) => r.total === r.uniq),
+      'Внутри каждого языка все тексты уникальны',
+      cover.map((r) => `${r.lang}: ${r.total} строк, ${r.uniq} разных`).join('; '),
     )
-    check(c?.gaps === '0', 'В диапазоне нет пропущенных дней', `пропусков: ${c?.gaps}`)
     check(
-      c?.first === '2026-09-06' && c?.last === '2029-01-01',
+      cover.every((r) => r.gaps === '0'),
+      'В диапазоне нет пропущенных дней',
+      cover.map((r) => `${r.lang}: ${r.gaps}`).join('; '),
+    )
+    check(
+      cover.every((r) => r.first === '2026-09-06' && r.last === '2029-01-01'),
       'Диапазон тот, что просили',
-      `${c?.first} - ${c?.last}`,
+      cover.map((r) => `${r.lang}: ${r.first} - ${r.last}`).join('; '),
+    )
+
+    // Дата без полного набора языков - это тихая дыра: отправка подставит
+    // русский, и заметить её можно только здесь
+    const { rows: partial } = await client.query<{ n: string; sample: string | null }>(
+      `select count(*)::text as n, min(on_date)::text as sample
+         from (select on_date from public.love_notes
+                group by on_date having count(distinct lang) <> $1) t`,
+      [LANGS.length],
+    )
+    check(
+      partial[0]?.n === '0',
+      'У каждой даты есть все три языка',
+      partial[0]?.n === '0'
+        ? `языков на дату: ${LANGS.length}`
+        : `неполных дат: ${partial[0]?.n}, первая ${partial[0]?.sample}`,
     )
 
     const { rows: empty } = await client.query<{ n: string }>(
@@ -64,6 +93,24 @@ async function main(): Promise<void> {
       Number(ph[0]?.n) > 0,
       'Часть текстов обращается к партнёру по имени',
       `с подстановкой имени: ${ph[0]?.n}`,
+    )
+
+    // Подстановка обязана быть на тех же датах во всех языках: потерянная
+    // при переводе, она оставит фразу без имени, а лишняя вставит его дважды
+    const { rows: drift } = await client.query<{ n: string; sample: string | null }>(
+      `select count(*)::text as n, min(on_date)::text as sample
+         from (select on_date
+                 from public.love_notes
+                group by on_date
+               having count(*) filter (where message like '%{partner}%') not in (0, $1)) t`,
+      [LANGS.length],
+    )
+    check(
+      drift[0]?.n === '0',
+      'Подстановка имени сохранена при переводе',
+      drift[0]?.n === '0'
+        ? 'во всех языках одной даты она либо есть, либо её нет'
+        : `разошлась на ${drift[0]?.n} датах, первая ${drift[0]?.sample}`,
     )
 
     // Подстановка не должна оставлять фигурных скобок в готовом сообщении
@@ -117,15 +164,17 @@ async function main(): Promise<void> {
       // доставки не проверялся вовсе, и дыру было видно только по строке
       // «ПРОП» в выводе. Теперь недостающую строку заводим сами: транзакция
       // всё равно откатывается.
-      await client.query(
-        `insert into public.love_notes (on_date, message)
-         values ((now() at time zone $1)::date, 'ТЕСТ: помни, как ты любима, {partner}')
-         on conflict (on_date) do nothing`,
-        [evening],
-      )
+      for (const lang of LANGS) {
+        await client.query(
+          `insert into public.love_notes (on_date, lang, message)
+           values ((now() at time zone $1)::date, $2, 'ТЕСТ ' || $2 || ': {partner}, помни')
+           on conflict (on_date, lang) do nothing`,
+          [evening, lang],
+        )
+      }
       const hasToday = await client.query<{ n: string }>(
         `select count(*)::text as n from public.love_notes
-          where on_date = (now() at time zone $1)::date`,
+          where on_date = (now() at time zone $1)::date and lang = 'ru'`,
         [evening],
       )
       const beforeEvening = await queued()
@@ -157,6 +206,47 @@ async function main(): Promise<void> {
           (await queued()) === beforeRepeat,
           'Повторный запуск в тот же день молчит',
           'задание идёт каждый час - дубли недопустимы',
+        )
+
+        // Записка на языке получателя. Без этой проверки полный перевод
+        // и русская отправка выглядят одинаково: словарь есть, а выбора нет
+        const [reader] = (
+          await client.query<{ user_id: string }>('select user_id from public.app_members limit 1')
+        ).rows
+        const wrong: string[] = []
+        for (const lang of LANGS) {
+          // Сверяем с тем, что РЕАЛЬНО лежит в таблице на эту дату: подложить
+          // свой текст нельзя - строки на сегодня уже есть, и вставка
+          // с on conflict do nothing молча ничего не сделает
+          const { rows: want } = await client.query<{ message: string }>(
+            `select message from public.love_notes
+              where on_date = (now() at time zone $1)::date and lang = $2`,
+            [evening, lang],
+          )
+          const expected = (want[0]?.message ?? '').replace('{partner}', '').trim().slice(0, 24)
+          if (expected === '') {
+            wrong.push(`${lang} (нет текста)`)
+            continue
+          }
+
+          await client.query('update public.profiles set language = $1 where user_id = $2', [
+            lang,
+            reader?.user_id,
+          ])
+          await client.query('delete from public.love_notes_sent')
+          await client.query('select public.send_love_notes()')
+          const { rows: last } = await client.query<{ body: string }>(
+            `select convert_from(q.body, 'utf8') as body from net.http_request_queue q
+              where q.url like '%/api/push' order by q.id desc limit 1`,
+          )
+          if (!(last[0]?.body ?? '').includes(expected)) wrong.push(lang)
+        }
+        check(
+          wrong.length === 0,
+          'Записка уходит на языке получателя',
+          wrong.length === 0
+            ? `проверено: ${LANGS.join(', ')}`
+            : `ушло не на своём языке: ${wrong.join(', ')}`,
         )
       } else {
         console.log(
