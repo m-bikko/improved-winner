@@ -422,6 +422,7 @@ export type Database = {
       foods: {
         Row: {
           archived_at: string | null
+          barcode: string | null
           brand: string | null
           carbs_100: number
           created_at: string
@@ -440,6 +441,7 @@ export type Database = {
         }
         Insert: {
           archived_at?: string | null
+          barcode?: string | null
           brand?: string | null
           carbs_100?: number
           created_at?: string
@@ -458,6 +460,7 @@ export type Database = {
         }
         Update: {
           archived_at?: string | null
+          barcode?: string | null
           brand?: string | null
           carbs_100?: number
           created_at?: string
@@ -473,6 +476,27 @@ export type Database = {
           source_url?: string | null
           updated_at?: string
           yield_grams?: number | null
+        }
+        Relationships: []
+      }
+      gratitudes: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          author_id?: string
+          body: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
         }
         Relationships: []
       }
@@ -1143,6 +1167,18 @@ export type Database = {
           user_id: string
         }[]
       }
+      cycle_diary_stats: {
+        Args: { months?: number; owner: string; today: string }
+        Returns: {
+          days: number
+          mean_carbs: number
+          mean_kcal: number
+          mean_protein: number
+          phase: string
+          weigh_ins: number
+          weight_delta: number
+        }[]
+      }
       cycle_shared_with_me: { Args: { owner: string }; Returns: boolean }
       cycle_state: {
         Args: { on_date: string; owner: string }
@@ -1168,6 +1204,27 @@ export type Database = {
           protein: number
         }[]
       }
+      energy_balance: {
+        Args: { days?: number; target: string; today: string }
+        Returns: {
+          first_weight: number
+          fit_today: number
+          from_date: string
+          gap: string
+          last_weight: number
+          logged_days: number
+          mean_kcal: number
+          slope: number
+          slope_error: number
+          tdee: number
+          tdee_error: number
+          to_date: string
+          weigh_ins: number
+          weight_span: number
+          window_days: number
+        }[]
+      }
+      health_summary: { Args: { days?: number; today: string }; Returns: Json }
       in_quiet_hours: { Args: { target: string }; Returns: boolean }
       is_member: { Args: never; Returns: boolean }
       lang_of: { Args: { person: string }; Returns: string }

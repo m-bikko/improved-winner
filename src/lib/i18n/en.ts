@@ -1183,4 +1183,6 @@ export const en: Dict = {
   'tip.delay.title': 'Late by {n} {unit}',
   'tip.almost.body': 'The forecast comes from your average, not from the calendar on the wall: a shift of a couple of days is normal. Mark it when it starts and the average gets sharper.',
   'tip.delay.body': 'Stress, illness, a flight, a sharp change in training or weight all shift the cycle. If it drags on - a test and a doctor, in that order.',
+  'notif.gratitude': 'Thanks',
+  'notif.gratitude.hint': 'When your partner says thank you',
 }
