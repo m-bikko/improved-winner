@@ -252,6 +252,8 @@ export type FoodDraft = {
   protein100: number
   fat100: number
   carbs100: number
+  /** Код с упаковки. Пишется один раз и дальше находит продукт сам. */
+  barcode?: string | null
 }
 
 export function useSaveFood() {
@@ -266,6 +268,9 @@ export function useSaveFood() {
         protein_100: draft.protein100,
         fat_100: draft.fat100,
         carbs_100: draft.carbs100,
+        // undefined означает «поле не трогаем»: форма редактирования
+        // о штрихкоде не знает и не должна его стирать
+        ...(draft.barcode === undefined ? {} : { barcode: draft.barcode }),
       }
 
       if (id) {

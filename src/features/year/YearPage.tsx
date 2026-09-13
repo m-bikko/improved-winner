@@ -58,6 +58,7 @@ export function YearPage() {
               <Stat n={summary.data.together.commentsWritten} label={t('year.comments')} />
               <Stat n={summary.data.together.tasksDone} label={t('year.tasksDone')} />
               <Stat n={summary.data.together.wishesAdded} label={t('year.wishes')} />
+              <Stat n={summary.data.together.thanksSaid} label={t('year.thanks')} />
             </dl>
           </section>
 

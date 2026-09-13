@@ -26,6 +26,8 @@ export type Food = {
   ingredientsGrams: number
   /** Путь в бакете food-photos. null - фотографии нет. */
   imagePath: string | null
+  /** EAN/UPC. Появляется после первого сканирования и делает продукт своим. */
+  barcode: string | null
 }
 
 export type Serving = {
@@ -57,6 +59,7 @@ export function foodFromRow(row: FoodRow): Food {
     ingredientsCount: row.ingredients_count ?? 0,
     ingredientsGrams: row.ingredients_grams ?? 0,
     imagePath: row.image_path,
+    barcode: row.barcode,
   }
 }
 

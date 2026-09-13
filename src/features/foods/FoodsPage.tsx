@@ -1,7 +1,9 @@
+import { lookupBarcode } from './openFoodFacts'
+import { BarcodeScanner } from './BarcodeScanner'
 import { useT } from '@/lib/i18n'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ChevronRight, Plus } from 'lucide-react'
+import { ChevronRight, Plus, ScanLine } from 'lucide-react'
 import { searchItems } from '@/lib/search'
 import { SearchInput } from '@/ui/SearchInput'
 import { EmptyState, ErrorState, Loading } from '@/ui/States'
@@ -15,6 +17,42 @@ export function FoodsPage() {
   const [query, setQuery] = useState('')
   const foods = useFoods()
   const navigate = useNavigate()
+  const [scanning, setScanning] = useState(false)
+  const [lookup, setLookup] = useState<string | null>(null)
+
+  /**
+   * Что делать с распознанным кодом.
+   *
+   * Сначала своя база - она уже в памяти целиком, и попадание здесь означает,
+   * что внешний справочник не нужен вовсе. Дальше справочник, и только если
+   * и он молчит - ручное заведение с уже привязанным кодом.
+   */
+  const resolve = async (code: string): Promise<void> => {
+    setLookup(null)
+    const known = (foods.data ?? []).find((f) => f.barcode === code)
+    if (known) {
+      navigate(`/foods/${known.id}`)
+      return
+    }
+    try {
+      const found = await lookupBarcode(code)
+      if (!found) {
+        setLookup(t('scan.notFound'))
+        return
+      }
+      const params = new URLSearchParams({ barcode: code, name: found.name })
+      if (found.brand !== null) params.set('brand', found.brand)
+      if (found.kcal100 !== null) params.set('kcal', String(found.kcal100))
+      if (found.protein100 !== null) params.set('protein', String(found.protein100))
+      if (found.fat100 !== null) params.set('fat', String(found.fat100))
+      if (found.carbs100 !== null) params.set('carbs', String(found.carbs100))
+      navigate(`/foods/new?${params.toString()}`)
+    } catch {
+      // Справочник в сети, а приложение работает и без неё: молчаливый отказ
+      // тут честнее ошибки - код всегда можно завести руками
+      setLookup(t('scan.notFound'))
+    }
+  }
 
   const visible = useMemo(() => {
     const all = foods.data ?? []
@@ -44,7 +82,35 @@ export function FoodsPage() {
         </Tab>
       </div>
 
-      <SearchInput value={query} onChange={setQuery} placeholder={t('food.searchPlaceholder')} />
+      <div className="flex items-center gap-2">
+        <span className="min-w-0 flex-1">
+          <SearchInput value={query} onChange={setQuery} placeholder={t('food.searchPlaceholder')} />
+        </span>
+        {/* Только у продуктов: у сваренного борща штрихкода не бывает */}
+        {tab === 'product' && (
+          <button
+            type="button"
+            onClick={() => setScanning(true)}
+            aria-label={t('scan.scan')}
+            className="shrink-0 rounded-xl bg-raised p-3 text-muted ring-1 ring-line"
+          >
+            <ScanLine size={18} aria-hidden />
+          </button>
+        )}
+      </div>
+
+      {scanning && (
+        <BarcodeScanner
+          open
+          onClose={() => setScanning(false)}
+          onCode={(code) => {
+            setScanning(false)
+            void resolve(code)
+          }}
+        />
+      )}
+
+      {lookup !== null && <p className="mt-2 text-sm text-muted">{lookup}</p>}
 
       {foods.isPending && <Loading />}
       {foods.isError && <ErrorState error={foods.error} onRetry={() => void foods.refetch()} />}

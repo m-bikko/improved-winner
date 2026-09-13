@@ -1096,6 +1096,7 @@ export type Database = {
       foods_v: {
         Row: {
           archived_at: string | null
+          barcode: string | null
           brand: string | null
           carbs_100: number | null
           created_at: string | null

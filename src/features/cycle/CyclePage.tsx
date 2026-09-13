@@ -32,6 +32,7 @@ import {
 import { CycleCalendar } from './CycleCalendar'
 import { DaySheet } from './DaySheet'
 import { Patterns } from './Patterns'
+import { DiaryByPhase } from './DiaryByPhase'
 import { emptyLog, type DayLog } from './dayLog'
 import {
   cycleDay,
@@ -297,6 +298,8 @@ function CycleBody({
       )}
 
       <Patterns ownerId={ownerId} />
+
+      <DiaryByPhase ownerId={ownerId} />
 
       <Tips state={state} owned={owned} />
 

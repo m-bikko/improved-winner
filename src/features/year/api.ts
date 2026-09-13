@@ -25,6 +25,7 @@ export type YearSummary = {
     topicsClosed: number
     tasksDone: number
     wishesAdded: number
+    thanksSaid: number
     commentsWritten: number
   }
 }

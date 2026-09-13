@@ -1,3 +1,5 @@
+import { HealthSummary } from './HealthSummary'
+import { EnergyBalance } from './EnergyBalance'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
@@ -340,6 +342,12 @@ function ProfileForm({ profile }: { profile: Profile }) {
           </div>
         )}
       </div>
+
+      <HealthSummary />
+
+      {/* Ниже дневной нормы, а не выше: норма - то, чем человек пользуется
+          каждый день, а измеренный расход - повод её пересмотреть */}
+      <EnergyBalance userId={profile.userId} />
 
       <PushToggle userId={profile.userId} />
 

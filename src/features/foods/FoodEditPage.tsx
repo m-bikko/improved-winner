@@ -58,7 +58,21 @@ export function FoodEditPage() {
   return (
     // Пересоздаём форму при смене продукта, иначе черновик перетечёт
     // с одной карточки на другую
-    <FoodForm key={id ?? 'new'} existing={existing} existingServings={ownServings} isDish={false} />
+    <FoodForm
+      key={id ?? 'new'}
+      existing={existing}
+      existingServings={ownServings}
+      isDish={false}
+      prefill={{
+        barcode: params.get('barcode'),
+        name: params.get('name'),
+        brand: params.get('brand'),
+        kcal: params.get('kcal'),
+        protein: params.get('protein'),
+        fat: params.get('fat'),
+        carbs: params.get('carbs'),
+      }}
+    />
   )
 }
 
@@ -73,14 +87,40 @@ type FormState = {
   carbs: number | ''
 }
 
+/**
+ * Что пришло по ссылке от сканера.
+ *
+ * Всё строками и всё может отсутствовать: справочник заполняют люди,
+ * и половина полей там регулярно пустая. Пустое поле формы честнее нуля,
+ * который человек примет за измеренное значение.
+ */
+type Prefill = {
+  barcode: string | null
+  name: string | null
+  brand: string | null
+  kcal: string | null
+  protein: string | null
+  fat: string | null
+  carbs: string | null
+}
+
+/** Число из ссылки или пусто. Мусор в адресе не должен становиться КБЖУ. */
+function num(value: string | null): number | '' {
+  if (value === null) return ''
+  const n = Number(value)
+  return Number.isFinite(n) && n >= 0 ? n : ''
+}
+
 function FoodForm({
   existing,
   existingServings,
   isDish,
+  prefill,
 }: {
   existing: Food | undefined
   existingServings: Serving[]
   isDish: boolean
+  prefill?: Prefill
 }) {
   const t = useT()
   const navigate = useNavigate()
@@ -99,7 +139,14 @@ function FoodForm({
           fat: existing.fat100,
           carbs: existing.carbs100,
         }
-      : { name: '', brand: '', kcal: '', protein: '', fat: '', carbs: '' },
+      : {
+          name: prefill?.name ?? '',
+          brand: prefill?.brand ?? '',
+          kcal: num(prefill?.kcal ?? null),
+          protein: num(prefill?.protein ?? null),
+          fat: num(prefill?.fat ?? null),
+          carbs: num(prefill?.carbs ?? null),
+        },
   )
   const [servingDrafts, setServingDrafts] = useState<ServingDraft[]>(() =>
     existingServings.map((s) => ({ key: s.id, label: s.label, grams: s.grams })),
@@ -129,6 +176,9 @@ function FoodForm({
           protein100: form.protein === '' ? 0 : form.protein,
           fat100: form.fat === '' ? 0 : form.fat,
           carbs100: form.carbs === '' ? 0 : form.carbs,
+          // Только у новой записи: форма редактирования о коде не знает,
+          // и передавать undefined значит «не трогать»
+          ...(existing || !prefill?.barcode ? {} : { barcode: prefill.barcode }),
         },
       })
       await saveServings.mutateAsync({
@@ -195,6 +245,14 @@ function FoodForm({
           onChange={(e) => patch({ brand: e.target.value })}
           placeholder={t('common.optional')}
         />
+
+        {/* Код виден, но не правится: его источник - упаковка, а не человек,
+            и опечатка тут сделала бы продукт ненаходимым */}
+        {(existing?.barcode ?? prefill?.barcode ?? null) !== null && (
+          <p className="-mt-1 text-xs text-muted">
+            {t('food.barcode')}: {existing?.barcode ?? prefill?.barcode}
+          </p>
+        )}
 
         <div className="rounded-xl bg-raised p-3">
           <p className="mb-3 text-sm font-medium">{t('food.per100title')}</p>

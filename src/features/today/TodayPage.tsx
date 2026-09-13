@@ -27,6 +27,7 @@ import { useTasks } from '@/features/tasks/api'
 import { occurrencesOn } from '@/features/tasks/TasksCalendar'
 import { useLastReply } from './api'
 import { NudgeButton } from './NudgeButton'
+import { GratitudeTile } from '@/features/gratitude/GratitudeTile'
 
 /**
  * «Сегодня» - первый экран приложения.
@@ -95,6 +96,11 @@ export function TodayPage() {
       <NextDate list={dates.data ?? []} />
 
       <Reply reply={reply.data ?? null} userId={userId} partnerName={partner?.nickname ?? t('partner')} />
+
+      {/* Внизу, а не вверху: экран отвечает на «что сейчас», а благодарность -
+          это то, что делают, дочитав. Наверху она требовала бы действия
+          раньше, чем человек увидел день */}
+      <GratitudeTile partnerName={partner?.nickname ?? t('partner')} />
     </div>
   )
 }

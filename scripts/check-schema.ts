@@ -89,6 +89,25 @@ const cases: Case[] = [
     mustFailWith: 'foods_yield_only_for_dish',
   },
   {
+    name: 'Штрихкод у блюда отклоняется',
+    sql: `insert into foods (kind, name, barcode)
+          values ('dish', 'ТЕСТ Борщ с кодом', '4600000000001')`,
+    mustFailWith: 'foods_barcode_product_only',
+  },
+  {
+    name: 'Штрихкод из букв отклоняется',
+    sql: `insert into foods (kind, name, barcode)
+          values ('product', 'ТЕСТ Буквы', 'ABCDEFGH')`,
+    mustFailWith: 'foods_barcode_check',
+  },
+  {
+    name: 'Два живых продукта с одним штрихкодом отклоняются',
+    sql: `insert into foods (kind, name, barcode) values
+            ('product', 'ТЕСТ Код раз', '4600000000002'),
+            ('product', 'ТЕСТ Код два', '4600000000002')`,
+    mustFailWith: 'foods_barcode_live',
+  },
+  {
     name: 'Калорийность выше 900 на 100 г отклоняется',
     sql: `insert into foods (kind, name, kcal_100) values ('product', 'ТЕСТ Опечатка', 5400)`,
     mustFailWith: 'kcal_100',
