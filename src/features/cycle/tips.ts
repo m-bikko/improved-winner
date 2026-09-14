@@ -816,11 +816,46 @@ export function tipsForPartner(state: CycleDay): Tip[] {
   return [...PARTNER[state.phase], ...PARTNER_ALWAYS, ...shared]
 }
 
+/**
+ * Подсказки, пока записей нет вовсе.
+ *
+ * Раздел включают до первой менструации, и до неё фазы не существует -
+ * а значит, всё «про сегодня» посчитать не из чего. Но справочная часть
+ * от цикла не зависит: гормоны, близость, её виды и то, что она даёт,
+ * написаны про вообще, а не про день.
+ *
+ * Раньше этот экран показывал одну строку «записей пока нет» и кнопку.
+ * Человек, включивший раздел, получал пустоту и уходил, так и не узнав,
+ * что внутри полтораста подсказок, из которых больше половины читаются
+ * без единой отметки.
+ *
+ * Привязанные к фазам сюда не попадают - и не могут: без цикла нечем
+ * решить, уместна подсказка сегодня или нет.
+ */
+export function tipsWithoutCycle(audience: 'owner' | 'partner' = 'owner'): Tip[] {
+  const library =
+    audience === 'partner'
+      ? [...INTIMACY, ...PRACTICES, ...BENEFITS, ...PARTNER_ALWAYS]
+      : [...HORMONES, ...INTIMACY, ...PRACTICES, ...BENEFITS, ...EXTRA]
+  return library.filter((t) => !t.phases)
+}
+
 export function tipsByCategory(
   state: CycleDay,
   audience: 'owner' | 'partner' = 'owner',
 ): { category: TipCategory; tips: Tip[]; library: boolean }[] {
   const all = audience === 'partner' ? tipsForPartner(state) : tipsFor(state)
+  return group(all)
+}
+
+/** То же деление по темам, но для списка, собранного без цикла. */
+export function tipsByCategoryWithoutCycle(
+  audience: 'owner' | 'partner' = 'owner',
+): { category: TipCategory; tips: Tip[]; library: boolean }[] {
+  return group(tipsWithoutCycle(audience))
+}
+
+function group(all: Tip[]): { category: TipCategory; tips: Tip[]; library: boolean }[] {
   return TIP_CATEGORIES.map((category) => {
     const tips = all.filter((t) => t.category === category)
     // Привязанное к фазе выше общего: внутри «Гормонов» подсказка про

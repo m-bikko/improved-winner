@@ -195,6 +195,34 @@ async function schemaChecks(client: Client): Promise<void> {
     )
   }
 
+  // --- задним числом ---
+  //
+  // Раздел включают до первой менструации, и прошлые циклы вносят руками:
+  // без них ни средней длины, ни прогноза нет до следующего месяца.
+  // База обязана принимать любую прошлую дату и отвергать пересечение -
+  // форма это только показывает.
+  await client.query('savepoint back')
+  await client.query(
+    `insert into public.periods (user_id, started_on, ended_on)
+     values ($1, '2026-05-01', '2026-05-05')`,
+    [uid],
+  )
+  const { rows: added } = await client.query<{ n: string }>(
+    `select count(*)::text as n from public.periods
+      where user_id = $1 and started_on = '2026-05-01'`,
+    [uid],
+  )
+  check(added[0]?.n === '1', 'Менструация вносится задним числом', 'дата в прошлом принята')
+
+  await mustFail(
+    client,
+    'Пересекающаяся запись отвергается',
+    `insert into public.periods (user_id, started_on, ended_on)
+     values ($1, '2026-05-03', '2026-05-08')`,
+    [uid],
+  )
+  await client.query('rollback to savepoint back')
+
   // --- рассылка ---
   //
   // Час проверяем подбором пояса, где сейчас 13: ждать тринадцати часов

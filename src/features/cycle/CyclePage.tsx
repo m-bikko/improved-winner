@@ -2,6 +2,7 @@ import { dynamicKey, useT } from '@/lib/i18n'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
+  CalendarPlus,
   ChevronDown,
   ChevronRight,
   Droplet,
@@ -26,6 +27,7 @@ import {
   useDeletePeriod,
   usePeriods,
   useSaveCycleSettings,
+  useAddPeriod,
   useSavePeriod,
   useStartPeriod,
 } from './api'
@@ -42,7 +44,7 @@ import {
   type CycleDay,
   type Period,
 } from './cycle'
-import { tipsByCategory } from './tips'
+import { tipsByCategory, tipsByCategoryWithoutCycle } from './tips'
 
 /**
  * Раздел цикла.
@@ -74,7 +76,7 @@ export function CyclePage() {
   const shared = useCycleShared(partner?.userId ?? '')
 
   const [tab, setTab] = useState<'mine' | 'theirs' | null>(null)
-  const [editing, setEditing] = useState<Period | null>(null)
+  const [editing, setEditing] = useState<Period | 'new' | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   const tracking = settings.data?.trackingEnabled ?? false
@@ -132,7 +134,12 @@ export function CyclePage() {
         onSettings={() => setSettingsOpen(true)}
       />
 
-      {editing && <PeriodSheet period={editing} onClose={() => setEditing(null)} />}
+      {editing && (
+        <PeriodSheet
+          period={editing === 'new' ? null : editing}
+          onClose={() => setEditing(null)}
+        />
+      )}
       {settingsOpen && <SettingsSheet onClose={() => setSettingsOpen(false)} />}
     </div>
   )
@@ -152,7 +159,7 @@ function CycleBody({
   lutealDays: number
   owned: boolean
   ownerId: string
-  onEdit: (p: Period) => void
+  onEdit: (p: Period | 'new') => void
   onSettings: () => void
 }) {
   const t = useT()
@@ -186,6 +193,9 @@ function CycleBody({
     (p) => today >= p.startedOn && (p.endedOn === null || today <= p.endedOn),
   )
 
+  // Записей ещё нет. Фазу, прогноз и календарь показать не из чего - но
+  // справочная часть от цикла не зависит, и прятать её до первой отметки
+  // значило бы отдавать пустой экран тому, кто только что включил раздел.
   if (!state || !last) {
     return (
       <div className="flex flex-col gap-3">
@@ -194,14 +204,24 @@ function CycleBody({
             {t(owned ? 'cyc.emptyMine' : 'cyc.emptyTheirs')}
           </p>
           {owned && (
-            <div className="mt-4">
+            <div className="mt-4 flex flex-col gap-2">
               <Button onClick={() => void start.mutateAsync(today)} loading={start.isPending}>
                 <Droplet size={18} aria-hidden />
                 {t('cyc.startedToday')}
               </Button>
+              {/* Для того, кто только начал, это важнее кнопки «сегодня»:
+                  без прошлых циклов средней длины нет, и прогноз молчит
+                  до следующей менструации */}
+              <Button variant="secondary" onClick={() => onEdit('new')}>
+                <CalendarPlus size={18} aria-hidden />
+                {t('cyc.addPast')}
+              </Button>
+              <p className="px-1 text-xs text-muted">{t('cyc.addPastHint')}</p>
             </div>
           )}
         </div>
+
+        <Tips state={null} owned={owned} />
 
         {/* Ссылка нужна именно здесь. Без неё человек, случайно включивший
             ведение своего цикла, попадал в тупик: на пустом экране нет
@@ -342,9 +362,13 @@ function CycleBody({
  * Порядок тем не случаен: сначала то, что чувствуешь прямо сейчас, потом
  * то, на что это влияет, и в конце то, что касается двоих.
  */
-function Tips({ state, owned }: { state: CycleDay; owned: boolean }) {
+function Tips({ state, owned }: { state: CycleDay | null; owned: boolean }) {
   const t = useT()
-  const groups = tipsByCategory(state, owned ? 'owner' : 'partner')
+  const audience = owned ? 'owner' : 'partner'
+  // Без цикла фазы нет, и «про сегодня» посчитать не из чего - остаётся
+  // справочная часть, которая от дня не зависит
+  const groups =
+    state === null ? tipsByCategoryWithoutCycle(audience) : tipsByCategory(state, audience)
   // Открыта только первая тема про сегодня. Справочные - «Близость»
   // и «Что даёт близость» - свёрнуты всегда: их читают по желанию,
   // а не каждый раз, когда открыли раздел.
@@ -360,7 +384,9 @@ function Tips({ state, owned }: { state: CycleDay; owned: boolean }) {
 
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="px-1 text-sm text-muted">{t('cyc.tipsTitle')}</h2>
+      <h2 className="px-1 text-sm text-muted">
+        {t(state === null ? 'cyc.tipsLibrary' : 'cyc.tipsTitle')}
+      </h2>
       {groups.map(({ category, tips }) => {
         const open = !closed.includes(category)
         return (
@@ -519,13 +545,20 @@ function History({
 }: {
   periods: Period[]
   owned: boolean
-  onEdit: (p: Period) => void
+  onEdit: (p: Period | 'new') => void
 }) {
   const t = useT()
   const sorted = [...periods].sort((a, b) => (a.startedOn < b.startedOn ? 1 : -1))
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="px-1 text-sm text-muted">{t('cyc.history')}</h2>
+      <div className="flex items-baseline justify-between gap-3 px-1">
+        <h2 className="text-sm text-muted">{t('cyc.history')}</h2>
+        {owned && (
+          <button type="button" onClick={() => onEdit('new')} className="text-sm text-accent">
+            {t('cyc.addPast')}
+          </button>
+        )}
+      </div>
       <ul className="overflow-hidden rounded-2xl bg-surface ring-1 ring-line">
         {sorted.map((p) => (
           <li key={p.id} className="border-b border-line last:border-0">
@@ -555,24 +588,47 @@ function History({
   )
 }
 
-function PeriodSheet({ period, onClose }: { period: Period; onClose: () => void }) {
+/**
+ * Менструация: правка существующей или запись задним числом.
+ *
+ * Одна форма на оба случая, потому что поля те же. Отличается только то,
+ * что у новой записи нечего удалять, а даты начинаются пустыми.
+ *
+ * Дата начала ограничена сегодняшним днём: менструация, начавшаяся в будущем, -
+ * это опечатка, а не запись. Ограничение стоит на поле, а не в базе: день
+ * считает клиент, и `current_date` в проверке смотрел бы на пояс сервера.
+ */
+function PeriodSheet({ period, onClose }: { period: Period | null; onClose: () => void }) {
   const t = useT()
+  const add = useAddPeriod()
   const save = useSavePeriod()
   const remove = useDeletePeriod()
-  const [startedOn, setStartedOn] = useState(period.startedOn)
-  const [endedOn, setEndedOn] = useState(period.endedOn ?? '')
-  const [note, setNote] = useState(period.note ?? '')
+  const [startedOn, setStartedOn] = useState(period?.startedOn ?? '')
+  const [endedOn, setEndedOn] = useState(period?.endedOn ?? '')
+  const [note, setNote] = useState(period?.note ?? '')
   const [error, setError] = useState<string | null>(null)
 
   const submit = async () => {
     setError(null)
+    if (startedOn === '') {
+      setError(t('cyc.needStart'))
+      return
+    }
     try {
-      await save.mutateAsync({
-        id: period.id,
-        startedOn,
-        endedOn: endedOn || null,
-        note: note.trim() || null,
-      })
+      if (period) {
+        await save.mutateAsync({
+          id: period.id,
+          startedOn,
+          endedOn: endedOn || null,
+          note: note.trim() || null,
+        })
+      } else {
+        await add.mutateAsync({
+          startedOn,
+          endedOn: endedOn || null,
+          note: note.trim() || null,
+        })
+      }
       onClose()
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -587,6 +643,7 @@ function PeriodSheet({ period, onClose }: { period: Period; onClose: () => void 
           <input
             type="date"
             value={startedOn}
+            max={todayLocal()}
             onChange={(e) => setStartedOn(e.target.value)}
             className="w-full min-w-0 rounded-xl bg-surface px-4 py-3 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
           />
@@ -616,17 +673,19 @@ function PeriodSheet({ period, onClose }: { period: Period; onClose: () => void 
 
         {error && <p className="text-sm text-danger">{error}</p>}
 
-        <Button onClick={() => void submit()} loading={save.isPending}>
+        <Button onClick={() => void submit()} loading={save.isPending || add.isPending}>
           {t('common.save')}
         </Button>
-        <Button
-          variant="danger"
-          loading={remove.isPending}
-          onClick={() => void remove.mutateAsync(period.id).then(onClose)}
-        >
-          <Trash2 size={18} aria-hidden />
-          {t('common.delete')}
-        </Button>
+        {period && (
+          <Button
+            variant="danger"
+            loading={remove.isPending}
+            onClick={() => void remove.mutateAsync(period.id).then(onClose)}
+          >
+            <Trash2 size={18} aria-hidden />
+            {t('common.delete')}
+          </Button>
+        )}
       </div>
     </Sheet>
   )

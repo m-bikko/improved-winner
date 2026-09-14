@@ -113,6 +113,39 @@ export function useStartPeriod() {
   })
 }
 
+/**
+ * Менструация задним числом.
+ *
+ * Отдельно от useStartPeriod, потому что это другое действие: та отмечает
+ * начало сегодня и ничего не спрашивает, эта заводит запись с любыми датами.
+ *
+ * Нужна ровно тем, кто только начал вести раздел: пока прошлых циклов нет,
+ * приложению не из чего считать ни среднюю длину, ни прогноз - оно молчит
+ * до второй менструации, то есть до следующего месяца. Внесённые вручную
+ * два-три прошлых цикла дают прогноз сразу.
+ *
+ * Пересечения, порядок дат и разумную длину держит база: перекрывающиеся
+ * записи она отвергает исключающим индексом, а не формой.
+ */
+export function useAddPeriod() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: {
+      startedOn: string
+      endedOn: string | null
+      note: string | null
+    }): Promise<void> => {
+      const { error } = await supabase.from('periods').insert({
+        started_on: input.startedOn,
+        ended_on: input.endedOn,
+        note: input.note,
+      })
+      if (error) throw error
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['periods'] }),
+  })
+}
+
 export function useSavePeriod() {
   const qc = useQueryClient()
   return useMutation({
