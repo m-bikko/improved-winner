@@ -21,15 +21,15 @@ import {
   DEFAULT_PERIOD_DAYS,
   cycleDay,
   cycleStats,
+  delayOf,
   forecast,
   warnings,
   type Period,
 } from '../src/features/cycle/cycle.ts'
 import {
   TIP_CATEGORIES,
-  tipsByCategory,
-  tipsFor,
-  tipsForPartner,
+  tipsLibrary,
+  tipsToday,
 } from '../src/features/cycle/tips.ts'
 import { pgConfig } from './env.ts'
 
@@ -195,6 +195,41 @@ async function schemaChecks(client: Client): Promise<void> {
     )
   }
 
+  // --- задержка: SQL и клиент ---
+  //
+  // Та же ловушка, что с фазой, и цена ошибки выше: уведомление о задержке
+  // рассылает база, а число на экране считает клиент. Разойдись они - человек
+  // получит «третий день задержки» в тот день, когда на экране написано
+  // «седьмой», и доверять после этого не будет ни тому, ни другому.
+  //
+  // Проверяем и `measured` (среднее есть), и `assumed` (среднего нет):
+  // именно вторая ветка была пропущена в прежней реализации целиком.
+  for (const iso of ['2026-08-20', '2026-08-24', '2026-08-28', '2026-09-04', '2026-10-26']) {
+    const { rows: sql } = await client.query<{
+      days: number | null
+      level: string | null
+      basis: string | null
+      since_last: number | null
+    }>('select days, level, basis, since_last from public.cycle_delay($1, $2::date)', [uid, iso])
+    const ts = delayOf(mirror, iso)
+    const row = sql[0]
+    const same =
+      row === undefined
+        ? ts === null
+        : ts !== null &&
+          row.days === ts.days &&
+          row.level === ts.level &&
+          row.basis === ts.basis &&
+          row.since_last === ts.sinceLast
+    check(
+      same,
+      `Задержка: SQL и клиент согласны на ${iso}`,
+      row === undefined
+        ? `оба молчат: ${ts === null}`
+        : `SQL ${row.days} ${row.level} ${row.basis} | TS ${ts?.days} ${ts?.level} ${ts?.basis}`,
+    )
+  }
+
   // --- задним числом ---
   //
   // Раздел включают до первой менструации, и прошлые циклы вносят руками:
@@ -291,6 +326,52 @@ async function schemaChecks(client: Client): Promise<void> {
       'Повторный запуск в тот же день молчит',
       'дубли недопустимы: задание идёт каждый час',
     )
+
+    // --- задержка ---
+    //
+    // Уведомление о задержке уходит ровно дважды за цикл - на третий день
+    // и на седьмой. Проверяем и то, что оно уходит, и то, что на пятый день
+    // его нет: ежедневное напоминание о задержке - ровно то поведение,
+    // от которого раздел должен избавлять, а не воспроизводить его.
+    //
+    // Среднего по циклам тут нет намеренно: одна запись - это ветка
+    // `assumed`, счёт от 35 дней, и именно она раньше молчала вовсе.
+    for (const [offset, expected] of [
+      [38, 2],
+      [40, 0],
+      [42, 2],
+    ] as [number, number][]) {
+      await client.query('delete from public.periods where user_id = $1', [uid])
+      await client.query('delete from public.cycle_notices where user_id = $1', [uid])
+      await client.query(
+        `insert into public.periods (user_id, started_on, ended_on)
+         values ($1, (now() at time zone $2)::date - $3::int,
+                     (now() at time zone $2)::date - ($3::int - 5))`,
+        [uid, noonZone, offset],
+      )
+      // Подсказка дня уходит каждый день и к задержке отношения не имеет.
+      // Глушим её заранее отметкой - иначе в счёт запросов попадает она,
+      // и проверка меряет не то, что проверяет.
+      await client.query(
+        `insert into public.cycle_notices (user_id, date, kind)
+         values ($1, (now() at time zone $2)::date, 'tip') on conflict do nothing`,
+        [uid, noonZone],
+      )
+      const before = await queued()
+      await client.query('select public.send_cycle_notices()')
+      const sent = (await queued()) - before
+      const { rows: marks } = await client.query<{ n: string }>(
+        `select count(*)::text as n from public.cycle_notices
+          where user_id = $1 and kind = 'delay'`,
+        [uid],
+      )
+      const day = offset - 35
+      check(
+        sent === expected && Number(marks[0]?.n ?? 0) === (expected > 0 ? 1 : 0),
+        `Задержка ${day} дн.: ${expected > 0 ? 'уведомление уходит' : 'молчим'}`,
+        `запросов ${sent} (ждали ${expected}), отметок ${marks[0]?.n}`,
+      )
+    }
   }
 
   await client.query('delete from public.periods where user_id = $1', [uid])
@@ -524,11 +605,16 @@ function logicChecks(): void {
   // нельзя, это не его тело. Пересечение этих двух наборов должно быть
   // только по общим темам, и если однажды сюда просочится подсказка
   // из личных, заметить это по экрану будет нечем.
+  const flat = (groups: { tips: { id: string; category: string }[] }[]) =>
+    groups.flatMap((g) => g.tips)
+
   for (const { iso, name } of phaseDays) {
     const st = cycleDay(even, iso, 14)
     if (!st) continue
-    const ownerIds = new Set(tipsFor(st).map((t) => t.id))
-    const partnerTips = tipsForPartner(st)
+    const ownerIds = new Set(
+      [...flat(tipsToday(st, 'owner')), ...flat(tipsLibrary('owner'))].map((t) => t.id),
+    )
+    const partnerTips = [...flat(tipsToday(st, 'partner')), ...flat(tipsLibrary('partner'))]
     const leaked = partnerTips.filter(
       // Общие темы - те, что написаны для двоих изначально. «Вдвоём»
       // попала сюда позже остальных: она про обоих по определению, и держать
@@ -543,30 +629,37 @@ function logicChecks(): void {
       `Наблюдателю в фазе «${name}» показывают свой набор`,
       `${partnerTips.length} шт., чужих личных подсказок: ${leaked.map((t) => t.id).join(', ') || 'нет'}`,
     )
-    const grouped = tipsByCategory(st, 'partner').flatMap((g) => g.tips)
-    check(
-      grouped.length === partnerTips.length,
-      `Группировка для наблюдателя в фазе «${name}» ничего не теряет`,
-      `${grouped.length} из ${partnerTips.length}`,
-    )
   }
 
+  // Разделение на «сегодня» и базу знаний должно быть полным в обе стороны:
+  // ничего не потеряно и ничего не показано дважды. Ошибка тут не падает
+  // и не пустеет - карточка просто перестаёт попадаться на глаза.
   for (const { iso, name } of phaseDays) {
     const st = cycleDay(even, iso, 14)
     if (!st) {
       check(false, `Подсказки для фазы «${name}»`, 'расчёт вернул null')
       continue
     }
-    const flat = tipsFor(st)
-    const grouped = tipsByCategory(st).flatMap((g) => g.tips)
-    const known = flat.every((t) => (TIP_CATEGORIES as readonly string[]).includes(t.category))
-    const ids = new Set(flat.map((t) => t.id))
+    const today = flat(tipsToday(st, 'owner'))
+    const library = flat(tipsLibrary('owner'))
+    const all = [...today, ...library]
+    const known = all.every((t) => (TIP_CATEGORIES as readonly string[]).includes(t.category))
+    const ids = new Set(all.map((t) => t.id))
     check(
-      flat.length >= 20 && grouped.length === flat.length && known && ids.size === flat.length,
+      today.length >= 5 && library.length >= 100 && known && ids.size === all.length,
       `Подсказки для фазы «${name}»`,
-      `${flat.length} шт. (минимум 20), в группах ${grouped.length}, темы известны: ${known}, дублей нет: ${ids.size === flat.length}`,
+      `на сегодня ${today.length}, в базе ${library.length}, темы известны: ${known}, пересечений нет: ${ids.size === all.length}`,
     )
   }
+
+  // В базе знаний не должно быть ничего, привязанного к фазе: иначе
+  // на экране до первой записи она бы менялась от несуществующего дня.
+  const phased = flat(tipsLibrary('owner')).filter((t) => 'phases' in t && t.phases)
+  check(
+    phased.length === 0,
+    'База знаний не зависит от фазы',
+    phased.length === 0 ? 'ни одной привязанной подсказки' : phased.map((t) => t.id).join(', '),
+  )
 }
 
 async function main(): Promise<void> {

@@ -50,7 +50,7 @@ import { kk } from '../src/lib/i18n/kk.ts'
 import { en } from '../src/lib/i18n/en.ts'
 import { LANGS, setActiveLang } from '../src/lib/i18n/lang.ts'
 import { tr } from '../src/lib/i18n/index.tsx'
-import { TIP_CATEGORIES, tipsByCategory } from '../src/features/cycle/tips.ts'
+import { TIP_CATEGORIES, tipsLibrary, tipsToday } from '../src/features/cycle/tips.ts'
 import { FLOW, MOODS, SYMPTOMS } from '../src/features/cycle/dayLog.ts'
 import { PHASES } from '../src/features/cycle/cycle.ts'
 import { STATES, STATE_GROUPS } from '../src/features/checkin/states.ts'
@@ -269,14 +269,26 @@ check(
 )
 
 // И то же самое, но не по списку ключей, а тем же путём, каким текст
-// достаётся на экране: через tipsByCategory() и tr(). Так проверяется
+// достаётся на экране: через tipsToday()/tipsLibrary() и tr(). Так проверяется
 // не только наличие ключа, но и то, что компонент соберёт именно его
+const DELAYS = [
+  null,
+  { days: 4, level: 'slight', expectedOn: '2026-09-10', sinceLast: 32, basis: 'measured' },
+  { days: 10, level: 'notable', expectedOn: '2026-09-04', sinceLast: 38, basis: 'assumed' },
+  { days: 20, level: 'long', expectedOn: '2026-08-25', sinceLast: 48, basis: 'measured' },
+  { days: 62, level: 'absent', expectedOn: '2026-07-14', sinceLast: 90, basis: 'measured' },
+] as const
+
 const unresolved: string[] = []
 let resolved = 0
 for (const lang of LANGS) {
   setActiveLang(lang)
   for (const phase of PHASES) {
     for (const audience of ['owner', 'partner'] as const) {
+      // Задержка перебирается вся: подсказки о ней появляются по порогам,
+      // и без перебора самые важные - про тест и про врача - не развернулись
+      // бы ни разу. `assumed` отдельно: у него своя карточка.
+      for (const delay of DELAYS) {
       const state = {
         day: 3,
         phase,
@@ -285,8 +297,12 @@ for (const lang of LANGS) {
         daysToNext: 5,
         fertileFrom: '2026-09-14',
         fertileTo: '2026-09-19',
+        delay,
       }
-      for (const group of tipsByCategory(state as never, audience)) {
+      for (const group of [
+        ...tipsToday(state as never, audience),
+        ...tipsLibrary(audience),
+      ]) {
         for (const tip of group.tips) {
           const title = tip.title ?? tr(`tip.${tip.id}.title` as never)
           const body = tr(`tip.${tip.id}.body` as never)
@@ -295,6 +311,7 @@ for (const lang of LANGS) {
           if (title.startsWith('tip.')) unresolved.push(`${lang}/${tip.id}/title`)
           if (body.startsWith('tip.')) unresolved.push(`${lang}/${tip.id}/body`)
         }
+      }
       }
     }
   }

@@ -40,6 +40,7 @@ function Chrome({ children }: { children: ReactNode }) {
   // с «/cycle» и без этого показывал бы заголовок раздела
   const EXTRA = [
     ['/cycle/report', 'title.cycleReport'],
+    ['/cycle/library', 'title.cycleLibrary'],
     ['/notifications', 'title.notifications'],
     ['/month', 'title.month'],
     ['/year', 'title.year'],

@@ -16,13 +16,17 @@
  * она не ноль.
  */
 import { tr, trPlural } from '@/lib/i18n'
-import type { CycleDay, Phase } from './cycle'
+import { DELAY, type CycleDay, type Delay, type Phase } from './cycle'
 
 // Порядок не алфавитный и не случайный. Сначала то, что человек чувствует
 // прямо сейчас, потом объяснение почему, потом что с этим делать, потом
 // про двоих. Библиотечные темы - близость и её польза - идут последними:
 // они не про сегодня, а про вообще, и открывают их по желанию.
 export const TIP_CATEGORIES = [
+  // Задержка идёт первой и появляется только когда она есть. Всё остальное
+  // на экране в этот момент второстепенно: человек открыл раздел не затем,
+  // чтобы почитать про железо.
+  'delay',
   'body',
   'hormones',
   'food',
@@ -807,6 +811,41 @@ const MORE: Tip[] = [
  */
 const FOR_BOTH: readonly TipCategory[] = ['intimacy', 'practices', 'benefits', 'together']
 
+/**
+ * Задержка: что это значит и что с этим делать.
+ *
+ * Появляются только когда задержка есть, и не все сразу: на третий день
+ * говорить про врача рано, а на двадцатый молчать про тест поздно. Порог
+ * у каждой свой и совпадает с порогами в `DELAY` - иначе текст и условие
+ * разошлись бы молча.
+ *
+ * Владелице - весь набор. Наблюдателю - одна, и не про тест: решение
+ * делать его и идти к врачу принадлежит не ему, а вопрос «ну что, проверила?»
+ * каждый день - самое неприятное, чем можно ответить на задержку.
+ */
+const DELAY_TIPS: { id: string; fromDays: number; assumedOnly?: boolean }[] = [
+  { id: 'd-happens', fromDays: 0 },
+  { id: 'd-assumed', fromDays: 0, assumedOnly: true },
+  { id: 'd-note-it', fromDays: 0 },
+  { id: 'd-test-when', fromDays: 0 },
+  { id: 'd-irregular', fromDays: 0 },
+  { id: 'd-after-pill', fromDays: 0 },
+  { id: 'd-test-negative', fromDays: DELAY.notable },
+  { id: 'd-doctor-when', fromDays: DELAY.long },
+]
+
+const DELAY_PARTNER: string[] = ['d-p-dont-ask', 'd-p-not-a-verdict']
+
+function delayTips(delay: Delay | null, audience: 'owner' | 'partner'): Tip[] {
+  if (delay === null) return []
+  if (audience === 'partner') {
+    return DELAY_PARTNER.map((id) => ({ id, category: 'delay' as const }))
+  }
+  return DELAY_TIPS.filter(
+    (t) => delay.days >= t.fromDays && (!t.assumedOnly || delay.basis === 'assumed'),
+  ).map((t) => ({ id: t.id, category: 'delay' as const }))
+}
+
 /** Подсказки для конкретных дней - они важнее фазовых и идут первыми. */
 function specific(state: CycleDay): Tip[] {
   const out: Tip[] = []
@@ -847,91 +886,61 @@ function specific(state: CycleDay): Tip[] {
 }
 
 /**
- * Все подсказки одним списком, отфильтрованные по текущей фазе.
+ * Всё, что в принципе может быть показано этому читателю.
  *
- * Порядок: сначала привязанные к конкретному дню, потом фазовые,
- * потом справочные. Внутри категории та же логика - относящееся к сегодня
- * идёт выше общего.
+ * Владелице - полный набор. Наблюдателю - только то, что написано для двоих:
+ * близость, её виды, польза и «мы». Остальное обращено к телу, которое
+ * не его, и в повелительном наклонении звучит как указание.
  */
-export function tipsFor(state: CycleDay): Tip[] {
-  const library = [...HORMONES, ...INTIMACY, ...PRACTICES, ...BENEFITS, ...EXTRA, ...MORE]
-  const fitsPhase = (t: Tip) => !t.phases || t.phases.includes(state.phase)
-  return [...specific(state), ...BY_PHASE[state.phase], ...library.filter(fitsPhase)]
+function pool(audience: 'owner' | 'partner'): Tip[] {
+  if (audience === 'partner') {
+    return [
+      ...INTIMACY,
+      ...PRACTICES,
+      ...BENEFITS,
+      ...PARTNER_ALWAYS,
+      ...[...EXTRA, ...MORE].filter((t) => FOR_BOTH.includes(t.category)),
+    ]
+  }
+  return [...HORMONES, ...INTIMACY, ...PRACTICES, ...BENEFITS, ...EXTRA, ...MORE]
 }
 
 /**
- * Те же подсказки, сгруппированные по темам.
+ * Про сегодня: день, фаза и задержка.
  *
- * Категории идут в порядке TIP_CATEGORIES, и он продуман: сначала то, что
- * человек чувствует сейчас, потом почему, потом что с этим делать, потом
- * про двоих, и в конце справочные разделы про близость.
- *
- * `library: true` означает, что тема не про сегодня, а про вообще, - такие
- * группы интерфейс держит свёрнутыми, чтобы справка не топила главное.
+ * Раздел раньше показывал одним списком и это, и всю справку - две сотни
+ * карточек, где «сегодня третий день, вот что с этим делать» тонуло между
+ * щитовидкой и видами смазки. Разделение проведено по одному признаку:
+ * подсказка про сегодня, если она зависит от дня. Всё остальное - база
+ * знаний, и она одинакова хоть в первый день цикла, хоть до первой записи.
  */
-/**
- * Подсказки для наблюдателя - того, кому открыли чужой цикл.
- *
- * Берутся не те же самые: владельцу говорят «уменьши объём тренировки»,
- * а наблюдателю это сказать нельзя - это не его тело. Зато темы «Близость»
- * и «Что даёт близость» общие, они написаны для двоих изначально.
- */
-export function tipsForPartner(state: CycleDay): Tip[] {
-  const shared = [
-    ...INTIMACY,
-    ...PRACTICES,
-    ...BENEFITS,
-    ...[...EXTRA, ...MORE].filter((t) => FOR_BOTH.includes(t.category)),
-  ].filter((t) => !t.phases || t.phases.includes(state.phase))
-  return [...PARTNER[state.phase], ...PARTNER_ALWAYS, ...shared]
-}
-
-/**
- * Подсказки, пока записей нет вовсе.
- *
- * Раздел включают до первой менструации, и до неё фазы не существует -
- * а значит, всё «про сегодня» посчитать не из чего. Но справочная часть
- * от цикла не зависит: гормоны, близость, её виды и то, что она даёт,
- * написаны про вообще, а не про день.
- *
- * Раньше этот экран показывал одну строку «записей пока нет» и кнопку.
- * Человек, включивший раздел, получал пустоту и уходил, так и не узнав,
- * что внутри полтораста подсказок, из которых больше половины читаются
- * без единой отметки.
- *
- * Привязанные к фазам сюда не попадают - и не могут: без цикла нечем
- * решить, уместна подсказка сегодня или нет.
- */
-export function tipsWithoutCycle(audience: 'owner' | 'partner' = 'owner'): Tip[] {
-  const library =
-    audience === 'partner'
-      ? [
-          ...INTIMACY,
-          ...PRACTICES,
-          ...BENEFITS,
-          ...PARTNER_ALWAYS,
-          ...[...EXTRA, ...MORE].filter((t) => FOR_BOTH.includes(t.category)),
-        ]
-      : [...HORMONES, ...INTIMACY, ...PRACTICES, ...BENEFITS, ...EXTRA, ...MORE]
-  return library.filter((t) => !t.phases)
-}
-
-export function tipsByCategory(
+export function tipsToday(
   state: CycleDay,
   audience: 'owner' | 'partner' = 'owner',
-): { category: TipCategory; tips: Tip[]; library: boolean }[] {
-  const all = audience === 'partner' ? tipsForPartner(state) : tipsFor(state)
-  return group(all)
+): TipGroup[] {
+  const own = audience === 'partner' ? PARTNER[state.phase] : BY_PHASE[state.phase]
+  const phased = pool(audience).filter((t) => t.phases?.includes(state.phase))
+  // Подсказки конкретного дня - только владелице. Они написаны тому, кто
+  // отмечает: «чем аккуратнее отмечена эта дата, тем ближе к правде всё
+  // остальное». Наблюдателю это указание к чужому телу и чужим записям.
+  const mine = audience === 'owner' ? specific(state) : []
+  return group([...mine, ...delayTips(state.delay, audience), ...own, ...phased])
 }
 
-/** То же деление по темам, но для списка, собранного без цикла. */
-export function tipsByCategoryWithoutCycle(
-  audience: 'owner' | 'partner' = 'owner',
-): { category: TipCategory; tips: Tip[]; library: boolean }[] {
-  return group(tipsWithoutCycle(audience))
+/**
+ * База знаний: всё, что от дня не зависит.
+ *
+ * Не требует ни цикла, ни единой отметки - и в этом смысл. Раздел включают
+ * до первой менструации, и до неё «про сегодня» посчитать не из чего;
+ * а гормоны, близость, её виды и то, что она даёт, написаны про вообще.
+ */
+export function tipsLibrary(audience: 'owner' | 'partner' = 'owner'): TipGroup[] {
+  return group(pool(audience).filter((t) => !t.phases))
 }
 
-function group(all: Tip[]): { category: TipCategory; tips: Tip[]; library: boolean }[] {
+export type TipGroup = { category: TipCategory; tips: Tip[]; library: boolean }
+
+function group(all: Tip[]): TipGroup[] {
   return TIP_CATEGORIES.map((category) => {
     const tips = all.filter((t) => t.category === category)
     // Привязанное к фазе выше общего: внутри «Гормонов» подсказка про

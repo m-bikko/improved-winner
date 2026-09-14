@@ -2,12 +2,14 @@ import { dynamicKey, useT } from '@/lib/i18n'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
+  BookOpen,
   CalendarPlus,
   ChevronDown,
   ChevronRight,
   Droplet,
   FileText,
   Info,
+  Lightbulb,
   Plus,
   ShieldCheck,
   Trash2,
@@ -41,10 +43,11 @@ import {
   cycleStats,
   forecast,
   warnings,
+  NORMS,
   type CycleDay,
   type Period,
 } from './cycle'
-import { tipsByCategory, tipsByCategoryWithoutCycle } from './tips'
+import { tipsLibrary, tipsToday } from './tips'
 
 /**
  * Раздел цикла.
@@ -225,7 +228,7 @@ function CycleBody({
           )}
         </div>
 
-        <Tips state={null} owned={owned} />
+        <LibraryCard owned={owned} />
 
         {/* Ссылка нужна именно здесь. Без неё человек, случайно включивший
             ведение своего цикла, попадал в тупик: на пустом экране нет
@@ -330,6 +333,13 @@ function CycleBody({
                 {w.title}
               </p>
               <p className="mt-1.5 text-sm text-muted">{w.body}</p>
+              {/* Третья строка - что делать. Первых двух не хватало: человек
+                  узнавал, что число вышло за коридор, и оставался с этим один.
+                  Наблюдателю она не показывается: «сделайте тест», «запишитесь
+                  к врачу», «отметьте последний день» - это действия с чужим
+                  телом и чужими записями. Что число вышло за коридор, он видит;
+                  что с этим делать - решает она. */}
+              {owned && <p className="mt-2 border-t border-line pt-2 text-sm">{w.action}</p>}
             </div>
           ))}
           <p className="px-1 text-xs text-muted">
@@ -342,7 +352,9 @@ function CycleBody({
 
       <DiaryByPhase ownerId={ownerId} />
 
-      <Tips state={state} owned={owned} />
+      <TodayTips state={state} owned={owned} />
+
+      <LibraryCard owned={owned} />
 
       {owned && (
         <Link
@@ -374,95 +386,162 @@ function CycleBody({
 }
 
 /**
- * Подсказки, сгруппированные по темам.
+ * Советы на сегодня - отдельная раскрывашка.
  *
- * Плоским списком их пятнадцать, и никто не дочитывает до середины. Группы
- * сворачиваемые, открыта первая: остальные видно по заголовкам, и человек
- * сам решает, что ему сегодня нужно - про еду, про нагрузку или про близость.
+ * Раньше «сегодня» и вся справка лежали одним списком из двух сотен карточек,
+ * и разница между «сегодня третий день, вот что с этим делать» и справкой
+ * про щитовидку стиралась: и то и другое было очередной строкой в очередной
+ * свёрнутой теме.
  *
- * Порядок тем не случаен: сначала то, что чувствуешь прямо сейчас, потом
- * то, на что это влияет, и в конце то, что касается двоих.
+ * Теперь здесь только то, что зависит от дня: фаза, конкретный день цикла
+ * и задержка. Этого мало - десяток карточек, - и раскрывашка открыта сразу.
+ * Всё остальное живёт в базе знаний и открывается по желанию.
  */
-function Tips({ state, owned }: { state: CycleDay | null; owned: boolean }) {
+function TodayTips({ state, owned }: { state: CycleDay; owned: boolean }) {
   const t = useT()
-  const audience = owned ? 'owner' : 'partner'
-  // Без цикла фазы нет, и «про сегодня» посчитать не из чего - остаётся
-  // справочная часть, которая от дня не зависит
-  const groups =
-    state === null ? tipsByCategoryWithoutCycle(audience) : tipsByCategory(state, audience)
-  // Открыта только первая тема про сегодня. Справочные - «Близость»
-  // и «Что даёт близость» - свёрнуты всегда: их читают по желанию,
-  // а не каждый раз, когда открыли раздел.
-  const [closed, setClosed] = useState<string[]>(() =>
-    groups.filter((g, i) => i > 0 || g.library).map((g) => g.category),
-  )
-
-  const toggle = (category: string) => {
-    setClosed((prev) =>
-      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category],
-    )
-  }
+  const groups = tipsToday(state, owned ? 'owner' : 'partner')
+  const [open, setOpen] = useState(true)
+  const count = groups.reduce((n, g) => n + g.tips.length, 0)
 
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="px-1 text-sm text-muted">
-        {t(state === null ? 'cyc.tipsLibrary' : 'cyc.tipsTitle')}
-      </h2>
-      {groups.map(({ category, tips }) => {
-        const open = !closed.includes(category)
-        return (
-          <div key={category} className="overflow-hidden rounded-2xl bg-surface ring-1 ring-line">
-            <button
-              type="button"
-              onClick={() => toggle(category)}
-              aria-expanded={open}
-              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
-            >
-              <span className="font-medium">{t(dynamicKey('tipCat', category))}</span>
-              <span className="flex items-center gap-2 text-sm text-muted">
-                {tips.length}
-                <ChevronDown
-                  size={18}
-                  aria-hidden
-                  className={`transition-transform ${open ? 'rotate-180' : ''}`}
-                />
-              </span>
-            </button>
-            {open && (
-              <div className="flex flex-col gap-3 border-t border-line px-4 py-3">
-                {tips.map((tip) => (
-                  <div key={tip.id}>
-                    <p className="text-sm font-medium">
-                      {tip.title ?? t(dynamicKey('tip', `${tip.id}.title`))}
-                    </p>
-                    <p className="mt-1 text-sm text-muted">
-                      {t(dynamicKey('tip', `${tip.id}.body`))}
-                    </p>
-                  </div>
-                ))}
+    <section className="overflow-hidden rounded-2xl bg-surface ring-1 ring-line">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
+      >
+        <span className="flex items-center gap-2 font-medium">
+          <Lightbulb size={17} aria-hidden className="text-accent" />
+          {t('cyc.tipsToday')}
+        </span>
+        <span className="flex items-center gap-2 text-sm text-muted">
+          {count}
+          <ChevronDown
+            size={18}
+            aria-hidden
+            className={`transition-transform ${open ? 'rotate-180' : ''}`}
+          />
+        </span>
+      </button>
+      {open && (
+        <div className="flex flex-col gap-4 border-t border-line px-4 py-3.5">
+          {count === 0 ? (
+            <p className="text-sm text-muted">{t('cyc.tipsTodayNone')}</p>
+          ) : (
+            groups.map(({ category, tips }) => (
+              <div key={category}>
+                <p className="text-xs text-muted">{t(dynamicKey('tipCat', category))}</p>
+                <div className="mt-2 flex flex-col gap-3">
+                  {tips.map((tip) => (
+                    <div key={tip.id}>
+                      <p className="text-sm font-medium">
+                        {tip.title ?? t(dynamicKey('tip', `${tip.id}.title`))}
+                      </p>
+                      <p className="mt-1 text-sm text-muted">
+                        {t(dynamicKey('tip', `${tip.id}.body`))}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            )}
-          </div>
-        )
-      })}
+            ))
+          )}
+        </div>
+      )}
     </section>
   )
 }
 
+/**
+ * Вход в базу знаний.
+ *
+ * Отдельной страницей, а не ещё одним аккордеоном внизу: полторы сотни
+ * карточек под календарём означают, что до истории менструаций никто
+ * не долистает. Здесь - только обещание и число, чтобы было видно, что
+ * там есть что читать.
+ */
+function LibraryCard({ owned }: { owned: boolean }) {
+  const t = useT()
+  const count = tipsLibrary(owned ? 'owner' : 'partner').reduce(
+    (n, g) => n + g.tips.length,
+    0,
+  )
+
+  return (
+    <Link
+      to="/cycle/library"
+      className="flex items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-4
+                 ring-1 ring-line"
+    >
+      <span className="min-w-0">
+        <span className="flex items-center gap-2 text-sm font-medium">
+          <BookOpen size={16} aria-hidden />
+          {t('cyc.library')}
+        </span>
+        <span className="mt-0.5 block text-xs text-muted">{t('cyc.libraryHint')}</span>
+      </span>
+      <span className="flex shrink-0 items-center gap-1 text-xs text-muted">
+        {count} {t.plural('unit.card', count)}
+        <ChevronRight size={18} aria-hidden />
+      </span>
+    </Link>
+  )
+}
+
+/**
+ * Шапка: где мы сегодня.
+ *
+ * Крупной строкой стоит то, что человек пришёл узнать. Обычно это день цикла;
+ * при задержке - сама задержка, потому что «День 47 из ~28» на неё только
+ * намекает, а считать разницу в уме экран просить не должен.
+ *
+ * Карточка слева при этом перестаёт называться «Следующая»: дата в ней уже
+ * прошла, и заголовок, обещающий будущее, противоречил значению. Отдельной
+ * строкой сказано, что прогноз не пересчитается сам, - иначе остаётся
+ * впечатление, что приложение сломалось.
+ */
 function Today({ state, stats }: { state: CycleDay; stats: ReturnType<typeof cycleStats> }) {
   const t = useT()
+  const delay = state.delay
+  const alarming = delay !== null && (delay.level === 'long' || delay.level === 'absent')
+
   return (
     <section className="rounded-2xl bg-surface p-5 ring-1 ring-line">
       <p className="text-sm text-muted">{t(dynamicKey('phase', state.phase))}</p>
-      <p className="mt-1 flex items-baseline gap-2">
-        <span className="text-4xl font-semibold">{t('cyc.dayN', { n: state.day })}</span>
-        <span className="text-sm text-muted">{t('cyc.ofAbout', { n: state.cycleLength })}</span>
-      </p>
+
+      {delay !== null ? (
+        <>
+          <p className={`mt-1 text-4xl font-semibold ${alarming ? 'text-danger' : ''}`}>
+            {t('cyc.delayBig', {
+              n: delay.days,
+              unit: t.plural('unit.day', delay.days),
+            })}
+          </p>
+          <p className="mt-1 text-sm text-muted">
+            {t('cyc.dayN', { n: state.day })} {t('cyc.ofAbout', { n: state.cycleLength })}
+          </p>
+        </>
+      ) : (
+        <p className="mt-1 flex items-baseline gap-2">
+          <span className="text-4xl font-semibold">{t('cyc.dayN', { n: state.day })}</span>
+          <span className="text-sm text-muted">{t('cyc.ofAbout', { n: state.cycleLength })}</span>
+        </p>
+      )}
+
       <p className="mt-2 text-sm text-muted">{t(dynamicKey('phaseSummary', state.phase))}</p>
 
       <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+        {/* Дата берётся из задержки, а не из прогноза, и это не придирка.
+            Прогноз рисуется от двадцати восьми дней, пока своего среднего нет,
+            а задержка считается от тридцати пяти - и на экране оказывалось
+            два разных числа сразу: «Задержка 11 дней» крупно и «задержка
+            18 дней» в карточке под ней. Соседние строки обязаны отвечать
+            одинаково; календарь живёт своей жизнью и рисует прогноз. */}
         <div className="rounded-xl bg-raised px-3 py-2.5">
-          <dt className="text-xs text-muted">{t('cyc.next')}</dt>
+          <dt className="text-xs text-muted">
+            {state.daysToNext < 0 ? t('cyc.expected') : t('cyc.next')}
+          </dt>
           <dd className="mt-0.5 font-medium">
             {state.daysToNext > 0
               ? t('cyc.inDays', {
@@ -471,12 +550,11 @@ function Today({ state, stats }: { state: CycleDay; stats: ReturnType<typeof cyc
                 })
               : state.daysToNext === 0
                 ? t('cyc.todayLower')
-                : t('cyc.delay', {
-                    n: -state.daysToNext,
-                    unit: t.plural('unit.day', -state.daysToNext),
-                  })}
+                : formatDayLabel(delay?.expectedOn ?? state.nextStart)}
           </dd>
-          <dd className="text-xs text-muted">{formatDayLabel(state.nextStart)}</dd>
+          {state.daysToNext >= 0 && (
+            <dd className="text-xs text-muted">{formatDayLabel(state.nextStart)}</dd>
+          )}
         </div>
         <div className="rounded-xl bg-raised px-3 py-2.5">
           <dt className="text-xs text-muted">{t('cyc.avgCycle')}</dt>
@@ -496,6 +574,18 @@ function Today({ state, stats }: { state: CycleDay; stats: ReturnType<typeof cyc
           </dd>
         </div>
       </dl>
+
+      {state.daysToNext < 0 && (
+        <p className="mt-3 text-xs text-muted">{t('cyc.forecastHold')}</p>
+      )}
+      {/* Откуда взялось число задержки. Без этой строки «задержка 12 дней»
+          при пустом «среднем цикле» выглядит как противоречие: приложение
+          говорит, что данных нет, и тут же считает от чего-то. */}
+      {delay?.basis === 'assumed' && (
+        <p className="mt-1 text-xs text-muted">
+          {t('cyc.assumedBasis', { max: NORMS.cycleMax })}
+        </p>
+      )}
     </section>
   )
 }
@@ -511,7 +601,12 @@ function Today({ state, stats }: { state: CycleDay; stats: ReturnType<typeof cyc
 function PhaseStrip({ state }: { state: CycleDay }) {
   const t = useT()
   const firstDay = shiftDays(state.nextStart, -state.cycleLength)
-  const days = Array.from({ length: state.cycleLength }, (_, i) => shiftDays(firstDay, i))
+  // Полоса длиной в цикл теряла сегодняшний день, как только начиналась
+  // задержка: день 47 в двадцативосьмидневной полосе просто некуда поставить,
+  // и белая отметка исчезала с экрана, оставаясь в легенде. Тянем полосу
+  // до сегодняшнего дня; лишние дни - нейтральные, они уже сверх ожидаемого.
+  const span = Math.max(state.cycleLength, state.day)
+  const days = Array.from({ length: span }, (_, i) => shiftDays(firstDay, i))
 
   return (
     <section className="rounded-2xl bg-surface p-4 ring-1 ring-line">
@@ -522,6 +617,7 @@ function PhaseStrip({ state }: { state: CycleDay }) {
           // она шесть дней, полоса врала бы каждый месяц на день.
           const bleeding = i < state.periodLength
           const fertile = iso >= state.fertileFrom && iso <= state.fertileTo
+          const overdue = i >= state.cycleLength
           return (
             <span
               key={iso}
@@ -529,7 +625,15 @@ function PhaseStrip({ state }: { state: CycleDay }) {
               // Сегодняшний день выше остальных. Обводка на трёхпиксельном
               // сегменте не читается - проверено на снимке.
               className={`flex-1 ${isToday ? 'h-6 rounded-sm bg-ink' : 'h-3'} ${
-                isToday ? '' : bleeding ? 'bg-accent' : fertile ? 'bg-carbs' : 'bg-raised'
+                isToday
+                  ? ''
+                  : overdue
+                    ? 'bg-raised/50'
+                    : bleeding
+                      ? 'bg-accent'
+                      : fertile
+                        ? 'bg-carbs'
+                        : 'bg-raised'
               }`}
             />
           )

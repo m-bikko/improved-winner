@@ -83,6 +83,93 @@ export const PLAUSIBLE = {
 export const DEFAULT_CYCLE_DAYS = 28
 export const DEFAULT_PERIOD_DAYS = 5
 
+/**
+ * Пороги задержки.
+ *
+ * Разделены не ради градаций, а потому что на разных сроках уместно разное.
+ * Два дня - обычный разброс, и говорить о них значит пугать без повода.
+ * Неделя - уже стоит назвать вслух. Две - тест, даже отрицательный,
+ * перестаёт закрывать вопрос.
+ */
+export const DELAY = {
+  /** Ниже этого молчим совсем. */
+  quiet: 3,
+  /** С этого дня стоит сказать про тест. */
+  notable: 8,
+  /** С этого - про врача, даже при отрицательном тесте. */
+  long: 15,
+} as const
+
+export type DelayLevel = 'slight' | 'notable' | 'long' | 'absent'
+
+export type Delay = {
+  /** Сколько дней сверх ожидаемого. */
+  days: number
+  level: DelayLevel
+  /** Дата, от которой считаем. */
+  expectedOn: string
+  /** Сколько дней прошло с начала последней менструации. */
+  sinceLast: number
+  /**
+   * `measured` - считали от её собственного среднего.
+   * `assumed` - среднего ещё нет, и мы считаем от верхней границы нормы.
+   *
+   * Разница должна быть видна человеку. Первые два цикла приложение не знает
+   * её нормы, и объявлять задержку от двадцати восьми дней - выдавать
+   * допущение за измерение. Тридцать пять - верх общепринятого коридора:
+   * дальше него цикл выходит за норму у кого угодно, и это уже можно
+   * сказать, ничего не придумывая.
+   */
+  basis: 'measured' | 'assumed'
+}
+
+/**
+ * Задержка на сегодня. `null` - задержки нет или о ней рано говорить.
+ *
+ * Отдельно от `cycleDay()` сознательно: там прогноз, а тут вопрос
+ * «не пора ли что-то делать», и отвечать на него надо даже когда прогноза
+ * ещё нет. Ровно этот случай и был пропущен - при одной записи средней длины
+ * нет, а значит не было и предупреждения, хотя восемнадцатый день задержки
+ * виден на экране.
+ */
+export function delayOf(periods: Period[], today: string): Delay | null {
+  const sorted = [...periods]
+    .filter((p) => p.startedOn <= today)
+    .sort((a, b) => (a.startedOn < b.startedOn ? -1 : 1))
+  const last = sorted[sorted.length - 1]
+  if (!last) return null
+
+  // Менструация идёт прямо сейчас - задержки нет по определению. Запись,
+  // которую забыли закрыть, ловит отдельное предупреждение о длительном
+  // кровотечении; подменять его задержкой было бы неверно вдвойне.
+  if (last.endedOn === null) return null
+
+  const stats = cycleStats(periods)
+  const measured = stats.usableCycle !== null
+  const base = measured ? Math.round(stats.usableCycle ?? 0) : NORMS.cycleMax
+  const sinceLast = daysBetween(last.startedOn, today)
+  const days = sinceLast - base
+
+  if (sinceLast >= NORMS.absenceDays) {
+    return {
+      days,
+      level: 'absent',
+      expectedOn: shiftDays(last.startedOn, base),
+      sinceLast,
+      basis: measured ? 'measured' : 'assumed',
+    }
+  }
+  if (days < DELAY.quiet) return null
+
+  return {
+    days,
+    level: days >= DELAY.long ? 'long' : days >= DELAY.notable ? 'notable' : 'slight',
+    expectedOn: shiftDays(last.startedOn, base),
+    sinceLast,
+    basis: measured ? 'measured' : 'assumed',
+  }
+}
+
 /** Разница в днях между двумя локальными датами. */
 export function daysBetween(fromIso: string, toIso: string): number {
   const ms = fromLocalISO(toIso).getTime() - fromLocalISO(fromIso).getTime()
@@ -164,6 +251,8 @@ export type CycleDay = {
   daysToNext: number
   /** Идёт ли менструация прямо сейчас. */
   bleeding: boolean
+  /** Задержка, если о ней уже стоит говорить. Считает `delayOf()`. */
+  delay: Delay | null
 }
 
 /**
@@ -229,6 +318,7 @@ export function cycleDay(
     fertileTo: shiftDays(ovulation, 1),
     daysToNext: daysBetween(today, nextStart),
     bleeding,
+    delay: delayOf(periods, today),
   }
 }
 
@@ -236,6 +326,15 @@ export type Warning = {
   id: string
   title: string
   body: string
+  /**
+   * Что с этим делать.
+   *
+   * Третья строка появилась потому, что первых двух не хватало: человек
+   * узнавал, что число вышло за коридор, и оставался с этим один. Действие
+   * здесь всегда его собственное и всегда выполнимое сегодня - записать,
+   * измерить, взять с собой на приём. Лечения приложение не назначает.
+   */
+  action: string
   /** `attention` - стоит показать врачу. `note` - просто наблюдение. */
   level: 'attention' | 'note'
 }
@@ -262,6 +361,7 @@ export function warnings(periods: Period[], today: string): Warning[] {
         level: 'attention',
         title: tr('warn.cycleAvg', { n: avg, unit: trPlural('unit.day', avg) }),
         body: tr('warn.cycleRange', { min: NORMS.cycleMin, max: NORMS.cycleMax }),
+        action: tr('warn.cycleShortDo'),
       })
     } else if (avg > NORMS.cycleMax) {
       out.push({
@@ -269,6 +369,7 @@ export function warnings(periods: Period[], today: string): Warning[] {
         level: 'attention',
         title: tr('warn.cycleAvg', { n: avg, unit: trPlural('unit.day', avg) }),
         body: tr('warn.cycleRange', { min: NORMS.cycleMin, max: NORMS.cycleMax }),
+        action: tr('warn.cycleLongDo'),
       })
     }
   }
@@ -282,6 +383,7 @@ export function warnings(periods: Period[], today: string): Warning[] {
         unit: trPlural('unit.day', stats.spread),
       }),
       body: tr('warn.spreadBody', { max: NORMS.spreadMax }),
+      action: tr('warn.irregularDo'),
     })
   }
 
@@ -293,6 +395,7 @@ export function warnings(periods: Period[], today: string): Warning[] {
         level: 'attention',
         title: tr('warn.periodAvg', { n: avg, unit: trPlural('unit.day', avg) }),
         body: tr('warn.periodLong', { max: NORMS.periodMax }),
+        action: tr('warn.periodLongDo'),
       })
     } else if (avg < NORMS.periodMin) {
       out.push({
@@ -300,6 +403,7 @@ export function warnings(periods: Period[], today: string): Warning[] {
         level: 'note',
         title: tr('warn.periodAvg', { n: avg, unit: trPlural('unit.day', avg) }),
         body: tr('warn.periodShort', { min: NORMS.periodMin }),
+        action: tr('warn.periodShortDo'),
       })
     }
   }
@@ -314,28 +418,50 @@ export function warnings(periods: Period[], today: string): Warning[] {
         level: 'attention',
         title: tr('warn.bleeding', { n: going }),
         body: tr('warn.bleedingBody', { max: NORMS.periodMax }),
+        action: tr('warn.bleedingDo'),
       })
     }
   }
 
-  if (last) {
-    const since = daysBetween(last.startedOn, today)
-    if (since >= NORMS.absenceDays) {
+  // Задержка и отсутствие - через delayOf(), а не через собственное условие.
+  //
+  // Прежнее условие требовало средней длины цикла, а она появляется только
+  // со второго цикла. То есть о задержке молчали ровно у той, кто начала
+  // вести недавно, - и молчали до девяноста дней. Восемнадцатый день
+  // задержки был виден на экране числом «День 47» и не сопровождался
+  // ни словом.
+  const delay = delayOf(periods, today)
+  if (delay !== null) {
+    if (delay.level === 'absent') {
       out.push({
         id: 'absent',
         level: 'attention',
-        title: tr('warn.absent', { n: since, unit: trPlural('unit.day', since) }),
+        title: tr('warn.absent', {
+          n: delay.sinceLast,
+          unit: trPlural('unit.day', delay.sinceLast),
+        }),
         body: tr('warn.absentBody'),
+        action: tr('warn.absentDo'),
       })
-    } else if (stats.avgCycle !== null && since > Math.round(stats.avgCycle) + 7) {
+    } else {
       out.push({
         id: 'late',
-        level: 'note',
+        // До двух недель это наблюдение, дальше - повод показаться врачу.
+        level: delay.level === 'long' ? 'attention' : 'note',
         title: tr('warn.late', {
-          n: since - Math.round(stats.avgCycle),
-          unit: trPlural('unit.day', since - Math.round(stats.avgCycle)),
+          n: delay.days,
+          unit: trPlural('unit.day', delay.days),
         }),
-        body: tr('warn.lateBody'),
+        body: tr(
+          delay.level === 'slight'
+            ? 'warn.lateBody'
+            : delay.level === 'notable'
+              ? 'warn.lateBodyTest'
+              : 'warn.lateBodyLong',
+        ),
+        action: tr(delay.basis === 'measured' ? 'warn.lateDo' : 'warn.lateDoAssumed', {
+          max: NORMS.cycleMax,
+        }),
       })
     }
   }
