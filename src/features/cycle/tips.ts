@@ -738,6 +738,75 @@ const EXTRA: Tip[] = [
   { id: 'x-b-selfcare', category: 'benefits', },
 ]
 
+/**
+ * Вторая добавка, тоже по просьбе автора: по пять пунктов в каждую тему.
+ *
+ * Ни одна не привязана к фазе намеренно. Привязанная к фазе подсказка
+ * не попадает в список «Что полезно знать» - до первой отметки фазы нет,
+ * и решить, уместна ли она сегодня, нечем. А просьба была именно про этот
+ * список.
+ *
+ * Порядок внутри темы - как написано: они добавлены в конец, чтобы уже
+ * прочитанное не поехало.
+ */
+const MORE: Tip[] = [
+  { id: 'y-body-headache', category: 'body' },
+  { id: 'y-body-bowel', category: 'body' },
+  { id: 'y-body-back-heat', category: 'body' },
+  { id: 'y-body-breast-lump', category: 'body' },
+  { id: 'y-body-nausea-limit', category: 'body' },
+
+  { id: 'y-h-sleep-cortisol', category: 'hormones' },
+  { id: 'y-h-travel', category: 'hormones' },
+  { id: 'y-h-underfuel', category: 'hormones' },
+  { id: 'y-h-stress-phase', category: 'hormones' },
+  { id: 'y-h-vitamind', category: 'hormones' },
+
+  { id: 'y-food-salt', category: 'food' },
+  { id: 'y-food-calcium', category: 'food' },
+  { id: 'y-food-breakfast-protein', category: 'food' },
+  { id: 'y-food-iron-vitc', category: 'food' },
+  { id: 'y-food-no-deficit', category: 'food' },
+
+  { id: 'y-tr-rpe', category: 'training' },
+  { id: 'y-tr-jumps', category: 'training' },
+  { id: 'y-tr-short-sleep', category: 'training' },
+  { id: 'y-tr-records', category: 'training' },
+  { id: 'y-tr-walk', category: 'training' },
+
+  { id: 'y-us-one-question', category: 'together' },
+  { id: 'y-us-share-what', category: 'together' },
+  { id: 'y-us-not-a-forecast', category: 'together' },
+  { id: 'y-us-thanks', category: 'together' },
+  { id: 'y-us-make-task', category: 'together' },
+
+  { id: 'y-i-no-score', category: 'intimacy' },
+  { id: 'y-i-say-tired', category: 'intimacy' },
+  { id: 'y-i-your-curve', category: 'intimacy' },
+  { id: 'y-i-restart', category: 'intimacy' },
+  { id: 'y-i-privacy', category: 'intimacy' },
+
+  { id: 'y-pr-lube-amount', category: 'practices' },
+  { id: 'y-pr-toy-wash', category: 'practices' },
+  { id: 'y-pr-cup-out', category: 'practices' },
+  { id: 'y-pr-shaving', category: 'practices' },
+  { id: 'y-pr-no-douching', category: 'practices' },
+
+  { id: 'y-b-twenty-seconds', category: 'benefits' },
+  { id: 'y-b-not-a-fix', category: 'benefits' },
+  { id: 'y-b-laugh', category: 'benefits' },
+  { id: 'y-b-ritual-apart', category: 'benefits' },
+  { id: 'y-b-count-touch', category: 'benefits' },
+]
+
+/**
+ * Что из добавленного уместно показать наблюдателю.
+ *
+ * Тело - не его, и «держите норму в дни менструации» ему говорить незачем.
+ * Остаются темы, написанные для двоих изначально.
+ */
+const FOR_BOTH: readonly TipCategory[] = ['intimacy', 'practices', 'benefits', 'together']
+
 /** Подсказки для конкретных дней - они важнее фазовых и идут первыми. */
 function specific(state: CycleDay): Tip[] {
   const out: Tip[] = []
@@ -785,7 +854,7 @@ function specific(state: CycleDay): Tip[] {
  * идёт выше общего.
  */
 export function tipsFor(state: CycleDay): Tip[] {
-  const library = [...HORMONES, ...INTIMACY, ...PRACTICES, ...BENEFITS, ...EXTRA]
+  const library = [...HORMONES, ...INTIMACY, ...PRACTICES, ...BENEFITS, ...EXTRA, ...MORE]
   const fitsPhase = (t: Tip) => !t.phases || t.phases.includes(state.phase)
   return [...specific(state), ...BY_PHASE[state.phase], ...library.filter(fitsPhase)]
 }
@@ -808,11 +877,12 @@ export function tipsFor(state: CycleDay): Tip[] {
  * и «Что даёт близость» общие, они написаны для двоих изначально.
  */
 export function tipsForPartner(state: CycleDay): Tip[] {
-  const shared = [...INTIMACY, ...PRACTICES, ...BENEFITS, ...EXTRA.filter((t) =>
-    ['intimacy', 'practices', 'benefits', 'together'].includes(t.category),
-  )].filter(
-    (t) => !t.phases || t.phases.includes(state.phase),
-  )
+  const shared = [
+    ...INTIMACY,
+    ...PRACTICES,
+    ...BENEFITS,
+    ...[...EXTRA, ...MORE].filter((t) => FOR_BOTH.includes(t.category)),
+  ].filter((t) => !t.phases || t.phases.includes(state.phase))
   return [...PARTNER[state.phase], ...PARTNER_ALWAYS, ...shared]
 }
 
@@ -835,8 +905,14 @@ export function tipsForPartner(state: CycleDay): Tip[] {
 export function tipsWithoutCycle(audience: 'owner' | 'partner' = 'owner'): Tip[] {
   const library =
     audience === 'partner'
-      ? [...INTIMACY, ...PRACTICES, ...BENEFITS, ...PARTNER_ALWAYS]
-      : [...HORMONES, ...INTIMACY, ...PRACTICES, ...BENEFITS, ...EXTRA]
+      ? [
+          ...INTIMACY,
+          ...PRACTICES,
+          ...BENEFITS,
+          ...PARTNER_ALWAYS,
+          ...[...EXTRA, ...MORE].filter((t) => FOR_BOTH.includes(t.category)),
+        ]
+      : [...HORMONES, ...INTIMACY, ...PRACTICES, ...BENEFITS, ...EXTRA, ...MORE]
   return library.filter((t) => !t.phases)
 }
 
