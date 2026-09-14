@@ -3,8 +3,8 @@ title: Название приложения
 type: concept
 tags: [pwa, branding, build, notifications]
 created: 2026-09-03
-updated: 2026-09-03
-sources: [src/lib/appName.ts, vite.config.ts, index.html, scripts/make-icons.ts]
+updated: 2026-09-15
+sources: [src/lib/appName.ts, vite.config.ts, index.html, scripts/make-icons.ts, scripts/check-biometrics.ts]
 ---
 
 # Название приложения
@@ -38,6 +38,13 @@ iOS запоминает имя и иконку **в момент добавле
 Родная подстановка `%VITE_*%` в Vite не годится: она не умеет значений
 по умолчанию и при отсутствии переменной оставляет в заголовке буквальное
 `%VITE_PUBLIC_APP_NAME%`.
+
+Читается `import.meta.env` целиком, а не поле по имени. Вне сборки -
+а проверки в `scripts/` запускаются под `tsx` - этого объекта нет вовсе,
+и обращение к его полю роняет модуль при загрузке. Так и вышло: проверка
+входа по Face ID перестала запускаться, потому что тянет `biometrics.ts`,
+а тот - название для WebAuthn. Vite подставляет и объект, и поле, так что
+в сборке ничего не меняется.
 
 **В базе названия нет и быть не должно.** Заголовок push-уведомления о еде
 раньше был захардкожен как «Love promises»; теперь там приём пищи -

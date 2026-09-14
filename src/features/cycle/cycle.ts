@@ -26,7 +26,11 @@ export type Period = {
   cycleDays: number | null
 }
 
-export type Phase = 'menstrual' | 'follicular' | 'ovulation' | 'luteal'
+// Списком, а не объединением: по объединению нельзя пройтись во время
+// работы, а проверка перевода обязана перечислить все фазы и убедиться,
+// что у каждой есть название и сводка
+export const PHASES = ['menstrual', 'follicular', 'ovulation', 'luteal'] as const
+export type Phase = (typeof PHASES)[number]
 
 /**
  * Нормы.

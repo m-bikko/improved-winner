@@ -260,11 +260,11 @@ export const ru = {
   'symptom.cramps': 'Спазмы',
   'symptom.headache': 'Голова',
   'symptom.bloating': 'Вздутие',
-  'symptom.breast': 'Грудь',
-  'symptom.skin': 'Кожа',
-  'symptom.back': 'Поясница',
+  'symptom.breast-tenderness': 'Грудь',
+  'symptom.acne': 'Кожа',
+  'symptom.back-pain': 'Поясница',
   'symptom.fatigue': 'Усталость',
-  'symptom.sleep': 'Сон',
+  'symptom.insomnia': 'Сон',
   'symptom.nausea': 'Тошнота',
   'symptom.cravings': 'Тяга к еде',
   'day.flow': 'Обильность',
@@ -1239,6 +1239,7 @@ export const ru = {
   'cyc.needStart': 'Без даты начала записи нет',
   'cyc.addPast': 'Внести прошлую',
   'cyc.addPastHint': 'Пара прошлых циклов дают прогноз сразу - иначе он появится только после следующей менструации.',
+  'cyc.undoToday': 'Убрать отметку за сегодня',
 } as const
 
 export type Key = keyof typeof ru

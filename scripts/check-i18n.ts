@@ -17,6 +17,16 @@
  * не подвергся. Комментарии не в счёт - они для того, кто читает код,
  * а не для того, кто пользуется приложением.
  *
+ * Составные ключи. `dynamicKey('symptom', id)` собирает имя ключа из куска
+ * и идентификатора, и проверить такое типизацией нельзя - там приведение
+ * типа, единственное разрешённое в проекте. Промах не падает и не пустеет:
+ * на экране появляется строка «symptom.breast-tenderness».
+ *
+ * Именно так четыре симптома и прожили неделю на экране: при переносе
+ * в словарь я переименовал их ключи, а идентификаторы в коде остались
+ * прежними. Поэтому здесь перечислены ВСЕ источники идентификаторов,
+ * и каждый сверяется со словарём.
+ *
  * Подсказки цикла. У них нет текста в коде вовсе - только идентификатор,
  * а заголовок и тело берутся из словаря по нему. Промах тут не падает
  * и не пустеет: на экране появится строка «tip.cramps.body». Поэтому
@@ -40,7 +50,16 @@ import { kk } from '../src/lib/i18n/kk.ts'
 import { en } from '../src/lib/i18n/en.ts'
 import { LANGS, setActiveLang } from '../src/lib/i18n/lang.ts'
 import { tr } from '../src/lib/i18n/index.tsx'
-import { tipsByCategory } from '../src/features/cycle/tips.ts'
+import { TIP_CATEGORIES, tipsByCategory } from '../src/features/cycle/tips.ts'
+import { FLOW, MOODS, SYMPTOMS } from '../src/features/cycle/dayLog.ts'
+import { PHASES } from '../src/features/cycle/cycle.ts'
+import { STATES, STATE_GROUPS } from '../src/features/checkin/states.ts'
+import { MEALS } from '../src/features/diary/types.ts'
+import { WORKOUT_KINDS } from '../src/features/diary/workouts.ts'
+import { CATEGORIES } from '../src/features/wishlist/categories.ts'
+import { OCCASION_KINDS } from '../src/features/dates/kinds.ts'
+import { ACTIVITY_LEVELS, GOAL_DIRECTIONS } from '../src/lib/nutrition.ts'
+import { NOTIFICATION_KINDS } from '../src/features/profile/notifications.ts'
 
 let failed = 0
 function check(ok: boolean, name: string, detail: string): void {
@@ -189,6 +208,43 @@ check(
         .join('\n'),
 )
 
+/**
+ * Откуда берутся идентификаторы для составных ключей.
+ *
+ * Список обязан покрывать каждый вызов dynamicKey в приложении. Новый вызов
+ * без строки здесь - это ровно та дыра, ради которой проверка и написана.
+ */
+const FAMILIES: { prefix: string; ids: readonly string[]; suffixes?: string[] }[] = [
+  { prefix: 'symptom', ids: SYMPTOMS },
+  { prefix: 'flow', ids: FLOW },
+  { prefix: 'mood', ids: MOODS },
+  { prefix: 'phase', ids: PHASES },
+  { prefix: 'phaseSummary', ids: PHASES },
+  { prefix: 'state', ids: STATES.map((x) => x.id) },
+  { prefix: 'checkinGroup', ids: STATE_GROUPS },
+  { prefix: 'tipCat', ids: TIP_CATEGORIES },
+  { prefix: 'meal', ids: MEALS },
+  { prefix: 'workout', ids: WORKOUT_KINDS.map((x) => x.id) },
+  { prefix: 'wish', ids: CATEGORIES.map((x) => x.id) },
+  { prefix: 'occasion', ids: OCCASION_KINDS },
+  { prefix: 'activity', ids: ACTIVITY_LEVELS },
+  { prefix: 'goal', ids: GOAL_DIRECTIONS },
+  { prefix: 'notif', ids: NOTIFICATION_KINDS.map((x) => x.id), suffixes: ['', '.hint'] },
+]
+
+const dynamicGaps = FAMILIES.flatMap(({ prefix, ids, suffixes }) =>
+  ids.flatMap((id) =>
+    (suffixes ?? ['']).map((sfx) => `${prefix}.${id}${sfx}`).filter((key) => !(key in ru)),
+  ),
+)
+check(
+  dynamicGaps.length === 0,
+  'Составные ключи собираются из живых идентификаторов',
+  dynamicGaps.length === 0
+    ? `семейств ${FAMILIES.length}, ключей ${FAMILIES.reduce((n, f) => n + f.ids.length * (f.suffixes?.length ?? 1), 0)}`
+    : `нет в словаре: ${dynamicGaps.join(', ')}`,
+)
+
 // Подсказки цикла: у каждой должны быть и заголовок, и тело
 const tipsSource = readFileSync('src/features/cycle/tips.ts', 'utf8')
 const tipIds = [...new Set([...tipsSource.matchAll(/id: '([^']+)'/g)].map((m) => m[1] ?? ''))]
@@ -215,7 +271,6 @@ check(
 // И то же самое, но не по списку ключей, а тем же путём, каким текст
 // достаётся на экране: через tipsByCategory() и tr(). Так проверяется
 // не только наличие ключа, но и то, что компонент соберёт именно его
-const PHASES = ['menstrual', 'follicular', 'ovulation', 'luteal'] as const
 const unresolved: string[] = []
 let resolved = 0
 for (const lang of LANGS) {

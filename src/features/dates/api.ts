@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 
-export type OccasionKind = 'birthday' | 'anniversary' | 'other'
+import { OCCASION_KINDS, type OccasionKind } from './kinds'
+
+export { OCCASION_KINDS, type OccasionKind }
 
 export type Occasion = {
   id: string

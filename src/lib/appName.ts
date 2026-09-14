@@ -15,8 +15,16 @@
  * живых данных, и переименование не должно разлогинивать людей и терять
  * очередь неотправленных записей.
  */
-export const APP_NAME: string = import.meta.env.VITE_PUBLIC_APP_NAME || 'Тандем'
+/*
+ * Объект целиком, а не поле по имени. Vite подставляет и то и другое, а вот
+ * под `tsx` - которым запускаются проверки в scripts/ - сборочных переменных
+ * нет вовсе, и обращение к полю несуществующего объекта падает при загрузке
+ * модуля. Именно так проверка входа по Face ID перестала запускаться: она
+ * тянет biometrics.ts, а тот - название для WebAuthn.
+ */
+const env: Partial<ImportMetaEnv> = import.meta.env ?? {}
+
+export const APP_NAME: string = env.VITE_PUBLIC_APP_NAME || 'Тандем'
 
 /** Подпись под иконкой на домашнем экране: длинное имя там обрезается. */
-export const APP_SHORT_NAME: string =
-  import.meta.env.VITE_PUBLIC_APP_SHORT_NAME || APP_NAME
+export const APP_SHORT_NAME: string = env.VITE_PUBLIC_APP_SHORT_NAME || APP_NAME

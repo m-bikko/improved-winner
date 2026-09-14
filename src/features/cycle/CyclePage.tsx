@@ -166,6 +166,7 @@ function CycleBody({
   const today = todayLocal()
   const start = useStartPeriod()
   const save = useSavePeriod()
+  const remove = useDeletePeriod()
   const [pickedDay, setPickedDay] = useState<string | null>(null)
 
   // Три цикла вперёд, не больше: дальше прогноз всё равно расходится
@@ -192,6 +193,9 @@ function CycleBody({
   const coversToday = periods.some(
     (p) => today >= p.startedOn && (p.endedOn === null || today <= p.endedOn),
   )
+
+  // Запись, начатая сегодня: только её предлагаем убрать одним нажатием
+  const startedToday = periods.find((p) => p.startedOn === today)
 
   // Записей ещё нет. Фазу, прогноз и календарь показать не из чего - но
   // справочная часть от цикла не зависит, и прятать её до первой отметки
@@ -287,6 +291,23 @@ function CycleBody({
               <Droplet size={18} aria-hidden />
               {t('cyc.startedToday')}
             </Button>
+          )}
+
+          {/* Отмена там же, где промах. «Началась сегодня» - самая заметная
+              кнопка экрана, и случайное нажатие по ней вероятнее любого
+              другого; исправлять его пролистыванием до истории значит
+              просить человека искать то, что он только что не хотел делать.
+              Только за сегодня: правка вчерашней записи - осознанное
+              действие, и для него есть история. */}
+          {startedToday && (
+            <button
+              type="button"
+              disabled={remove.isPending}
+              onClick={() => void remove.mutateAsync(startedToday.id)}
+              className="self-start px-1 text-sm text-muted underline disabled:opacity-50"
+            >
+              {t('cyc.undoToday')}
+            </button>
           )}
         </div>
       )}
