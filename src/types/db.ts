@@ -763,6 +763,8 @@ export type Database = {
         Row: {
           activity_level: string
           birth_year: number | null
+          bmr_kcal: number | null
+          body_fat_pct: number | null
           created_at: string
           goal_carbs: number | null
           goal_direction: string
@@ -785,6 +787,8 @@ export type Database = {
         Insert: {
           activity_level?: string
           birth_year?: number | null
+          bmr_kcal?: number | null
+          body_fat_pct?: number | null
           created_at?: string
           goal_carbs?: number | null
           goal_direction?: string
@@ -807,6 +811,8 @@ export type Database = {
         Update: {
           activity_level?: string
           birth_year?: number | null
+          bmr_kcal?: number | null
+          body_fat_pct?: number | null
           created_at?: string
           goal_carbs?: number | null
           goal_direction?: string
@@ -1000,21 +1006,39 @@ export type Database = {
       }
       weight_log: {
         Row: {
+          bmr_kcal: number | null
+          body_fat_pct: number | null
           created_at: string
           date: string
+          muscle_pct: number | null
+          skeletal_muscle_pct: number | null
           user_id: string
+          visceral: number | null
+          water_pct: number | null
           weight_kg: number
         }
         Insert: {
+          bmr_kcal?: number | null
+          body_fat_pct?: number | null
           created_at?: string
           date: string
+          muscle_pct?: number | null
+          skeletal_muscle_pct?: number | null
           user_id?: string
+          visceral?: number | null
+          water_pct?: number | null
           weight_kg: number
         }
         Update: {
+          bmr_kcal?: number | null
+          body_fat_pct?: number | null
           created_at?: string
           date?: string
+          muscle_pct?: number | null
+          skeletal_muscle_pct?: number | null
           user_id?: string
+          visceral?: number | null
+          water_pct?: number | null
           weight_kg?: number
         }
         Relationships: []
@@ -1128,11 +1152,92 @@ export type Database = {
         }
         Relationships: []
       }
+      weight_log_v: {
+        Row: {
+          bmr_kcal: number | null
+          body_fat_pct: number | null
+          created_at: string | null
+          date: string | null
+          fat_kg: number | null
+          lean_kg: number | null
+          muscle_kg: number | null
+          muscle_pct: number | null
+          skeletal_kg: number | null
+          skeletal_muscle_pct: number | null
+          user_id: string | null
+          visceral: number | null
+          water_kg: number | null
+          water_pct: number | null
+          weight_kg: number | null
+        }
+        Insert: {
+          bmr_kcal?: number | null
+          body_fat_pct?: number | null
+          created_at?: string | null
+          date?: string | null
+          fat_kg?: never
+          lean_kg?: never
+          muscle_kg?: never
+          muscle_pct?: number | null
+          skeletal_kg?: never
+          skeletal_muscle_pct?: number | null
+          user_id?: string | null
+          visceral?: number | null
+          water_kg?: never
+          water_pct?: number | null
+          weight_kg?: number | null
+        }
+        Update: {
+          bmr_kcal?: number | null
+          body_fat_pct?: number | null
+          created_at?: string | null
+          date?: string | null
+          fat_kg?: never
+          lean_kg?: never
+          muscle_kg?: never
+          muscle_pct?: number | null
+          skeletal_kg?: never
+          skeletal_muscle_pct?: number | null
+          user_id?: string | null
+          visceral?: number | null
+          water_kg?: never
+          water_pct?: number | null
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       ask_checkins: { Args: never; Returns: number }
       ask_checkins_evening: { Args: never; Returns: number }
       attention_count: { Args: { target: string }; Returns: number }
+      body_composition: {
+        Args: { days?: number; target: string; today: string }
+        Returns: {
+          fat_change: number
+          fat_share: number
+          fat_slope: number
+          from_date: string
+          gap: string
+          last_bmr: number
+          last_date: string
+          last_fat_kg: number
+          last_fat_pct: number
+          last_lean_kg: number
+          last_muscle_pct: number
+          last_skeletal_pct: number
+          last_visceral: number
+          last_water_pct: number
+          lean_change: number
+          lean_slope: number
+          measures: number
+          span: number
+          to_date: string
+          weight_change: number
+          weight_slope: number
+          window_days: number
+        }[]
+      }
       by_sex: {
         Args: { female: string; male: string; neutral: string; person: string }
         Returns: string
@@ -1166,6 +1271,15 @@ export type Database = {
         Returns: {
           streak: number
           user_id: string
+        }[]
+      }
+      cycle_delay: {
+        Args: { on_date: string; owner: string }
+        Returns: {
+          basis: string
+          days: number
+          level: string
+          since_last: number
         }[]
       }
       cycle_diary_stats: {

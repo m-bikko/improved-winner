@@ -60,6 +60,7 @@ import { CATEGORIES } from '../src/features/wishlist/categories.ts'
 import { OCCASION_KINDS } from '../src/features/dates/kinds.ts'
 import { ACTIVITY_LEVELS, GOAL_DIRECTIONS } from '../src/lib/nutrition.ts'
 import { NOTIFICATION_KINDS } from '../src/features/profile/notifications.ts'
+import { BANDS, BODY_GAPS } from '../src/lib/body.ts'
 
 let failed = 0
 function check(ok: boolean, name: string, detail: string): void {
@@ -230,11 +231,17 @@ const FAMILIES: { prefix: string; ids: readonly string[]; suffixes?: string[] }[
   { prefix: 'activity', ids: ACTIVITY_LEVELS },
   { prefix: 'goal', ids: GOAL_DIRECTIONS },
   { prefix: 'notif', ids: NOTIFICATION_KINDS.map((x) => x.id), suffixes: ['', '.hint'] },
+  { prefix: 'band', ids: BANDS },
+  // Пустой префикс: эти ключи приходят из базы целиком. Функция состава тела
+  // возвращает не «почему не посчитано», а сам ключ словаря.
+  { prefix: '', ids: BODY_GAPS },
 ]
 
 const dynamicGaps = FAMILIES.flatMap(({ prefix, ids, suffixes }) =>
   ids.flatMap((id) =>
-    (suffixes ?? ['']).map((sfx) => `${prefix}.${id}${sfx}`).filter((key) => !(key in ru)),
+    (suffixes ?? [''])
+      .map((sfx) => `${prefix === '' ? id : `${prefix}.${id}`}${sfx}`)
+      .filter((key) => !(key in ru)),
   ),
 )
 check(

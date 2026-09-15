@@ -10,6 +10,13 @@ export type Profile = {
   sex: Sex | null
   heightCm: number | null
   weightKg: number | null
+  /**
+   * Последний известный процент жира и измеренный обмен. Оба необязательны:
+   * их даёт только взвешивание на умных весах, и без них всё считается
+   * ровно как раньше.
+   */
+  bodyFatPct: number | null
+  bmrKcal: number | null
   /** Тихие часы по местному времени. null - выключены. */
   quietFrom: number | null
   quietTo: number | null
@@ -43,6 +50,8 @@ export function useProfiles() {
         sex: row.sex as Sex | null,
         heightCm: row.height_cm,
         weightKg: row.weight_kg,
+        bodyFatPct: row.body_fat_pct,
+        bmrKcal: row.bmr_kcal,
         quietFrom: row.quiet_from,
         quietTo: row.quiet_to,
         language: row.language,
@@ -86,10 +95,51 @@ export function goalsFor(profile: Profile | undefined): Macros | null {
     weightKg: profile.weightKg,
     activityLevel: profile.activityLevel,
     goalDirection: profile.goalDirection,
+    // Тощая масса считается из процента и СЕГОДНЯШНЕГО веса, а не берётся
+    // готовой: процент меняется медленно, вес - каждый день, и норма белка
+    // должна идти за весом, а не застывать на дне последнего взвешивания
+    // на умных весах.
+    leanKg: leanFrom(profile),
+    bmrKcal: profile.bmrKcal,
   })
 }
 
-export type WeightPoint = { date: string; weightKg: number }
+/** Тощая масса из профиля. null - процента жира нет или веса нет. */
+export function leanFrom(profile: Profile): number | null {
+  if (profile.weightKg === null || profile.bodyFatPct === null) return null
+  return Math.round(profile.weightKg * (100 - profile.bodyFatPct)) / 100
+}
+
+/**
+ * Точка журнала веса.
+ *
+ * Вес обязателен, остальное - нет, и это не оговорка, а устройство раздела:
+ * обычные весы дают одно число, и день с одним числом полноценно участвует
+ * в графике, в расчёте расхода и в выписке. Умные добавляют состав, и тогда
+ * открывается то, что без него посчитать нельзя.
+ */
+export type WeightPoint = {
+  date: string
+  weightKg: number
+  bodyFatPct: number | null
+  musclePct: number | null
+  skeletalMusclePct: number | null
+  waterPct: number | null
+  visceral: number | null
+  bmrKcal: number | null
+}
+
+/** Расширенные поля - то, что приходит только с умных весов. */
+export type BodyFields = Omit<WeightPoint, 'date' | 'weightKg'>
+
+export const EMPTY_BODY: BodyFields = {
+  bodyFatPct: null,
+  musclePct: null,
+  skeletalMusclePct: null,
+  waterPct: null,
+  visceral: null,
+  bmrKcal: null,
+}
 
 export function useWeightLog(userId: string) {
   return useQuery({
@@ -97,11 +147,22 @@ export function useWeightLog(userId: string) {
     queryFn: async (): Promise<WeightPoint[]> => {
       const { data, error } = await supabase
         .from('weight_log')
-        .select('date, weight_kg')
+        .select(
+          'date, weight_kg, body_fat_pct, muscle_pct, skeletal_muscle_pct, water_pct, visceral, bmr_kcal',
+        )
         .eq('user_id', userId)
         .order('date')
       if (error) throw error
-      return data.map((r) => ({ date: r.date, weightKg: r.weight_kg }))
+      return data.map((r) => ({
+        date: r.date,
+        weightKg: r.weight_kg,
+        bodyFatPct: r.body_fat_pct,
+        musclePct: r.muscle_pct,
+        skeletalMusclePct: r.skeletal_muscle_pct,
+        waterPct: r.water_pct,
+        visceral: r.visceral,
+        bmrKcal: r.bmr_kcal,
+      }))
     },
     enabled: userId !== '',
   })
@@ -117,8 +178,26 @@ export function useWeightLog(userId: string) {
 export function useLogWeight() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (input: { userId: string; date: string; weightKg: number }) => {
-      const row = { user_id: input.userId, date: input.date, weight_kg: input.weightKg }
+    mutationFn: async (
+      input: { userId: string; date: string; weightKg: number } & Partial<BodyFields>,
+    ) => {
+      // Расширенные поля пишутся ВСЕГДА, в том числе как null.
+      //
+      // Иначе выходит ловушка: человек ввёл состав с умных весов, на другой
+      // день взвесился обычными и переписал день - проценты остались бы
+      // от прошлого взвешивания и выглядели бы сегодняшним измерением.
+      // Отсутствие данных - тоже данные, и стирать их надо явно.
+      const row = {
+        user_id: input.userId,
+        date: input.date,
+        weight_kg: input.weightKg,
+        body_fat_pct: input.bodyFatPct ?? null,
+        muscle_pct: input.musclePct ?? null,
+        skeletal_muscle_pct: input.skeletalMusclePct ?? null,
+        water_pct: input.waterPct ?? null,
+        visceral: input.visceral ?? null,
+        bmr_kcal: input.bmrKcal ?? null,
+      }
       const { error } = await supabase
         .from('weight_log')
         .upsert(row, { onConflict: 'user_id,date' })
@@ -135,9 +214,18 @@ export function useLogWeight() {
         return
       }
 
+      // В профиль уходит вес всегда, а состав - только когда он есть.
+      // Обычное взвешивание не должно стирать последний известный процент
+      // жира: состав - свойство тела, а не сегодняшнего дня, и человек,
+      // вставший на чужие весы в гостях, не должен из-за этого получить
+      // другую норму белка.
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ weight_kg: input.weightKg })
+        .update({
+          weight_kg: input.weightKg,
+          ...(input.bodyFatPct != null && { body_fat_pct: input.bodyFatPct }),
+          ...(input.bmrKcal != null && { bmr_kcal: input.bmrKcal }),
+        })
         .eq('user_id', input.userId)
       if (profileError) throw profileError
     },

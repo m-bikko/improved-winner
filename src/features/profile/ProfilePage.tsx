@@ -57,6 +57,8 @@ import {
   type Profile,
 } from './api'
 import { WeightChart } from './WeightChart'
+import { WeighInSheet } from './WeighInSheet'
+import { BodyComposition } from './BodyComposition'
 
 /** Бот, от имени которого приходят уведомления. */
 const BOT_LINK = '@improved_winner_nine_bot'
@@ -97,6 +99,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pinOpen, setPinOpen] = useState(false)
+  const [weighIn, setWeighIn] = useState(false)
 
   const preview = computeGoals({
     birthYear: birthYear === '' ? null : birthYear,
@@ -227,6 +230,16 @@ function ProfileForm({ profile }: { profile: Profile }) {
         </p>
         {weights.isSuccess ? <WeightChart points={weights.data} /> : <Loading />}
 
+        {/* Отдельная кнопка, а не поле в форме профиля. Взвешивание -
+            ежедневное действие с датой, и у него шесть необязательных полей
+            с умных весов; поле «вес» среди роста и года рождения этого
+            не вмещает. Поле в форме остаётся: оно задаёт вес тому, кто
+            ещё ни разу не взвешивался в приложении. */}
+        <Button variant="secondary" onClick={() => setWeighIn(true)}>
+          <Scale size={18} aria-hidden />
+          {t('body.weighInAction')}
+        </Button>
+
         {weights.isSuccess && weights.data.length > 0 && (
           <ul className="mt-3 border-t border-line pt-2 text-sm">
             {weights.data
@@ -241,6 +254,21 @@ function ProfileForm({ profile }: { profile: Profile }) {
           </ul>
         )}
       </div>
+
+      <BodyComposition
+        userId={profile.userId}
+        sex={sex}
+        heightCm={heightCm === '' ? null : heightCm}
+        weightKg={weightKg === '' ? null : weightKg}
+      />
+
+      {weighIn && (
+        <WeighInSheet
+          userId={profile.userId}
+          existing={weights.data?.find((p) => p.date === todayLocal()) ?? null}
+          onClose={() => setWeighIn(false)}
+        />
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <NumberField

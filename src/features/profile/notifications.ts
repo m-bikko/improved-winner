@@ -24,4 +24,5 @@ export const NOTIFICATION_KINDS: NotificationKind[] = [
   { id: 'wishlist' },
   { id: 'nudge' },
   { id: 'gratitude' },
+  { id: 'weigh_in' },
 ]
