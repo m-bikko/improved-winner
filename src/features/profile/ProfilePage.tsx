@@ -56,7 +56,7 @@ import {
   useWeightLog,
   type Profile,
 } from './api'
-import { WeightChart } from './WeightChart'
+import { BodyChart } from './BodyChart'
 import { WeighInSheet } from './WeighInSheet'
 import { BodyComposition } from './BodyComposition'
 
@@ -226,33 +226,19 @@ function ProfileForm({ profile }: { profile: Profile }) {
       <div className="rounded-xl bg-surface px-4 py-4 ring-1 ring-line">
         <p className="mb-3 flex items-center gap-2 text-sm font-medium">
           <Scale size={16} aria-hidden />
-          {t('profile.weight')}
+          {t('chart.title')}
         </p>
-        {weights.isSuccess ? <WeightChart points={weights.data} /> : <Loading />}
-
-        {/* Отдельная кнопка, а не поле в форме профиля. Взвешивание -
-            ежедневное действие с датой, и у него шесть необязательных полей
-            с умных весов; поле «вес» среди роста и года рождения этого
-            не вмещает. Поле в форме остаётся: оно задаёт вес тому, кто
-            ещё ни разу не взвешивался в приложении. */}
+        {/* Кнопка стоит НАД графиком: взвешивание - действие, за которым
+            сюда приходят, а график - то, ради чего его делают. Внизу карточки
+            её пришлось бы искать за фильтрами и таблицей. */}
         <Button variant="secondary" onClick={() => setWeighIn(true)}>
           <Scale size={18} aria-hidden />
           {t('body.weighInAction')}
         </Button>
 
-        {weights.isSuccess && weights.data.length > 0 && (
-          <ul className="mt-3 border-t border-line pt-2 text-sm">
-            {weights.data
-              .slice(-5)
-              .reverse()
-              .map((p) => (
-                <li key={p.date} className="flex justify-between py-1 text-muted">
-                  <span>{p.date}</span>
-                  <span>{t('profile.kgSuffix', { n: p.weightKg.toFixed(1) })}</span>
-                </li>
-              ))}
-          </ul>
-        )}
+        <div className="mt-4">
+          {weights.isSuccess ? <BodyChart points={weights.data} /> : <Loading />}
+        </div>
       </div>
 
       <BodyComposition

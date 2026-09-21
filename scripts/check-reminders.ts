@@ -39,6 +39,16 @@ async function main(): Promise<void> {
   try {
     await client.query('begin')
 
+    /*
+     * Живые настройки уведомлений убираем - транзакция откатится.
+     *
+     * Проверка спрашивает, встал ли запрос в очередь, а `tg_notify_self`
+     * молча выходит, если этот вид выключен. Человек выключил напоминания
+     * о еде у себя в приложении - и исправная рассылка стала выглядеть
+     * сломанной. Проверка отвечает за код, а не за чужие галочки.
+     */
+    await client.query('delete from public.notification_settings')
+
     const { rows: members } = await client.query<{ user_id: string; nickname: string }>(
       `select p.user_id, p.nickname from public.profiles p
          join public.app_members m on m.user_id = p.user_id order by p.nickname limit 1`,

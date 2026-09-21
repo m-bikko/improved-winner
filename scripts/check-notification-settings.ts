@@ -89,6 +89,17 @@ async function main(): Promise<void> {
         : `без вида: ${silent.map((s) => s.proname).join(', ')}`,
     )
 
+    /*
+     * Живые настройки убираем - внутри транзакции, она откатится.
+     *
+     * Без этого проверка зависела от того, что человек включил у себя
+     * в приложении: она спрашивала «по умолчанию всё включено?» у вида,
+     * для которого строки просто не было. Стоило выключить напоминания
+     * о еде - и исправная база выглядела сломанной. Проверка обязана
+     * отвечать за код, а не за чужие галочки.
+     */
+    await client.query('delete from public.notification_settings')
+
     const allowed = async (kind: string, channel: string, who = a.user_id): Promise<boolean> =>
       (await one('select public.notify_allowed($1, $2, $3)::text as v', [who, kind, channel])) ===
       'true'
