@@ -49,10 +49,29 @@ export type Band = (typeof BANDS)[number]
 export const BODY_GAPS = ['body.none', 'body.fewMeasures', 'body.shortSpan'] as const
 export type BodyGap = (typeof BODY_GAPS)[number]
 
-/** Килограммы из процента. null - процента нет, и считать нечего. */
+/**
+ * Округление до десятой - ровно так же, как это делает `weight_log_v`.
+ *
+ * Одним шагом, а не двумя, и это не придирка. Раньше килограммы считались
+ * с точностью до сотой, а на экран выводились через `toFixed(1)` - двойное
+ * округление. На числах 96.75 кг и 29.1 % получалось 28.15, что в двоичной
+ * записи хранится как 28.149999999999998, и `toFixed` давал 28.1. База
+ * в той же строке показывала 28.2. Одно приложение, два экрана, разные числа.
+ */
+function round1(value: number): number {
+  return Math.round(value * 10) / 10
+}
+
+/**
+ * Килограммы из процента. null - процента нет, и считать нечего.
+ *
+ * Делится на 10, а не на 100 с последующим умножением: лишняя операция
+ * над числом с плавающей точкой - лишний шанс потерять ту самую пятёрку
+ * в конце.
+ */
 export function partKg(weightKg: number, pct: number | null): number | null {
   if (pct === null) return null
-  return Math.round(weightKg * pct) / 100
+  return round1((weightKg * pct) / 100)
 }
 
 /**
@@ -64,7 +83,7 @@ export function partKg(weightKg: number, pct: number | null): number | null {
  */
 export function leanKg(weightKg: number, bodyFatPct: number | null): number | null {
   if (bodyFatPct === null) return null
-  return Math.round(weightKg * (100 - bodyFatPct)) / 100
+  return round1((weightKg * (100 - bodyFatPct)) / 100)
 }
 
 /** Индекс массы тела. Для полноты картины, а не как показатель сам по себе. */

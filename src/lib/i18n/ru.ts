@@ -1423,7 +1423,7 @@ export const ru = {
   'chart.range.quarter': '3 месяца',
   'chart.range.year': 'Год',
   'chart.range.all': 'Всё',
-  'chart.max': 'Больше трёх линий сразу не различить - выключите одну, чтобы добавить другую.',
+  'chart.max': 'Больше трёх показателей сразу не помещается - выключите один, чтобы добавить другой.',
   'chart.noData': 'За этот период взвешиваний нет.',
   'chart.needMore': 'Нужно хотя бы два измерения за период.',
   'chart.asTable': 'Таблицей',
@@ -1434,6 +1434,7 @@ export const ru = {
   'chart.mode': 'Показ',
   'chart.mode.delta': 'Изменение',
   'chart.mode.abs': 'Значения',
+  'chart.panelAria': '{name}: с {from} до {to}. То же таблицей - кнопка под графиком.',
 } as const
 
 export type Key = keyof typeof ru

@@ -1417,7 +1417,7 @@ export const en: Dict = {
   'chart.range.quarter': '3 months',
   'chart.range.year': 'Year',
   'chart.range.all': 'All',
-  'chart.max': 'More than three lines at once cannot be told apart - turn one off to add another.',
+  'chart.max': 'Three metrics at a time is the limit - turn one off to add another.',
   'chart.noData': 'No weigh-ins in this period.',
   'chart.needMore': 'At least two measurements in the period are needed.',
   'chart.asTable': 'As a table',
@@ -1428,4 +1428,5 @@ export const en: Dict = {
   'chart.mode': 'Display',
   'chart.mode.delta': 'Change',
   'chart.mode.abs': 'Values',
+  'chart.panelAria': '{name}: from {from} to {to}. The same as a table - the button below the chart.',
 }

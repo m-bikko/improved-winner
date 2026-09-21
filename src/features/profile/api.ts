@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { enqueue, isRetriable } from '@/lib/outbox'
 import { supabase } from '@/lib/supabase'
 import { computeGoals, type ActivityLevel, type GoalDirection, type Macros, type Sex } from '@/lib/nutrition'
+import { leanKg } from '@/lib/body'
 
 export type Profile = {
   userId: string
@@ -107,7 +108,7 @@ export function goalsFor(profile: Profile | undefined): Macros | null {
 /** Тощая масса из профиля. null - процента жира нет или веса нет. */
 export function leanFrom(profile: Profile): number | null {
   if (profile.weightKg === null || profile.bodyFatPct === null) return null
-  return Math.round(profile.weightKg * (100 - profile.bodyFatPct)) / 100
+  return leanKg(profile.weightKg, profile.bodyFatPct)
 }
 
 /**

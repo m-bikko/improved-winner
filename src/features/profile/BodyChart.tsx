@@ -121,19 +121,24 @@ const RANGES = [
 ] as const satisfies readonly { days: number; key: Key }[]
 
 /**
- * Что показывать по вертикали.
+ * Два способа показать одно и то же, и каждый отвечает на свой вопрос.
  *
- * `abs` - сами значения. Честно про соотношение: видно, что жира 25 кг
- * при весе 94.
+ * `abs` - настоящие значения, **каждый показатель на своей панели**.
+ * Отвечает на «сколько у меня сейчас и куда это идёт». Панелями, а не одной
+ * линией поверх другой, по простой причине: на общей вертикали вес 96 кг
+ * и жир 27 кг разносит так, что собственное движение каждого - полтора
+ * килограмма - становится невидимым. Получался график, на котором «видно
+ * только вес». Своя шкала у каждой панели - это не вторая ось: линии
+ * не сравниваются между собой, они стоят рядом, и подписи у каждой свои.
  *
- * `delta` - изменение от начала периода, все линии стартуют с нуля.
- * Нужен потому, что на одной оси вес и жир различаются вчетверо, и обе линии
- * выглядят плоскими: реальное движение в полтора килограмма теряется
- * на шкале высотой в восемьдесят. Вторую ось добавлять нельзя - это враньё
- * о соотношении; приведение к общему началу - как раз то, чем такую пару
- * и разводят.
+ * `delta` - изменение от начала периода, все линии на одном поле и стартуют
+ * с нуля. Отвечает на другой вопрос: «что менялось сильнее». Это единственный
+ * честный способ положить разномасштабные величины на одну ось - привести их
+ * к общему началу.
+ *
+ * Умолчание - `abs`: чаще нужно знать, сколько сейчас.
  */
-export const MODES = ['delta', 'abs'] as const
+export const MODES = ['abs', 'delta'] as const
 export type Mode = (typeof MODES)[number]
 
 const SLOTS = 3
@@ -148,11 +153,7 @@ export function BodyChart({ points }: { points: WeightPoint[] }) {
   const [unit, setUnit] = useState<Unit>('kg')
   const [days, setDays] = useState(30)
   const [table, setTable] = useState(false)
-  // Больше одной линии - по умолчанию изменение: сравнивать движение
-  // разномасштабных величин иначе нельзя.
-  const [mode, setMode] = useState<Mode>(() =>
-    initial(points).filter((s) => s !== null).length > 1 ? 'delta' : 'abs',
-  )
+  const [mode, setMode] = useState<Mode>('abs')
   // Слот закреплён за показателем, пока тот включён. Выключение одной линии
   // не перекрашивает оставшиеся.
   const [slots, setSlots] = useState<(MetricId | null)[]>(() => initial(points))
@@ -245,7 +246,7 @@ export function BodyChart({ points }: { points: WeightPoint[] }) {
 
       <div>
         <p className="mb-1.5 px-0.5 text-xs text-muted">{t('chart.show')}</p>
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+        <div className="flex flex-wrap gap-2">
           {available.map((metric) => {
             const on = slots.includes(metric)
             const color = SLOT_COLOR[slots.indexOf(metric)]
@@ -256,7 +257,7 @@ export function BodyChart({ points }: { points: WeightPoint[] }) {
                 onClick={() => setSlots((prev) => toggleSlot(prev, metric))}
                 disabled={!on && full}
                 aria-pressed={on}
-                className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm
                             ring-1 disabled:opacity-40 ${
                               on ? 'bg-raised ring-line' : 'bg-surface text-muted ring-line'
                             }`}
@@ -282,6 +283,8 @@ export function BodyChart({ points }: { points: WeightPoint[] }) {
         </p>
       ) : table ? (
         <Readout series={drawable} unit={unit} />
+      ) : mode === 'abs' ? (
+        <Panels series={drawable} unit={unit} />
       ) : (
         <Plot series={drawable} unit={unit} mode={mode} />
       )}
@@ -542,6 +545,186 @@ function Plot({ series, unit, mode }: { series: Series[]; unit: Unit; mode: Mode
 }
 
 /**
+ * Настоящие значения - по панели на показатель.
+ *
+ * Ось времени общая у всех панелей, вертикальная - своя: только так движение
+ * жира видно наравне с движением веса. Перекрестье тоже общее - оно и делает
+ * стопку панелей единым графиком, а не тремя картинками: ведя пальцем,
+ * человек читает все показатели одного дня сразу.
+ */
+function Panels({ series, unit }: { series: Series[]; unit: Unit }) {
+  const dates = [...new Set(series.flatMap((s) => s.pts.map((p) => p.date)))].sort()
+  const [hover, setHover] = useState<string | null>(null)
+
+  const times = dates.map((d) => fromLocalISO(d).getTime())
+  const tMin = Math.min(...times)
+  const tMax = Math.max(...times)
+
+  return (
+    <div className="flex flex-col gap-4">
+      {series.map((s) => (
+        <Panel
+          key={s.metric}
+          series={s}
+          unit={unit}
+          tMin={tMin}
+          tMax={tMax}
+          hover={hover}
+          onHover={setHover}
+          dates={dates}
+        />
+      ))}
+      <div className="flex justify-between px-0.5 text-xs text-muted">
+        <span>{formatDayMonth(fromLocalISO(dates[0] ?? ''))}</span>
+        <span>{formatDayMonth(fromLocalISO(dates[dates.length - 1] ?? ''))}</span>
+      </div>
+    </div>
+  )
+}
+
+const PANEL_HEIGHT = 74
+
+function Panel({
+  series,
+  unit,
+  tMin,
+  tMax,
+  hover,
+  onHover,
+  dates,
+}: {
+  series: Series
+  unit: Unit
+  tMin: number
+  tMax: number
+  hover: string | null
+  onHover: (date: string | null) => void
+  dates: string[]
+}) {
+  const t = useT()
+  const tSpan = tMax - tMin || 1
+
+  const values = series.pts.map((p) => p.value)
+  const vMin = Math.min(...values)
+  const vMax = Math.max(...values)
+  const pad = (vMax - vMin) * 0.18 || Math.max(Math.abs(vMax) * 0.02, 0.5)
+  const lo = vMin - pad
+  const hi = vMax + pad
+
+  const x = (iso: string): number =>
+    PAD_X + ((fromLocalISO(iso).getTime() - tMin) / tSpan) * (WIDTH - PAD_X * 2)
+  const y = (v: number): number => 10 + (1 - (v - lo) / (hi - lo)) * (PANEL_HEIGHT - 20)
+
+  const at = hover === null ? undefined : series.pts.find((p) => p.date === hover)
+  const shown = at ?? series.pts[series.pts.length - 1]
+
+  const pick = (clientX: number, rect: DOMRect): void => {
+    const time = tMin + ((clientX - rect.left) / rect.width) * tSpan
+    let best = dates[0] ?? null
+    let bestGap = Infinity
+    for (const d of dates) {
+      const gap = Math.abs(fromLocalISO(d).getTime() - time)
+      if (gap < bestGap) {
+        bestGap = gap
+        best = d
+      }
+    }
+    onHover(best)
+  }
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="flex items-center gap-1.5 text-sm">
+          <span
+            aria-hidden
+            className="size-2.5 shrink-0 rounded-full"
+            style={{ background: series.color }}
+          />
+          {t(LABEL_OF[series.metric])}
+        </span>
+        <span className="text-sm">
+          <span className="font-medium">{shown ? format(shown.value, unit) : '—'}</span>
+          {hover !== null && (
+            <span className="ml-1.5 text-xs text-muted">
+              {formatDayMonth(fromLocalISO(hover))}
+            </span>
+          )}
+        </span>
+      </div>
+
+      <svg
+        viewBox={`0 0 ${WIDTH} ${PANEL_HEIGHT}`}
+        className="w-full touch-none"
+        role="img"
+        aria-label={t('chart.panelAria', {
+          name: t(LABEL_OF[series.metric]),
+          from: format(series.pts[0]?.value ?? 0, unit),
+          to: format(series.pts[series.pts.length - 1]?.value ?? 0, unit),
+        })}
+        onPointerDown={(e) => pick(e.clientX, e.currentTarget.getBoundingClientRect())}
+        onPointerMove={(e) => {
+          if (e.buttons > 0 || e.pointerType === 'mouse') {
+            pick(e.clientX, e.currentTarget.getBoundingClientRect())
+          }
+        }}
+        onPointerLeave={() => onHover(null)}
+      >
+        {[lo + pad, hi - pad].map((value, i) => (
+          <g key={i}>
+            <line
+              x1={PAD_X}
+              x2={WIDTH - PAD_X}
+              y1={y(value)}
+              y2={y(value)}
+              stroke="var(--color-line)"
+              strokeWidth="1"
+            />
+            <text x={PAD_X + 2} y={y(value) - 3} className="fill-muted" fontSize="9">
+              {format(value, unit)}
+            </text>
+          </g>
+        ))}
+
+        {hover !== null && (
+          <line
+            x1={x(hover)}
+            x2={x(hover)}
+            y1="2"
+            y2={PANEL_HEIGHT - 2}
+            stroke="var(--color-muted)"
+            strokeWidth="1"
+            strokeDasharray="3 3"
+          />
+        )}
+
+        <path
+          d={series.pts
+            .map((p, i) => `${i === 0 ? 'M' : 'L'}${x(p.date).toFixed(1)},${y(p.value).toFixed(1)}`)
+            .join(' ')}
+          fill="none"
+          stroke={series.color}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {shown && (
+          <circle
+            cx={x(shown.date)}
+            cy={y(shown.value)}
+            r="4"
+            fill={series.color}
+            stroke="var(--color-surface)"
+            strokeWidth="2"
+          />
+        )}
+      </svg>
+    </div>
+  )
+}
+
+/**
  * Те же данные таблицей.
  *
  * Не запасной вариант «на случай если», а обязательная часть: линия
@@ -609,14 +792,14 @@ function Chips({
   return (
     <div>
       <p className="mb-1.5 px-0.5 text-xs text-muted">{label}</p>
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+      <div className="flex flex-wrap gap-2">
         {items.map((item) => (
           <button
             key={item.id}
             type="button"
             onClick={() => onPick(item.id)}
             aria-pressed={item.active}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-sm ring-1 ${
+            className={`rounded-full px-3 py-1.5 text-sm ring-1 ${
               item.active
                 ? 'bg-accent text-accent-ink ring-accent'
                 : 'bg-surface text-muted ring-line'

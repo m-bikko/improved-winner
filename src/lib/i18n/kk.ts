@@ -1418,7 +1418,7 @@ export const kk: Dict = {
   'chart.range.quarter': '3 ай',
   'chart.range.year': 'Жыл',
   'chart.range.all': 'Бәрі',
-  'chart.max': 'Бір мезгілде үш сызықтан көбін ажырату мүмкін емес - біреуін өшіріп, басқасын қосыңыз.',
+  'chart.max': 'Бір мезгілде үш көрсеткіштен көбі сыймайды - біреуін өшіріп, басқасын қосыңыз.',
   'chart.noData': 'Бұл кезеңде өлшену жоқ.',
   'chart.needMore': 'Кезеңде кемінде екі өлшем қажет.',
   'chart.asTable': 'Кестемен',
@@ -1429,4 +1429,5 @@ export const kk: Dict = {
   'chart.mode': 'Көрсетілім',
   'chart.mode.delta': 'Өзгеріс',
   'chart.mode.abs': 'Мәндер',
+  'chart.panelAria': '{name}: {from} мәнінен {to} мәніне дейін. Дәл сол кестемен - график астындағы түйме.',
 }
