@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, type CSSProperties, type ReactNode } from 'react'
 import {
   CalendarHeart,
   ChevronRight,
@@ -21,6 +21,8 @@ import { Tag } from '@/ui/Chip'
 import { Avatar, personTone } from '@/ui/Avatar'
 import { AnimatedNumber } from '@/ui/AnimatedNumber'
 import { motion } from 'motion/react'
+import { Sparkles } from '@/ui/Sparkles'
+import { ShineBorder } from '@/ui/ShineBorder'
 import type { Tone } from '@/ui/tones'
 import { useCheckins, useStreaks } from '@/features/checkin/api'
 import { STATE_BY_ID } from '@/features/checkin/states'
@@ -176,7 +178,12 @@ function Hero({
 }) {
   const t = useT()
   return (
-    <section className="relative isolate flex items-center gap-3 overflow-hidden rounded-[28px] bg-surface py-5 pr-4 pl-5 shadow-card">
+    <section
+      className="relative isolate flex items-center gap-3 overflow-hidden rounded-[28px] bg-surface py-5 pr-4 pl-5 shadow-card"
+      style={{ '--pair-a': toneVar(myTone), '--pair-b': toneVar(partnerTone) } as CSSProperties}
+    >
+      {/* Оба отметились - по рамке пошло сияние в цветах пары */}
+      {together && <ShineBorder colors={[toneVar(myTone), 'var(--c-accent)', toneVar(partnerTone)]} />}
       <div aria-hidden className="aurora">
         <span style={{ background: `radial-gradient(closest-side, ${toneVar(myTone)}, transparent)` }} />
         <span style={{ background: `radial-gradient(closest-side, ${toneVar(partnerTone)}, transparent)` }} />
@@ -184,7 +191,7 @@ function Hero({
       </div>
       <div className="min-w-0 flex-1">
         <p className="font-display text-[22px] leading-tight font-extrabold tracking-tight">
-          {t(greetingKey(new Date().getHours()))}, {name}
+          {t(greetingKey(new Date().getHours()))}, <span className="pair-text">{name}</span>
         </p>
         {/* Не formatDayLabel: он вернёт «Сегодня», а так уже называется сам
             раздел - вышло бы слово «Сегодня» дважды подряд. Здесь нужна дата */}
@@ -192,13 +199,20 @@ function Hero({
           {formatWeekdayDate(fromLocalISO(today))}
         </p>
       </div>
-      <PairMark
-        name={name}
-        partnerName={partnerName}
-        myTone={myTone}
-        partnerTone={partnerTone}
-        together={together}
-      />
+      {/* Звёзд вокруг колец всегда пара, а когда отметились оба - вдвое больше */}
+      <Sparkles
+        count={together ? 6 : 3}
+        colors={[toneVar(myTone), 'var(--t-amber)', toneVar(partnerTone)]}
+        className="shrink-0"
+      >
+        <PairMark
+          name={name}
+          partnerName={partnerName}
+          myTone={myTone}
+          partnerTone={partnerTone}
+          together={together}
+        />
+      </Sparkles>
     </section>
   )
 }
@@ -613,6 +627,8 @@ function NextDate({ list }: { list: { title: string; days: number }[] }) {
       title={t('today.nextDate')}
       value={value}
       caption={next.title}
+      // Меньше недели до праздника - число начинает искриться
+      sparkle={next.days <= 7}
     />
   )
 }
@@ -625,6 +641,7 @@ function MiniTile({
   title,
   value,
   caption,
+  sparkle = false,
 }: {
   to: string
   icon: LucideIcon
@@ -632,6 +649,7 @@ function MiniTile({
   title: string
   value: string
   caption: string
+  sparkle?: boolean
 }) {
   return (
     <CardLink to={to} className="flex min-w-0 flex-col p-4">
@@ -639,7 +657,15 @@ function MiniTile({
         <IconBadge icon={icon} tone={tone} size="sm" />
         <span className="min-w-0 truncate text-[13px] font-semibold text-muted">{title}</span>
       </span>
-      <span className="mt-3 truncate font-display text-[22px] leading-tight font-extrabold">{value}</span>
+      {sparkle ? (
+        // Звёзды выходят за край числа - обёртка не должна их обрезать,
+        // поэтому truncate у самого текста, а не у обёртки
+        <Sparkles count={4} colors={['var(--t-teal)', 'var(--t-amber)', 'var(--c-accent)']} className="mt-3 max-w-full self-start">
+          <span className="truncate font-display text-[22px] leading-tight font-extrabold">{value}</span>
+        </Sparkles>
+      ) : (
+        <span className="mt-3 truncate font-display text-[22px] leading-tight font-extrabold">{value}</span>
+      )}
       <span className="mt-0.5 line-clamp-2 text-sm text-muted">{caption}</span>
     </CardLink>
   )

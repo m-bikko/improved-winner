@@ -51,13 +51,15 @@ export function NudgeButton() {
       disabled={cooling || send.isPending}
       whileTap={cooling ? {} : { scale: 0.97 }}
       transition={SPRING}
-      className={`flex min-h-16 items-center justify-center gap-2.5 rounded-3xl px-4 font-display
+      className={`relative flex min-h-16 items-center justify-center gap-2.5 overflow-hidden rounded-3xl px-4 font-display
                   text-[17px] font-bold transition-colors ${
                     cooling
                       ? 'bg-surface text-muted shadow-card'
                       : 'bg-accent text-accent-ink shadow-[0_12px_28px_-12px_var(--c-accent)]'
                   }`}
     >
+      {/* Редкий блик зовёт нажать; пока кнопка остывает, звать некуда */}
+      {!cooling && <span aria-hidden className="shimmer" />}
       {/* Сердце «бьётся» один раз в момент отправки - ответ на нажатие,
           который видно, даже если кнопка тут же ушла в остывание */}
       <motion.span

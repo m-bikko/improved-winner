@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { ChevronLeft, ChevronRight, Heart, ScanFace } from 'lucide-react'
 import { ACCOUNTS, PIN_LENGTH, type Account } from '@/lib/accounts'
 import { useT, type Translate } from '@/lib/i18n'
@@ -7,6 +7,7 @@ import { useAuth, type SignInFailure } from './AuthProvider'
 import { PinPad } from './PinPad'
 import { APP_NAME } from '@/lib/appName'
 import { Avatar } from '@/ui/Avatar'
+import { Sparkles } from '@/ui/Sparkles'
 
 /** Задержка после N подряд неверных попыток, в секундах. */
 const LOCK_SECONDS = [0, 0, 0, 5, 15, 30, 60] as const
@@ -133,10 +134,19 @@ export function LoginScreen() {
     return (
       <Backdrop>
         <div className="flex flex-col items-center gap-3 text-center">
-          <span className="flex size-16 items-center justify-center rounded-[22px] bg-accent text-accent-ink shadow-[0_14px_30px_-12px_var(--c-accent)]">
-            <Heart size={30} className="fill-current" aria-hidden />
-          </span>
-          <p className="font-display text-[28px] font-extrabold tracking-tight">{APP_NAME}</p>
+          {/* Первое, что видно после установки: знак в искрах и имя,
+              переливающееся цветами двоих */}
+          <Sparkles count={5} colors={['var(--c-accent)', 'var(--t-amber)', 'var(--t-sky)']}>
+            <span className="flex size-16 items-center justify-center rounded-[22px] bg-accent text-accent-ink shadow-[0_14px_30px_-12px_var(--c-accent)]">
+              <Heart size={30} className="fill-current" aria-hidden />
+            </span>
+          </Sparkles>
+          <p
+            className="font-display text-[28px] font-extrabold tracking-tight"
+            style={{ '--pair-a': 'var(--t-rose)', '--pair-b': 'var(--t-sky)' } as CSSProperties}
+          >
+            <span className="pair-text">{APP_NAME}</span>
+          </p>
           <h1 className="text-base text-muted">{t('login.who')}</h1>
         </div>
         <div className="flex w-full max-w-xs flex-col gap-3">
