@@ -98,21 +98,33 @@ export function MonthCalendar({
   return (
     <Sheet open={open} onClose={onClose} title={t('diary.calendar')}>
       <div className="pb-2">
-        <div className="flex items-center justify-between py-2">
-          <button type="button" onClick={() => shift(-1)} aria-label={t('cal.prevMonth')} className="p-3 text-muted">
-            <ChevronLeft size={20} aria-hidden />
+        {/* Переключатель месяца - той же капсулой, что переключатель дня
+            в дневнике: один жест в обоих местах */}
+        <div className="mb-3 flex items-center gap-1 rounded-2xl bg-surface p-1 shadow-card">
+          <button
+            type="button"
+            onClick={() => shift(-1)}
+            aria-label={t('cal.prevMonth')}
+            className="flex size-11 items-center justify-center rounded-xl text-muted transition-colors active:bg-raised"
+          >
+            <ChevronLeft size={22} aria-hidden />
           </button>
-          <span className="text-base font-medium">
+          <span className="min-w-0 flex-1 truncate text-center font-display text-[17px] font-bold">
             {monthName(cursor.month)} {cursor.year}
           </span>
-          <button type="button" onClick={() => shift(1)} aria-label={t('cal.nextMonth')} className="p-3 text-muted">
-            <ChevronRight size={20} aria-hidden />
+          <button
+            type="button"
+            onClick={() => shift(1)}
+            aria-label={t('cal.nextMonth')}
+            className="flex size-11 items-center justify-center rounded-xl text-muted transition-colors active:bg-raised"
+          >
+            <ChevronRight size={22} aria-hidden />
           </button>
         </div>
 
         <div className="mb-1 grid grid-cols-7 gap-1">
           {weekdayShortNames().map((w) => (
-            <span key={w} className="py-1 text-center text-xs text-muted">
+            <span key={w} className="py-1 text-center text-[13px] font-medium text-muted">
               {w}
             </span>
           ))}
@@ -144,7 +156,7 @@ export function MonthCalendar({
           </div>
         )}
 
-        <div className="mt-5 flex flex-col gap-1.5 text-xs text-muted">
+        <div className="mt-4 flex flex-col gap-1.5 px-1 text-[13px] text-muted">
           <span className="flex items-center gap-2">
             <span className="size-2.5 rounded-full bg-accent" aria-hidden />
             {t('cal.outerRing')}
@@ -196,8 +208,8 @@ function DayCell({
         kcal: Math.round(kcalRatio * 100),
         protein: Math.round(proteinRatio * 100),
       })}
-      className={`relative flex aspect-square items-center justify-center rounded-xl
-                  transition-colors active:bg-raised ${isSelected ? 'bg-raised' : ''}`}
+      className={`relative flex aspect-square items-center justify-center rounded-2xl
+                  transition-colors active:bg-raised ${isSelected ? 'bg-surface shadow-card' : ''}`}
     >
       <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="absolute inset-0 size-full" aria-hidden>
         <g transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}>
@@ -206,8 +218,8 @@ function DayCell({
         </g>
       </svg>
       <span
-        className={`relative text-xs ${
-          isToday ? 'font-semibold text-accent' : empty ? 'text-muted' : 'text-ink'
+        className={`relative text-[13px] tabular-nums ${
+          isToday ? 'font-bold text-accent' : empty ? 'text-muted' : 'font-medium text-ink'
         }`}
       >
         {day}

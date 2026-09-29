@@ -1,12 +1,12 @@
 import { useT } from '@/lib/i18n'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import {
   Bell,
   CalendarClock,
   CalendarDays,
   Check,
   List,
-  Plus,
+  ListChecks,
   Repeat,
   TriangleAlert,
 } from 'lucide-react'
@@ -19,6 +19,9 @@ import { useTasks, useToggleTask, type Task } from './api'
 import { TaskEditor } from './TaskEditor'
 import { TasksCalendar, occurrencesOn } from './TasksCalendar'
 import { describeRecurrence } from './recurrence'
+import { Segmented } from '@/ui/Segmented'
+import { Fab } from '@/ui/Fab'
+import { Card, SectionTitle } from '@/ui/Card'
 
 export function TasksPage() {
   const t = useT()
@@ -63,17 +66,15 @@ export function TasksPage() {
     void toggle.mutateAsync({ task, done, userId })
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pt-3 pb-28">
-      <div className="mb-3 flex gap-1 rounded-xl bg-raised p-1">
-        <ViewTab active={asCalendar} onClick={() => setAsCalendar(true)}>
-          <CalendarDays size={15} aria-hidden />
-          {t('task.calendar')}
-        </ViewTab>
-        <ViewTab active={!asCalendar} onClick={() => setAsCalendar(false)}>
-          <List size={15} aria-hidden />
-          {t('task.list')}
-        </ViewTab>
-      </div>
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+      <Segmented
+        value={asCalendar ? 'calendar' : 'list'}
+        onChange={(v) => setAsCalendar(v === 'calendar')}
+        options={[
+          { value: 'calendar', label: t('task.calendar'), icon: CalendarDays },
+          { value: 'list', label: t('task.list'), icon: List },
+        ]}
+      />
 
       {tasks.isPending && <Loading />}
 
@@ -81,14 +82,14 @@ export function TasksPage() {
         <>
           <TasksCalendar tasks={all} selected={selected} onSelect={setSelected} />
 
-          <p className="mt-5 mb-2 text-sm text-muted">{formatDayLabel(selected)}</p>
+          <SectionTitle className="mt-2">{formatDayLabel(selected)}</SectionTitle>
 
           {dayItems.length === 0 ? (
-            <p className="rounded-xl bg-surface px-4 py-6 text-center text-sm text-muted ring-1 ring-line">
+            <Card className="px-4 py-6 text-center text-[15px] text-muted">
               {t('task.dayEmpty')}
-            </p>
+            </Card>
           ) : (
-            <ul className="flex flex-col gap-2">
+            <TaskList>
               {dayItems.map((item) => (
                 <li key={`${item.task.id}-${item.at.toISOString()}`}>
                   <TaskRow
@@ -99,13 +100,13 @@ export function TasksPage() {
                   />
                 </li>
               ))}
-            </ul>
+            </TaskList>
           )}
 
           {undated.length > 0 && (
             <>
-              <p className="mt-6 mb-2 text-sm text-muted">{t('task.undated')}</p>
-              <ul className="flex flex-col gap-2">
+              <SectionTitle className="mt-2">{t('task.undated')}</SectionTitle>
+              <TaskList>
                 {undated.map((task) => (
                   <li key={task.id}>
                     <TaskRow
@@ -116,7 +117,7 @@ export function TasksPage() {
                     />
                   </li>
                 ))}
-              </ul>
+              </TaskList>
             </>
           )}
         </>
@@ -124,13 +125,15 @@ export function TasksPage() {
         <>
           {tasks.isSuccess && all.length === 0 && (
             <EmptyState
+              icon={ListChecks}
+              tone="sky"
               title={t('task.emptyTitle')}
               hint={t('task.emptyHint')}
             />
           )}
 
           {[...open, ...undated].length > 0 && (
-            <ul className="flex flex-col gap-2">
+            <TaskList>
               {[...open, ...undated].map((task) => (
                 <li key={task.id}>
                   <TaskRow
@@ -141,13 +144,13 @@ export function TasksPage() {
                   />
                 </li>
               ))}
-            </ul>
+            </TaskList>
           )}
 
           {done.length > 0 && (
             <>
-              <p className="mt-6 mb-2 text-sm text-muted">{t('task.doneSection')}</p>
-              <ul className="flex flex-col gap-2">
+              <SectionTitle className="mt-2">{t('task.doneSection')}</SectionTitle>
+              <TaskList>
                 {done.map((task) => (
                   <li key={task.id}>
                     <TaskRow
@@ -158,23 +161,13 @@ export function TasksPage() {
                     />
                   </li>
                 ))}
-              </ul>
+              </TaskList>
             </>
           )}
         </>
       )}
 
-      <button
-        type="button"
-        onClick={() => setEditing('new')}
-        aria-label={t('task.new')}
-        className="fixed right-5 bottom-6 z-20 flex size-14 items-center justify-center
-                   rounded-full bg-accent text-accent-ink shadow-lg
-                   transition-transform active:scale-95"
-        style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
-      >
-        <Plus size={26} aria-hidden />
-      </button>
+      <Fab onClick={() => setEditing('new')} label={t('task.new')} />
 
       {editing && (
         <TaskEditor
@@ -187,6 +180,21 @@ export function TasksPage() {
         />
       )}
     </div>
+  )
+}
+
+/**
+ * Задачи группы - строками одной карточки.
+ *
+ * Раньше каждая задача была отдельной обведённой плашкой, и пять задач
+ * читались как пять разных блоков. Строка во всю ширину с разделителем
+ * держит группу вместе и оставляет всю ширину под нажатие.
+ */
+function TaskList({ children }: { children: ReactNode }) {
+  return (
+    <Card as="div" className="overflow-hidden">
+      <ul className="divide-y divide-line">{children}</ul>
+    </Card>
   )
 }
 
@@ -209,47 +217,71 @@ function TaskRow({
   const overdue = !isDone && at !== null && at <= new Date()
 
   return (
-    <div
-      className={`flex items-start gap-3 rounded-xl bg-surface px-3 py-3 ring-1 ${
-        overdue ? 'ring-danger/40' : 'ring-line'
-      }`}
-    >
+    <div className="flex items-start">
+      {/* Круг 26px, а область нажатия 44px: попасть в маленький квадрат
+          на ходу большим пальцем было задачей само по себе, а промах
+          открывал редактор вместо отметки */}
       <button
         type="button"
         onClick={onToggle}
         aria-label={t(isDone ? 'task.reopen' : 'task.doneSection')}
-        className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md ring-1 transition-colors ${
-          isDone ? 'bg-carbs text-white ring-carbs' : 'ring-line'
-        }`}
+        className="group mt-0.5 ml-1.5 flex size-11 shrink-0 items-center justify-center rounded-full"
       >
-        {isDone && <Check size={15} aria-hidden />}
+        <span
+          className={`flex size-[26px] items-center justify-center rounded-full border-2 transition-[background-color,border-color,transform]
+                      duration-150 group-active:scale-90 ${
+                        isDone
+                          ? 'border-carbs bg-carbs text-white'
+                          : overdue
+                            ? 'border-danger/70'
+                            : 'border-muted/45'
+                      }`}
+        >
+          {isDone && <Check size={16} strokeWidth={3} aria-hidden />}
+        </span>
       </button>
 
-      <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
-        <span className={`block ${isDone ? 'text-muted line-through' : ''}`}>{task.title}</span>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="min-h-14 min-w-0 flex-1 self-stretch py-3 pr-4 pl-1 text-left transition-colors active:bg-raised"
+      >
+        <span
+          className={`block text-[15px] font-medium ${isDone ? 'text-muted line-through' : ''}`}
+        >
+          {task.title}
+        </span>
 
         {task.notes && !isDone && (
-          <span className="mt-0.5 line-clamp-2 block text-sm text-muted">{task.notes}</span>
+          <span className="mt-0.5 line-clamp-2 text-[13px] text-muted">{task.notes}</span>
         )}
 
-        {!isDone && (
-          <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
-            {at && (
-              <span className={`flex items-center gap-1 ${overdue ? 'text-danger' : 'text-muted'}`}>
-                {overdue ? <TriangleAlert size={12} aria-hidden /> : <CalendarClock size={12} aria-hidden />}
-                {overdue ? t('task.overdue') : ''}
-                {formatDueAt(at.toISOString())}
-              </span>
-            )}
+        {!isDone && (at !== null || task.recurrence !== null) && (
+          <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]">
+            {at &&
+              (overdue ? (
+                // Просрочка - плашкой, а не только цветом текста: красная строка
+                // среди серых теряется, а цвет в одиночку о состоянии не говорит
+                <span className="flex items-center gap-1 rounded-full bg-danger-soft px-2 py-0.5 font-medium text-danger">
+                  <TriangleAlert size={13} aria-hidden className="shrink-0" />
+                  {t('task.overdue')}
+                  {formatDueAt(at.toISOString())}
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-muted">
+                  <CalendarClock size={13} aria-hidden className="shrink-0" />
+                  {formatDueAt(at.toISOString())}
+                </span>
+              ))}
             {task.recurrence && (
               <span className="flex items-center gap-1 text-muted">
-                <Repeat size={12} aria-hidden />
+                <Repeat size={13} aria-hidden className="shrink-0" />
                 {describeRecurrence(task.recurrence)}
               </span>
             )}
             {task.reminders.length > 0 && at && (
-              <span className="flex items-center gap-1 text-muted">
-                <Bell size={12} aria-hidden />
+              <span className="flex items-center gap-1 text-muted tabular-nums">
+                <Bell size={13} aria-hidden className="shrink-0" />
                 {task.reminders.length}
               </span>
             )}
@@ -257,34 +289,11 @@ function TaskRow({
         )}
 
         {isDone && task.doneBy && (
-          <span className="mt-0.5 block text-xs text-muted">
+          <span className="mt-0.5 block text-[13px] text-muted">
             {nicknames.get(task.doneBy) ?? t('task.someone')}
           </span>
         )}
       </button>
     </div>
-  )
-}
-
-function ViewTab({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition-colors ${
-        active ? 'bg-surface text-ink shadow-sm' : 'text-muted'
-      }`}
-    >
-      {children}
-    </button>
   )
 }

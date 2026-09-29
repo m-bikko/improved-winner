@@ -1,12 +1,13 @@
 import { HealthSummary } from './HealthSummary'
 import { EnergyBalance } from './EnergyBalance'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import {
   BellRing,
   Languages,
   Check,
-  ChevronRight,
+  CircleCheck,
+  Circle,
   KeyRound,
   Scale,
   ScanFace,
@@ -45,6 +46,11 @@ import {
 } from '@/lib/push'
 import { Button } from '@/ui/Button'
 import { Field, NumberField } from '@/ui/Field'
+import { Card, SectionTitle } from '@/ui/Card'
+import { IconBadge } from '@/ui/IconBadge'
+import { ListGroup, ListRow } from '@/ui/List'
+import { Segmented } from '@/ui/Segmented'
+import { Switch } from '@/ui/Switch'
 
 import { Sheet } from '@/ui/Sheet'
 import { ErrorState, Loading } from '@/ui/States'
@@ -100,6 +106,23 @@ function ProfileForm({ profile }: { profile: Profile }) {
   const [error, setError] = useState<string | null>(null)
   const [pinOpen, setPinOpen] = useState(false)
   const [weighIn, setWeighIn] = useState(false)
+
+  // «Вес» с главной приходит сюда с ?weigh=1 и сразу открывает взвешивание.
+  // Параметр снимается, чтобы перезагрузка не открывала шторку снова
+  const [params, setParams] = useSearchParams()
+  const weighParam = params.get('weigh')
+  useEffect(() => {
+    if (weighParam !== '1') return
+    setWeighIn(true)
+    setParams({}, { replace: true })
+  }, [weighParam, setParams])
+
+  // Отметка «Сохранено» живёт пару секунд и уходит вместе с панелью
+  useEffect(() => {
+    if (!saved) return
+    const id = setTimeout(() => setSaved(false), 2000)
+    return () => clearTimeout(id)
+  }, [saved])
 
   const preview = computeGoals({
     birthYear: birthYear === '' ? null : birthYear,
@@ -190,48 +213,40 @@ function ProfileForm({ profile }: { profile: Profile }) {
     weightKg === '' && t('profile.weightLow'),
   ].filter((x): x is string => typeof x === 'string')
 
+  // Есть ли что сохранять. Панель «Сохранить» появляется только тогда:
+  // раньше кнопка стояла в самом низу длинной страницы, и после правки
+  // роста человек не знал, применилось ли - а кнопку надо было искать
+  const dirty =
+    birthYear !== (profile.birthYear ?? '') ||
+    heightCm !== (profile.heightCm ?? '') ||
+    weightKg !== (profile.weightKg ?? '') ||
+    sex !== profile.sex ||
+    activity !== profile.activityLevel ||
+    goal !== profile.goalDirection ||
+    manual !== (profile.goalsMode === 'manual') ||
+    manualKcal !== (profile.goalKcal ?? '') ||
+    chatId.trim() !== (profile.telegramChatId ?? '')
+
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-5 px-4 pt-3 pb-16">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       {missing.length > 0 && (
-        <p className="flex items-start gap-2 rounded-xl bg-raised px-4 py-3 text-sm">
-          <Target size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
-          <span>
-            {t('profile.missing', { list: missing.join(', ') })}
-          </span>
+        <p className="flex items-start gap-2.5 rounded-2xl bg-accent-soft px-4 py-3 text-sm text-accent-soft-ink">
+          <Target size={17} className="mt-0.5 shrink-0" aria-hidden />
+          <span>{t('profile.missing', { list: missing.join(', ') })}</span>
         </p>
       )}
 
-      <Link
-        to="/notifications"
-        className="flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-4 ring-1 ring-line"
-      >
-        <span className="flex items-center gap-2 text-sm font-medium">
-          <BellRing size={16} aria-hidden />
-          {t('profile.notifications')}
-        </span>
-        <ChevronRight size={18} aria-hidden className="text-muted" />
-      </Link>
+      <SectionTitle>{t('profile.section.body')}</SectionTitle>
 
-      <Link
-        to="/year"
-        className="flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-4 ring-1 ring-line"
-      >
-        <span className="flex items-center gap-2 text-sm font-medium">
-          <Sparkles size={16} aria-hidden />
-          {t('profile.year')}
-        </span>
-        <ChevronRight size={18} aria-hidden className="text-muted" />
-      </Link>
-
-      <div className="rounded-xl bg-surface px-4 py-4 ring-1 ring-line">
-        <p className="mb-3 flex items-center gap-2 text-sm font-medium">
-          <Scale size={16} aria-hidden />
-          {t('chart.title')}
-        </p>
+      <Card className="p-4">
+        <div className="flex items-center gap-2.5">
+          <IconBadge icon={Scale} tone="slate" size="sm" />
+          <p className="font-display text-[17px] font-bold">{t('chart.title')}</p>
+        </div>
         {/* Кнопка стоит НАД графиком: взвешивание - действие, за которым
-            сюда приходят, а график - то, ради чего его делают. Внизу карточки
-            её пришлось бы искать за фильтрами и таблицей. */}
-        <Button variant="secondary" onClick={() => setWeighIn(true)}>
+            сюда приходят каждый день, а график - то, ради чего его делают.
+            Внизу карточки её пришлось бы искать за фильтрами и таблицей. */}
+        <Button className="mt-3 w-full" onClick={() => setWeighIn(true)}>
           <Scale size={18} aria-hidden />
           {t('body.weighInAction')}
         </Button>
@@ -239,7 +254,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
         <div className="mt-4">
           {weights.isSuccess ? <BodyChart points={weights.data} /> : <Loading />}
         </div>
-      </div>
+      </Card>
 
       <BodyComposition
         userId={profile.userId}
@@ -256,106 +271,113 @@ function ProfileForm({ profile }: { profile: Profile }) {
         />
       )}
 
-      <div className="grid grid-cols-2 gap-3">
-        <NumberField
-          label={t('profile.birthYear')}
-          value={birthYear}
-          onValueChange={setBirthYear}
-          max={2100}
-          placeholder="2004"
-          invalid={range.birthYear !== null}
-          hint={range.birthYear ?? undefined}
-        />
-        <NumberField
-          label={t('profile.height')}
-          suffix={t('profile.unit.cm')}
-          value={heightCm}
-          onValueChange={setHeightCm}
-          max={250}
-          invalid={range.heightCm !== null}
-          hint={range.heightCm ?? undefined}
-        />
-        <NumberField
-          label={t('profile.weight')}
-          suffix={t('unit.kg')}
-          value={weightKg}
-          onValueChange={setWeightKg}
-          max={400}
-          invalid={range.weightKg !== null}
-          hint={range.weightKg ?? undefined}
-        />
-      </div>
+      <SectionTitle className="mt-4">{t('profile.section.norm')}</SectionTitle>
 
-      <Group label={t('profile.sex')}>
-        <Choice active={sex === 'male'} onClick={() => setSex('male')}>
-          {t('profile.male')}
-        </Choice>
-        <Choice active={sex === 'female'} onClick={() => setSex('female')}>
-          {t('profile.female')}
-        </Choice>
-      </Group>
-
-      <div>
-        <p className="mb-2 text-sm text-muted">{t('profile.activity')}</p>
-        <div className="flex flex-col gap-1.5">
-          {ACTIVITY_LEVELS.map((level) => (
-            <Row key={level} active={activity === level} onClick={() => setActivity(level)}>
-              {t(dynamicKey('activity', level))}
-            </Row>
-          ))}
-        </div>
-      </div>
-
-      <Group label={t('profile.goal')}>
-        {GOAL_DIRECTIONS.map((g) => (
-          <Choice key={g} active={goal === g} onClick={() => setGoal(g)}>
-            {t(dynamicKey('goal', g))}
-          </Choice>
-        ))}
-      </Group>
-
-      <div className="rounded-xl bg-raised px-4 py-4">
-        <p className="text-sm font-medium">{t('profile.daily')}</p>
-
-        {effective ? (
-          <>
-            <p className="mt-1 text-2xl font-semibold">
-              {Math.round(effective.kcal)} {t('unit.kcal')}
-            </p>
-            <p className="mt-1 text-sm text-muted">
-              {t('macro.p')} {preview?.protein} · {t('macro.f')} {preview?.fat} ·{' '}
-              {t('macro.c')} {preview?.carbs} {t('unit.gram')}
-            </p>
-          </>
-        ) : (
-          <p className="mt-1 text-sm text-muted">
-            {t('profile.autoHint')}
-          </p>
-        )}
-
-        <label className="mt-3 flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={manual}
-            onChange={(e) => setManual(e.target.checked)}
-            className="size-4 accent-[var(--c-accent)]"
+      <Card className="flex flex-col gap-5 p-4">
+        <div className="grid grid-cols-2 gap-3">
+          <NumberField
+            label={t('profile.birthYear')}
+            value={birthYear}
+            onValueChange={setBirthYear}
+            max={2100}
+            placeholder="2004"
+            invalid={range.birthYear !== null}
+            hint={range.birthYear ?? undefined}
           />
-          {t('profile.manual')}
-        </label>
+          <NumberField
+            label={t('profile.height')}
+            suffix={t('profile.unit.cm')}
+            value={heightCm}
+            onValueChange={setHeightCm}
+            max={250}
+            invalid={range.heightCm !== null}
+            hint={range.heightCm ?? undefined}
+          />
+          <NumberField
+            label={t('profile.weight')}
+            suffix={t('unit.kg')}
+            value={weightKg}
+            onValueChange={setWeightKg}
+            max={400}
+            invalid={range.weightKg !== null}
+            hint={range.weightKg ?? undefined}
+          />
+        </div>
 
-        {manual && (
-          <div className="mt-2">
-            <NumberField
-              label={t('profile.ownGoal')}
-              suffix={t('unit.kcal')}
-              value={manualKcal}
-              onValueChange={setManualKcal}
-              max={10000}
-              hint={t('profile.manualHint')}
-            />
+        <div>
+          <Label>{t('profile.sex')}</Label>
+          <Segmented
+            ariaLabel={t('profile.sex')}
+            value={sex ?? ''}
+            onChange={(v) => setSex(v === '' ? null : v)}
+            options={[
+              { value: 'male', label: t('profile.male') },
+              { value: 'female', label: t('profile.female') },
+            ]}
+          />
+        </div>
+
+        <div>
+          <Label>{t('profile.activity')}</Label>
+          <div className="flex flex-col gap-1.5">
+            {ACTIVITY_LEVELS.map((level) => (
+              <Row key={level} active={activity === level} onClick={() => setActivity(level)}>
+                {t(dynamicKey('activity', level))}
+              </Row>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+
+        <div>
+          <Label>{t('profile.goal')}</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {GOAL_DIRECTIONS.map((g) => (
+              <Choice key={g} active={goal === g} onClick={() => setGoal(g)}>
+                {t(dynamicKey('goal', g))}
+              </Choice>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-raised/70 p-4">
+          <p className="text-sm font-semibold text-muted">{t('profile.daily')}</p>
+
+          {effective ? (
+            <>
+              <p className="mt-1 font-display text-[32px] leading-tight font-extrabold tabular-nums">
+                {Math.round(effective.kcal)}{' '}
+                <span className="text-lg font-bold text-muted">{t('unit.kcal')}</span>
+              </p>
+              <p className="mt-1 text-sm tabular-nums">
+                <span className="font-semibold text-protein">{t('macro.p')}</span> {preview?.protein} ·{' '}
+                <span className="font-semibold text-fat">{t('macro.f')}</span> {preview?.fat} ·{' '}
+                <span className="font-semibold text-carbs">{t('macro.c')}</span> {preview?.carbs}{' '}
+                <span className="text-muted">{t('unit.gram')}</span>
+              </p>
+            </>
+          ) : (
+            <p className="mt-1 text-sm text-muted">{t('profile.autoHint')}</p>
+          )}
+
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <span className="text-[15px] font-medium">{t('profile.manual')}</span>
+            <Switch checked={manual} onChange={setManual} label={t('profile.manual')} />
+          </div>
+
+          {manual && (
+            <div className="mt-3">
+              <NumberField
+                label={t('profile.ownGoal')}
+                suffix={t('unit.kcal')}
+                value={manualKcal}
+                onValueChange={setManualKcal}
+                max={10000}
+                hint={t('profile.manualHint')}
+              />
+            </div>
+          )}
+        </div>
+      </Card>
 
       <HealthSummary />
 
@@ -363,16 +385,30 @@ function ProfileForm({ profile }: { profile: Profile }) {
           каждый день, а измеренный расход - повод её пересмотреть */}
       <EnergyBalance userId={profile.userId} />
 
+      <SectionTitle className="mt-4">{t('profile.section.settings')}</SectionTitle>
+
+      <ListGroup>
+        <ListRow to="/notifications" icon={BellRing} tone="slate" title={t('profile.notifications')} />
+        <ListRow to="/year" icon={Sparkles} tone="accent" title={t('profile.year')} />
+        <ListRow
+          onClick={() => setPinOpen(true)}
+          icon={KeyRound}
+          tone="sky"
+          title={t('profile.changePinButton')}
+        />
+        <FaceIdRow />
+      </ListGroup>
+
+      <LanguageRow />
+
       <PushToggle userId={profile.userId} />
 
-      <div className="rounded-xl bg-raised px-4 py-4">
-        <p className="flex items-center gap-2 text-sm font-medium">
-          <Send size={15} aria-hidden />
+      <Card className="p-4">
+        <p className="flex items-center gap-2.5 text-[15px] font-semibold">
+          <IconBadge icon={Send} tone="sky" size="sm" />
           {t('profile.telegram')}
         </p>
-        <p className="mt-1 mb-3 text-xs text-muted">
-          {t('profile.telegramAbout')}
-        </p>
+        <p className="mt-2 mb-3 text-[13px] text-muted">{t('profile.telegramAbout')}</p>
         <Field
           label="Chat ID"
           value={chatId}
@@ -382,29 +418,28 @@ function ProfileForm({ profile }: { profile: Profile }) {
           hint={t('profile.chatIdHint', { link: BOT_LINK })}
         />
         {chatIdInvalid && <p className="mt-1 text-xs text-danger">{t('profile.chatIdDigits')}</p>}
-      </div>
-
-      {error && <p className="text-sm text-danger">{error}</p>}
-
-      <Button
-        onClick={() => void submit()}
-        loading={save.isPending}
-        disabled={hasRangeError || chatIdInvalid}
-      >
-        {saved ? <Check size={18} aria-hidden /> : null}
-        {saved ? t('profile.saved') : t('common.save')}
-      </Button>
-
-      <Button variant="secondary" onClick={() => setPinOpen(true)}>
-        <KeyRound size={18} aria-hidden />
-        {t('profile.changePinButton')}
-      </Button>
+      </Card>
 
       <ChangePinSheet open={pinOpen} onClose={() => setPinOpen(false)} />
 
-      <LanguageRow />
-
-      <FaceIdRow />
+      {(dirty || saved || error) && (
+        <div className="sticky bottom-above-tabbar z-20 mt-1">
+          <div className="flex items-center gap-3 rounded-3xl bg-surface/90 p-2 pl-4 shadow-float backdrop-blur-xl">
+            <span className={`min-w-0 flex-1 text-sm ${error ? 'text-danger' : 'text-muted'}`}>
+              {error ?? (saved && !dirty ? t('profile.saved') : t('profile.unsaved'))}
+            </span>
+            <Button
+              className="min-h-11 shrink-0 px-6"
+              onClick={() => void submit()}
+              loading={save.isPending}
+              disabled={hasRangeError || chatIdInvalid || (!dirty && saved)}
+            >
+              <Check size={18} aria-hidden />
+              {saved && !dirty ? t('profile.saved') : t('common.save')}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -422,28 +457,20 @@ function LanguageRow() {
   const save = useSaveLang()
 
   return (
-    <div className="rounded-xl bg-surface px-4 py-4 ring-1 ring-line">
-      <p className="flex items-center gap-2 text-sm font-medium">
-        <Languages size={16} aria-hidden />
+    <Card className="p-4">
+      <p className="flex items-center gap-2.5 text-[15px] font-semibold">
+        <IconBadge icon={Languages} tone="teal" size="sm" />
         {t('lang.title')}
       </p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {LANGS.map((code) => (
-          <button
-            key={code}
-            type="button"
-            onClick={() => save.mutate(code)}
-            aria-pressed={lang === code}
-            className={`rounded-full px-4 py-2 text-sm transition-colors ${
-              lang === code ? 'bg-accent text-accent-ink' : 'bg-raised text-ink ring-1 ring-line'
-            }`}
-          >
-            {LANG_NAMES[code]}
-          </button>
-        ))}
-      </div>
-      <p className="mt-2 text-xs text-muted">{t('lang.hint')}</p>
-    </div>
+      <Segmented
+        className="mt-3"
+        ariaLabel={t('lang.title')}
+        value={lang}
+        onChange={(code) => save.mutate(code)}
+        options={LANGS.map((code) => ({ value: code, label: LANG_NAMES[code] }))}
+      />
+      <p className="mt-2 text-[13px] text-muted">{t('lang.hint')}</p>
+    </Card>
   )
 }
 
@@ -512,23 +539,19 @@ function FaceIdRow() {
 
   return (
     <>
-      <div className="flex items-start justify-between gap-3 rounded-xl bg-surface px-4 py-4 ring-1 ring-line">
-        <div className="min-w-0">
-          <p className="flex items-center gap-2 text-sm font-medium">
-            <ScanFace size={16} aria-hidden />
-            {t('profile.faceId')}
-          </p>
-          <p className="mt-1 text-xs text-muted">
-            {t('profile.faceIdHint')}
-          </p>
+      {/* Строка сгруппированного списка настроек, а не отдельная карточка:
+          переключатель справа, объяснение мелко под названием */}
+      <div className="flex min-h-14 items-center gap-3 px-4 py-2.5">
+        <IconBadge icon={ScanFace} tone="violet" size="sm" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[15px] font-medium">{t('profile.faceId')}</p>
+          <p className="mt-0.5 text-[13px] text-muted">{t('profile.faceIdHint')}</p>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={on}
-          aria-label={t('profile.faceId')}
-          onClick={() => {
-            if (on) {
+        <Switch
+          checked={on}
+          label={t('profile.faceId')}
+          onChange={(next) => {
+            if (!next) {
               forgetBiometrics(account)
               setOn(false)
             } else {
@@ -537,9 +560,6 @@ function FaceIdRow() {
               setAsking(true)
             }
           }}
-          className={`mt-0.5 size-6 shrink-0 rounded-md ring-1 transition-colors ${
-            on ? 'bg-accent ring-accent' : 'bg-bg ring-line'
-          }`}
         />
       </div>
 
@@ -694,31 +714,28 @@ function PushToggle({ userId }: { userId: string }) {
   }
 
   return (
-    <div className="rounded-xl bg-raised px-4 py-4">
-      <p className="flex items-center gap-2 text-sm font-medium">
-        <BellRing size={15} aria-hidden />
-        {t('push.device')}
-      </p>
-      <p className="mt-1 mb-3 text-xs text-muted">{state ? hint[state] : t('push.checking')}</p>
-
-      {(state === 'off' || state === 'on') && (
-        <Button variant={state === 'on' ? 'secondary' : 'primary'} onClick={() => void toggle()} loading={busy}>
-          {t(state === 'on' ? 'push.disable' : 'push.enable')}
-        </Button>
-      )}
+    <Card className="p-4">
+      <div className="flex items-center gap-3">
+        <IconBadge icon={BellRing} tone="rose" size="sm" />
+        <p className="min-w-0 flex-1 text-[15px] font-semibold">{t('push.device')}</p>
+        {(state === 'off' || state === 'on') && (
+          <Switch
+            checked={state === 'on'}
+            disabled={busy}
+            label={t(state === 'on' ? 'push.disable' : 'push.enable')}
+            onChange={() => void toggle()}
+          />
+        )}
+      </div>
+      <p className="mt-2 text-[13px] text-muted">{state ? hint[state] : t('push.checking')}</p>
 
       {error && <p className="mt-2 text-xs text-danger">{error}</p>}
-    </div>
+    </Card>
   )
 }
 
-function Group({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <p className="mb-2 text-sm text-muted">{label}</p>
-      <div className="flex flex-wrap gap-2">{children}</div>
-    </div>
-  )
+function Label({ children }: { children: React.ReactNode }) {
+  return <p className="mb-2 text-[13px] font-semibold tracking-wide text-muted uppercase">{children}</p>
 }
 
 function Choice({
@@ -735,15 +752,17 @@ function Choice({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`rounded-full px-4 py-2.5 text-sm transition-colors ${
-        active ? 'bg-accent text-accent-ink' : 'bg-raised text-ink ring-1 ring-line'
-      }`}
+      className={`min-h-12 rounded-2xl px-2 py-1.5 text-center text-sm leading-tight font-semibold
+                  transition-[background-color,color,transform] active:scale-95 ${
+                    active ? 'bg-accent text-accent-ink' : 'bg-raised text-ink'
+                  }`}
     >
       {children}
     </button>
   )
 }
 
+/** Вариант из списка: отметка слева - выбор виден и без цвета. */
 function Row({
   active,
   onClick,
@@ -753,15 +772,16 @@ function Row({
   onClick: () => void
   children: React.ReactNode
 }) {
+  const Mark = active ? CircleCheck : Circle
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex items-center gap-2 rounded-xl px-4 py-3 text-left text-sm transition-colors ${
-        active ? 'bg-accent text-accent-ink' : 'bg-surface text-ink ring-1 ring-line'
-      }`}
+      className={`flex min-h-12 items-center gap-3 rounded-2xl px-4 py-2.5 text-left text-[15px]
+                  transition-colors ${active ? 'bg-accent-soft font-semibold text-accent-soft-ink' : 'bg-raised text-ink'}`}
     >
+      <Mark size={20} aria-hidden className={`shrink-0 ${active ? '' : 'text-muted/60'}`} />
       {children}
     </button>
   )

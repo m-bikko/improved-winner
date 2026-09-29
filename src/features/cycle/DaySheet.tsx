@@ -4,6 +4,8 @@ import { Trash2 } from 'lucide-react'
 import { formatDayLabel } from '@/lib/date'
 import { Button } from '@/ui/Button'
 import { Sheet } from '@/ui/Sheet'
+import { Chip } from '@/ui/Chip'
+import { INPUT_CLASS } from '@/ui/Field'
 import { useDeleteCycleDay, useSaveCycleDay } from './api'
 import {
   FLOW,
@@ -74,7 +76,7 @@ export function DaySheet({
           <>
             <Group label={t('day.flow')}>
               {FLOW.map((f) => (
-                <Chip key={f} active={flow === f} onClick={() => setFlow(flow === f ? null : f)}>
+                <Chip key={f} selected={flow === f} onClick={() => setFlow(flow === f ? null : f)}>
                   {t(dynamicKey('flow', f))}
                 </Chip>
               ))}
@@ -82,7 +84,7 @@ export function DaySheet({
 
             <Group label={t('day.pain')}>
               {[0, 1, 2, 3].map((p) => (
-                <Chip key={p} active={pain === p} onClick={() => setPain(pain === p ? null : p)}>
+                <Chip key={p} selected={pain === p} onClick={() => setPain(pain === p ? null : p)}>
                   {t(PAIN_KEYS[p] ?? 'pain.none')}
                 </Chip>
               ))}
@@ -90,7 +92,7 @@ export function DaySheet({
 
             <Group label={t('day.mood')}>
               {MOODS.map((m) => (
-                <Chip key={m} active={mood === m} onClick={() => setMood(mood === m ? null : m)}>
+                <Chip key={m} selected={mood === m} onClick={() => setMood(mood === m ? null : m)}>
                   {t(dynamicKey('mood', m))}
                 </Chip>
               ))}
@@ -98,7 +100,7 @@ export function DaySheet({
 
             <Group label={t('day.symptoms')}>
               {SYMPTOMS.map((s) => (
-                <Chip key={s} active={symptoms.includes(s)} onClick={() => toggleSymptom(s)}>
+                <Chip key={s} selected={symptoms.includes(s)} onClick={() => toggleSymptom(s)}>
                   {t(dynamicKey('symptom', s))}
                 </Chip>
               ))}
@@ -111,8 +113,7 @@ export function DaySheet({
                 onChange={(e) => setNote(e.target.value)}
                 rows={2}
                 placeholder={t('day.notePlaceholder')}
-                className="w-full min-w-0 resize-none rounded-xl bg-surface px-4 py-3 ring-1
-                           ring-line outline-none focus:ring-2 focus:ring-accent placeholder:text-muted"
+                className={`${INPUT_CLASS} min-w-0 resize-none`}
               />
             </label>
 
@@ -141,9 +142,9 @@ export function DaySheet({
 
 function ReadOnly({ log }: { log: DayLog }) {
   const t = useT()
-  if (isEmpty(log)) return <p className="text-sm text-muted">{t('day.empty')}</p>
+  if (isEmpty(log)) return <p className="text-[15px] text-muted">{t('day.empty')}</p>
   return (
-    <dl className="flex flex-col gap-3 text-sm">
+    <dl className="divide-y divide-line overflow-hidden rounded-2xl bg-raised/60">
       {log.flow && <Row label={t('day.flow')} value={t(dynamicKey('flow', log.flow))} />}
       {log.pain !== null && <Row label={t('day.pain')} value={t(PAIN_KEYS[log.pain] ?? 'pain.none')} />}
       {log.mood && <Row label={t('day.mood')} value={t(dynamicKey('mood', log.mood))} />}
@@ -157,41 +158,18 @@ function ReadOnly({ log }: { log: DayLog }) {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <dt className="text-xs text-muted">{label}</dt>
-      <dd className="mt-0.5">{value}</dd>
+    <div className="px-4 py-3">
+      <dt className="text-[13px] text-muted">{label}</dt>
+      <dd className="mt-0.5 text-[15px] leading-relaxed">{value}</dd>
     </div>
   )
 }
 
 function Group({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-sm text-muted">{label}</p>
+    <div className="flex flex-col gap-2.5">
+      <p className="text-sm font-semibold text-muted">{label}</p>
       <div className="flex flex-wrap gap-2">{children}</div>
     </div>
-  )
-}
-
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`rounded-full px-3.5 py-2 text-sm transition-colors ${
-        active ? 'bg-accent text-accent-ink' : 'bg-raised text-ink ring-1 ring-line'
-      }`}
-    >
-      {children}
-    </button>
   )
 }

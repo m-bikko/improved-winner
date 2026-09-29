@@ -1,9 +1,10 @@
 import { useT } from '@/lib/i18n'
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Archive, ChevronLeft, Plus, Trash2, TriangleAlert } from 'lucide-react'
+import { Archive, Barcode, Plus, Trash2, TriangleAlert } from 'lucide-react'
 import { normalize } from '@/lib/search'
 import { Button } from '@/ui/Button'
+import { Card } from '@/ui/Card'
 import { Field, NumberField } from '@/ui/Field'
 import { ErrorState, Loading } from '@/ui/States'
 import {
@@ -208,22 +209,13 @@ function FoodForm({
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pb-16">
-      <div className="flex items-center gap-1 py-2">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          aria-label={t('food.back')}
-          className="-ml-2 p-2 text-muted"
-        >
-          <ChevronLeft size={22} aria-hidden />
-        </button>
-        <span className="truncate text-base font-medium">
-          {existing ? existing.name : t(isDish ? 'food.newDish' : 'food.newProduct')}
-        </span>
-      </div>
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+      {/* «Назад» теперь в шапке оболочки - здесь только имя того, что правим */}
+      <h2 className="truncate px-1 font-display text-2xl font-extrabold tracking-tight">
+        {existing ? existing.name : t(isDish ? 'food.newDish' : 'food.newProduct')}
+      </h2>
 
-      <div className="flex flex-col gap-4">
+      <Card as="section" className="flex flex-col gap-4 p-4">
         <Field
           label={t('food.name')}
           value={form.name}
@@ -233,8 +225,8 @@ function FoodForm({
         />
 
         {duplicate && (
-          <p className="flex items-start gap-2 rounded-xl bg-raised px-3 py-2.5 text-sm text-muted">
-            <TriangleAlert size={16} className="mt-0.5 shrink-0 text-fat" aria-hidden />
+          <p className="flex items-start gap-2 rounded-2xl bg-raised px-3.5 py-3 text-sm text-muted">
+            <TriangleAlert size={16} className="mt-0.5 shrink-0 text-tone-amber" aria-hidden />
             {t('food.duplicate', { name: duplicate })}
           </p>
         )}
@@ -249,63 +241,66 @@ function FoodForm({
         {/* Код виден, но не правится: его источник - упаковка, а не человек,
             и опечатка тут сделала бы продукт ненаходимым */}
         {(existing?.barcode ?? prefill?.barcode ?? null) !== null && (
-          <p className="-mt-1 text-xs text-muted">
-            {t('food.barcode')}: {existing?.barcode ?? prefill?.barcode}
+          <p className="-mt-1 flex items-center gap-1.5 text-[13px] text-muted">
+            <Barcode size={15} aria-hidden className="shrink-0" />
+            <span>
+              {t('food.barcode')}: <span className="tabular-nums">{existing?.barcode ?? prefill?.barcode}</span>
+            </span>
           </p>
         )}
+      </Card>
 
-        <div className="rounded-xl bg-raised p-3">
-          <p className="mb-3 text-sm font-medium">{t('food.per100title')}</p>
-          <div className="grid grid-cols-2 gap-3">
-            <NumberField
-              label={t('food.kcal')}
-              suffix={t('unit.kcal')}
-              max={900}
-              value={form.kcal}
-              onValueChange={(v) => patch({ kcal: v })}
-            />
-            <NumberField
-              label={t('food.protein')}
-              suffix={t('unit.gram')}
-              max={100}
-              value={form.protein}
-              onValueChange={(v) => patch({ protein: v })}
-            />
-            <NumberField
-              label={t('food.fat')}
-              suffix={t('unit.gram')}
-              max={100}
-              value={form.fat}
-              onValueChange={(v) => patch({ fat: v })}
-            />
-            <NumberField
-              label={t('food.carbs')}
-              suffix={t('unit.gram')}
-              max={100}
-              value={form.carbs}
-              onValueChange={(v) => patch({ carbs: v })}
-            />
-          </div>
-          <AtwaterHint {...form} />
+      <Card as="section" className="p-4">
+        <h3 className="mb-3 font-display text-[17px] font-bold">{t('food.per100title')}</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <NumberField
+            label={t('food.kcal')}
+            suffix={t('unit.kcal')}
+            max={900}
+            value={form.kcal}
+            onValueChange={(v) => patch({ kcal: v })}
+          />
+          <NumberField
+            label={t('food.protein')}
+            suffix={t('unit.gram')}
+            max={100}
+            value={form.protein}
+            onValueChange={(v) => patch({ protein: v })}
+          />
+          <NumberField
+            label={t('food.fat')}
+            suffix={t('unit.gram')}
+            max={100}
+            value={form.fat}
+            onValueChange={(v) => patch({ fat: v })}
+          />
+          <NumberField
+            label={t('food.carbs')}
+            suffix={t('unit.gram')}
+            max={100}
+            value={form.carbs}
+            onValueChange={(v) => patch({ carbs: v })}
+          />
         </div>
+        <AtwaterHint {...form} />
+      </Card>
 
-        <FoodPhotoEditor foodId={existing?.id} imagePath={existing?.imagePath ?? null} />
+      <FoodPhotoEditor foodId={existing?.id} imagePath={existing?.imagePath ?? null} />
 
-        <ServingsEditor value={servingDrafts} onChange={setServingDrafts} />
+      <ServingsEditor value={servingDrafts} onChange={setServingDrafts} />
 
-        {error && <p className="text-sm text-danger">{error}</p>}
+      {error && <p className="px-1 text-sm text-danger">{error}</p>}
 
-        <Button onClick={() => void submit()} disabled={!canSave} loading={busy}>
-          {t('common.save')}
+      <Button className="mt-1 min-h-14 text-[17px]" onClick={() => void submit()} disabled={!canSave} loading={busy}>
+        {t('common.save')}
+      </Button>
+
+      {existing && (
+        <Button variant="danger" onClick={() => void doArchive()} loading={archive.isPending}>
+          <Archive size={18} aria-hidden />
+          {t('food.archive')}
         </Button>
-
-        {existing && (
-          <Button variant="danger" onClick={() => void doArchive()} loading={archive.isPending}>
-            <Archive size={18} aria-hidden />
-            {t('food.archive')}
-          </Button>
-        )}
-      </div>
+      )}
     </div>
   )
 }
@@ -335,7 +330,8 @@ function AtwaterHint({
   if (Math.abs(kcal - computed) / kcal < 0.25) return null
 
   return (
-    <p className="mt-3 text-xs text-muted">
+    <p className="mt-3 flex items-start gap-2 rounded-2xl bg-raised px-3.5 py-3 text-[13px] text-muted">
+      <TriangleAlert size={15} className="mt-0.5 shrink-0 text-tone-amber" aria-hidden />
       {t('food.mismatch', { computed: Math.round(computed), kcal })}
     </p>
   )
@@ -350,17 +346,15 @@ function ServingsEditor({
 }) {
   const t = useT()
   return (
-    <div className="flex flex-col gap-2">
+    <Card as="section" className="flex flex-col gap-3 p-4">
       <div>
-        <p className="text-sm font-medium">{t('food.servings')}</p>
-        <p className="text-xs text-muted">
-          {t('food.servingsHintProduct')}
-        </p>
+        <h3 className="font-display text-[17px] font-bold">{t('food.servings')}</h3>
+        <p className="mt-0.5 text-[13px] text-muted">{t('food.servingsHintProduct')}</p>
       </div>
 
       {value.map((s, i) => (
         <div key={s.key} className="flex items-end gap-2">
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <Field
               label={t('food.serving')}
               value={s.label}
@@ -388,7 +382,9 @@ function ServingsEditor({
             type="button"
             onClick={() => onChange(value.filter((_, j) => j !== i))}
             aria-label={t('food.deleteServing')}
-            className="mb-1.5 p-3 text-muted"
+            // Высотой ровно с поле: кнопка стоит в одну линию с ним
+            className="flex size-12 shrink-0 items-center justify-center rounded-2xl text-muted
+                       transition-colors active:bg-raised"
           >
             <Trash2 size={18} aria-hidden />
           </button>
@@ -396,12 +392,13 @@ function ServingsEditor({
       ))}
 
       <Button
-        variant="secondary"
+        variant="soft"
+        className="min-h-11 text-[15px]"
         onClick={() => onChange([...value, { key: crypto.randomUUID(), label: '', grams: '' }])}
       >
         <Plus size={18} aria-hidden />
         {t('food.addServing')}
       </Button>
-    </div>
+    </Card>
   )
 }

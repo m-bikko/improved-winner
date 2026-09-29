@@ -1,14 +1,14 @@
 import { dynamicKey, useT } from '@/lib/i18n'
 import { useMemo, useState } from 'react'
-import { Clock, Plus, Repeat } from 'lucide-react'
+import { Clock, Plus, Repeat, SearchX } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { searchItems } from '@/lib/search'
+import { Card, SectionTitle } from '@/ui/Card'
 import { SearchInput } from '@/ui/SearchInput'
 import { Sheet } from '@/ui/Sheet'
 import { EmptyState, Loading } from '@/ui/States'
-import { trim } from '@/features/foods/FoodsPage'
+import { FoodRow } from '@/features/foods/FoodsPage'
 import { useFoodPhotoUrls, useFoods } from '@/features/foods/api'
-import { FoodThumb } from '@/features/foods/FoodPhoto'
 import type { Food } from '@/features/foods/types'
 import { useRecentFoodIds } from './api'
 import { type Meal } from './types'
@@ -64,67 +64,68 @@ export function FoodPicker({ open, meal, userId, onClose, onPick }: Props) {
     return { results: known.slice(0, 30), mode: 'recent' as const }
   }, [foods.data, recent.data, query])
 
+  // Ненайденное заводится сразу с набранным названием: человек только что
+  // напечатал его в поиске, и печатать второй раз в форме незачем
+  const typed = query.trim()
+  const newFoodLink = typed ? `/foods/new?${new URLSearchParams({ name: typed }).toString()}` : '/foods/new'
+
   return (
     <Sheet open={open} onClose={onClose} title={t(dynamicKey('meal', meal))} bleed>
-      <div className="sticky top-0 z-10 bg-bg px-4 pt-3 pb-2">
+      <div className="sticky top-0 z-10 bg-bg px-4 pt-1 pb-3">
         <SearchInput value={query} onChange={setQuery} placeholder={t('pick.placeholder')} autoFocus />
       </div>
 
       {foods.isPending && <Loading />}
 
       {mode === 'recent' && (
-        <p className="flex items-center gap-1.5 px-4 pt-1 pb-2 text-xs text-muted">
-          <Repeat size={13} aria-hidden />
-          {t('pick.frequent')}
-        </p>
+        <SectionTitle className="mx-4 mb-2">
+          <span className="flex items-center gap-1.5">
+            <Repeat size={15} aria-hidden />
+            {t('pick.frequent')}
+          </span>
+        </SectionTitle>
       )}
 
       {foods.isSuccess && results.length === 0 && (
         <EmptyState
+          icon={SearchX}
+          tone="amber"
           title={t('pick.nothingFound')}
           hint={t('pick.nothingHint')}
           action={
-            <Link to="/foods/new" onClick={onClose} className="flex items-center gap-1.5 text-sm text-accent">
-              <Plus size={16} aria-hidden />
+            <Link
+              to={newFoodLink}
+              onClick={onClose}
+              className="mt-1 flex min-h-11 items-center gap-1.5 rounded-2xl bg-accent-soft px-5 text-[15px]
+                         font-semibold text-accent-soft-ink transition-transform active:scale-[0.97]"
+            >
+              <Plus size={18} strokeWidth={2.4} aria-hidden />
               {t('pick.newFood')}
             </Link>
           }
         />
       )}
 
-      <ul className="px-2 pb-4">
-        {results.map((food) => (
-          <li key={food.id}>
-            <button
-              type="button"
-              onClick={() => onPick(food)}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left active:bg-raised"
-            >
-              <FoodThumb url={food.imagePath ? photos.data?.[food.imagePath] : undefined} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate">
-                  {food.name}
-                  {food.brand && <span className="text-muted"> · {food.brand}</span>}
-                </span>
-                <span className="mt-0.5 block text-xs text-muted">
-                  {Math.round(food.kcal100)} {t('unit.kcal')} ·{' '}
-                  <span className="text-protein">
-                    {t('macro.p')} {trim(food.protein100)}
-                  </span>{' '}
-                  <span className="text-fat">
-                    {t('macro.f')} {trim(food.fat100)}
-                  </span>{' '}
-                  <span className="text-carbs">
-                    {t('macro.c')} {trim(food.carbs100)}
-                  </span>{' '}
-                  {t('pick.per100')}
-                </span>
-              </span>
-              {mode === 'recent' && <Clock size={14} className="shrink-0 text-muted" aria-hidden />}
-            </button>
-          </li>
-        ))}
-      </ul>
+      {results.length > 0 && (
+        <Card className="mx-4 mb-5 overflow-hidden">
+          <ul className="divide-y divide-line">
+            {results.map((food) => (
+              <li key={food.id}>
+                <FoodRow
+                  food={food}
+                  onClick={() => onPick(food)}
+                  photoUrl={food.imagePath ? photos.data?.[food.imagePath] : undefined}
+                  trailing={
+                    mode === 'recent' ? (
+                      <Clock size={15} className="shrink-0 text-muted/70" aria-hidden />
+                    ) : undefined
+                  }
+                />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
     </Sheet>
   )
 }

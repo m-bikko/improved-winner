@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
-import { CircleAlert, LoaderCircle } from 'lucide-react'
+import { CircleAlert, LoaderCircle, type LucideIcon } from 'lucide-react'
 import { useT } from '@/lib/i18n'
+import { IconBadge } from './IconBadge'
+import type { Tone } from './tones'
 
 export function Loading({ label }: { label?: string }) {
   const t = useT()
@@ -15,6 +17,8 @@ export function EmptyState({
   title,
   hint,
   action,
+  icon,
+  tone = 'accent',
 }: {
   title: string
   // `| undefined` явно: под exactOptionalPropertyTypes «необязательное»
@@ -22,11 +26,15 @@ export function EmptyState({
   // условное значение
   hint?: string | undefined
   action?: ReactNode | undefined
+  /** Значок раздела над заголовком: пустой экран без него выглядел как ошибка. */
+  icon?: LucideIcon | undefined
+  tone?: Tone | undefined
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 px-8 py-16 text-center">
-      <p className="text-base text-ink">{title}</p>
-      {hint && <p className="text-sm text-muted">{hint}</p>}
+    <div className="flex flex-col items-center gap-3 px-8 py-14 text-center">
+      {icon && <IconBadge icon={icon} tone={tone} size="lg" className="mb-1" />}
+      <p className="font-display text-lg font-bold text-ink">{title}</p>
+      {hint && <p className="max-w-xs text-sm text-muted">{hint}</p>}
       {action}
     </div>
   )

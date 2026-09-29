@@ -2,6 +2,9 @@ import { tr, useT } from '@/lib/i18n'
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { monthName, todayLocal } from '@/lib/date'
+import type { Tone } from '@/ui/tones'
+import { Avatar, personTone } from '@/ui/Avatar'
+import { Card } from '@/ui/Card'
 import { ErrorState, Loading } from '@/ui/States'
 import { useMonthSummary, type MonthPerson } from './api'
 
@@ -49,13 +52,17 @@ export function MonthPage() {
     return <ErrorState error={summary.error} onRetry={() => void summary.refetch()} />
   }
 
+  const ids = summary.data?.people.map((p) => p.userId) ?? []
+
   return (
-    <div className="mx-auto max-w-2xl px-4 pt-3 pb-10">
-      <div className="flex items-center justify-between gap-3">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+      {/* Капсула, как переключатель дня в дневнике: экран открывают оттуда,
+          и листать месяцы должно быть тем же жестом, что и дни */}
+      <div className="flex items-center gap-1 rounded-2xl bg-surface p-1 shadow-card">
         <Arrow dir="prev" disabled={atStart} onClick={() => shift(-1)} />
-        <h1 className="text-xl font-semibold">
+        <h2 className="min-w-0 flex-1 truncate text-center font-display text-[17px] font-bold">
           {monthName(month - 1)} {year}
-        </h1>
+        </h2>
         <Arrow dir="next" disabled={isNow} onClick={() => shift(1)} />
       </div>
 
@@ -63,7 +70,7 @@ export function MonthPage() {
         <Loading />
       ) : (
         summary.data.people.map((p) => (
-          <Person key={p.userId} person={p} elapsed={elapsed} />
+          <Person key={p.userId} person={p} elapsed={elapsed} tone={personTone(p.userId, ids)} />
         ))
       )}
     </div>
@@ -87,15 +94,23 @@ function Arrow({
       onClick={onClick}
       disabled={disabled}
       aria-label={dir === 'prev' ? t('cal.prevMonth') : t('cal.nextMonth')}
-      className="flex size-10 shrink-0 items-center justify-center rounded-full
-                 bg-raised text-muted ring-1 ring-line disabled:opacity-30"
+      className="flex size-11 shrink-0 items-center justify-center rounded-xl text-muted
+                 transition-colors active:bg-raised disabled:opacity-30"
     >
       <Icon size={20} aria-hidden />
     </button>
   )
 }
 
-function Person({ person: p, elapsed }: { person: MonthPerson; elapsed: number }) {
+function Person({
+  person: p,
+  elapsed,
+  tone,
+}: {
+  person: MonthPerson
+  elapsed: number
+  tone: Tone
+}) {
   const t = useT()
   // Пара «было - стало» как одно значение: иначе TypeScript не сужает
   // weightFrom и weightTo по факту того, что посчиталась разница
@@ -110,16 +125,20 @@ function Person({ person: p, elapsed }: { person: MonthPerson; elapsed: number }
   const actual = weight?.delta ?? null
 
   return (
-    <section className="mt-4 rounded-2xl bg-surface p-4 ring-1 ring-line">
-      <h2 className="font-medium">{p.nickname}</h2>
+    <Card as="section" className="p-4">
+      <div className="flex items-center gap-3">
+        <Avatar name={p.nickname} tone={tone} />
+        <h3 className="min-w-0 flex-1 truncate font-display text-[17px] font-bold">{p.nickname}</h3>
+      </div>
 
       {p.days === 0 ? (
-        <p className="mt-2 text-sm text-muted">{t('month.noRecords')}</p>
+        <p className="mt-3 text-sm text-muted">{t('month.noRecords')}</p>
       ) : (
         <>
-          <dl className="mt-3 grid grid-cols-2 gap-4">
-            <Stat value={`${p.avgKcal}`} label={t('month.avgKcal')} />
-            <Stat value={`${p.avgGoal}`} label={t('month.avgGoal')} />
+          <dl className="mt-4 grid grid-cols-2 gap-2">
+            {/* Прочерк вместо «null»: без нормы в профиле среднего по ней нет */}
+            <Stat value={p.avgKcal === null ? '—' : String(p.avgKcal)} label={t('month.avgKcal')} />
+            <Stat value={p.avgGoal === null ? '—' : String(p.avgGoal)} label={t('month.avgGoal')} />
           </dl>
 
           <p className="mt-3 text-sm text-muted">
@@ -164,7 +183,7 @@ function Person({ person: p, elapsed }: { person: MonthPerson; elapsed: number }
           )}
         </>
       )}
-    </section>
+    </Card>
   )
 }
 
@@ -217,14 +236,14 @@ function Verdict({
 
   if (Math.abs(diff) <= 1) {
     return (
-      <p className="mt-3 rounded-xl bg-raised px-3 py-2 text-sm">
+      <p className="mt-3 rounded-2xl bg-raised px-3.5 py-3 text-sm">
         {t('month.matches')}
       </p>
     )
   }
 
   return (
-    <p className="mt-3 rounded-xl bg-raised px-3 py-2 text-sm">
+    <p className="mt-3 rounded-2xl bg-raised px-3.5 py-3 text-sm">
       {actual < p.expectedKg
         ? t('month.faster')
         : t('month.slower')}
@@ -239,11 +258,15 @@ function Verdict({
   )
 }
 
+/**
+ * Число и подпись. В разметке подпись - термин (dt), число - значение (dd),
+ * а на экране число сверху: его ищут глазами первым.
+ */
 function Stat({ value, label }: { value: string; label: string }) {
   return (
-    <div>
-      <dt className="text-2xl font-semibold tabular-nums">{value}</dt>
-      <dd className="text-sm text-muted">{label}</dd>
+    <div className="flex flex-col-reverse justify-end rounded-2xl bg-raised/60 px-3.5 py-3">
+      <dt className="mt-0.5 text-[13px] leading-snug text-muted">{label}</dt>
+      <dd className="font-display text-[28px] leading-none font-extrabold tabular-nums">{value}</dd>
     </div>
   )
 }

@@ -3,6 +3,9 @@ import { Heart, Trash2 } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
 import { formatDayLabel, toLocalISO } from '@/lib/date'
 import { useT } from '@/lib/i18n'
+import { Card } from '@/ui/Card'
+import { IconBadge } from '@/ui/IconBadge'
+import { INPUT_CLASS } from '@/ui/Field'
 import { useAddGratitude, useDeleteGratitude, useGratitudes } from './api'
 
 /** Столько строк показываем; остальное - память, а не лента. */
@@ -44,17 +47,18 @@ export function GratitudeTile({ partnerName }: { partnerName: string }) {
   }
 
   return (
-    <section className="rounded-2xl bg-surface p-4 ring-1 ring-line">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="flex items-center gap-2 font-medium">
-          <Heart size={16} aria-hidden className="text-accent" />
+    <Card as="section" className="p-4">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="flex min-w-0 items-center gap-2.5 text-[15px] font-semibold">
+          <IconBadge icon={Heart} tone="rose" size="sm" />
           {t('thanks.title')}
         </h2>
         {!open && (
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="shrink-0 text-sm text-accent"
+            className="shrink-0 rounded-full bg-accent-soft px-3.5 py-1.5 text-sm font-semibold
+                       text-accent-soft-ink transition-transform active:scale-95"
           >
             {t('thanks.add')}
           </button>
@@ -70,16 +74,15 @@ export function GratitudeTile({ partnerName }: { partnerName: string }) {
             autoFocus
             maxLength={500}
             placeholder={t('thanks.placeholder', { name: partnerName })}
-            className="w-full min-w-0 resize-none rounded-xl bg-bg px-4 py-3 ring-1 ring-line
-                       outline-none focus:ring-2 focus:ring-accent placeholder:text-muted"
+            className={`${INPUT_CLASS} min-w-0 resize-none`}
           />
           <div className="flex gap-2">
             <button
               type="button"
               disabled={!ready || add.isPending}
               onClick={() => void submit()}
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-ink
-                         disabled:opacity-50"
+              className="rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-accent-ink
+                         transition-transform active:scale-95 disabled:opacity-50"
             >
               {t('thanks.send')}
             </button>
@@ -89,7 +92,7 @@ export function GratitudeTile({ partnerName }: { partnerName: string }) {
                 setText('')
                 setOpen(false)
               }}
-              className="px-3 py-2 text-sm text-muted"
+              className="px-3 py-2.5 text-sm font-medium text-muted"
             >
               {t('common.cancel')}
             </button>
@@ -100,11 +103,11 @@ export function GratitudeTile({ partnerName }: { partnerName: string }) {
       {items.length === 0 ? (
         !open && <p className="mt-2 text-sm text-muted">{t('thanks.empty')}</p>
       ) : (
-        <ul className="mt-3 flex flex-col gap-2.5">
+        <ul className="mt-3 flex flex-col gap-2">
           {items.slice(0, SHOWN).map((g) => {
             const mine = g.authorId === userId
             return (
-              <li key={g.id} className="flex items-start gap-2">
+              <li key={g.id} className="flex items-start gap-2 rounded-2xl bg-raised/60 px-3.5 py-2.5">
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm">{g.body}</span>
                   <span className="mt-0.5 block text-xs text-muted">
@@ -119,7 +122,7 @@ export function GratitudeTile({ partnerName }: { partnerName: string }) {
                     aria-label={t('common.delete')}
                     disabled={remove.isPending}
                     onClick={() => void remove.mutateAsync(g.id)}
-                    className="shrink-0 p-1 text-muted"
+                    className="-mr-1.5 shrink-0 p-1.5 text-muted"
                   >
                     <Trash2 size={14} aria-hidden />
                   </button>
@@ -129,6 +132,6 @@ export function GratitudeTile({ partnerName }: { partnerName: string }) {
           })}
         </ul>
       )}
-    </section>
+    </Card>
   )
 }

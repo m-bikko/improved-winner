@@ -1,15 +1,18 @@
 import { lookupBarcode } from './openFoodFacts'
 import { BarcodeScanner } from './BarcodeScanner'
 import { useT } from '@/lib/i18n'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ChevronRight, Plus, ScanLine } from 'lucide-react'
+import { Apple, ChevronRight, CookingPot, ScanLine, SearchX } from 'lucide-react'
 import { searchItems } from '@/lib/search'
+import { Card } from '@/ui/Card'
 import { SearchInput } from '@/ui/SearchInput'
 import { EmptyState, ErrorState, Loading } from '@/ui/States'
 import { useFoodPhotoUrls, useFoods } from './api'
 import { FoodThumb } from './FoodPhoto'
 import type { Food, FoodKind } from './types'
+import { Segmented } from '@/ui/Segmented'
+import { Fab } from '@/ui/Fab'
 
 export function FoodsPage() {
   const t = useT()
@@ -72,15 +75,15 @@ export function FoodsPage() {
   const photos = useFoodPhotoUrls(photoPaths)
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pt-3 pb-28">
-      <div className="mb-3 flex gap-1 rounded-xl bg-raised p-1">
-        <Tab active={tab === 'product'} onClick={() => setTab('product')}>
-          {t('food.tabProducts')}
-        </Tab>
-        <Tab active={tab === 'dish'} onClick={() => setTab('dish')}>
-          {t('food.tabDishes')}
-        </Tab>
-      </div>
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+      <Segmented
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: 'product', label: t('food.tabProducts') },
+          { value: 'dish', label: t('food.tabDishes') },
+        ]}
+      />
 
       <div className="flex items-center gap-2">
         <span className="min-w-0 flex-1">
@@ -92,9 +95,10 @@ export function FoodsPage() {
             type="button"
             onClick={() => setScanning(true)}
             aria-label={t('scan.scan')}
-            className="shrink-0 rounded-xl bg-raised p-3 text-muted ring-1 ring-line"
+            className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-surface text-tone-green
+                       shadow-card transition-transform active:scale-95"
           >
-            <ScanLine size={18} aria-hidden />
+            <ScanLine size={20} aria-hidden />
           </button>
         )}
       </div>
@@ -110,13 +114,17 @@ export function FoodsPage() {
         />
       )}
 
-      {lookup !== null && <p className="mt-2 text-sm text-muted">{lookup}</p>}
+      {lookup !== null && (
+        <p className="rounded-2xl bg-raised px-4 py-3 text-sm text-muted">{lookup}</p>
+      )}
 
       {foods.isPending && <Loading />}
       {foods.isError && <ErrorState error={foods.error} onRetry={() => void foods.refetch()} />}
 
       {foods.isSuccess && visible.length === 0 && (
         <EmptyState
+          icon={query ? SearchX : tab === 'dish' ? CookingPot : Apple}
+          tone="green"
           title={t(
             query ? 'pick.nothingFound' : tab === 'dish' ? 'food.noDishes' : 'food.noProducts',
           )}
@@ -131,92 +139,93 @@ export function FoodsPage() {
       )}
 
       {visible.length > 0 && (
-        <ul className="mt-3 overflow-hidden rounded-xl ring-1 ring-line">
-          {visible.map((food, i) => (
-            <li key={food.id} className={i > 0 ? 'border-t border-line' : undefined}>
-              <FoodRow
-                food={food}
-                to={`/foods/${food.id}`}
-                photoUrl={food.imagePath ? photos.data?.[food.imagePath] : undefined}
-              />
-            </li>
-          ))}
-        </ul>
+        <Card className="overflow-hidden">
+          <ul className="divide-y divide-line">
+            {visible.map((food) => (
+              <li key={food.id}>
+                <FoodRow
+                  food={food}
+                  to={`/foods/${food.id}`}
+                  photoUrl={food.imagePath ? photos.data?.[food.imagePath] : undefined}
+                />
+              </li>
+            ))}
+          </ul>
+        </Card>
       )}
 
-      <button
-        type="button"
+      <Fab
         onClick={() => navigate(tab === 'dish' ? '/foods/new?kind=dish' : '/foods/new')}
-        aria-label={t(tab === 'dish' ? 'food.newDish' : 'food.newProduct')}
-        className="fixed right-5 bottom-6 z-20 flex size-14 items-center justify-center
-                   rounded-full bg-accent text-accent-ink shadow-lg
-                   transition-transform active:scale-95"
-        style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
-      >
-        <Plus size={26} aria-hidden />
-      </button>
+        label={t(tab === 'dish' ? 'food.newDish' : 'food.newProduct')}
+      />
     </div>
   )
 }
 
-function Tab({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-colors ${
-        active ? 'bg-surface text-ink shadow-sm' : 'text-muted'
-      }`}
-    >
-      {children}
-    </button>
-  )
-}
-
-/** Строка продукта. Используется и здесь, и в шторке выбора из дневника. */
-export function FoodRow({
-  food,
-  to,
-  photoUrl,
-}: {
+type FoodRowProps = {
   food: Food
-  to: string
   photoUrl?: string | undefined
-}) {
+  /** Правый край. По умолчанию у ссылки - шеврон, у кнопки - ничего. */
+  trailing?: ReactNode | undefined
+} & ({ to: string } | { onClick: () => void })
+
+/**
+ * Строка продукта: миниатюра, название и КБЖУ на 100 г.
+ *
+ * Одна на три места - список продуктов, выбор еды в дневник и выбор
+ * ингредиента для блюда. Раньше у каждого места была своя вёрстка, и выбор
+ * ингредиента остался вовсе без фотографий: одно и то же выглядело
+ * по-разному в зависимости от того, откуда его открыли.
+ *
+ * Строка во всю ширину карточки и есть область нажатия, как у ListRow.
+ */
+export function FoodRow(props: FoodRowProps) {
+  const { food, photoUrl } = props
   const t = useT()
-  return (
-    <Link to={to} className="flex items-center gap-3 bg-surface px-4 py-3 active:bg-raised">
-      <FoodThumb url={photoUrl} />
+  const trailing =
+    props.trailing ??
+    ('to' in props ? <ChevronRight size={18} className="shrink-0 text-muted/70" aria-hidden /> : null)
+
+  const body = (
+    <>
+      <FoodThumb url={photoUrl} kind={food.kind} />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-base">
+        <span className="block truncate text-[15px] font-medium">
           {food.name}
-          {food.brand && <span className="text-muted"> · {food.brand}</span>}
+          {food.brand && <span className="font-normal text-muted"> · {food.brand}</span>}
         </span>
-        <span className="mt-0.5 block text-xs text-muted">
-          {Math.round(food.kcal100)} {t('unit.kcal')} ·{' '}
-          <span className="text-protein">
+        <span className="mt-0.5 block truncate text-[13px] text-muted">
+          <span className="font-semibold text-ink tabular-nums">{Math.round(food.kcal100)}</span>{' '}
+          {t('unit.kcal')} ·{' '}
+          <span className="text-protein tabular-nums">
             {t('macro.p')} {trim(food.protein100)}
           </span>{' '}
-          <span className="text-fat">
+          <span className="text-fat tabular-nums">
             {t('macro.f')} {trim(food.fat100)}
           </span>{' '}
-          <span className="text-carbs">
+          <span className="text-carbs tabular-nums">
             {t('macro.c')} {trim(food.carbs100)}
-          </span>
-          <span className="text-muted"> {t('pick.per100')}</span>
+          </span>{' '}
+          {t('pick.per100')}
         </span>
       </span>
-      <ChevronRight size={18} className="shrink-0 text-muted" aria-hidden />
-    </Link>
+      {trailing}
+    </>
+  )
+  const cls =
+    'flex w-full min-h-16 items-center gap-3 px-4 py-2.5 text-left transition-colors active:bg-raised'
+
+  if ('to' in props) {
+    return (
+      <Link to={props.to} className={cls}>
+        {body}
+      </Link>
+    )
+  }
+  return (
+    <button type="button" onClick={props.onClick} className={cls}>
+      {body}
+    </button>
   )
 }
 

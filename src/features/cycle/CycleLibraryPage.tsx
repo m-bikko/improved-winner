@@ -1,10 +1,48 @@
 import { useMemo, useState } from 'react'
-import { ChevronDown, Search, X } from 'lucide-react'
+import {
+  Activity,
+  Apple,
+  CalendarClock,
+  ChevronDown,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  Dumbbell,
+  Flower2,
+  HeartHandshake,
+  HeartPulse,
+  SearchX,
+  Sparkles,
+  Sun,
+  type LucideIcon,
+} from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
 import { dynamicKey, useT } from '@/lib/i18n'
 import { normalize, tokenize } from '@/lib/search'
+import { Card } from '@/ui/Card'
+import { Chip } from '@/ui/Chip'
+import { IconBadge } from '@/ui/IconBadge'
+import { SearchInput } from '@/ui/SearchInput'
+import { EmptyState } from '@/ui/States'
+import type { Tone } from '@/ui/tones'
 import { useCycleSettings } from './api'
 import { tipsLibrary, TIP_CATEGORIES, type TipCategory } from './tips'
+
+/**
+ * Значок темы. Оглавление из девяти одинаковых строк читалось сплошным
+ * списком; со значком тему находят глазами, не вчитываясь в названия.
+ * Тона - от разделов с тем же смыслом: еда зелёная, как «Продукты».
+ */
+const CATEGORY_LOOK: Record<TipCategory, { icon: LucideIcon; tone: Tone }> = {
+  delay: { icon: CalendarClock, tone: 'orange' },
+  body: { icon: HeartPulse, tone: 'rose' },
+  hormones: { icon: Activity, tone: 'violet' },
+  food: { icon: Apple, tone: 'green' },
+  training: { icon: Dumbbell, tone: 'sky' },
+  together: { icon: HeartHandshake, tone: 'teal' },
+  intimacy: { icon: Flower2, tone: 'plum' },
+  practices: { icon: Sparkles, tone: 'plum' },
+  benefits: { icon: Sun, tone: 'amber' },
+}
 
 /**
  * База знаний по циклу.
@@ -123,45 +161,21 @@ export function CycleLibraryPage() {
   const allOpen = opened.length === byCategory.length && byCategory.length > 0
 
   return (
-    <div className="flex flex-col gap-3 px-4 py-4">
-      <div className="relative">
-        <Search
-          size={17}
-          aria-hidden
-          className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-muted"
-        />
-        <input
-          type="text"
-          inputMode="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t('lib.search')}
-          aria-label={t('lib.search')}
-          className="w-full min-w-0 rounded-xl bg-surface py-3 pr-10 pl-10 ring-1 ring-line
-                     outline-none focus:ring-2 focus:ring-accent placeholder:text-muted"
-        />
-        {query !== '' && (
-          <button
-            type="button"
-            onClick={() => setQuery('')}
-            aria-label={t('common.cancel')}
-            className="absolute top-1/2 right-2 -translate-y-1/2 p-2 text-muted"
-          >
-            <X size={17} aria-hidden />
-          </button>
-        )}
-      </div>
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+      <SearchInput value={query} onChange={setQuery} placeholder={t('lib.search')} />
 
       {/* Чипы тем. Прокручиваются вбок, а не переносятся: восемь тем в две
-          строки съедают экран до первого материала. */}
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-        <Chip active={only === null} onClick={() => setOnly(null)}>
+          строки съедают экран до первого материала. nowrap и shrink-0 у детей -
+          иначе в узкой строке чип «Что даёт близость» переносится сам. */}
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 py-1 whitespace-nowrap *:shrink-0">
+        <Chip size="sm" selected={only === null} onClick={() => setOnly(null)}>
           {t('lib.all')}
         </Chip>
         {groups.map(({ category }) => (
           <Chip
             key={category}
-            active={only === category}
+            size="sm"
+            selected={only === category}
             onClick={() => setOnly(only === category ? null : category)}
           >
             {t(dynamicKey('tipCat', category))}
@@ -169,43 +183,55 @@ export function CycleLibraryPage() {
         ))}
       </div>
 
-      <div className="flex items-center justify-between gap-3 px-1">
-        <p className="text-xs text-muted">{t('lib.found', { n: found.length })}</p>
+      <div className="flex min-h-10 items-center justify-between gap-3 px-1">
+        <p className="text-[13px] text-muted tabular-nums">{t('lib.found', { n: found.length })}</p>
         {byCategory.length > 0 && !searching && (
           <button
             type="button"
             onClick={() => setOpened(allOpen ? [] : byCategory.map((g) => g.category))}
-            className="text-xs text-accent"
+            className="flex min-h-9 items-center gap-1 rounded-full bg-accent-soft px-3 text-[13px]
+                       font-semibold text-accent-soft-ink transition-transform active:scale-95"
           >
+            {allOpen ? (
+              <ChevronsDownUp size={15} aria-hidden />
+            ) : (
+              <ChevronsUpDown size={15} aria-hidden />
+            )}
             {allOpen ? t('lib.collapseAll') : t('lib.expandAll')}
           </button>
         )}
       </div>
 
       {found.length === 0 ? (
-        <div className="rounded-2xl bg-surface p-5 ring-1 ring-line">
-          <p className="font-medium">{t('lib.nothing')}</p>
-          <p className="mt-1 text-sm text-muted">{t('lib.nothingHint')}</p>
-        </div>
+        <EmptyState
+          icon={SearchX}
+          tone="plum"
+          title={t('lib.nothing')}
+          hint={t('lib.nothingHint')}
+        />
       ) : (
         byCategory.map(({ category, cards }) => {
           // При поиске всё развёрнуто: искать в свёрнутом нечего.
           const open = searching || opened.includes(category)
+          const look = CATEGORY_LOOK[category]
           return (
-            <section
-              key={category}
-              className="overflow-hidden rounded-2xl bg-surface ring-1 ring-line"
-            >
+            <Card key={category} as="section" className="overflow-hidden">
               <button
                 type="button"
                 onClick={() => toggle(category)}
                 aria-expanded={open}
                 disabled={searching}
-                className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
+                className="flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left transition-colors
+                           enabled:active:bg-raised"
               >
-                <span className="font-medium">{t(dynamicKey('tipCat', category))}</span>
-                <span className="flex items-center gap-2 text-sm text-muted">
-                  {cards.length}
+                <IconBadge icon={look.icon} tone={look.tone} size="sm" />
+                <span className="min-w-0 flex-1 truncate font-display text-[17px] font-bold">
+                  {t(dynamicKey('tipCat', category))}
+                </span>
+                <span className="flex shrink-0 items-center gap-2 text-muted">
+                  <span className="rounded-full bg-raised px-2.5 py-0.5 text-[13px] font-semibold tabular-nums">
+                    {cards.length}
+                  </span>
                   {!searching && (
                     <ChevronDown
                       size={18}
@@ -216,42 +242,22 @@ export function CycleLibraryPage() {
                 </span>
               </button>
               {open && (
-                <div className="flex flex-col gap-3.5 border-t border-line px-4 py-3.5">
+                // Материал - длинный текст, и читают его подряд: разделитель
+                // между карточками вместо отдельных плашек, поля пошире,
+                // тело не серым - приглушённый абзац в десять строк утомляет
+                <div className="divide-y divide-line border-t border-line">
                   {cards.map((card) => (
-                    <div key={card.id}>
-                      <p className="text-sm font-medium">{card.title}</p>
-                      <p className="mt-1 text-sm text-muted">{card.body}</p>
-                    </div>
+                    <article key={card.id} className="px-5 py-4">
+                      <h3 className="text-[15px] leading-snug font-semibold">{card.title}</h3>
+                      <p className="mt-1.5 text-[15px] leading-relaxed text-ink/80">{card.body}</p>
+                    </article>
                   ))}
                 </div>
               )}
-            </section>
+            </Card>
           )
         })
       )}
     </div>
-  )
-}
-
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm ring-1 ${
-        active ? 'bg-accent text-accent-ink ring-accent' : 'bg-surface text-muted ring-line'
-      }`}
-    >
-      {children}
-    </button>
   )
 }

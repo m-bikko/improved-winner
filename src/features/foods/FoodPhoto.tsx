@@ -1,9 +1,11 @@
 import { useT } from '@/lib/i18n'
 import { useRef, useState } from 'react'
-import { Camera, ImageOff, LoaderCircle, Trash2 } from 'lucide-react'
+import { Apple, Camera, CookingPot, ImagePlus, LoaderCircle, Trash2 } from 'lucide-react'
 import { formatBytes } from '@/lib/image'
 import { Button } from '@/ui/Button'
+import { Card } from '@/ui/Card'
 import { useFoodPhotoUrls, useRemoveFoodPhoto, useUploadFoodPhoto } from './api'
+import type { FoodKind } from './types'
 
 /**
  * Загрузка фотографии продукта.
@@ -31,9 +33,12 @@ export function FoodPhotoEditor({
 
   if (!foodId) {
     return (
-      <p className="rounded-xl bg-raised px-4 py-3 text-sm text-muted">
-        {t('food.photoAfterSave')}
-      </p>
+      <Card as="section" className="flex items-center gap-3 p-4">
+        <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-raised text-muted">
+          <ImagePlus size={20} aria-hidden />
+        </span>
+        <p className="min-w-0 flex-1 text-sm text-muted">{t('food.photoAfterSave')}</p>
+      </Card>
     )
   }
 
@@ -49,48 +54,62 @@ export function FoodPhotoEditor({
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-sm font-medium">{t('food.photo')}</p>
+    <Card as="section" className="flex flex-col gap-3 p-4">
+      <h2 className="font-display text-[17px] font-bold">{t('food.photo')}</h2>
 
-      <div className="flex items-center gap-3">
-        <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-raised ring-1 ring-line">
+      <div className="flex items-center gap-4">
+        {/* Превью - кнопкой: по крупному квадрату попасть легче, чем по надписи */}
+        <button
+          type="button"
+          onClick={() => input.current?.click()}
+          disabled={upload.isPending}
+          aria-label={t(imagePath ? 'food.replacePhoto' : 'food.addPhoto')}
+          className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-raised
+                     text-muted transition-transform active:scale-95"
+        >
           {upload.isPending ? (
-            <LoaderCircle size={20} className="animate-spin text-muted" aria-hidden />
+            <LoaderCircle size={22} className="animate-spin" aria-hidden />
           ) : url ? (
             <img src={url} alt="" className="size-full object-cover" />
           ) : (
-            <ImageOff size={20} className="text-muted" aria-hidden />
+            <ImagePlus size={24} aria-hidden />
           )}
-        </div>
+        </button>
 
         <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <Button variant="secondary" onClick={() => input.current?.click()} loading={upload.isPending}>
+          <Button
+            variant="soft"
+            className="min-h-11 px-4 text-[15px]"
+            onClick={() => input.current?.click()}
+            loading={upload.isPending}
+          >
             <Camera size={18} aria-hidden />
             {t(imagePath ? 'food.replacePhoto' : 'food.addPhoto')}
           </Button>
 
           {imagePath && (
-            <button
-              type="button"
+            <Button
+              variant="danger"
+              className="min-h-11 px-4 text-[15px]"
+              loading={remove.isPending}
               onClick={() => void remove.mutateAsync({ foodId, path: imagePath })}
-              className="flex items-center gap-1.5 self-start px-1 py-1 text-sm text-muted"
             >
-              <Trash2 size={15} aria-hidden />
+              <Trash2 size={17} aria-hidden />
               {t('common.delete')}
-            </button>
+            </Button>
           )}
         </div>
       </div>
 
       {savedSize && (
-        <p className="text-xs text-muted">
+        <p className="text-[13px] text-muted">
           {t('food.shrunk', {
             from: formatBytes(savedSize.from),
             to: formatBytes(savedSize.to),
           })}
         </p>
       )}
-      {error && <p className="text-xs text-danger">{error}</p>}
+      {error && <p className="text-[13px] text-danger">{error}</p>}
 
       <input
         ref={input}
@@ -105,21 +124,38 @@ export function FoodPhotoEditor({
           if (file) void pick(file)
         }}
       />
-    </div>
+    </Card>
   )
 }
 
-/** Квадратное превью для списков. */
-export function FoodThumb({ url, size = 40 }: { url: string | undefined; size?: number }) {
+/**
+ * Квадратное превью для списков.
+ *
+ * Без фото - значок вида записи, а не «картинки нет»: у большинства продуктов
+ * фото нет вовсе, и колонка перечёркнутых картинок читалась как поломка.
+ * Подложка нейтральная, а не зелёная: настоящие фотографии должны
+ * выделяться среди заглушек, а не тонуть в тридцати одинаковых значках.
+ */
+export function FoodThumb({
+  url,
+  size = 44,
+  kind = 'product',
+}: {
+  url: string | undefined
+  size?: number
+  kind?: FoodKind | undefined
+}) {
+  const Icon = kind === 'dish' ? CookingPot : Apple
   return (
     <span
-      className="flex shrink-0 items-center justify-center overflow-hidden rounded-lg bg-raised"
+      aria-hidden
+      className="flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-raised"
       style={{ width: size, height: size }}
     >
       {url ? (
         <img src={url} alt="" loading="lazy" className="size-full object-cover" />
       ) : (
-        <ImageOff size={size * 0.4} className="text-muted/60" aria-hidden />
+        <Icon size={Math.round(size * 0.42)} className="text-muted/70" />
       )}
     </span>
   )

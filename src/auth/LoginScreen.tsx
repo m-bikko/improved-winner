@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronLeft, ScanFace } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Heart, ScanFace } from 'lucide-react'
 import { ACCOUNTS, PIN_LENGTH, type Account } from '@/lib/accounts'
 import { useT, type Translate } from '@/lib/i18n'
 import { biometricsAvailable, hasBiometrics, unlockWithBiometrics } from '@/lib/biometrics'
 import { useAuth, type SignInFailure } from './AuthProvider'
 import { PinPad } from './PinPad'
+import { APP_NAME } from '@/lib/appName'
+import { Avatar } from '@/ui/Avatar'
 
 /** Задержка после N подряд неверных попыток, в секундах. */
 const LOCK_SECONDS = [0, 0, 0, 5, 15, 30, 60] as const
@@ -129,8 +131,14 @@ export function LoginScreen() {
 
   if (!account) {
     return (
-      <main className="flex min-h-dvh flex-col items-center justify-center gap-10 px-6">
-        <h1 className="text-2xl font-semibold tracking-tight">{t('login.who')}</h1>
+      <Backdrop>
+        <div className="flex flex-col items-center gap-3 text-center">
+          <span className="flex size-16 items-center justify-center rounded-[22px] bg-accent text-accent-ink shadow-[0_14px_30px_-12px_var(--c-accent)]">
+            <Heart size={30} className="fill-current" aria-hidden />
+          </span>
+          <p className="font-display text-[28px] font-extrabold tracking-tight">{APP_NAME}</p>
+          <h1 className="text-base text-muted">{t('login.who')}</h1>
+        </div>
         <div className="flex w-full max-w-xs flex-col gap-3">
           {ACCOUNTS.map((a) => (
             <button
@@ -141,19 +149,21 @@ export function LoginScreen() {
                 setPin('')
                 setError(null)
               }}
-              className="rounded-2xl bg-surface px-6 py-5 text-lg font-medium shadow-sm
-                         ring-1 ring-line transition-transform active:scale-[0.98]"
+              className="flex items-center gap-4 rounded-3xl bg-surface px-5 py-4 text-left shadow-card
+                         transition-transform active:scale-[0.97]"
             >
-              {a.nickname}
+              <Avatar name={a.nickname} tone="accent" size="lg" />
+              <span className="min-w-0 flex-1 truncate font-display text-xl font-bold">{a.nickname}</span>
+              <ChevronRight size={20} aria-hidden className="shrink-0 text-muted/70" />
             </button>
           ))}
         </div>
-      </main>
+      </Backdrop>
     )
   }
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center px-6 py-10">
+    <Backdrop>
       <PinPad
         title={account.nickname}
         subtitle={lockLeft > 0 ? t('login.wait', { n: lockLeft }) : t('login.enterPin')}
@@ -190,6 +200,21 @@ export function LoginScreen() {
           </div>
         }
       />
+    </Backdrop>
+  )
+}
+
+/**
+ * Фон экрана входа: тёплое сияние сверху, как и внутри приложения, -
+ * чтобы вход не выглядел отдельным сайтом.
+ */
+function Backdrop({ children }: { children: React.ReactNode }) {
+  return (
+    <main
+      className="flex min-h-dvh flex-col items-center justify-center gap-10 px-6 pt-safe pb-safe"
+      style={{ background: 'radial-gradient(130% 60% at 50% 0%, var(--c-glow), transparent 70%)' }}
+    >
+      {children}
     </main>
   )
 }

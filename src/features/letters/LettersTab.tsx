@@ -1,11 +1,13 @@
 import { useT } from '@/lib/i18n'
 import { useMemo, useRef, useState } from 'react'
-import { Check, ImagePlus, Mail, MailOpen, Plus, X } from 'lucide-react'
+import { Check, ImagePlus, Mail, MailOpen, X } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
 import { formatDayMonthYear, fromLocalISO, shiftDays, todayLocal } from '@/lib/date'
 import { formatBytes, prepareImage, type PreparedImage } from '@/lib/image'
 import { Button } from '@/ui/Button'
-import { Field } from '@/ui/Field'
+import { Card as Surface } from '@/ui/Card'
+import { Field, INPUT_CLASS } from '@/ui/Field'
+import { IconBadge } from '@/ui/IconBadge'
 import { PhotoViewer } from '@/ui/PhotoViewer'
 import { Sheet } from '@/ui/Sheet'
 import { EmptyState, ErrorState, Loading } from '@/ui/States'
@@ -18,6 +20,8 @@ import {
   type Letter,
   type LetterAudience,
 } from './api'
+import { Fab } from '@/ui/Fab'
+import { Segmented } from '@/ui/Segmented'
 
 function day(iso: string): string {
   return formatDayMonthYear(fromLocalISO(iso))
@@ -69,9 +73,11 @@ export function LettersTab() {
         <EmptyState
           title={t('letter.emptyTitle')}
           hint={t('letter.emptyHint')}
+          icon={Mail}
+          tone="teal"
         />
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-3">
           {arrived.map((l) => (
             <li key={l.id}>
               <Card
@@ -86,23 +92,13 @@ export function LettersTab() {
       )}
 
       {flying > 0 && (
-        <p className="mt-4 flex items-center justify-center gap-2 text-sm text-muted">
-          <Mail size={15} aria-hidden className="text-accent" />
+        <p className="flex items-center justify-center gap-2 rounded-2xl bg-raised/60 px-4 py-3 text-sm text-muted">
+          <Mail size={16} aria-hidden className="shrink-0 text-accent" />
           {t.plural('letter.flying', flying).replace('{n}', String(flying))}
         </p>
       )}
 
-      <button
-        type="button"
-        onClick={() => setWriting(true)}
-        aria-label={t('letter.new')}
-        className="fixed right-5 bottom-6 z-20 flex size-14 items-center justify-center
-                   rounded-full bg-accent text-accent-ink shadow-lg
-                   transition-transform active:scale-95"
-        style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
-      >
-        <Plus size={26} aria-hidden />
-      </button>
+      <Fab onClick={() => setWriting(true)} label={t('letter.new')} />
 
       {writing && <Editor onClose={() => setWriting(false)} />}
       {viewing && (
@@ -129,30 +125,32 @@ function Card({
   const author = profiles.data?.find((p) => p.userId === letter.authorId)?.nickname ?? t('partner')
 
   return (
-    <div className="rounded-2xl bg-surface p-4 ring-1 ring-line">
-      <div className="flex items-center gap-2 text-sm text-muted">
-        <MailOpen size={15} aria-hidden />
-        {t('letter.arrived', { day: day(letter.deliverOn) })}
-        {!mine && ` · ${author}`}
-        {mine && letter.audience === 'both' && t('letter.toBoth')}
+    <Surface as="article" className="p-4">
+      <div className="flex items-center gap-2.5">
+        <IconBadge icon={MailOpen} tone="teal" size="sm" />
+        <p className="min-w-0 flex-1 truncate text-[13px] font-semibold text-muted">
+          {t('letter.arrived', { day: day(letter.deliverOn) })}
+          {!mine && ` · ${author}`}
+          {mine && letter.audience === 'both' && t('letter.toBoth')}
+        </p>
       </div>
       {url && (
         <button
           type="button"
           onClick={() => onView(url)}
           aria-label={t('letter.viewPhoto')}
-          className="mt-3 block w-full overflow-hidden rounded-xl bg-raised"
+          className="mt-3 block w-full overflow-hidden rounded-2xl bg-raised"
         >
           {/* object-contain, а не cover: снимок в письме не превью в сетке,
               и обрезать его - значит обрезать то, ради чего он приложен */}
           <img src={url} alt="" className="max-h-72 w-full object-contain" />
         </button>
       )}
-      <p className="mt-2 text-sm whitespace-pre-wrap">{letter.body}</p>
-      <p className="mt-2 text-xs text-muted">
+      <p className="mt-3 text-[15px] leading-relaxed whitespace-pre-wrap">{letter.body}</p>
+      <p className="mt-3 text-[13px] text-muted">
         {t('letter.written', { day: day(letter.createdAt.slice(0, 10)) })}
       </p>
-    </div>
+    </Surface>
   )
 }
 
@@ -218,11 +216,11 @@ function Editor({ onClose }: { onClose: () => void }) {
     return (
       <Sheet open onClose={onClose} title={t('letter.sealedTitle')}>
         <div className="flex flex-col items-center gap-4 py-4 text-center">
-          <span className="flex size-14 items-center justify-center rounded-full bg-accent text-accent-ink">
-            <Check size={28} aria-hidden />
+          <span className="flex size-16 items-center justify-center rounded-full bg-accent text-accent-ink shadow-float">
+            <Check size={30} strokeWidth={2.6} aria-hidden />
           </span>
           <div>
-            <p className="font-medium">{t('letter.sealedHead')}</p>
+            <p className="font-display text-lg font-bold">{t('letter.sealedHead')}</p>
             <p className="mt-1 text-sm text-muted">
               {t('letter.sealedBody', {
                 day: day(deliverOn),
@@ -231,7 +229,9 @@ function Editor({ onClose }: { onClose: () => void }) {
               })}
             </p>
           </div>
-          <Button onClick={onClose}>{t('common.done')}</Button>
+          <Button onClick={onClose} className="w-full">
+            {t('common.done')}
+          </Button>
         </div>
       </Sheet>
     )
@@ -248,8 +248,7 @@ function Editor({ onClose }: { onClose: () => void }) {
             rows={6}
             autoFocus
             placeholder={t('letter.placeholder')}
-            className="w-full min-w-0 resize-none rounded-xl bg-surface px-4 py-3 ring-1 ring-line
-                       outline-none focus:ring-2 focus:ring-accent placeholder:text-muted"
+            className={`${INPUT_CLASS} min-w-0 resize-none`}
           />
         </label>
 
@@ -269,7 +268,7 @@ function Editor({ onClose }: { onClose: () => void }) {
             }}
           />
           {photo ? (
-            <div className="relative overflow-hidden rounded-xl bg-raised">
+            <div className="relative overflow-hidden rounded-2xl bg-raised">
               <img src={photo.url} alt="" className="max-h-56 w-full object-contain" />
               <button
                 type="button"
@@ -278,50 +277,38 @@ function Editor({ onClose }: { onClose: () => void }) {
                   setPhoto(null)
                 }}
                 aria-label={t('letter.removePhoto')}
-                className="absolute top-2 right-2 rounded-full bg-black/60 p-2 text-white"
+                className="absolute top-2 right-2 flex size-10 items-center justify-center rounded-full
+                           bg-black/60 text-white backdrop-blur-sm"
               >
-                <X size={16} aria-hidden />
+                <X size={18} aria-hidden />
               </button>
-              <p className="px-3 py-2 text-xs text-muted">
+              <p className="px-3 py-2 text-[13px] text-muted tabular-nums">
                 {formatBytes(photo.from)} → {formatBytes(photo.prepared.blob.size)}
               </p>
             </div>
           ) : (
-            <button
-              type="button"
+            <Button
+              variant="secondary"
               onClick={() => input.current?.click()}
-              className="flex items-center gap-2 self-start rounded-xl bg-raised px-4 py-3 text-sm ring-1 ring-line"
+              className="self-start text-[15px]"
             >
-              <ImagePlus size={17} aria-hidden className="text-muted" />
+              <ImagePlus size={18} aria-hidden className="text-muted" />
               {t('letter.attachPhoto')}
-            </button>
+            </Button>
           )}
         </div>
 
         <div className="flex flex-col gap-2">
           <span className="text-sm text-muted">{t('letter.to')}</span>
-          <div className="flex flex-wrap gap-2">
-            {(
-              [
-                ['partner', 'letter.toPartner'],
-                ['both', 'letter.toBothChoice'],
-              ] as const
-            ).map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setAudience(id)}
-                aria-pressed={audience === id}
-                className={`rounded-full px-4 py-2 text-sm transition-colors ${
-                  audience === id
-                    ? 'bg-accent text-accent-ink'
-                    : 'bg-raised text-ink ring-1 ring-line'
-                }`}
-              >
-                {t(label)}
-              </button>
-            ))}
-          </div>
+          <Segmented
+            value={audience}
+            onChange={setAudience}
+            ariaLabel={t('letter.to')}
+            options={[
+              { value: 'partner', label: t('letter.toPartner') },
+              { value: 'both', label: t('letter.toBothChoice') },
+            ]}
+          />
         </div>
 
         <Field

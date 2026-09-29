@@ -1,4 +1,8 @@
 @import 'tailwindcss';
+/* Шрифт заголовков и крупных чисел. Локально, а не с Google Fonts: PWA
+   должна рисоваться офлайн, а woff2 попадает в прекэш service worker.
+   Variable-сборка с cyrillic-ext - в ней все казахские буквы (ә ғ қ ң ө ұ ү һ і). */
+@import '@fontsource-variable/nunito';
 
 /* Токены темы. Значения живут в :root и переключаются по prefers-color-scheme,
    а @theme только связывает их с утилитами Tailwind (bg-surface, text-muted и т.д.). */
@@ -6,12 +10,48 @@
   --color-bg: var(--c-bg);
   --color-surface: var(--c-surface);
   --color-raised: var(--c-raised);
+  /* Поверхность, приподнятая НАД raised: выбранный сегмент переключателя.
+     Не surface: в тёмной теме surface темнее raised, и выбранный вариант
+     выглядел вдавленным, а не выбранным */
+  --color-lifted: var(--c-lifted);
   --color-line: var(--c-line);
   --color-ink: var(--c-ink);
   --color-muted: var(--c-muted);
   --color-accent: var(--c-accent);
   --color-accent-ink: var(--c-accent-ink);
+  /* Мягкий тон акцента: подложка выбранного чипа, вторичные кнопки,
+     подсветка активной вкладки. Текст на нём - accent-soft-ink, не accent:
+     розовый на розовом не дотягивал до 4.5:1 */
+  --color-accent-soft: var(--c-accent-soft);
+  --color-accent-soft-ink: var(--c-accent-soft-ink);
   --color-danger: var(--c-danger);
+  --color-danger-soft: var(--c-danger-soft);
+
+  /* Тона разделов - ТОЛЬКО для значков (IconBadge) и аватаров. Для данных
+     они не годятся: палитра данных проверена на дальтонизм отдельно,
+     а эти - нет, им это и не нужно, рядом всегда подпись. */
+  --color-tone-rose: var(--t-rose);
+  --color-tone-rose-soft: var(--t-rose-soft);
+  --color-tone-amber: var(--t-amber);
+  --color-tone-amber-soft: var(--t-amber-soft);
+  --color-tone-violet: var(--t-violet);
+  --color-tone-violet-soft: var(--t-violet-soft);
+  --color-tone-sky: var(--t-sky);
+  --color-tone-sky-soft: var(--t-sky-soft);
+  --color-tone-green: var(--t-green);
+  --color-tone-green-soft: var(--t-green-soft);
+  --color-tone-teal: var(--t-teal);
+  --color-tone-teal-soft: var(--t-teal-soft);
+  --color-tone-orange: var(--t-orange);
+  --color-tone-orange-soft: var(--t-orange-soft);
+  --color-tone-slate: var(--t-slate);
+  --color-tone-slate-soft: var(--t-slate-soft);
+  --color-tone-indigo: var(--t-indigo);
+  --color-tone-indigo-soft: var(--t-indigo-soft);
+  --color-tone-plum: var(--t-plum);
+  --color-tone-plum-soft: var(--t-plum-soft);
+
+  --font-display: 'Nunito Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --color-protein: var(--c-protein);
   --color-fat: var(--c-fat);
   --color-carbs: var(--c-carbs);
@@ -48,15 +88,53 @@
 }
 
 :root {
-  --c-bg: #faf9f7;
+  /* Нейтральные чуть теплее прежних: вместе с тенями вместо рамок это
+     и даёт ощущение «мягко», а не «таблица». Серый текст затемнён на ступень -
+     на подложке raised прежний давал 4.2:1 при пороге 4.5. */
+  --c-bg: #f7f3ee;
   --c-surface: #ffffff;
-  --c-raised: #efece6;
-  --c-line: #ddd8d0;
-  --c-ink: #1c1a17;
-  --c-muted: #6f6a63;
+  --c-raised: #efe8e1;
+  --c-lifted: #ffffff;
+  --c-line: #e6ddd4;
+  --c-ink: #1f1a17;
+  --c-muted: #6b625a;
   --c-accent: #b4485f;
   --c-accent-ink: #ffffff;
+  --c-accent-soft: #f8e5e9;
+  --c-accent-soft-ink: #98374d;
   --c-danger: #c2410c;
+  --c-danger-soft: #fde9df;
+  /* Сияние у верха экрана - розовое, едва заметное */
+  --c-glow: rgb(214 108 132 / 0.16);
+  /* Тень карточки вместо рамки: две ступени - близкая чёткая и дальняя мягкая */
+  --c-shadow-card: 0 1px 2px rgb(74 42 30 / 0.05), 0 6px 20px -4px rgb(74 42 30 / 0.08);
+  --c-shadow-float: 0 8px 28px -6px rgb(74 42 30 / 0.22), 0 2px 6px rgb(74 42 30 / 0.08);
+
+  /* Тона разделов. Иконка на своей подложке - от 4:1 и выше (для значка нужно 3:1) */
+  --t-rose: #c0395a;
+  --t-rose-soft: #fbe6eb;
+  --t-amber: #a86400;
+  --t-amber-soft: #fcefd9;
+  --t-violet: #7446c4;
+  --t-violet-soft: #eee7fa;
+  --t-sky: #1b67b5;
+  --t-sky-soft: #e2eefa;
+  --t-green: #237a45;
+  --t-green-soft: #e2f2e6;
+  --t-teal: #0b7c78;
+  --t-teal-soft: #dbf1ef;
+  --t-orange: #bb5212;
+  --t-orange-soft: #fce8da;
+  --t-slate: #56606c;
+  --t-slate-soft: #eaedf0;
+  --t-indigo: #4953c9;
+  --t-indigo-soft: #e6e8fa;
+  --t-plum: #a63467;
+  --t-plum-soft: #f8e3ed;
+
+  /* Высота панели вкладок без safe-area. Нужна и самой панели, и всему,
+     что обязано стоять над ней: FAB, липкая кнопка «Сохранить», тост */
+  --tabbar-h: 64px;
   /* Трио Б/Ж/У прогнано валидатором палитры по всем парам. Прежние значения
      проваливались: зелёный и янтарный различались хуже порога даже при
      нормальном зрении (ΔE 14.2 при минимуме 15), а при протанопии - 5.5.
@@ -83,15 +161,45 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --c-bg: #141312;
-    --c-surface: #1e1c1a;
-    --c-raised: #2a2724;
-    --c-line: #322f2b;
-    --c-ink: #f2efea;
-    --c-muted: #9c958c;
+    --c-bg: #121110;
+    --c-surface: #1c1a18;
+    --c-raised: #28241f;
+    --c-lifted: #3b362f;
+    --c-line: #312c27;
+    --c-ink: #f3efe9;
+    --c-muted: #a39b92;
     --c-accent: #e5768c;
     --c-accent-ink: #1c1a17;
+    --c-accent-soft: #3a2228;
+    --c-accent-soft-ink: #f4a3b3;
     --c-danger: #f07a4a;
+    --c-danger-soft: #3a2117;
+    --c-glow: rgb(229 118 140 / 0.12);
+    /* В тёмной теме тень не видна - глубину даёт ступень светлоты
+       и тонкая внутренняя линия света по краю */
+    --c-shadow-card: inset 0 0 0 1px rgb(255 255 255 / 0.045), 0 1px 2px rgb(0 0 0 / 0.3);
+    --c-shadow-float: inset 0 0 0 1px rgb(255 255 255 / 0.06), 0 10px 30px -6px rgb(0 0 0 / 0.6);
+
+    --t-rose: #f28ca2;
+    --t-rose-soft: #3a1f27;
+    --t-amber: #efb35e;
+    --t-amber-soft: #382a15;
+    --t-violet: #b89cf1;
+    --t-violet-soft: #2b2340;
+    --t-sky: #84b9ef;
+    --t-sky-soft: #1a2a3c;
+    --t-green: #80cf99;
+    --t-green-soft: #193022;
+    --t-teal: #6fd1cb;
+    --t-teal-soft: #15302e;
+    --t-orange: #f3a473;
+    --t-orange-soft: #3a2417;
+    --t-slate: #aab3bf;
+    --t-slate-soft: #262a30;
+    --t-indigo: #a0a8f2;
+    --t-indigo-soft: #23253f;
+    --t-plum: #ec93bc;
+    --t-plum-soft: #381f2c;
     --c-protein: #2f7fd0;
     --c-fat: #c08000;
     --c-carbs: #009c65;
@@ -119,6 +227,25 @@
   margin-top: env(safe-area-inset-top);
 }
 
+/* Карточка без рамки: глубину даёт тень, в тёмной теме - линия света */
+@utility shadow-card {
+  box-shadow: var(--c-shadow-card);
+}
+/* Всё, что парит над контентом: FAB, панель вкладок, тост */
+@utility shadow-float {
+  box-shadow: var(--c-shadow-float);
+}
+
+/* Нижний отступ экрана под панель вкладок - чтобы последний элемент
+   не прятался под ней. Запас сверху - под FAB */
+@utility pb-tabbar {
+  padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 5.5rem);
+}
+/* Отступ снизу для того, что стоит над панелью: FAB, липкие кнопки, тост */
+@utility bottom-above-tabbar {
+  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 0.875rem);
+}
+
 /* Слой base обязателен, а не косметика: неслоёные правила в каскаде побеждают
    любой @layer, поэтому `button { background: none }` на верхнем уровне
    перебивал бы утилиту .bg-accent из слоя utilities - и все акцентные кнопки
@@ -135,6 +262,7 @@
     background: var(--c-bg);
     color: var(--c-ink);
     font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
     /* Убирает залипание подсветки при тапе на мобильном Safari */
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: none;

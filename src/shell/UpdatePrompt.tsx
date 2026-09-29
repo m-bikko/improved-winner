@@ -43,16 +43,16 @@ export function UpdatePrompt() {
   return (
     <div
       role="status"
-      className="fixed inset-x-4 bottom-6 z-50 flex items-center gap-3 rounded-xl bg-surface
-                 px-4 py-3 shadow-lg ring-1 ring-line"
-      style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
+      // Над панелью вкладок: у нижнего края её бы закрыла панель
+      className="fixed inset-x-3 bottom-above-tabbar z-50 mx-auto flex max-w-lg items-center gap-3
+                 rounded-2xl bg-surface px-4 py-3 shadow-float"
     >
       <RefreshCw size={18} className="shrink-0 text-accent" aria-hidden />
       <span className="flex-1 text-sm">{tr('update.available')}</span>
       <button
         type="button"
         onClick={() => void updateServiceWorker(true)}
-        className="rounded-lg bg-accent px-3 py-2 text-sm text-accent-ink"
+        className="rounded-xl bg-accent px-3.5 py-2 text-sm font-semibold text-accent-ink"
       >
         {tr('common.refresh')}
       </button>

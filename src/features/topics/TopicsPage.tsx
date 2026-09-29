@@ -1,10 +1,14 @@
 import { useT } from '@/lib/i18n'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CircleCheck, CircleDot, Plus } from 'lucide-react'
+import { ChevronRight, CircleCheck, CircleDot, MessagesSquare } from 'lucide-react'
 import { SearchInput } from '@/ui/SearchInput'
 import { EmptyState, ErrorState, Loading } from '@/ui/States'
 import { useTopics, type TopicStatus } from './api'
+import { Segmented } from '@/ui/Segmented'
+import { Fab } from '@/ui/Fab'
+import { Card } from '@/ui/Card'
+import { IconBadge } from '@/ui/IconBadge'
 
 export function TopicsPage() {
   const t = useT()
@@ -15,17 +19,17 @@ export function TopicsPage() {
   const visible = (topics.data ?? []).filter((t) => t.status === tab)
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pt-3 pb-28">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       {/* Два таба, а не горизонтальные колонки с перетаскиванием: канбан
           на телефоне - это боль, а статусов всего два */}
-      <div className="mb-3 flex gap-1 rounded-xl bg-raised p-1">
-        <Tab active={tab === 'open'} onClick={() => setTab('open')}>
-          {t('topic.tabOpen')}
-        </Tab>
-        <Tab active={tab === 'closed'} onClick={() => setTab('closed')}>
-          {t('topic.tabClosed')}
-        </Tab>
-      </div>
+      <Segmented
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: 'open', label: t('topic.tabOpen'), icon: CircleDot },
+          { value: 'closed', label: t('topic.tabClosed'), icon: CircleCheck },
+        ]}
+      />
 
       <SearchInput value={query} onChange={setQuery} placeholder={t('topic.search')} />
 
@@ -34,6 +38,8 @@ export function TopicsPage() {
 
       {topics.isSuccess && visible.length === 0 && (
         <EmptyState
+          icon={MessagesSquare}
+          tone="indigo"
           title={
             query
               ? t('pick.nothingFound')
@@ -51,69 +57,43 @@ export function TopicsPage() {
         />
       )}
 
-      <ul className="mt-3 flex flex-col gap-2">
-        {visible.map((topic) => (
-          <li key={topic.id}>
-            <Link
-              to={`/topics/${topic.id}`}
-              className="block rounded-xl bg-surface px-4 py-3 ring-1 ring-line active:bg-raised"
-            >
-              <span className="flex items-start gap-2">
-                {topic.status === 'open' ? (
-                  <CircleDot size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
-                ) : (
-                  <CircleCheck size={16} className="mt-0.5 shrink-0 text-carbs" aria-hidden />
-                )}
-                <span className="min-w-0 flex-1">
-                  <span className="block font-medium">{topic.title}</span>
-                  {topic.status === 'closed' && topic.resolution && (
-                    <span className="mt-1 line-clamp-2 block text-sm text-muted">
-                      {topic.resolution}
+      {/* Одна карточка со строками, а не карточка на тему: тем за месяц
+          единицы, и стопка отдельных плашек с тенями читалась бы тяжелее,
+          чем сам список */}
+      {visible.length > 0 && (
+        <Card as="div" className="overflow-hidden">
+          <ul className="divide-y divide-line">
+            {visible.map((topic) => {
+              const preview = topic.status === 'closed' ? topic.resolution : topic.body
+              return (
+                <li key={topic.id}>
+                  <Link
+                    to={`/topics/${topic.id}`}
+                    className="flex min-h-14 items-start gap-3 px-4 py-3.5 transition-colors active:bg-raised"
+                  >
+                    <IconBadge
+                      icon={topic.status === 'open' ? MessagesSquare : CircleCheck}
+                      tone="indigo"
+                      size="sm"
+                    />
+                    <span className="min-w-0 flex-1 self-center">
+                      <span className="block text-[15px] font-semibold">{topic.title}</span>
+                      {preview && (
+                        <span className="mt-0.5 line-clamp-2 text-[13px] text-muted">
+                          {preview}
+                        </span>
+                      )}
                     </span>
-                  )}
-                  {topic.status === 'open' && topic.body && (
-                    <span className="mt-1 line-clamp-2 block text-sm text-muted">{topic.body}</span>
-                  )}
-                </span>
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+                    <ChevronRight size={18} aria-hidden className="mt-1.5 shrink-0 text-muted/70" />
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        </Card>
+      )}
 
-      <Link
-        to="/topics/new"
-        aria-label={t('topic.new')}
-        className="fixed right-5 bottom-6 z-20 flex size-14 items-center justify-center
-                   rounded-full bg-accent text-accent-ink shadow-lg
-                   transition-transform active:scale-95"
-        style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
-      >
-        <Plus size={26} aria-hidden />
-      </Link>
+      <Fab to="/topics/new" label={t('topic.new')} />
     </div>
-  )
-}
-
-function Tab({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-colors ${
-        active ? 'bg-surface text-ink shadow-sm' : 'text-muted'
-      }`}
-    >
-      {children}
-    </button>
   )
 }

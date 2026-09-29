@@ -1,4 +1,6 @@
 import type { GoalDirection } from '@/lib/nutrition'
+import type { ReactNode } from 'react'
+import { Target } from 'lucide-react'
 import { dynamicKey, useT } from '@/lib/i18n'
 import { Sheet } from '@/ui/Sheet'
 
@@ -34,28 +36,33 @@ export function MacroInfoSheet({
   return (
     <Sheet open={nutrient !== null} onClose={onClose} title={part('title')}>
       {nutrient && (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-5">
+          {/* Трактовка под цель - первой: ради неё справку обычно и открывают,
+              а общие абзацы ниже - для тех, кто хочет разобраться */}
+          <div className="rounded-3xl bg-accent-soft px-4 py-3.5 text-accent-soft-ink">
+            <p className="mb-1 flex items-center gap-1.5 font-display text-[15px] font-bold">
+              <Target size={16} aria-hidden />
+              {t('macro.forGoal')}
+            </p>
+            <p className="text-[15px] leading-relaxed">{part(goalDirection)}</p>
+          </div>
+
           <Block label={t('macro.role')}>{part('role')}</Block>
           <Block label={t('macro.under')}>{part('under')}</Block>
           <Block label={t('macro.over')}>{part('over')}</Block>
 
-          <div className="rounded-xl bg-raised px-4 py-3">
-            <p className="mb-1 text-sm font-medium text-accent">{t('macro.forGoal')}</p>
-            <p className="text-sm">{part(goalDirection)}</p>
-          </div>
-
-          <p className="text-xs text-muted">{t('macro.disclaimer')}</p>
+          <p className="text-[13px] text-muted">{t('macro.disclaimer')}</p>
         </div>
       )}
     </Sheet>
   )
 }
 
-function Block({ label, children }: { label: string; children: React.ReactNode }) {
+function Block({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
-      <p className="mb-1 text-sm font-medium text-muted">{label}</p>
-      <p className="text-sm leading-relaxed">{children}</p>
+      <p className="mb-1 font-display text-[15px] font-bold">{label}</p>
+      <p className="text-[15px] leading-relaxed text-ink/90">{children}</p>
     </div>
   )
 }

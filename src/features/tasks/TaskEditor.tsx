@@ -3,7 +3,10 @@ import { useState } from 'react'
 import { Bell, Plus, Repeat, Trash2, X } from 'lucide-react'
 import { fromDateTimeInput, toDateTimeInput } from '@/lib/date'
 import { Button } from '@/ui/Button'
-import { Field } from '@/ui/Field'
+import { Card } from '@/ui/Card'
+import { Chip } from '@/ui/Chip'
+import { Field, INPUT_CLASS } from '@/ui/Field'
+import { IconBadge } from '@/ui/IconBadge'
 import { Sheet } from '@/ui/Sheet'
 import { useDeleteTask, useSaveTask, type EditScope, type Task } from './api'
 import {
@@ -150,9 +153,7 @@ export function TaskEditor({
             onChange={(e) => setNotes(e.target.value)}
             rows={2}
             placeholder={t('common.optional')}
-            className="w-full min-w-0 resize-none rounded-xl bg-surface px-4 py-3 ring-1
-                       ring-line outline-none focus:ring-2 focus:ring-accent
-                       placeholder:text-muted"
+            className={`${INPUT_CLASS} min-w-0 resize-none`}
           />
         </label>
 
@@ -164,22 +165,25 @@ export function TaskEditor({
             type="datetime-local"
             value={due}
             onChange={(e) => setDue(e.target.value)}
-            className="w-full min-w-0 rounded-xl bg-surface px-4 py-3 ring-1 ring-line
-                       outline-none focus:ring-2 focus:ring-accent"
+            className={`${INPUT_CLASS} min-w-0`}
           />
           {hasDue ? (
+            // Пилюлей, а не подчёркнутой ссылкой: мелкий серый текст под полем
+            // не читался как действие, и в него было не попасть пальцем
             <button
               type="button"
               onClick={() => {
                 setDue('')
                 setRecurrence(null)
               }}
-              className="self-start text-xs text-muted underline"
+              className="mt-0.5 flex min-h-9 items-center gap-1.5 self-start rounded-full bg-raised px-3.5
+                         text-sm font-medium text-muted transition-transform active:scale-95"
             >
+              <X size={15} aria-hidden />
               {t('task.clearDue')}
             </button>
           ) : (
-            <span className="text-xs text-muted">
+            <span className="text-[13px] text-muted">
               {t('task.noDueHint')}
             </span>
           )}
@@ -187,14 +191,14 @@ export function TaskEditor({
 
         {hasDue && (
           <>
-            <div className="flex flex-col gap-2">
-              <p className="flex items-center gap-2 text-sm font-medium">
-                <Bell size={15} aria-hidden />
+            <div className="flex flex-col gap-2.5">
+              <p className="flex items-center gap-2.5 text-[15px] font-semibold">
+                <IconBadge icon={Bell} tone="sky" size="sm" />
                 {t('task.reminders')}
               </p>
 
               {reminders.length === 0 && (
-                <p className="text-xs text-muted">{t('task.noReminders')}</p>
+                <p className="text-[13px] text-muted">{t('task.noReminders')}</p>
               )}
 
               <div className="flex flex-wrap gap-2">
@@ -203,7 +207,7 @@ export function TaskEditor({
                   .map((minutes) => (
                     <span
                       key={minutes}
-                      className="flex items-center gap-1 rounded-full bg-raised py-1.5 pr-1.5 pl-3 text-sm ring-1 ring-line"
+                      className="flex min-h-9 items-center gap-0.5 rounded-full bg-raised pr-0.5 pl-3.5 text-sm font-medium"
                     >
                       {(() => {
                         const found = REMINDER_OPTIONS.find((o) => o.minutes === minutes)
@@ -213,9 +217,10 @@ export function TaskEditor({
                         type="button"
                         onClick={() => setReminders(reminders.filter((m) => m !== minutes))}
                         aria-label={t('task.clearReminder')}
-                        className="p-1 text-muted"
+                        className="flex size-8 items-center justify-center rounded-full text-muted
+                                   transition-colors active:bg-line"
                       >
-                        <X size={13} aria-hidden />
+                        <X size={15} aria-hidden />
                       </button>
                     </span>
                   ))}
@@ -224,16 +229,18 @@ export function TaskEditor({
                   <button
                     type="button"
                     onClick={() => setPickingReminder(true)}
-                    className="flex items-center gap-1 rounded-full px-3 py-1.5 text-sm text-accent ring-1 ring-accent/40"
+                    aria-expanded={pickingReminder}
+                    className="flex min-h-9 items-center gap-1 rounded-full bg-accent-soft px-3.5 text-sm
+                               font-semibold text-accent-soft-ink transition-transform active:scale-95"
                   >
-                    <Plus size={14} aria-hidden />
+                    <Plus size={16} strokeWidth={2.4} aria-hidden />
                     {t('common.add')}
                   </button>
                 )}
               </div>
 
               {pickingReminder && (
-                <div className="mt-1 flex flex-wrap gap-2 rounded-xl bg-raised p-3">
+                <div className="flex flex-wrap gap-2 rounded-2xl bg-raised p-3">
                   {REMINDER_OPTIONS.filter((o) => !reminders.includes(o.minutes)).map((option) => (
                     <button
                       key={option.minutes}
@@ -242,7 +249,8 @@ export function TaskEditor({
                         setReminders([...reminders, option.minutes])
                         setPickingReminder(false)
                       }}
-                      className="rounded-full bg-surface px-3 py-1.5 text-sm ring-1 ring-line"
+                      className="min-h-9 rounded-full bg-surface px-3.5 text-sm font-medium shadow-card
+                                 transition-transform active:scale-95"
                     >
                       {t(option.key)}
                     </button>
@@ -250,7 +258,7 @@ export function TaskEditor({
                   <button
                     type="button"
                     onClick={() => setPickingReminder(false)}
-                    className="px-2 py-1.5 text-sm text-muted"
+                    className="min-h-9 px-2.5 text-sm font-medium text-muted"
                   >
                     {t('common.cancel')}
                   </button>
@@ -258,18 +266,18 @@ export function TaskEditor({
               )}
             </div>
 
-            <div className="flex flex-col gap-2">
-              <p className="flex items-center gap-2 text-sm font-medium">
-                <Repeat size={15} aria-hidden />
+            <div className="flex flex-col gap-2.5">
+              <p className="flex items-center gap-2.5 text-[15px] font-semibold">
+                <IconBadge icon={Repeat} tone="sky" size="sm" />
                 {t('task.repeat')}
               </p>
 
               <div className="flex flex-wrap gap-2">
-                <Chip active={recurrence === null} onClick={() => setFreq(null)}>
+                <Chip selected={recurrence === null} onClick={() => setFreq(null)}>
                   {t('task.noRepeat')}
                 </Chip>
                 {(Object.keys(FREQ_KEYS) as Freq[]).map((freq) => (
-                  <Chip key={freq} active={recurrence?.freq === freq} onClick={() => setFreq(freq)}>
+                  <Chip key={freq} selected={recurrence?.freq === freq} onClick={() => setFreq(freq)}>
                     {t(FREQ_KEYS[freq])}
                   </Chip>
                 ))}
@@ -287,13 +295,16 @@ export function TaskEditor({
                         const n = raw === '' ? 1 : Math.min(99, Number(raw))
                         setRecurrence({ ...recurrence, interval: n })
                       }}
-                      className="w-16 rounded-lg bg-surface px-3 py-2 text-center ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
+                      className="w-16 rounded-2xl bg-raised px-3 py-2.5 text-center tabular-nums ring-1 ring-transparent
+                                 outline-none focus:bg-surface focus:ring-2 focus:ring-accent"
                     />
                     <span className="text-muted">{t(FREQ_KEYS[recurrence.freq]).toLowerCase()}</span>
                   </label>
 
                   {recurrence.freq === 'weekly' && (
-                    <div className="flex flex-wrap gap-1.5">
+                    // Сетка на семь, а не перенос строки: семь кругов по 44px
+                    // ровно встают в ширину шторки, и неделя читается одной строкой
+                    <div className="grid grid-cols-7 gap-1.5">
                       {WEEKDAY_KEYS.map((key, i) => {
                         const day = i + 1
                         const active = (recurrence.weekdays ?? []).includes(day)
@@ -303,9 +314,11 @@ export function TaskEditor({
                             type="button"
                             onClick={() => toggleWeekday(day)}
                             aria-pressed={active}
-                            className={`size-9 rounded-full text-xs transition-colors ${
-                              active ? 'bg-accent text-accent-ink' : 'bg-raised ring-1 ring-line'
-                            }`}
+                            className={`flex aspect-square min-h-11 items-center justify-center rounded-full
+                                        text-[13px] font-semibold transition-[background-color,color,transform]
+                                        active:scale-95 ${
+                                          active ? 'bg-accent text-accent-ink' : 'bg-raised text-ink'
+                                        }`}
                           >
                             {t(key)}
                           </button>
@@ -320,9 +333,9 @@ export function TaskEditor({
                       type="date"
                       value={until}
                       onChange={(e) => setUntil(e.target.value)}
-                      className="w-full min-w-0 rounded-xl bg-surface px-4 py-3 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
+                      className={`${INPUT_CLASS} min-w-0`}
                     />
-                    <span className="text-xs text-muted">
+                    <span className="text-[13px] text-muted">
                       {until
                         ? describeRecurrence(recurrence)
                         : t('task.noEnd', { rule: describeRecurrence(recurrence) })}
@@ -393,43 +406,23 @@ function ScopeSheet({
 
   return (
     <Sheet open onClose={onClose} title={t('task.scope.title')}>
-      <div className="flex flex-col gap-2">
-        {options.map((o) => (
-          <button
-            key={o.scope}
-            type="button"
-            disabled={busy}
-            onClick={() => onPick(o.scope)}
-            className="rounded-xl bg-surface px-4 py-3.5 text-left ring-1 ring-line disabled:opacity-60"
-          >
-            <span className="block font-medium">{t(o.label)}</span>
-            <span className="mt-0.5 block text-sm text-muted">{t(o.hint)}</span>
-          </button>
-        ))}
-      </div>
+      <Card as="div" className="overflow-hidden">
+        <div className="divide-y divide-line">
+          {options.map((o) => (
+            <button
+              key={o.scope}
+              type="button"
+              disabled={busy}
+              onClick={() => onPick(o.scope)}
+              className="flex min-h-14 w-full flex-col justify-center px-4 py-3 text-left transition-colors
+                         active:bg-raised disabled:opacity-60"
+            >
+              <span className="block text-[15px] font-semibold">{t(o.label)}</span>
+              <span className="mt-0.5 block text-[13px] text-muted">{t(o.hint)}</span>
+            </button>
+          ))}
+        </div>
+      </Card>
     </Sheet>
-  )
-}
-
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`rounded-full px-3.5 py-2 text-sm transition-colors ${
-        active ? 'bg-accent text-accent-ink' : 'bg-raised text-ink ring-1 ring-line'
-      }`}
-    >
-      {children}
-    </button>
   )
 }

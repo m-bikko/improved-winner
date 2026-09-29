@@ -26,8 +26,8 @@ export function SearchInput({ value, onChange, placeholder, autoFocus }: Props) 
         autoCapitalize="off"
         spellCheck={false}
         aria-label={placeholder}
-        className="w-full rounded-xl bg-surface py-3 pr-10 pl-11 ring-1 ring-line outline-none
-                   focus:ring-2 focus:ring-accent placeholder:text-muted
+        className="w-full rounded-2xl bg-surface py-3 pr-10 pl-11 shadow-card outline-none
+                   transition-shadow focus:ring-2 focus:ring-accent placeholder:text-muted/80
                    [&::-webkit-search-cancel-button]:hidden"
       />
       {value && (

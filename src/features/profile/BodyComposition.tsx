@@ -15,6 +15,7 @@ import {
 } from '@/lib/body'
 import type { Sex } from '@/lib/nutrition'
 import { Loading } from '@/ui/States'
+import { IconBadge } from '@/ui/IconBadge'
 
 /**
  * Окно наблюдения - восемь недель.
@@ -122,14 +123,14 @@ export function BodyComposition({
   const index = weightKg === null ? null : bmi(weightKg, heightCm)
 
   return (
-    <section className="rounded-xl bg-surface px-4 py-4 ring-1 ring-line">
-      <p className="flex items-center gap-2 text-sm font-medium">
-        <PersonStanding size={16} aria-hidden />
+    <section className="rounded-3xl bg-surface px-4 py-4 shadow-card">
+      <p className="flex items-center gap-2.5 font-display text-[17px] font-bold">
+        <IconBadge icon={PersonStanding} tone="green" size="sm" />
         {t('body.title')}
       </p>
 
       {c.gap === null && c.weightChange !== null && c.fatChange !== null ? (
-        <div className="mt-3 rounded-xl bg-raised px-3 py-3">
+        <div className="mt-3 rounded-2xl bg-raised/70 px-3.5 py-3">
           <p className="text-sm">
             {t('body.overSpan', {
               n: c.span,

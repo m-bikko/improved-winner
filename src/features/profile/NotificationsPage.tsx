@@ -2,7 +2,9 @@ import { dynamicKey, useT } from '@/lib/i18n'
 import { useState } from 'react'
 import { BellOff, Moon, Send, Smartphone } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
+import { ListGroup, ListRow } from '@/ui/List'
 import { Loading } from '@/ui/States'
+import { Switch } from '@/ui/Switch'
 import { useProfiles } from './api'
 import { NOTIFICATION_KINDS } from './notifications'
 import {
@@ -46,76 +48,62 @@ export function NotificationsPage() {
   }).length
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 pt-3 pb-10">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <QuietHours quietFrom={me?.quietFrom ?? null} quietTo={me?.quietTo ?? null} />
 
-      <section className="rounded-2xl bg-surface ring-1 ring-line">
-        <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
-          <p className="text-sm font-medium">{t('notif.whatToSend')}</p>
-          <div className="flex shrink-0 gap-3 text-muted">
-            <Send size={15} aria-hidden />
-            <Smartphone size={15} aria-hidden />
+      <ListGroup className="mt-2">
+        {/* Шапка таблицы: значки каналов стоят ровно над своими столбцами
+            переключателей (та же ширина, что у Switch, и тот же зазор).
+            Раньше здесь были квадратные флажки - казалось, что двадцать
+            восемь тумблеров читаются как забор. Но флажок на телефоне
+            не опознаётся как «вкл/выкл», а тумблер опознаётся сразу; забор
+            же разбирают столбцы, у каждого канала свой, со значком сверху */}
+        <div className="flex items-center justify-between gap-3 px-4 py-3">
+          <p className="font-display text-[17px] font-bold">{t('notif.whatToSend')}</p>
+          <div className="flex shrink-0 gap-2 text-muted">
+            <span className="flex w-[50px] justify-center">
+              <Send size={17} aria-hidden />
+            </span>
+            <span className="flex w-[50px] justify-center">
+              <Smartphone size={17} aria-hidden />
+            </span>
           </div>
         </div>
 
-        <ul>
-          {NOTIFICATION_KINDS.map((kind) => {
-            const c = current(kind.id)
-            return (
-              <li
-                key={kind.id}
-                className="flex items-center justify-between gap-3 border-b border-line px-4 py-3 last:border-0"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm">{t(dynamicKey('notif', kind.id))}</p>
-                  <p className="truncate text-xs text-muted">{t(dynamicKey('notif', `${kind.id}.hint`))}</p>
-                </div>
-                <div className="flex shrink-0 gap-3">
-                  <Box
-                    on={c.telegram}
-                    label={`${t(dynamicKey('notif', kind.id))}: Telegram`}
-                    onClick={() => toggle(kind.id, 'telegram')}
-                  />
-                  <Box
-                    on={c.push}
-                    label={`${t(dynamicKey('notif', kind.id))}: push`}
-                    onClick={() => toggle(kind.id, 'push')}
-                  />
-                </div>
-              </li>
-            )
-          })}
-        </ul>
-      </section>
+        {NOTIFICATION_KINDS.map((kind) => {
+          const c = current(kind.id)
+          return (
+            <div key={kind.id} className="flex min-h-16 items-center justify-between gap-3 px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-[15px] leading-snug font-medium">{t(dynamicKey('notif', kind.id))}</p>
+                <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-muted">
+                  {t(dynamicKey('notif', `${kind.id}.hint`))}
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <Switch
+                  checked={c.telegram}
+                  label={`${t(dynamicKey('notif', kind.id))}: Telegram`}
+                  onChange={() => toggle(kind.id, 'telegram')}
+                />
+                <Switch
+                  checked={c.push}
+                  label={`${t(dynamicKey('notif', kind.id))}: push`}
+                  onChange={() => toggle(kind.id, 'push')}
+                />
+              </div>
+            </div>
+          )
+        })}
+      </ListGroup>
 
       {muted > 0 && (
-        <p className="flex items-start gap-2 px-1 text-sm text-muted">
+        <p className="flex items-start gap-2 px-1 text-[13px] text-muted">
           <BellOff size={15} aria-hidden className="mt-0.5 shrink-0" />
           {t('notif.mutedCount', { n: muted })}
         </p>
       )}
     </div>
-  )
-}
-
-/**
- * Флажок канала.
- *
- * Не переключатель-«тумблер»: их тут двадцать два, и тумблеры такой плотности
- * читаются как забор. Квадрат с галочкой на этом расстоянии понятнее.
- */
-function Box({ on, label, onClick }: { on: boolean; label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      aria-label={label}
-      onClick={onClick}
-      className={`size-6 rounded-md ring-1 transition-colors ${
-        on ? 'bg-accent ring-accent' : 'bg-bg ring-line'
-      }`}
-    />
   )
 }
 
@@ -140,30 +128,36 @@ function QuietHours({ quietFrom, quietTo }: { quietFrom: number | null; quietTo:
   }
 
   return (
-    <section className="rounded-2xl bg-surface p-4 ring-1 ring-line">
-      <div className="flex items-center justify-between gap-3">
-        <p className="flex items-center gap-2 text-sm font-medium">
-          <Moon size={16} aria-hidden />
-          {t('notif.quiet')}
-        </p>
-        <Box
-          on={enabled}
-          label={t('notif.quiet')}
-          onClick={() => (enabled ? save.mutate({ from: null, to: null }) : apply(from, to))}
+    <section className="flex flex-col gap-2">
+      <ListGroup>
+        <ListRow
+          static
+          icon={Moon}
+          tone="slate"
+          title={t('notif.quiet')}
+          trailing={
+            <Switch
+              checked={enabled}
+              label={t('notif.quiet')}
+              onChange={() => (enabled ? save.mutate({ from: null, to: null }) : apply(from, to))}
+            />
+          }
         />
-      </div>
 
-      {enabled && (
-        <div className="mt-3 flex items-center gap-2 text-sm">
-          <Hour value={from} onChange={(v) => apply(v, to)} label={t('notif.quietFrom')} />
-          <span className="text-muted">—</span>
-          <Hour value={to} onChange={(v) => apply(from, v)} label={t('notif.quietTo')} />
-        </div>
-      )}
+        {enabled && (
+          <div className="flex min-h-14 items-center gap-2 px-4 py-2.5">
+            <Hour value={from} onChange={(v) => apply(v, to)} label={t('notif.quietFrom')} />
+            <span className="text-muted" aria-hidden>
+              —
+            </span>
+            <Hour value={to} onChange={(v) => apply(from, v)} label={t('notif.quietTo')} />
+          </div>
+        )}
+      </ListGroup>
 
-      <p className="mt-3 text-xs text-muted">
-        {t('notif.quietHint')}
-      </p>
+      {/* Подсказка под группой, а не внутри: как сноска в настройках iPhone -
+          объясняет группу, но не спорит со строками за место */}
+      <p className="px-4 text-[13px] leading-snug text-muted">{t('notif.quietHint')}</p>
     </section>
   )
 }
@@ -182,7 +176,8 @@ function Hour({
       value={value}
       onChange={(e) => onChange(Number(e.target.value))}
       aria-label={label}
-      className="rounded-xl bg-bg px-3 py-2 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
+      className="min-h-11 flex-1 rounded-2xl bg-raised px-4 text-center tabular-nums ring-1 ring-transparent outline-none
+                 focus:bg-surface focus:ring-2 focus:ring-accent"
     >
       {Array.from({ length: 24 }, (_, h) => (
         <option key={h} value={h}>

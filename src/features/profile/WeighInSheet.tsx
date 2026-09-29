@@ -117,7 +117,7 @@ export function WeighInSheet({
           hint={problems.weight ?? undefined}
         />
 
-        <div className="overflow-hidden rounded-xl ring-1 ring-line">
+        <div className="overflow-hidden rounded-2xl bg-surface shadow-card">
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}

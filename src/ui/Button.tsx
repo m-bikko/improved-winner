@@ -1,13 +1,15 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { LoaderCircle } from 'lucide-react'
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
+type Variant = 'primary' | 'secondary' | 'soft' | 'ghost' | 'danger'
 
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-accent text-accent-ink',
-  secondary: 'bg-raised text-ink ring-1 ring-line',
+  primary: 'bg-accent text-accent-ink shadow-[0_6px_16px_-6px_var(--c-accent)]',
+  secondary: 'bg-raised text-ink',
+  // Второе по важности действие: заметно, но не спорит с главным
+  soft: 'bg-accent-soft text-accent-soft-ink',
   ghost: 'text-muted',
-  danger: 'text-danger ring-1 ring-danger/30',
+  danger: 'bg-danger-soft text-danger',
 }
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -30,9 +32,10 @@ export function Button({
       type="button"
       disabled={disabled || loading}
       // min-h-12 - нижняя граница комфортной цели нажатия на телефоне
-      className={`flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 text-base
-                  font-medium transition-[transform,opacity] active:scale-[0.98]
-                  disabled:opacity-40 disabled:active:scale-100 ${VARIANTS[variant]} ${className}`}
+      className={`flex min-h-12 items-center justify-center gap-2 rounded-2xl px-5 text-base
+                  font-semibold transition-[transform,opacity] duration-150 active:scale-[0.97]
+                  disabled:opacity-40 disabled:shadow-none disabled:active:scale-100
+                  ${VARIANTS[variant]} ${className}`}
       {...rest}
     >
       {loading && <LoaderCircle size={18} className="animate-spin" aria-hidden />}

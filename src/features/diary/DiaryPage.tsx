@@ -1,5 +1,5 @@
 import { dynamicKey, useT } from '@/lib/i18n'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   DndContext,
@@ -24,7 +24,7 @@ import {
   Plus,
   Target,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { formatDayLabel, shiftDays, todayLocal } from '@/lib/date'
 import { useLocalFlag } from '@/lib/localFlag'
 import { queueSize } from '@/lib/outbox'
@@ -32,6 +32,9 @@ import type { GoalDirection, Macros } from '@/lib/nutrition'
 import { useAuth } from '@/auth/AuthProvider'
 import { useHeaderAction } from '@/shell/HeaderAction'
 import { ErrorState, Loading } from '@/ui/States'
+import { Card } from '@/ui/Card'
+import { ListGroup, ListRow } from '@/ui/List'
+import { Segmented } from '@/ui/Segmented'
 import { useFoods, useServingsByFood } from '@/features/foods/api'
 import { trim } from '@/features/foods/FoodsPage'
 import type { Food } from '@/features/foods/types'
@@ -58,6 +61,9 @@ import { FoodPicker } from './FoodPicker'
 import { PortionSheet } from './PortionSheet'
 import { MEALS, sumEntries, type DiaryEntry, type Meal } from './types'
 
+const isMeal = (value: string | null): value is Meal =>
+  value !== null && (MEALS as readonly string[]).includes(value)
+
 export function DiaryPage() {
   const t = useT()
   const { user } = useAuth()
@@ -77,7 +83,8 @@ export function DiaryPage() {
           type="button"
           onClick={() => setCalendarOpen(true)}
           aria-label={t('diary.calendar')}
-          className="p-3 text-ink"
+          className="flex size-10 items-center justify-center rounded-full text-ink
+                     transition-colors active:bg-raised"
         >
           <CalendarDays size={21} aria-hidden />
         </button>
@@ -123,6 +130,18 @@ export function DiaryPage() {
   const [portion, setPortion] = useState<
     { food: Food; meal: Meal; entry?: DiaryEntry } | null
   >(null)
+
+  // «Еда» с главной приходит сюда с ?add=<приём> и сразу открывает выбор
+  // продукта. Параметр снимается: иначе «назад» из шторки и перезагрузка
+  // открывали бы её снова
+  const [params, setParams] = useSearchParams()
+  const addParam = params.get('add')
+  useEffect(() => {
+    if (!isMeal(addParam)) return
+    setDate(todayLocal())
+    setPicking(addParam)
+    setParams({}, { replace: true })
+  }, [addParam, setParams])
 
   const addEntry = useAddEntry()
   const updateEntry = useUpdateEntry()
@@ -197,21 +216,23 @@ export function DiaryPage() {
   if (day.isError) return <ErrorState error={day.error} onRetry={() => void day.refetch()} />
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pt-2 pb-24">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-2xl px-4 pt-1">
+      {/* Переключатель дня - капсулой: стрелки получают крупную область
+          нажатия, а тап по дате возвращает к сегодняшнему дню */}
+      <div className="flex items-center gap-1 rounded-2xl bg-surface p-1 shadow-card">
         <button
           type="button"
           onClick={() => setDate(shiftDays(date, -1))}
           aria-label={t('diary.prevDay')}
-          className="p-3 text-muted"
+          className="flex size-11 items-center justify-center rounded-xl text-muted transition-colors active:bg-raised"
         >
-          <ChevronLeft size={20} aria-hidden />
+          <ChevronLeft size={22} aria-hidden />
         </button>
 
         <button
           type="button"
           onClick={() => setDate(todayLocal())}
-          className="text-base font-medium"
+          className="min-w-0 flex-1 truncate font-display text-[17px] font-bold"
         >
           {formatDayLabel(date)}
         </button>
@@ -220,14 +241,14 @@ export function DiaryPage() {
           type="button"
           onClick={() => setDate(shiftDays(date, 1))}
           aria-label={t('diary.nextDay')}
-          className="p-3 text-muted"
+          className="flex size-11 items-center justify-center rounded-xl text-muted transition-colors active:bg-raised"
         >
-          <ChevronRight size={20} aria-hidden />
+          <ChevronRight size={22} aria-hidden />
         </button>
       </div>
 
       {pending > 0 && (
-        <p className="mb-2 flex items-center justify-center gap-1.5 rounded-lg bg-raised py-1.5 text-xs text-muted">
+        <p className="mt-3 flex items-center justify-center gap-1.5 rounded-xl bg-raised py-2 text-xs text-muted">
           <CloudOff size={13} aria-hidden />
           {t.plural('diary.pending', pending).replace('{n}', String(pending))}
         </p>
@@ -245,14 +266,15 @@ export function DiaryPage() {
       )}
 
       {partner && (
-        <div className="mt-3 flex gap-1 rounded-xl bg-raised p-1">
-          <ModeTab active={!compare} onClick={() => setCompare(false)}>
-            {t('diary.me')}
-          </ModeTab>
-          <ModeTab active={compare} onClick={() => setCompare(true)}>
-            {t('diary.compare')}
-          </ModeTab>
-        </div>
+        <Segmented
+          className="mt-3"
+          value={compare ? 'compare' : 'me'}
+          onChange={(v) => setCompare(v === 'compare')}
+          options={[
+            { value: 'me', label: t('diary.me') },
+            { value: 'compare', label: t('diary.compare') },
+          ]}
+        />
       )}
 
       {compare && partner ? (
@@ -311,17 +333,9 @@ export function DiaryPage() {
 
           {/* Ссылка внизу дня, а не пункт меню: итоги месяца смотрят
               из дневника и редко */}
-          <Link
-            to="/month"
-            className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-surface
-                       px-4 py-4 ring-1 ring-line"
-          >
-            <span className="flex items-center gap-2 text-sm font-medium">
-              <ChartNoAxesColumn size={16} aria-hidden />
-              {t('diary.monthSummary')}
-            </span>
-            <ChevronRight size={18} aria-hidden className="text-muted" />
-          </Link>
+          <ListGroup className="mt-3">
+            <ListRow to="/month" icon={ChartNoAxesColumn} tone="amber" title={t('diary.monthSummary')} />
+          </ListGroup>
         </>
       )}
 
@@ -435,7 +449,7 @@ function Progress({
   // чего не хватает, и кнопка туда, где это заполняется.
   if (!goals) {
     return (
-      <div className="mt-3 flex flex-col items-center gap-3 rounded-xl bg-raised px-5 py-6 text-center">
+      <Card className="mt-3 flex flex-col items-center gap-3 px-5 py-6 text-center">
         <Target size={26} className="text-muted" aria-hidden />
         <p className="text-2xl font-semibold">
           {Math.round(totals.kcal)} {t('unit.kcal')}
@@ -445,11 +459,11 @@ function Progress({
         </p>
         <Link
           to="/profile"
-          className="rounded-xl bg-accent px-5 py-3 text-sm font-medium text-accent-ink"
+          className="rounded-2xl bg-accent px-5 py-3 text-sm font-semibold text-accent-ink"
         >
           {t('diary.fillProfile')}
         </Link>
-      </div>
+      </Card>
     )
   }
 
@@ -460,7 +474,7 @@ function Progress({
 
   if (!expanded) {
     return (
-      <div className="mt-3 rounded-xl bg-raised px-4 py-3">
+      <Card className="mt-3 px-4 py-3.5">
         <button
           type="button"
           onClick={() => setExpanded(true)}
@@ -478,12 +492,12 @@ function Progress({
           <MiniMacro label={t('macro.f')} value={totals.fat} goal={goals.fat} color="bg-fat" text="text-fat" />
           <MiniMacro label={t('macro.c')} value={totals.carbs} goal={goals.carbs} color="bg-carbs" text="text-carbs" />
         </div>
-      </div>
+      </Card>
     )
   }
 
   return (
-    <div className="relative mt-3 rounded-xl bg-raised px-4 py-5">
+    <Card className="relative mt-3 px-4 py-5">
       <HelpButton
         label={t('diary.whatAreCalories')}
         onClick={() => onExplain('kcal')}
@@ -527,7 +541,7 @@ function Progress({
           onExplain={() => onExplain('carbs')}
         />
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -638,7 +652,7 @@ function Bar({
   const filled = goal > 0 ? Math.min(100, (value / goal) * 100) : 0
   const over = goal > 0 && value > goal
   return (
-    <div className={`w-full overflow-hidden rounded-full bg-line ${className}`}>
+    <div className={`w-full overflow-hidden rounded-full bg-raised ${className}`}>
       <div
         className={`h-full rounded-full transition-[width] ${over ? 'bg-danger' : color}`}
         style={{ width: `${filled}%` }}
@@ -669,7 +683,7 @@ function MealSection({
   const [collapsed, setCollapsed] = useLocalFlag(`diary-meal-${meal}-collapsed`, false)
 
   return (
-    <section className="overflow-hidden rounded-xl bg-surface ring-1 ring-line">
+    <Card as="section" className="overflow-hidden">
       {/* Зона сброса охватывает всю секцию, включая заголовок. Иначе в свёрнутый
           приём нельзя было бы перетащить еду: ронять было бы не на что,
           и перетаскивание отваливалось бы ровно там, где секцию убрали с глаз. */}
@@ -678,10 +692,10 @@ function MealSection({
           type="button"
           onClick={() => setCollapsed(!collapsed)}
           aria-expanded={!collapsed}
-          className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-raised"
+          className="flex w-full items-center gap-3 px-4 pt-3.5 pb-3 text-left transition-colors active:bg-raised"
         >
           <span className="min-w-0 flex-1">
-            <span className="block font-medium">{t(dynamicKey('meal', meal))}</span>
+            <span className="block font-display text-[17px] font-bold">{t(dynamicKey('meal', meal))}</span>
             {collapsed && entries.length > 0 && (
               <span className="mt-0.5 block truncate text-xs">
                 <span className="text-protein">
@@ -701,8 +715,8 @@ function MealSection({
           </span>
 
           {entries.length > 0 && (
-            <span className="shrink-0 text-sm text-muted">
-              {Math.round(totals.kcal)} {t('unit.kcal')}
+            <span className="shrink-0 text-sm font-semibold tabular-nums">
+              {Math.round(totals.kcal)} <span className="font-normal text-muted">{t('unit.kcal')}</span>
             </span>
           )}
           {collapsed ? (
@@ -721,31 +735,39 @@ function MealSection({
         )}
       </MealDropZone>
 
-      {!collapsed && repeatable.length > 0 && (
-        <button
-          type="button"
-          onClick={onRepeat}
-          disabled={repeating}
-          className="flex w-full items-center gap-2 border-t border-line px-4 py-2.5 text-sm text-muted active:bg-raised"
-        >
-          <CopyPlus size={16} aria-hidden />
-          {t('diary.repeatYesterday', {
-            meal: t(dynamicKey('meal', meal)).toLowerCase(),
-          })}
-        </button>
-      )}
-
+      {/* Действия приёма - кнопками внутри карточки, а не строками с рамкой:
+          «Добавить» - самое частое действие во всём приложении, и строка
+          мелким розовым текстом у края его прятала */}
       {!collapsed && (
-        <button
-          type="button"
-          onClick={onAdd}
-          className="flex w-full items-center gap-2 border-t border-line px-4 py-3 text-sm text-accent active:bg-raised"
-        >
-          <Plus size={16} aria-hidden />
-          {t('common.add')}
-        </button>
+        <div className="flex gap-2 px-3 pt-1 pb-3">
+          <button
+            type="button"
+            onClick={onAdd}
+            className="flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-accent-soft
+                       px-4 text-[15px] font-semibold text-accent-soft-ink transition-transform active:scale-[0.97]"
+          >
+            <Plus size={18} strokeWidth={2.4} aria-hidden />
+            {t('common.add')}
+          </button>
+          {repeatable.length > 0 && (
+            <button
+              type="button"
+              onClick={onRepeat}
+              disabled={repeating}
+              aria-label={t('diary.repeatYesterday', {
+                meal: t(dynamicKey('meal', meal)).toLowerCase(),
+              })}
+              className="flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-2xl bg-raised
+                         px-3.5 text-sm font-medium text-ink transition-transform active:scale-[0.97]
+                         disabled:opacity-50"
+            >
+              <CopyPlus size={17} aria-hidden className="shrink-0" />
+              <span className="truncate">{t('diary.yesterday')}</span>
+            </button>
+          )}
+        </div>
       )}
-    </section>
+    </Card>
   )
 }
 
@@ -783,9 +805,9 @@ function Comparison({
     <>
       <div className="mt-4 grid grid-cols-2 gap-3">
         {[mine, theirs].map((side) => (
-          <div key={side.nickname} className="rounded-xl bg-surface px-4 py-4 ring-1 ring-line">
-            <p className="text-sm text-muted">{side.nickname}</p>
-            <p className="mt-1 text-2xl font-semibold">{Math.round(side.totals.kcal)}</p>
+          <Card key={side.nickname} className="px-4 py-4">
+            <p className="text-sm font-medium text-muted">{side.nickname}</p>
+            <p className="mt-1 font-display text-[28px] leading-none font-extrabold tabular-nums">{Math.round(side.totals.kcal)}</p>
             <p className="text-xs text-muted">{t('unit.kcal')}</p>
             <p className="mt-3 text-sm">
               <span className="text-protein">
@@ -805,7 +827,7 @@ function Comparison({
                 {t('diary.burnedOnTraining', { n: Math.round(side.burned) })}
               </p>
             )}
-          </div>
+          </Card>
         ))}
       </div>
 
@@ -815,14 +837,14 @@ function Comparison({
         </p>
 
         {theirMeals.length === 0 ? (
-          <p className="rounded-xl bg-surface px-4 py-5 text-center text-sm text-muted ring-1 ring-line">
+          <p className="rounded-3xl bg-surface px-4 py-5 text-center text-sm text-muted shadow-card">
             {t('diary.noEntriesDay')}
           </p>
         ) : (
           theirMeals.map(({ meal, entries }) => (
-            <div key={meal} className="rounded-xl bg-surface ring-1 ring-line">
+            <Card key={meal} className="overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-sm font-medium">{t(dynamicKey('meal', meal))}</span>
+                <span className="font-display text-[17px] font-bold">{t(dynamicKey('meal', meal))}</span>
                 <span className="text-sm text-muted">
                   {Math.round(sumEntries(entries).kcal)} {t('unit.kcal')}
                 </span>
@@ -845,33 +867,10 @@ function Comparison({
                   </li>
                 ))}
               </ul>
-            </div>
+            </Card>
           ))
         )}
       </div>
     </>
-  )
-}
-
-function ModeTab({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
-        active ? 'bg-surface text-ink shadow-sm' : 'text-muted'
-      }`}
-    >
-      {children}
-    </button>
   )
 }

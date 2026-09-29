@@ -65,8 +65,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-8 text-center">
-        <CircleAlert size={28} className="text-danger" aria-hidden />
-        <p className="text-base">{tr('err.broke')}</p>
+        <span className="flex size-14 items-center justify-center rounded-2xl bg-danger-soft text-danger">
+          <CircleAlert size={28} aria-hidden />
+        </span>
+        <p className="font-display text-xl font-extrabold">{tr('err.broke')}</p>
         <p className="text-sm break-words text-muted">{error.message}</p>
 
         <div className="mt-2 flex w-full max-w-xs flex-col gap-2">
@@ -77,8 +79,8 @@ export class ErrorBoundary extends Component<Props, State> {
               void hardReset()
             }}
             disabled={resetting}
-            className="flex items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3
-                       text-accent-ink disabled:opacity-60"
+            className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-accent px-5
+                       font-semibold text-accent-ink disabled:opacity-60"
           >
             {resetting && <LoaderCircle size={16} className="animate-spin" aria-hidden />}
             {tr('err.updateHard')}
@@ -86,7 +88,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="px-5 py-3 text-sm text-muted underline"
+            className="flex min-h-12 items-center justify-center rounded-2xl bg-raised px-5 font-semibold text-ink"
           >
             {tr('err.reload')}
           </button>

@@ -4,6 +4,7 @@ import { shiftDays, todayLocal } from '@/lib/date'
 import { formatDayMonth, fromLocalISO } from '@/lib/date'
 import { supabase } from '@/lib/supabase'
 import { dynamicKey, useT } from '@/lib/i18n'
+import { IconBadge } from '@/ui/IconBadge'
 
 /** Окно наблюдения. Короче месяца вес меняет вода, а не жир. */
 const WINDOW_DAYS = 28
@@ -81,9 +82,9 @@ export function EnergyBalance({ userId }: { userId: string }) {
   if (!b) return null
 
   return (
-    <div className="rounded-xl bg-raised px-4 py-4">
-      <p className="flex items-center gap-2 text-sm font-medium">
-        <Scale size={15} aria-hidden />
+    <div className="rounded-3xl bg-surface p-4 shadow-card">
+      <p className="flex items-center gap-2.5 font-display text-[17px] font-bold">
+        <IconBadge icon={Scale} tone="amber" size="sm" />
         {t('balance.title')}
       </p>
 

@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Check, ClipboardList, Copy } from 'lucide-react'
+import { Check, ChevronRight, ClipboardList, Copy } from 'lucide-react'
 import { formatDayMonth, fromLocalISO, todayLocal } from '@/lib/date'
 import { supabase } from '@/lib/supabase'
 import { tr, useT } from '@/lib/i18n'
 import { Button } from '@/ui/Button'
 import { Sheet } from '@/ui/Sheet'
 import { Loading } from '@/ui/States'
+import { IconBadge } from '@/ui/IconBadge'
 
 /** Окно наблюдения. Три месяца - то, о чём врач спрашивает на приёме. */
 const DAYS = 90
@@ -136,13 +137,12 @@ export function HealthSummary() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-4
-                   ring-1 ring-line"
+        className="flex min-h-14 items-center gap-3 rounded-3xl bg-surface px-4 py-3 text-left
+                   shadow-card transition-transform active:scale-[0.98]"
       >
-        <span className="flex items-center gap-2 text-sm font-medium">
-          <ClipboardList size={16} aria-hidden />
-          {t('summary.title')}
-        </span>
+        <IconBadge icon={ClipboardList} tone="indigo" size="sm" />
+        <span className="min-w-0 flex-1 text-[15px] font-semibold">{t('summary.title')}</span>
+        <ChevronRight size={18} aria-hidden className="shrink-0 text-muted/70" />
       </button>
 
       {open && (

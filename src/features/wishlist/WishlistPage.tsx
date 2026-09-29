@@ -10,10 +10,11 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, ImageOff, ImagePlus, Plus, Trash2 } from 'lucide-react'
+import { Gift, GripVertical, ImageOff, ImagePlus, Trash2 } from 'lucide-react'
 import { formatBytes, loadBitmap, prepareSquare, type SquareCrop } from '@/lib/image'
 import { Button } from '@/ui/Button'
-import { Field } from '@/ui/Field'
+import { Chip } from '@/ui/Chip'
+import { Field, INPUT_CLASS } from '@/ui/Field'
 import { PhotoViewer } from '@/ui/PhotoViewer'
 import { Sheet } from '@/ui/Sheet'
 import { SquareCropper } from '@/ui/SquareCropper'
@@ -30,6 +31,7 @@ import {
   useWishes,
   type Wish,
 } from './api'
+import { Fab } from '@/ui/Fab'
 
 /**
  * Вишлист: список желаний с картинками.
@@ -98,48 +100,53 @@ export function WishlistPage() {
     profiles.data?.find((p) => p.userId === who)?.nickname ?? t('partner')
 
   return (
-    <div className="mx-auto max-w-2xl pt-3 pb-28">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       {/* Фильтр прокручивается вбок: категорий восемь, в две строки они
-          съедали бы верх экрана на каждом заходе. Отступ здесь, а не
-          на всей странице: список должен занимать её целиком */}
-      <div className="overflow-x-auto px-4 pb-1">
+          съедали бы верх экрана на каждом заходе. Лента выходит под края
+          экрана (-mx-4 и обратно px-4): обрезанный на краю чип и есть
+          подсказка, что дальше есть ещё. Полоса прокрутки спрятана - на
+          телефоне ленту листают пальцем, а полоса только съедает высоту */}
+      <div
+        className="-mx-4 overflow-x-auto px-4 py-1 [scrollbar-width:none]
+                   [&::-webkit-scrollbar]:hidden"
+      >
         <div className="flex w-max gap-2">
-          <Chip active={category === null} onClick={() => setCategory(null)}>
+          <FilterChip active={category === null} onClick={() => setCategory(null)}>
             {t('wish.all')}
-            {all.length > 0 && ` · ${all.length}`}
-          </Chip>
+            {all.length > 0 && <Count n={all.length} />}
+          </FilterChip>
           {CATEGORIES.map((c) => {
             const n = counts.get(c.id) ?? 0
             const Icon = c.icon
             return (
-              <Chip
+              <FilterChip
                 key={c.id}
                 active={category === c.id}
                 dim={n === 0}
                 onClick={() => setCategory(category === c.id ? null : c.id)}
               >
-                <Icon size={14} aria-hidden />
+                <Icon size={16} aria-hidden />
                 {t(dynamicKey('wish', c.id))}
-                {n > 0 && ` · ${n}`}
-              </Chip>
+                {n > 0 && <Count n={n} />}
+              </FilterChip>
             )
           })}
         </div>
       </div>
 
       {shown.length === 0 ? (
-        <div className="px-4">
-          <EmptyState
-            title={t(category === null ? 'wish.emptyAll' : 'wish.emptyCategory')}
-            hint={t(
-              category === null ? 'wish.emptyHintAll' : 'wish.emptyHintCategory',
-            )}
-          />
-        </div>
+        <EmptyState
+          title={t(category === null ? 'wish.emptyAll' : 'wish.emptyCategory')}
+          hint={t(
+            category === null ? 'wish.emptyHintAll' : 'wish.emptyHintCategory',
+          )}
+          icon={category === null ? Gift : (CATEGORY_BY_ID[category]?.icon ?? Gift)}
+          tone="orange"
+        />
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={shown.map((w) => w.id)} strategy={verticalListSortingStrategy}>
-            <ul className="mx-4 mt-3 divide-y divide-line overflow-hidden rounded-2xl ring-1 ring-line">
+            <ul className="flex flex-col gap-2.5">
               {shown.map((wish) => (
                 <Row
                   key={wish.id}
@@ -155,17 +162,7 @@ export function WishlistPage() {
         </DndContext>
       )}
 
-      <button
-        type="button"
-        onClick={() => setEditing('new')}
-        aria-label={t('wish.new')}
-        className="fixed right-5 bottom-6 z-20 flex size-14 items-center justify-center
-                   rounded-full bg-accent text-accent-ink shadow-lg
-                   transition-transform active:scale-95"
-        style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
-      >
-        <Plus size={26} aria-hidden />
-      </button>
+      <Fab onClick={() => setEditing('new')} label={t('wish.new')} />
 
       {editing && (
         <Editor
@@ -181,7 +178,15 @@ export function WishlistPage() {
   )
 }
 
-function Chip({
+/**
+ * Чип фильтра.
+ *
+ * Свой, а не общий Chip: выбран всегда ровно один, и выбор заливается
+ * акцентом целиком - это фильтр, а не набор отметок. И у пустой категории
+ * приглушённый текст: выбрать её можно (новое желание создастся сразу в ней),
+ * но видно, что там пока ничего.
+ */
+function FilterChip({
   active,
   dim,
   onClick,
@@ -197,18 +202,24 @@ function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-sm transition-colors ${
-        active
-          ? 'bg-accent text-accent-ink'
-          : `bg-raised ring-1 ring-line ${dim ? 'text-muted' : 'text-ink'}`
-      }`}
+      className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[15px] font-medium
+                  transition-[background-color,color,transform] duration-150 active:scale-95 ${
+                    active
+                      ? 'bg-accent text-accent-ink'
+                      : `bg-surface shadow-card ${dim ? 'text-muted' : 'text-ink'}`
+                  }`}
     >
       {children}
     </button>
   )
 }
 
-/** Строка списка - как у продуктов: превью, название, подпись. */
+/** Счётчик в чипе - отдельно и тише подписи, чтобы не читался её частью. */
+function Count({ n }: { n: number }) {
+  return <span className="text-[13px] font-semibold tabular-nums opacity-70">{n}</span>
+}
+
+/** Карточка желания: картинка, название, подпись, ручка перестановки. */
 function Row({
   wish,
   url,
@@ -233,7 +244,11 @@ function Row({
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex items-center gap-3 bg-surface px-3 py-3 ${isDragging ? 'opacity-80' : ''}`}
+      // Поднятая карточка парит над соседями: без тени и слоя выше она
+      // проезжала бы под ними, и было бы не видно, что именно тянешь
+      className={`flex items-center gap-3 rounded-3xl bg-surface p-3 pr-1 ${
+        isDragging ? 'relative z-10 shadow-float' : 'shadow-card'
+      }`}
     >
       {/* Картинка - отдельная кнопка: тап по ней открывает просмотр,
           а не форму. Это то, чего ждёшь от превью */}
@@ -242,22 +257,32 @@ function Row({
         onClick={() => url && onView(url)}
         disabled={!url}
         aria-label={url ? t('wish.viewPhoto', { name: wish.title }) : wish.title}
-        className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-raised ring-1 ring-line"
+        className={`flex size-18 shrink-0 items-center justify-center overflow-hidden rounded-2xl ${
+          url ? 'bg-raised' : 'bg-tone-orange-soft text-tone-orange'
+        }`}
       >
         {url ? (
           <img src={url} alt="" className="size-full object-cover" />
         ) : (
-          <Icon size={20} className="text-muted" aria-hidden />
+          <Icon size={26} strokeWidth={2.1} aria-hidden />
         )}
       </button>
 
-      <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
-        <span className="block truncate text-base">{wish.title}</span>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="flex min-h-18 min-w-0 flex-1 flex-col justify-center self-stretch text-left
+                   transition-opacity active:opacity-60"
+      >
+        <span className="block truncate text-base font-semibold">{wish.title}</span>
         {wish.details && (
-          <span className="mt-0.5 block truncate text-sm text-muted">{wish.details}</span>
+          <span className="mt-0.5 line-clamp-2 text-sm text-muted">{wish.details}</span>
         )}
-        <span className="mt-0.5 block truncate text-xs text-muted">
-          {category ? t(dynamicKey('wish', category.id)) : wish.category} · {author}
+        <span className="mt-1 flex min-w-0 items-center gap-1 text-[13px] text-muted">
+          <Icon size={13} aria-hidden className="shrink-0" />
+          <span className="truncate">
+            {category ? t(dynamicKey('wish', category.id)) : wish.category} · {author}
+          </span>
         </span>
       </button>
 
@@ -266,9 +291,9 @@ function Row({
         {...attributes}
         {...listeners}
         aria-label={wish.title}
-        className="shrink-0 touch-none p-2 text-muted"
+        className="flex w-11 shrink-0 touch-none items-center justify-center self-stretch text-muted/70"
       >
-        <GripVertical size={18} aria-hidden />
+        <GripVertical size={20} aria-hidden />
       </button>
     </li>
   )
@@ -324,32 +349,23 @@ function Editor({
             onChange={(e) => setDetails(e.target.value)}
             rows={3}
             placeholder={t('wish.detailsPlaceholder')}
-            className="w-full min-w-0 resize-none rounded-xl bg-surface px-4 py-3 ring-1 ring-line
-                       outline-none focus:ring-2 focus:ring-accent placeholder:text-muted"
+            className={`${INPUT_CLASS} min-w-0 resize-none`}
           />
         </label>
 
         <div className="flex flex-col gap-2">
           <span className="text-sm text-muted">{t('wish.category')}</span>
           <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((c) => {
-              const Icon = c.icon
-              const active = category === c.id
-              return (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => setCategory(c.id)}
-                  aria-pressed={active}
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-sm transition-colors ${
-                    active ? 'bg-accent text-accent-ink' : 'bg-raised text-ink ring-1 ring-line'
-                  }`}
-                >
-                  <Icon size={15} aria-hidden />
-                  {t(dynamicKey('wish', c.id))}
-                </button>
-              )
-            })}
+            {CATEGORIES.map((c) => (
+              <Chip
+                key={c.id}
+                icon={c.icon}
+                selected={category === c.id}
+                onClick={() => setCategory(c.id)}
+              >
+                {t(dynamicKey('wish', c.id))}
+              </Chip>
+            ))}
           </div>
         </div>
 
@@ -475,7 +491,7 @@ function Photo({
 
   return (
     <div className="flex items-center gap-4">
-      <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-raised ring-1 ring-line">
+      <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-raised">
         {preview ? (
           <img src={preview} alt="" className="size-full object-cover" />
         ) : (
@@ -483,7 +499,7 @@ function Photo({
         )}
       </div>
 
-      <div className="flex min-w-0 flex-col items-start gap-1">
+      <div className="flex min-w-0 flex-col items-start gap-2">
         <input
           ref={input}
           type="file"
@@ -500,8 +516,10 @@ function Photo({
         <button
           type="button"
           onClick={() => input.current?.click()}
-          className="text-sm text-accent underline"
+          className="flex min-h-10 items-center gap-1.5 rounded-full bg-accent-soft px-4 text-sm font-semibold
+                     text-accent-soft-ink transition-transform active:scale-95"
         >
+          <ImagePlus size={16} aria-hidden className="shrink-0" />
           {t(path ? 'wish.replacePhoto' : 'wish.addPhoto')}
         </button>
 
@@ -514,14 +532,16 @@ function Photo({
                 setPreview(null)
               })
             }
-            className="text-sm text-muted underline"
+            className="flex min-h-10 items-center gap-1.5 rounded-full bg-raised px-4 text-sm font-medium
+                       text-muted transition-transform active:scale-95"
           >
+            <Trash2 size={15} aria-hidden className="shrink-0" />
             {t('wish.removePhoto')}
           </button>
         )}
 
         {saved && (
-          <p className="text-xs text-muted">
+          <p className="text-[13px] text-muted tabular-nums">
             {formatBytes(saved.from)} → {formatBytes(saved.to)}
           </p>
         )}

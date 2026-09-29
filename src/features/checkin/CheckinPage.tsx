@@ -1,11 +1,16 @@
 import { useMemo, useState } from 'react'
-import { Check, Flame, Trash2 } from 'lucide-react'
+import { Check, Flame, Pencil, Trash2 } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
 import { useProfiles } from '@/features/profile/api'
 import { formatDayLabel, todayLocal } from '@/lib/date'
 import { dynamicKey, useT } from '@/lib/i18n'
 import { Button } from '@/ui/Button'
 import { Loading } from '@/ui/States'
+import { Card as Surface, SectionTitle } from '@/ui/Card'
+import { Chip, Tag } from '@/ui/Chip'
+import { Avatar, personTone } from '@/ui/Avatar'
+import { INPUT_CLASS } from '@/ui/Field'
+import type { Tone } from '@/ui/tones'
 import {
   useCheckins,
   useDeleteCheckin,
@@ -49,6 +54,8 @@ export function CheckinPage() {
 
   const partner = profiles.data?.find((p) => p.userId !== userId)
   const me = profiles.data?.find((p) => p.userId === userId)
+  const ids = (profiles.data ?? []).map((p) => p.userId)
+  const partnerName = partner?.nickname ?? t('partner')
 
   const mine = all.data?.find((c) => c.userId === userId && c.date === today)
   const theirs = all.data?.find((c) => c.userId === partner?.userId && c.date === today)
@@ -60,7 +67,7 @@ export function CheckinPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <p className="px-1 text-sm text-muted">{formatDayLabel(today)}</p>
 
       {editing || !mine ? (
@@ -73,6 +80,8 @@ export function CheckinPage() {
       ) : (
         <Card
           title={me?.nickname ? t('checkin.meNamed', { name: me.nickname }) : t('checkin.me')}
+          name={me?.nickname ?? t('checkin.me')}
+          tone={personTone(userId, ids)}
           checkin={mine}
           streak={streaks.data?.[userId] ?? 0}
           onEdit={() => setEditing(true)}
@@ -80,7 +89,9 @@ export function CheckinPage() {
       )}
 
       <Card
-        title={partner?.nickname ?? t('partner')}
+        title={partnerName}
+        name={partnerName}
+        tone={personTone(partner?.userId ?? '', ids)}
         checkin={theirs ?? null}
         streak={partner ? (streaks.data?.[partner.userId] ?? 0) : 0}
         onEdit={null}
@@ -88,61 +99,76 @@ export function CheckinPage() {
 
       <Missed days={restorable.data ?? []} today={today} />
 
-      <History all={all.data ?? []} userId={userId} partnerName={partner?.nickname ?? t('partner')} />
+      <History
+        all={all.data ?? []}
+        userId={userId}
+        partnerName={partnerName}
+        myName={me?.nickname ?? t('checkin.me')}
+        myTone={personTone(userId, ids)}
+        partnerTone={personTone(partner?.userId ?? '', ids)}
+      />
     </div>
   )
 }
 
 function Card({
   title,
+  name,
+  tone,
   checkin,
   streak,
   onEdit,
 }: {
   title: string
+  name: string
+  tone: Tone
   checkin: Checkin | null
   streak: number
   onEdit: (() => void) | null
 }) {
   const t = useT()
   return (
-    <section className="rounded-2xl bg-surface p-4 ring-1 ring-line">
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="flex items-baseline gap-2 font-medium">
-          {title}
+    <Surface as="section" className="p-4">
+      <div className="flex items-center gap-3">
+        <Avatar name={name} tone={tone} size="md" />
+        <p className="flex min-w-0 flex-1 items-center gap-2 font-display text-[17px] font-bold">
+          <span className="truncate">{title}</span>
           {streak > 0 && <Streak days={streak} />}
         </p>
         {onEdit && (
-          <button type="button" onClick={onEdit} className="text-sm text-accent underline">
+          <button
+            type="button"
+            onClick={onEdit}
+            className="flex shrink-0 items-center gap-1.5 rounded-full bg-accent-soft px-3.5 py-1.5
+                       text-sm font-semibold text-accent-soft-ink transition-transform active:scale-95"
+          >
+            <Pencil size={14} aria-hidden />
             {t('common.edit')}
           </button>
         )}
       </div>
 
       {!checkin ? (
-        <p className="mt-2 text-sm text-muted">{t('checkin.notYet')}</p>
+        <p className="mt-3 text-sm text-muted">{t('checkin.notYet')}</p>
       ) : (
         <>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-1.5">
             {checkin.states.map((id) => {
               const def = STATE_BY_ID[id]
               if (!def) return null
-              const Icon = def.icon
               return (
-                <span
-                  key={id}
-                  className="flex items-center gap-1.5 rounded-full bg-raised px-3 py-1.5 text-sm ring-1 ring-line"
-                >
-                  <Icon size={15} aria-hidden />
+                <Tag key={id} icon={def.icon}>
                   {t(dynamicKey('state', id))}
-                </span>
+                </Tag>
               )
             })}
           </div>
-          {checkin.note && <p className="mt-3 text-sm text-muted">{checkin.note}</p>}
+          {checkin.note && (
+            <p className="mt-3 rounded-2xl bg-raised/60 px-3.5 py-2.5 text-sm">{checkin.note}</p>
+          )}
         </>
       )}
-    </section>
+    </Surface>
   )
 }
 
@@ -156,10 +182,11 @@ function Streak({ days }: { days: number }) {
   const t = useT()
   return (
     <span
-      className="flex items-baseline gap-1 text-sm text-accent"
+      className="flex shrink-0 items-center gap-0.5 rounded-full bg-accent-soft px-2 py-0.5 font-sans
+                 text-[13px] font-bold text-accent-soft-ink"
       title={t('checkin.streak', { n: days, unit: t.plural('unit.day', days) })}
     >
-      <Flame size={14} aria-hidden className="self-center" />
+      <Flame size={13} aria-hidden />
       {days}
     </span>
   )
@@ -181,9 +208,9 @@ function Missed({ days, today }: { days: Restorable[]; today: string }) {
   const left = days[0]?.monthLeft ?? 0
 
   return (
-    <section className="flex flex-col gap-3 rounded-2xl bg-surface p-4 ring-1 ring-line">
+    <Surface as="section" className="flex flex-col gap-3 p-4">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="font-medium">{t('checkin.missed')}</p>
+        <p className="font-display text-[17px] font-bold">{t('checkin.missed')}</p>
         <p className="text-sm text-muted">
           {left > 0
             ? t.plural('checkin.restoresLeft', left).replace('{n}', String(left))
@@ -204,8 +231,9 @@ function Missed({ days, today }: { days: Restorable[]; today: string }) {
                   onError: (e) => setError(e instanceof Error ? e.message : String(e)),
                 })
               }}
-              className="flex items-center gap-1.5 rounded-full bg-raised px-3 py-1.5 text-sm
-                         text-accent ring-1 ring-line disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-full bg-accent-soft px-3.5 py-1.5 text-sm
+                         font-semibold text-accent-soft-ink transition-transform active:scale-95
+                         disabled:opacity-50"
             >
               <Flame size={14} aria-hidden />
               {t('checkin.restore')}
@@ -217,7 +245,7 @@ function Missed({ days, today }: { days: Restorable[]; today: string }) {
       ))}
 
       {error && <p className="text-sm text-danger">{error}</p>}
-    </section>
+    </Surface>
   )
 }
 
@@ -264,91 +292,120 @@ function Editor({
   }
 
   return (
-    <section className="flex flex-col gap-4 rounded-2xl bg-surface p-4 ring-1 ring-line">
-      <p className="font-medium">{t('checkin.question')}</p>
+    <>
+      <Surface as="section" className="flex flex-col gap-5 p-4">
+        <p className="font-display text-xl font-extrabold tracking-tight">{t('checkin.question')}</p>
 
-      {STATE_GROUPS.map((group) => (
-        <div key={group} className="flex flex-col gap-2">
-          <p className="text-sm text-muted">{t(dynamicKey('checkinGroup', group))}</p>
-          <div className="flex flex-wrap gap-2">
-            {STATES.filter((s) => s.group === group).map((s) => {
-              const active = states.includes(s.id)
-              const Icon = s.icon
-              return (
-                <button
+        {STATE_GROUPS.map((group) => (
+          <div key={group} className="flex flex-col gap-2.5">
+            <p className="text-[13px] font-semibold tracking-wide text-muted uppercase">
+              {t(dynamicKey('checkinGroup', group))}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {STATES.filter((s) => s.group === group).map((s) => (
+                <Chip
                   key={s.id}
-                  type="button"
+                  selected={states.includes(s.id)}
                   onClick={() => toggle(s.id)}
-                  aria-pressed={active}
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-sm transition-colors ${
-                    active ? 'bg-accent text-accent-ink' : 'bg-raised text-ink ring-1 ring-line'
-                  }`}
+                  icon={s.icon}
                 >
-                  <Icon size={15} aria-hidden />
                   {t(dynamicKey('state', s.id))}
-                </button>
-              )
-            })}
+                </Chip>
+              ))}
+            </div>
           </div>
+        ))}
+
+        <label className="flex flex-col gap-2">
+          <span className="text-[13px] font-semibold tracking-wide text-muted uppercase">
+            {t('checkin.words')}
+          </span>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={2}
+            placeholder={t('common.optional')}
+            className={`${INPUT_CLASS} min-w-0 resize-none`}
+          />
+        </label>
+
+        {error && <p className="text-sm text-danger">{error}</p>}
+
+        {(onCancel || (current && !empty)) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {current && !empty && (
+              <Button
+                variant="danger"
+                className="min-h-11 flex-1 text-sm"
+                loading={remove.isPending}
+                onClick={() => void remove.mutateAsync(date).then(onDone)}
+              >
+                <Trash2 size={17} aria-hidden />
+                {t('checkin.erase')}
+              </Button>
+            )}
+            {onCancel && (
+              <Button variant="secondary" className="min-h-11 flex-1 text-sm" onClick={onCancel}>
+                {t('common.cancel')}
+              </Button>
+            )}
+          </div>
+        )}
+      </Surface>
+
+      {/* Сохранение прилипает к низу над панелью вкладок. Раньше кнопка
+          стояла под сорока чипами и полем заметки, и чтобы сохранить отметку,
+          нужно было пролистать весь опрос - а выбирают обычно в первых двух
+          группах */}
+      <div className="sticky bottom-above-tabbar z-20">
+        <div className="flex items-center gap-3 rounded-3xl bg-surface/90 p-2 pl-4 shadow-float backdrop-blur-xl">
+          <span className="min-w-0 flex-1 truncate text-sm text-muted">
+            {t('checkin.selected', { n: states.length })}
+          </span>
+          <Button
+            className="min-h-11 shrink-0 px-6"
+            onClick={() => void submit()}
+            loading={save.isPending || remove.isPending}
+          >
+            <Check size={18} aria-hidden />
+            {t(empty && current ? 'checkin.erase' : 'common.save')}
+          </Button>
         </div>
-      ))}
-
-      <label className="flex flex-col gap-1.5">
-        <span className="text-sm text-muted">{t('checkin.words')}</span>
-        <textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          rows={2}
-          placeholder={t('common.optional')}
-          className="w-full min-w-0 resize-none rounded-xl bg-bg px-4 py-3 ring-1 ring-line
-                     outline-none focus:ring-2 focus:ring-accent placeholder:text-muted"
-        />
-      </label>
-
-      {error && <p className="text-sm text-danger">{error}</p>}
-
-      <Button onClick={() => void submit()} loading={save.isPending || remove.isPending}>
-        <Check size={18} aria-hidden />
-        {t(empty && current ? 'checkin.erase' : 'common.save')}
-      </Button>
-
-      {onCancel && (
-        <button type="button" onClick={onCancel} className="text-sm text-muted underline">
-          {t('common.cancel')}
-        </button>
-      )}
-
-      {current && !empty && (
-        <Button
-          variant="danger"
-          loading={remove.isPending}
-          onClick={() => void remove.mutateAsync(date).then(onDone)}
-        >
-          <Trash2 size={18} aria-hidden />
-          {t('checkin.erase')}
-        </Button>
-      )}
-    </section>
+      </div>
+    </>
   )
 }
+
+/** Столько дней видно сразу; остальное - по кнопке, а не стеной. */
+const HISTORY_STEP = 7
 
 /**
  * Прошлые дни - по дате, оба ответа рядом.
  *
  * Рядом, а не двумя списками: смысл в сопоставлении. «У неё третий день
  * подряд болит голова, а я не заметил» видно только так.
+ *
+ * Состояния - чипами с иконками, а не строкой через запятую: тридцать дней
+ * текстом читались как простыня, а иконка узнаётся раньше слова.
  */
 function History({
   all,
   userId,
   partnerName,
+  myName,
+  myTone,
+  partnerTone,
 }: {
   all: Checkin[]
   userId: string
   partnerName: string
+  myName: string
+  myTone: Tone
+  partnerTone: Tone
 }) {
   const t = useT()
   const today = todayLocal()
+  const [shown, setShown] = useState(HISTORY_STEP)
   const days = useMemo(() => {
     const set = [...new Set(all.map((c) => c.date))].filter((d) => d !== today).sort().reverse()
     return set.slice(0, 30)
@@ -357,36 +414,54 @@ function History({
   if (days.length === 0) return null
 
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="px-1 text-sm text-muted">{t('checkin.pastDays')}</h2>
-      {days.map((date) => {
+    <section className="mt-2 flex flex-col gap-2.5">
+      <SectionTitle>{t('checkin.pastDays')}</SectionTitle>
+      {days.slice(0, shown).map((date) => {
         const mine = all.find((c) => c.date === date && c.userId === userId)
         const theirs = all.find((c) => c.date === date && c.userId !== userId)
         return (
-          <div key={date} className="rounded-2xl bg-surface p-4 ring-1 ring-line">
-            <p className="text-sm font-medium">{formatDayLabel(date)}</p>
-            <Row label={t('checkin.me')} checkin={mine ?? null} />
-            <Row label={partnerName} checkin={theirs ?? null} />
-          </div>
+          <Surface key={date} className="flex flex-col gap-3 p-4">
+            <p className="text-sm font-semibold first-letter:uppercase">{formatDayLabel(date)}</p>
+            <Row name={myName} tone={myTone} checkin={mine ?? null} />
+            <Row name={partnerName} tone={partnerTone} checkin={theirs ?? null} />
+          </Surface>
         )
       })}
+      {shown < days.length && (
+        <Button variant="secondary" onClick={() => setShown((n) => n + HISTORY_STEP * 2)}>
+          {t('common.showMore')}
+        </Button>
+      )}
     </section>
   )
 }
 
-function Row({ label, checkin }: { label: string; checkin: Checkin | null }) {
+function Row({ name, tone, checkin }: { name: string; tone: Tone; checkin: Checkin | null }) {
   const t = useT()
+  const states = (checkin?.states ?? []).filter((id) => STATE_BY_ID[id])
   return (
-    <div className="mt-2">
-      <p className="text-xs text-muted">{label}</p>
-      {!checkin ? (
-        <p className="text-sm text-muted">-</p>
-      ) : (
-        <p className="text-sm">
-          {checkin.states.map((id) => (STATE_BY_ID[id] ? t(dynamicKey('state', id)) : null)).filter(Boolean).join(', ') || '-'}
-          {checkin.note && <span className="text-muted"> · {checkin.note}</span>}
-        </p>
-      )}
+    <div className="flex gap-2.5">
+      <Avatar name={name} tone={tone} size="sm" />
+      <div className="min-w-0 flex-1 pt-0.5">
+        {!checkin ? (
+          <p className="text-sm text-muted">-</p>
+        ) : (
+          <>
+            {states.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {states.map((id) => (
+                  <Tag key={id} icon={STATE_BY_ID[id]?.icon}>
+                    {t(dynamicKey('state', id))}
+                  </Tag>
+                ))}
+              </div>
+            )}
+            {checkin.note && (
+              <p className={`text-sm text-muted ${states.length > 0 ? 'mt-1.5' : ''}`}>{checkin.note}</p>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }

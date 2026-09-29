@@ -30,24 +30,27 @@ export function DraggableEntry({
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
-      className={`flex items-center border-t border-line bg-surface ${
-        isDragging ? 'relative z-10 opacity-90 shadow-lg' : ''
-      }`}
+      // Разделитель от текста, а не от края - как в сгруппированных списках
+      className={`relative flex items-center bg-surface before:absolute before:inset-x-4 before:top-0
+                  before:h-px before:bg-line ${
+                    isDragging ? 'z-10 rounded-2xl opacity-95 shadow-float before:hidden' : ''
+                  }`}
     >
       <button
         type="button"
         onClick={onOpen}
-        className="flex min-w-0 flex-1 items-center gap-3 py-2.5 pl-4 text-left active:bg-raised"
+        className="flex min-h-14 min-w-0 flex-1 items-center gap-3 py-2.5 pl-4 text-left
+                   transition-colors active:bg-raised"
       >
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm">{entry.name}</span>
-          <span className="text-xs text-muted">
+          <span className="block truncate text-[15px] font-medium">{entry.name}</span>
+          <span className="text-[13px] text-muted">
             {entry.servingLabel ? `${entry.servingLabel} · ` : ''}
             {trim(entry.grams)} {t('unit.gram')}
           </span>
         </span>
-        <span className="shrink-0 text-sm text-muted">
-          {Math.round(entry.kcal)} {t('unit.kcal')}
+        <span className="shrink-0 text-sm font-semibold tabular-nums">
+          {Math.round(entry.kcal)} <span className="font-normal text-muted">{t('unit.kcal')}</span>
         </span>
       </button>
 
@@ -56,7 +59,7 @@ export function DraggableEntry({
         aria-label={t('diary.drag', { name: entry.name })}
         // touch-none обязателен: без него браузер считает жест прокруткой
         // и забирает его себе, так и не отдав библиотеке
-        className="shrink-0 cursor-grab touch-none px-3 py-4 text-muted active:cursor-grabbing"
+        className="shrink-0 cursor-grab touch-none px-3 py-4 text-muted/60 active:cursor-grabbing"
         {...attributes}
         {...listeners}
       >
@@ -89,7 +92,7 @@ export function MealDropZone({
       {children}
       {isEmpty && (
         <p
-          className={`border-t border-dashed px-4 py-3 text-center text-xs transition-colors ${
+          className={`mx-4 mb-1 rounded-2xl border border-dashed px-4 py-3 text-center text-[13px] transition-colors ${
             isOver ? 'border-accent text-accent' : 'border-line text-muted'
           }`}
         >

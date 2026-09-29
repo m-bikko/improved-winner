@@ -1,6 +1,8 @@
 import { useT } from '@/lib/i18n'
 import { useEffect, useState } from 'react'
 import { Heart } from 'lucide-react'
+import { motion } from 'motion/react'
+import { SPRING } from '@/ui/motion'
 import { NUDGE_COOLDOWN_MS, useLastNudge, useSendNudge } from './nudge'
 
 /**
@@ -35,21 +37,36 @@ export function NudgeButton() {
   const minutes = Math.ceil(left / 60_000)
 
   return (
-    <button
+    <motion.button
       type="button"
-      onClick={() => send.mutate()}
+      onClick={() => {
+        navigator.vibrate?.(12)
+        send.mutate()
+      }}
       disabled={cooling || send.isPending}
-      className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-4 text-sm font-medium
-                  transition-colors ${
+      whileTap={cooling ? {} : { scale: 0.97 }}
+      transition={SPRING}
+      className={`flex min-h-16 items-center justify-center gap-2.5 rounded-3xl px-4 font-display
+                  text-[17px] font-bold transition-colors ${
                     cooling
-                      ? 'bg-surface text-muted ring-1 ring-line'
-                      : 'bg-accent text-accent-ink active:opacity-90'
+                      ? 'bg-surface text-muted shadow-card'
+                      : 'bg-accent text-accent-ink shadow-[0_12px_28px_-12px_var(--c-accent)]'
                   }`}
     >
-      <Heart size={17} aria-hidden className={cooling ? '' : 'fill-current'} />
+      {/* Сердце «бьётся» один раз в момент отправки - ответ на нажатие,
+          который видно, даже если кнопка тут же ушла в остывание */}
+      <motion.span
+        key={last.data ?? 'idle'}
+        initial={last.data ? { scale: 1.6 } : false}
+        animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 12 }}
+        className="flex"
+      >
+        <Heart size={20} aria-hidden className={cooling ? '' : 'fill-current'} />
+      </motion.span>
       {/* Без имени: склонять ник по падежам - «думаю о Аминош» - хуже,
           чем не склонять вовсе, а правил тут не напасёшься */}
       {cooling ? t('nudge.cooling', { n: minutes }) : t('nudge.send')}
-    </button>
+    </motion.button>
   )
 }

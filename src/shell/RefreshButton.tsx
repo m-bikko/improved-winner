@@ -52,7 +52,8 @@ export function RefreshButton() {
       onClick={() => void refresh()}
       aria-label={t('common.refresh')}
       aria-busy={spinning}
-      className="p-3 text-muted transition-colors active:text-ink"
+      className="flex size-10 items-center justify-center rounded-full text-muted
+                 transition-[color,background-color] active:bg-raised active:text-ink"
     >
       <RotateCw size={19} aria-hidden className={spinning ? 'animate-spin' : ''} />
     </button>

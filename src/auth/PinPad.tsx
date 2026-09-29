@@ -48,30 +48,30 @@ export function PinPad({
   }
 
   return (
-    <div className="flex w-full max-w-xs flex-col items-center gap-8">
+    <div className="flex w-full max-w-xs flex-col items-center gap-7">
       <div className="text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+        <h1 className="font-display text-[26px] font-extrabold tracking-tight">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
       </div>
 
       <div key={shakeKey} className={error ? 'animate-shake' : undefined}>
-        <div className="flex gap-3" role="status" aria-label={t('pin.entered', { n: value.length, total: PIN_LENGTH })}>
+        <div className="flex gap-4" role="status" aria-label={t('pin.entered', { n: value.length, total: PIN_LENGTH })}>
           {Array.from({ length: PIN_LENGTH }, (_, i) => (
             <span
               key={i}
-              className={`size-3 rounded-full transition-colors ${
-                i < value.length ? 'bg-accent' : 'bg-line'
+              className={`size-3.5 rounded-full transition-[background-color,transform] duration-150 ${
+                i < value.length ? 'scale-110 bg-accent' : 'bg-line'
               }`}
             />
           ))}
         </div>
       </div>
 
-      <p className="min-h-5 text-center text-sm text-danger" role="alert">
+      <p className="-my-2 min-h-5 text-center text-sm text-danger" role="alert">
         {error}
       </p>
 
-      <div className="grid w-full grid-cols-3 gap-3">
+      <div className="grid w-full grid-cols-3 gap-x-5 gap-y-3.5">
         {KEYS.map((k) => (
           <PadButton key={k} onClick={() => press(k)} disabled={disabled}>
             {k}
@@ -108,11 +108,12 @@ function PadButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      // Фиксированная высота, а не aspect-square: на трёх колонках квадрат
-      // получается ~110px и пад уползает за экран вместе с «сменить пользователя»
-      className="flex h-16 items-center justify-center rounded-2xl bg-raised text-2xl
-                 font-medium ring-1 ring-line transition-[transform,background-color]
-                 active:scale-95 active:bg-line disabled:opacity-30 disabled:active:scale-100"
+      // Фиксированный размер, а не aspect-square по ширине колонки: на трёх
+      // колонках квадрат получается ~110px и пад уползает за экран вместе
+      // с «сменить пользователя». Круг 72px - как у системного набора
+      className="mx-auto flex size-[72px] items-center justify-center rounded-full bg-surface
+                 font-display text-[28px] font-bold shadow-card transition-[transform,background-color]
+                 active:scale-90 active:bg-raised disabled:opacity-30 disabled:active:scale-100"
     >
       {children}
     </button>

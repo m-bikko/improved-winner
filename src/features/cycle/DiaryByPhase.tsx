@@ -3,6 +3,8 @@ import { UtensilsCrossed } from 'lucide-react'
 import { todayLocal } from '@/lib/date'
 import { supabase } from '@/lib/supabase'
 import { dynamicKey, useT } from '@/lib/i18n'
+import { Card } from '@/ui/Card'
+import { IconBadge } from '@/ui/IconBadge'
 import type { Phase } from './cycle'
 
 type PhaseRow = {
@@ -68,34 +70,41 @@ export function DiaryByPhase({ ownerId }: { ownerId: string }) {
   const maxKcal = Math.max(...rows.map((r) => r.meanKcal))
 
   return (
-    <section className="mt-5 rounded-2xl bg-surface p-4 ring-1 ring-line">
-      <h2 className="flex items-center gap-2 font-medium">
-        <UtensilsCrossed size={17} aria-hidden className="text-accent" />
-        {t('phaseDiary.title')}
-      </h2>
-      <p className="mt-1 text-sm text-muted">{t('phaseDiary.window')}</p>
+    <Card as="section" className="p-4">
+      {/* Тон дневника, а не цикла: это еда из дневника, разложенная по фазам,
+          и узнаваться блок должен по тому, откуда данные */}
+      <div className="flex items-center gap-3">
+        <IconBadge icon={UtensilsCrossed} tone="amber" size="sm" />
+        <div className="min-w-0 flex-1">
+          <h2 className="font-display text-[17px] leading-tight font-bold">{t('phaseDiary.title')}</h2>
+          <p className="mt-0.5 text-[13px] text-muted">{t('phaseDiary.window')}</p>
+        </div>
+      </div>
 
-      <ul className="mt-3 flex flex-col gap-3">
+      <ul className="mt-4 flex flex-col gap-4">
         {rows.map((r) => (
           <li key={r.phase}>
-            <div className="flex items-baseline justify-between gap-3 text-sm">
-              <span className="min-w-0 truncate">{t(dynamicKey('phase', r.phase))}</span>
-              <span className="shrink-0 tabular-nums text-muted">
-                {r.meanKcal} {t('unit.kcal')}
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="min-w-0 truncate text-[15px] font-medium">
+                {t(dynamicKey('phase', r.phase))}
+              </span>
+              <span className="shrink-0 text-[13px] text-muted tabular-nums">
+                <span className="font-display text-[17px] font-bold text-ink">{r.meanKcal}</span>{' '}
+                {t('unit.kcal')}
               </span>
             </div>
 
             {/* Полоса от максимума, а не от нормы: сравниваются фазы между
                 собой, и норма тут сбивала бы с толку - она про день, а не
                 про фазу */}
-            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-raised">
+            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-raised">
               <div
                 className="h-full rounded-full bg-accent"
                 style={{ width: `${maxKcal > 0 ? (r.meanKcal / maxKcal) * 100 : 0}%` }}
               />
             </div>
 
-            <p className="mt-1 text-xs text-muted">
+            <p className="mt-1.5 text-[13px] text-muted tabular-nums">
               {t('phaseDiary.row', {
                 days: r.days,
                 unit: t.plural('unit.day', r.days),
@@ -116,9 +125,9 @@ export function DiaryByPhase({ ownerId }: { ownerId: string }) {
         ))}
       </ul>
 
-      <p className="mt-4 border-t border-line pt-3 text-xs text-muted">
+      <p className="mt-4 border-t border-line pt-3 text-[13px] leading-relaxed text-muted">
         {t('phaseDiary.note')}
       </p>
-    </section>
+    </Card>
   )
 }

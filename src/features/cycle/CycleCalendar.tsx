@@ -2,6 +2,7 @@ import { useT } from '@/lib/i18n'
 import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { fromLocalISO, monthName, toLocalISO, todayLocal, weekdayShortNames } from '@/lib/date'
+import { Card } from '@/ui/Card'
 import type { CycleDay, Forecast, Period } from './cycle'
 import type { DayLog } from './dayLog'
 
@@ -110,22 +111,32 @@ export function CycleCalendar({
   }
 
   return (
-    <section className="rounded-2xl bg-surface p-3 ring-1 ring-line">
-      <div className="mb-2 flex items-center justify-between px-1">
-        <button type="button" onClick={() => shift(-1)} aria-label={t('cal.prevMonth')} className="p-2 text-muted">
+    <Card as="section" className="p-3">
+      <div className="mb-1 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => shift(-1)}
+          aria-label={t('cal.prevMonth')}
+          className="flex size-11 items-center justify-center rounded-full text-muted transition-colors active:bg-raised"
+        >
           <ChevronLeft size={20} aria-hidden />
         </button>
-        <span className="text-sm font-medium">
+        <span className="font-display text-[17px] font-bold">
           {monthName(cursor.month)} {cursor.year}
         </span>
-        <button type="button" onClick={() => shift(1)} aria-label={t('cal.nextMonth')} className="p-2 text-muted">
+        <button
+          type="button"
+          onClick={() => shift(1)}
+          aria-label={t('cal.nextMonth')}
+          className="flex size-11 items-center justify-center rounded-full text-muted transition-colors active:bg-raised"
+        >
           <ChevronRight size={20} aria-hidden />
         </button>
       </div>
 
       <div className="mb-1 grid grid-cols-7 gap-1">
         {weekdayShortNames().map((w) => (
-          <span key={w} className="py-1 text-center text-xs text-muted">
+          <span key={w} className="py-1 text-center text-[13px] font-medium text-muted">
             {w}
           </span>
         ))}
@@ -139,18 +150,36 @@ export function CycleCalendar({
           const isSelected = iso === selected
           const day = Number(iso.slice(8, 10))
 
+          // Фон - только у того, что было: отмеченная менструация. Раньше
+          // серой плашкой были залиты все дни месяца, и на этом фоне
+          // особые дни терялись - сетка читалась как клавиатура.
+          //
+          // Обводка ровно одна, со старшинством: выбранный день, затем
+          // сегодняшний, затем ожидаемая менструация. Два ring-класса
+          // на одной кнопке спорят за одно свойство, и какой победит,
+          // решал бы порядок в CSS, а не смысл.
+          const fill = m?.bled ? 'bg-accent font-semibold text-accent-ink' : ''
+          const ring = isSelected
+            ? 'ring-2 ring-ink'
+            : isToday
+              ? 'ring-2 ring-muted/60'
+              : !m?.bled && m?.predicted
+                ? 'ring-[1.5px] ring-accent/60'
+                : ''
+          const text = m?.bled ? '' : m?.predicted ? 'text-accent' : isToday ? 'font-bold' : ''
+          // Залитому дню нажатие не меняет фон: серая вспышка поверх акцента
+          // выглядела бы как снятая отметка
+          const press = m?.bled ? 'active:opacity-80' : 'active:bg-raised'
+
           return (
             <button
               key={iso}
               type="button"
               onClick={() => onSelect(iso)}
               aria-current={isToday ? 'date' : undefined}
-              className={`relative flex aspect-square flex-col items-center justify-center rounded-lg text-sm transition-colors
-                ${m?.bled ? 'bg-accent text-accent-ink font-medium' : ''}
-                ${!m?.bled && m?.predicted ? 'ring-1 ring-accent/60 text-accent' : ''}
-                ${!m?.bled && !m?.predicted ? 'bg-raised' : ''}
-                ${isSelected ? 'ring-2 ring-ink' : ''}
-                ${isToday && !isSelected ? 'ring-1 ring-muted' : ''}`}
+              className={`relative flex aspect-square flex-col items-center justify-center rounded-full
+                          text-[15px] tabular-nums ring-inset transition-[background-color,opacity]
+                          ${fill} ${ring} ${text} ${press}`}
             >
               {day}
               <span className="mt-0.5 flex h-1.5 items-center gap-0.5">
@@ -165,13 +194,13 @@ export function CycleCalendar({
         })}
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 px-1 text-xs text-muted">
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 px-1 pb-1 text-[13px] text-muted">
         <Legend className="bg-accent">{t('cal.was')}</Legend>
         <Legend className="ring-1 ring-accent/60">{t('cal.expected')}</Legend>
         <Legend className="bg-carbs">{t('cal.ovulation')}</Legend>
         <Legend className="bg-ink/60">{t('cal.logged')}</Legend>
       </div>
-    </section>
+    </Card>
   )
 }
 

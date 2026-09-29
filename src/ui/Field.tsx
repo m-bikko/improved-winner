@@ -8,9 +8,11 @@ type BaseProps = {
   hideLabel?: boolean | undefined
 }
 
-const INPUT_CLASS =
-  'w-full rounded-xl bg-surface px-4 py-3 ring-1 ring-line outline-none ' +
-  'focus:ring-2 focus:ring-accent placeholder:text-muted'
+// Поле заливкой, а не рамкой: на карточке без рамок обведённое поле
+// выглядело бы чужим. Граница появляется при фокусе - там она и нужна
+export const INPUT_CLASS =
+  'w-full rounded-2xl bg-raised px-4 py-3 ring-1 ring-transparent outline-none ' +
+  'transition-shadow focus:bg-surface focus:ring-2 focus:ring-accent placeholder:text-muted/80'
 
 export function Field({
   label,

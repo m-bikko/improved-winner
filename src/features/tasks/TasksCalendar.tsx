@@ -1,7 +1,8 @@
 import { useT } from '@/lib/i18n'
 import { useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { fromLocalISO, monthName, toLocalISO, todayLocal, weekdayShortNames } from '@/lib/date'
+import { Card } from '@/ui/Card'
 import { occurrencesInRange } from './recurrence'
 import type { Task } from './api'
 
@@ -79,10 +80,15 @@ export function TasksCalendar({
   }
 
   return (
-    <div>
+    <Card as="section" className="px-2 pt-1.5 pb-2.5">
       <div className="flex items-center justify-between">
-        <button type="button" onClick={() => shift(-1)} aria-label={t('cal.prevMonth')} className="p-3 text-muted">
-          <ChevronLeft size={20} aria-hidden />
+        <button
+          type="button"
+          onClick={() => shift(-1)}
+          aria-label={t('cal.prevMonth')}
+          className="flex size-11 items-center justify-center rounded-full text-muted transition-colors active:bg-raised"
+        >
+          <ChevronLeft size={22} aria-hidden />
         </button>
         <button
           type="button"
@@ -91,18 +97,24 @@ export function TasksCalendar({
             setCursor({ year: now.getFullYear(), month: now.getMonth() })
             onSelect(todayLocal())
           }}
-          className="text-base font-medium"
+          className="min-h-11 rounded-full px-3 font-display text-[17px] font-bold tabular-nums
+                     transition-colors active:bg-raised"
         >
           {monthName(cursor.month)} {cursor.year}
         </button>
-        <button type="button" onClick={() => shift(1)} aria-label={t('cal.nextMonth')} className="p-3 text-muted">
-          <ChevronRight size={20} aria-hidden />
+        <button
+          type="button"
+          onClick={() => shift(1)}
+          aria-label={t('cal.nextMonth')}
+          className="flex size-11 items-center justify-center rounded-full text-muted transition-colors active:bg-raised"
+        >
+          <ChevronRight size={22} aria-hidden />
         </button>
       </div>
 
       <div className="mb-1 grid grid-cols-7 gap-1">
         {weekdayShortNames().map((w) => (
-          <span key={w} className="py-1 text-center text-xs text-muted">
+          <span key={w} className="py-1 text-center text-[13px] font-medium text-muted">
             {w}
           </span>
         ))}
@@ -124,19 +136,27 @@ export function TasksCalendar({
               onClick={() => onSelect(iso)}
               aria-label={t('cal.dayLabel', { day, n: items.length })}
               aria-pressed={isSelected}
-              className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-xl
+              aria-current={isToday ? 'date' : undefined}
+              // Сегодня - обводкой, выбранный - заливкой: так оба читаются
+              // одновременно, когда выбран другой день, и не спорят, когда
+              // выбран сам сегодняшний
+              className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl
                           transition-colors ${
-                            isSelected ? 'bg-accent text-accent-ink' : 'active:bg-raised'
+                            isSelected
+                              ? 'bg-accent text-accent-ink shadow-[0_6px_14px_-6px_var(--c-accent)]'
+                              : isToday
+                                ? 'ring-2 ring-accent ring-inset active:bg-raised'
+                                : 'active:bg-raised'
                           }`}
             >
               <span
-                className={`text-sm ${
+                className={`text-[15px] leading-none tabular-nums ${
                   isSelected
-                    ? 'font-semibold'
+                    ? 'font-bold'
                     : isToday
-                      ? 'font-semibold text-accent'
+                      ? 'font-bold text-accent'
                       : items.length > 0
-                        ? 'text-ink'
+                        ? 'font-semibold text-ink'
                         : 'text-muted'
                 }`}
               >
@@ -144,27 +164,32 @@ export function TasksCalendar({
               </span>
 
               {/* Точки вместо числа: до трёх задач их видно и так, а «5»
-                  на клетке 40 пикселей читается хуже, чем «много» */}
+                  на клетке 40 пикселей читается хуже, чем «много».
+                  Остаток - плюсом, а не «+2» мелким кеглем: текст в 9px
+                  на телефоне не прочесть, а точное число есть в aria-label */}
               <span className="flex h-1.5 items-center gap-0.5">
                 {items.slice(0, 3).map((_, index) => (
                   <span
                     key={index}
                     className={`size-1.5 rounded-full ${
-                      isSelected ? 'bg-accent-ink/70' : overdue ? 'bg-danger' : 'bg-accent'
+                      isSelected ? 'bg-accent-ink/80' : overdue ? 'bg-danger' : 'bg-accent'
                     }`}
                   />
                 ))}
                 {items.length > 3 && (
-                  <span className={`text-[9px] ${isSelected ? 'text-accent-ink/70' : 'text-muted'}`}>
-                    +{items.length - 3}
-                  </span>
+                  <Plus
+                    size={9}
+                    strokeWidth={3.5}
+                    aria-hidden
+                    className={isSelected ? 'text-accent-ink/80' : 'text-muted'}
+                  />
                 )}
               </span>
             </button>
           )
         })}
       </div>
-    </div>
+    </Card>
   )
 }
 

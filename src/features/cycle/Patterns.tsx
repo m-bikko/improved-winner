@@ -4,6 +4,8 @@ import { todayLocal } from '@/lib/date'
 import { supabase } from '@/lib/supabase'
 import { STATE_BY_ID } from '@/features/checkin/states'
 import { dynamicKey, tr, trPlural, useT } from '@/lib/i18n'
+import { Card } from '@/ui/Card'
+import { IconBadge } from '@/ui/IconBadge'
 import { type Phase } from './cycle'
 
 type Pattern = {
@@ -65,33 +67,46 @@ export function Patterns({ ownerId }: { ownerId: string }) {
   const observed = found.data[0]?.observedDays ?? 0
 
   return (
-    <section className="mt-5 rounded-2xl bg-surface p-4 ring-1 ring-line">
-      <h2 className="flex items-center gap-2 font-medium">
-        <Sparkles size={17} aria-hidden className="text-accent" />
-        {t('pat.title')}
-      </h2>
-      <p className="mt-1 text-sm text-muted">
-        {t('pat.observed', { n: observed, unit: t.plural('unit.dayDat', observed) })}
-      </p>
+    <Card as="section" className="p-4">
+      {/* Тон «Как ты», а не цикла: состояния берутся оттуда, и значок
+          это подсказывает раньше, чем текст */}
+      <div className="flex items-center gap-3">
+        <IconBadge icon={Sparkles} tone="violet" size="sm" />
+        <div className="min-w-0 flex-1">
+          <h2 className="font-display text-[17px] leading-tight font-bold">{t('pat.title')}</h2>
+          <p className="mt-0.5 text-[13px] text-muted">
+            {t('pat.observed', { n: observed, unit: t.plural('unit.dayDat', observed) })}
+          </p>
+        </div>
+      </div>
 
-      <ul className="mt-3 flex flex-col gap-3">
-        {found.data.map((p) => (
-          <li key={`${p.state}-${p.phase}`} className="text-sm">
-            <span className="font-medium">
-              {STATE_BY_ID[p.state] ? t(dynamicKey('state', p.state)) : p.state}
-            </span>
-            <span className="text-muted">
-              {' — '}
-              {phrase(p)}
-            </span>
-          </li>
-        ))}
+      <ul className="mt-3 flex flex-col gap-2">
+        {found.data.map((p) => {
+          const Icon = STATE_BY_ID[p.state]?.icon ?? Sparkles
+          return (
+            <li
+              key={`${p.state}-${p.phase}`}
+              className="flex items-start gap-3 rounded-2xl bg-raised/60 px-3.5 py-3"
+            >
+              <Icon size={18} aria-hidden className="mt-0.5 shrink-0 text-tone-violet" />
+              <p className="min-w-0 flex-1 text-[15px] leading-relaxed">
+                <span className="font-semibold">
+                  {STATE_BY_ID[p.state] ? t(dynamicKey('state', p.state)) : p.state}
+                </span>
+                <span className="text-muted">
+                  {' — '}
+                  {phrase(p)}
+                </span>
+              </p>
+            </li>
+          )
+        })}
       </ul>
 
-      <p className="mt-4 border-t border-line pt-3 text-xs text-muted">
+      <p className="mt-4 border-t border-line pt-3 text-[13px] leading-relaxed text-muted">
         {t('pat.disclaimer')}
       </p>
-    </section>
+    </Card>
   )
 }
 

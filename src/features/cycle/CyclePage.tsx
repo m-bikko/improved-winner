@@ -1,8 +1,8 @@
 import { dynamicKey, useT } from '@/lib/i18n'
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import {
   BookOpen,
+  CalendarCheck,
   CalendarPlus,
   ChevronDown,
   ChevronRight,
@@ -11,9 +11,11 @@ import {
   Info,
   Lightbulb,
   Plus,
+  Settings,
   ShieldCheck,
   Trash2,
   TriangleAlert,
+  Undo2,
 } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
 import { useProfiles } from '@/features/profile/api'
@@ -21,6 +23,12 @@ import { todayLocal, shiftDays, formatDayLabel } from '@/lib/date'
 import { Button } from '@/ui/Button'
 import { Loading } from '@/ui/States'
 import { Sheet } from '@/ui/Sheet'
+import { Card, CardLink, SectionTitle } from '@/ui/Card'
+import { Tag } from '@/ui/Chip'
+import { IconBadge } from '@/ui/IconBadge'
+import { ListGroup, ListRow } from '@/ui/List'
+import { Switch } from '@/ui/Switch'
+import { INPUT_CLASS } from '@/ui/Field'
 import {
   DEFAULT_SETTINGS,
   useCycleDays,
@@ -48,6 +56,7 @@ import {
   type Period,
 } from './cycle'
 import { tipsLibrary, tipsToday } from './tips'
+import { Segmented } from '@/ui/Segmented'
 
 /**
  * Раздел цикла.
@@ -115,16 +124,16 @@ export function CyclePage() {
   const owned = active === 'mine'
 
   return (
-    <div className="px-4 py-4">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       {showTabs && (
-        <div className="mb-4 flex gap-1 rounded-xl bg-raised p-1">
-          <Tab active={active === 'mine'} onClick={() => setTab('mine')}>
-            {t('cyc.tabMine')}
-          </Tab>
-          <Tab active={active === 'theirs'} onClick={() => setTab('theirs')}>
-            {partner?.nickname ?? t('partner')}
-          </Tab>
-        </div>
+        <Segmented
+          value={active}
+          onChange={setTab}
+          options={[
+            { value: 'mine', label: t('cyc.tabMine') },
+            { value: 'theirs', label: partner?.nickname ?? t('partner') },
+          ]}
+        />
       )}
 
       <CycleBody
@@ -206,12 +215,15 @@ function CycleBody({
   if (!state || !last) {
     return (
       <div className="flex flex-col gap-3">
-        <div className="rounded-2xl bg-surface p-5 ring-1 ring-line">
-          <p className="text-sm text-muted">
-            {t(owned ? 'cyc.emptyMine' : 'cyc.emptyTheirs')}
-          </p>
+        <Card as="section" className="p-5">
+          <div className="flex items-start gap-3">
+            <IconBadge icon={Droplet} tone="plum" />
+            <p className="min-w-0 flex-1 text-[15px] leading-relaxed text-muted">
+              {t(owned ? 'cyc.emptyMine' : 'cyc.emptyTheirs')}
+            </p>
+          </div>
           {owned && (
-            <div className="mt-4 flex flex-col gap-2">
+            <div className="mt-5 flex flex-col gap-2">
               <Button onClick={() => void start.mutateAsync(today)} loading={start.isPending}>
                 <Droplet size={18} aria-hidden />
                 {t('cyc.startedToday')}
@@ -219,36 +231,81 @@ function CycleBody({
               {/* Для того, кто только начал, это важнее кнопки «сегодня»:
                   без прошлых циклов средней длины нет, и прогноз молчит
                   до следующей менструации */}
-              <Button variant="secondary" onClick={() => onEdit('new')}>
+              <Button variant="soft" onClick={() => onEdit('new')}>
                 <CalendarPlus size={18} aria-hidden />
                 {t('cyc.addPast')}
               </Button>
-              <p className="px-1 text-xs text-muted">{t('cyc.addPastHint')}</p>
+              <p className="px-1 text-[13px] leading-relaxed text-muted">{t('cyc.addPastHint')}</p>
             </div>
           )}
-        </div>
+        </Card>
 
         <LibraryCard owned={owned} />
 
         {/* Ссылка нужна именно здесь. Без неё человек, случайно включивший
             ведение своего цикла, попадал в тупик: на пустом экране нет
             ни одной кнопки, ведущей к тумблеру «Вести цикл». */}
-        {owned && (
-          <button
-            type="button"
-            onClick={onSettings}
-            className="self-start px-1 text-sm text-accent underline"
-          >
-            {t('cyc.settings')}
-          </button>
-        )}
+        {owned && <SettingsRow onClick={onSettings} />}
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <Today state={state} stats={stats} />
+
+      {/* Отметка «началась/закончилась сегодня» - сразу под статусом, а не под
+          календарём: это главное действие раздела, и ниже первого экрана
+          до него приходилось листать */}
+      {owned && (
+        <div className="flex flex-col gap-2">
+          {ongoing ? (
+            <Button
+              onClick={() =>
+                void save.mutateAsync({
+                  id: ongoing.id,
+                  startedOn: ongoing.startedOn,
+                  endedOn: today,
+                  note: ongoing.note,
+                })
+              }
+              loading={save.isPending}
+            >
+              {t('cyc.endedToday')}
+            </Button>
+          ) : coversToday ? (
+            <Card className="flex items-center gap-3 p-4">
+              <IconBadge icon={CalendarCheck} tone="plum" size="sm" />
+              <p className="min-w-0 flex-1 text-sm text-muted">{t('cyc.alreadyMarked')}</p>
+            </Card>
+          ) : (
+            <Button onClick={() => void start.mutateAsync(today)} loading={start.isPending}>
+              <Droplet size={18} aria-hidden />
+              {t('cyc.startedToday')}
+            </Button>
+          )}
+
+          {/* Отмена там же, где промах. «Началась сегодня» - самая заметная
+              кнопка экрана, и случайное нажатие по ней вероятнее любого
+              другого; исправлять его пролистыванием до истории значит
+              просить человека искать то, что он только что не хотел делать.
+              Только за сегодня: правка вчерашней записи - осознанное
+              действие, и для него есть история. */}
+          {startedToday && (
+            <button
+              type="button"
+              disabled={remove.isPending}
+              onClick={() => void remove.mutateAsync(startedToday.id)}
+              className="flex min-h-11 items-center gap-1.5 self-center rounded-full bg-raised px-4
+                         text-sm font-semibold text-muted transition-transform active:scale-95
+                         disabled:opacity-50"
+            >
+              <Undo2 size={16} aria-hidden />
+              {t('cyc.undoToday')}
+            </button>
+          )}
+        </div>
+      )}
 
       <PhaseStrip state={state} />
 
@@ -269,80 +326,45 @@ function CycleBody({
         />
       )}
 
-      {owned && (
-        <div className="flex flex-col gap-2">
-          {ongoing ? (
-            <Button
-              onClick={() =>
-                void save.mutateAsync({
-                  id: ongoing.id,
-                  startedOn: ongoing.startedOn,
-                  endedOn: today,
-                  note: ongoing.note,
-                })
-              }
-              loading={save.isPending}
-            >
-              {t('cyc.endedToday')}
-            </Button>
-          ) : coversToday ? (
-            <p className="rounded-2xl bg-surface px-4 py-3 text-sm text-muted ring-1 ring-line">
-              {t('cyc.alreadyMarked')}
-            </p>
-          ) : (
-            <Button onClick={() => void start.mutateAsync(today)} loading={start.isPending}>
-              <Droplet size={18} aria-hidden />
-              {t('cyc.startedToday')}
-            </Button>
-          )}
-
-          {/* Отмена там же, где промах. «Началась сегодня» - самая заметная
-              кнопка экрана, и случайное нажатие по ней вероятнее любого
-              другого; исправлять его пролистыванием до истории значит
-              просить человека искать то, что он только что не хотел делать.
-              Только за сегодня: правка вчерашней записи - осознанное
-              действие, и для него есть история. */}
-          {startedToday && (
-            <button
-              type="button"
-              disabled={remove.isPending}
-              onClick={() => void remove.mutateAsync(startedToday.id)}
-              className="self-start px-1 text-sm text-muted underline disabled:opacity-50"
-            >
-              {t('cyc.undoToday')}
-            </button>
-          )}
-        </div>
-      )}
-
       {alerts.length > 0 && (
-        <section className="flex flex-col gap-2">
-          {alerts.map((w) => (
-            <div
-              key={w.id}
-              className={`rounded-2xl p-4 ring-1 ${
-                w.level === 'attention' ? 'bg-surface ring-danger/40' : 'bg-surface ring-line'
-              }`}
-            >
-              <p className="flex items-center gap-2 font-medium">
-                {w.level === 'attention' ? (
-                  <TriangleAlert size={17} className="text-danger" aria-hidden />
-                ) : (
-                  <Info size={17} className="text-muted" aria-hidden />
+        <section className="flex flex-col gap-3">
+          {alerts.map((w) => {
+            const attention = w.level === 'attention'
+            return (
+              <Card key={w.id} className="p-4">
+                <div className="flex items-start gap-3">
+                  {/* Оранжевый, а не тон раздела: он ближе всех к цвету
+                      опасности, и значок с заголовком говорят одним цветом */}
+                  <IconBadge
+                    icon={attention ? TriangleAlert : Info}
+                    tone={attention ? 'orange' : 'slate'}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className={`font-display text-[17px] leading-snug font-bold ${
+                        attention ? 'text-danger' : ''
+                      }`}
+                    >
+                      {w.title}
+                    </p>
+                    <p className="mt-1 text-[15px] leading-relaxed text-muted">{w.body}</p>
+                  </div>
+                </div>
+                {/* Третья строка - что делать. Первых двух не хватало: человек
+                    узнавал, что число вышло за коридор, и оставался с этим один.
+                    Наблюдателю она не показывается: «сделайте тест», «запишитесь
+                    к врачу», «отметьте последний день» - это действия с чужим
+                    телом и чужими записями. Что число вышло за коридор, он видит;
+                    что с этим делать - решает она. */}
+                {owned && (
+                  <p className="mt-3 rounded-2xl bg-raised/60 px-3.5 py-2.5 text-[15px] leading-relaxed">
+                    {w.action}
+                  </p>
                 )}
-                {w.title}
-              </p>
-              <p className="mt-1.5 text-sm text-muted">{w.body}</p>
-              {/* Третья строка - что делать. Первых двух не хватало: человек
-                  узнавал, что число вышло за коридор, и оставался с этим один.
-                  Наблюдателю она не показывается: «сделайте тест», «запишитесь
-                  к врачу», «отметьте последний день» - это действия с чужим
-                  телом и чужими записями. Что число вышло за коридор, он видит;
-                  что с этим делать - решает она. */}
-              {owned && <p className="mt-2 border-t border-line pt-2 text-sm">{w.action}</p>}
-            </div>
-          ))}
-          <p className="px-1 text-xs text-muted">
+              </Card>
+            )
+          })}
+          <p className="px-1 text-[13px] leading-relaxed text-muted">
             {t('cyc.noDiagnosis')}
           </p>
         </section>
@@ -357,31 +379,25 @@ function CycleBody({
       <LibraryCard owned={owned} />
 
       {owned && (
-        <Link
-          to="/cycle/report"
-          className="mt-5 flex items-center justify-between gap-3 rounded-2xl bg-surface
-                     px-4 py-4 ring-1 ring-line"
-        >
-          <span className="flex items-center gap-2 text-sm font-medium">
-            <FileText size={16} aria-hidden />
-            {t('cyc.report')}
-          </span>
-          <ChevronRight size={18} aria-hidden className="text-muted" />
-        </Link>
+        <ListGroup>
+          <ListRow to="/cycle/report" icon={FileText} tone="plum" title={t('cyc.report')} />
+        </ListGroup>
       )}
 
       <History periods={periods} owned={owned} onEdit={onEdit} />
 
-      {owned && (
-        <button
-          type="button"
-          onClick={onSettings}
-          className="self-start px-1 text-sm text-accent underline"
-        >
-          {t('cyc.settings')}
-        </button>
-      )}
+      {owned && <SettingsRow onClick={onSettings} />}
     </div>
+  )
+}
+
+/** Вход в настройки раздела - строкой, а не подчёркнутой ссылкой: в неё надо попасть пальцем. */
+function SettingsRow({ onClick }: { onClick: () => void }) {
+  const t = useT()
+  return (
+    <ListGroup>
+      <ListRow onClick={onClick} icon={Settings} tone="slate" title={t('cyc.settings')} />
+    </ListGroup>
   )
 }
 
@@ -404,19 +420,22 @@ function TodayTips({ state, owned }: { state: CycleDay; owned: boolean }) {
   const count = groups.reduce((n, g) => n + g.tips.length, 0)
 
   return (
-    <section className="overflow-hidden rounded-2xl bg-surface ring-1 ring-line">
+    <Card as="section" className="overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
+        className="flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left transition-colors
+                   active:bg-raised"
       >
-        <span className="flex items-center gap-2 font-medium">
-          <Lightbulb size={17} aria-hidden className="text-accent" />
+        <IconBadge icon={Lightbulb} tone="plum" size="sm" />
+        <span className="min-w-0 flex-1 truncate font-display text-[17px] font-bold">
           {t('cyc.tipsToday')}
         </span>
-        <span className="flex items-center gap-2 text-sm text-muted">
-          {count}
+        <span className="flex shrink-0 items-center gap-2 text-muted">
+          <span className="rounded-full bg-raised px-2.5 py-0.5 text-[13px] font-semibold tabular-nums">
+            {count}
+          </span>
           <ChevronDown
             size={18}
             aria-hidden
@@ -425,20 +444,24 @@ function TodayTips({ state, owned }: { state: CycleDay; owned: boolean }) {
         </span>
       </button>
       {open && (
-        <div className="flex flex-col gap-4 border-t border-line px-4 py-3.5">
+        <div className="flex flex-col gap-5 border-t border-line px-4 pt-4 pb-5">
           {count === 0 ? (
-            <p className="text-sm text-muted">{t('cyc.tipsTodayNone')}</p>
+            <p className="text-[15px] leading-relaxed text-muted">{t('cyc.tipsTodayNone')}</p>
           ) : (
             groups.map(({ category, tips }) => (
               <div key={category}>
-                <p className="text-xs text-muted">{t(dynamicKey('tipCat', category))}</p>
-                <div className="mt-2 flex flex-col gap-3">
+                <p className="text-[13px] font-semibold text-muted">
+                  {t(dynamicKey('tipCat', category))}
+                </p>
+                <div className="mt-2 flex flex-col gap-4">
                   {tips.map((tip) => (
                     <div key={tip.id}>
-                      <p className="text-sm font-medium">
+                      <p className="text-[15px] leading-snug font-semibold">
                         {tip.title ?? t(dynamicKey('tip', `${tip.id}.title`))}
                       </p>
-                      <p className="mt-1 text-sm text-muted">
+                      {/* Тело не приглушённым цветом: это то, ради чего
+                          карточку открыли, а серый длинный текст читать тяжело */}
+                      <p className="mt-1 text-[15px] leading-relaxed text-ink/80">
                         {t(dynamicKey('tip', `${tip.id}.body`))}
                       </p>
                     </div>
@@ -449,7 +472,7 @@ function TodayTips({ state, owned }: { state: CycleDay; owned: boolean }) {
           )}
         </div>
       )}
-    </section>
+    </Card>
   )
 }
 
@@ -469,23 +492,21 @@ function LibraryCard({ owned }: { owned: boolean }) {
   )
 
   return (
-    <Link
-      to="/cycle/library"
-      className="flex items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-4
-                 ring-1 ring-line"
-    >
-      <span className="min-w-0">
-        <span className="flex items-center gap-2 text-sm font-medium">
-          <BookOpen size={16} aria-hidden />
-          {t('cyc.library')}
+    <CardLink to="/cycle/library" className="flex items-center gap-3 p-4">
+      <IconBadge icon={BookOpen} tone="plum" />
+      {/* Подсказка переносится, а не обрезается: она и есть обещание,
+          ради которого сюда заходят, и половина её ничего не обещает */}
+      <span className="min-w-0 flex-1">
+        <span className="block text-[15px] font-semibold">{t('cyc.library')}</span>
+        <span className="mt-0.5 block text-[13px] leading-snug text-muted">
+          {t('cyc.libraryHint')}
         </span>
-        <span className="mt-0.5 block text-xs text-muted">{t('cyc.libraryHint')}</span>
+        <span className="mt-1 block text-[13px] font-semibold text-tone-plum tabular-nums">
+          {count} {t.plural('unit.card', count)}
+        </span>
       </span>
-      <span className="flex shrink-0 items-center gap-1 text-xs text-muted">
-        {count} {t.plural('unit.card', count)}
-        <ChevronRight size={18} aria-hidden />
-      </span>
-    </Link>
+      <ChevronRight size={18} aria-hidden className="shrink-0 text-muted/70" />
+    </CardLink>
   )
 }
 
@@ -507,42 +528,59 @@ function Today({ state, stats }: { state: CycleDay; stats: ReturnType<typeof cyc
   const alarming = delay !== null && (delay.level === 'long' || delay.level === 'absent')
 
   return (
-    <section className="rounded-2xl bg-surface p-5 ring-1 ring-line">
-      <p className="text-sm text-muted">{t(dynamicKey('phase', state.phase))}</p>
+    <Card as="section" className="p-5">
+      <div className="flex items-center gap-2.5">
+        <IconBadge icon={Droplet} tone="plum" size="sm" />
+        <Tag>{t(dynamicKey('phase', state.phase))}</Tag>
+      </div>
 
       {delay !== null ? (
         <>
-          <p className={`mt-1 text-4xl font-semibold ${alarming ? 'text-danger' : ''}`}>
+          <p
+            className={`mt-4 font-display text-[34px] leading-[1.1] font-extrabold tracking-tight
+                        tabular-nums ${alarming ? 'text-danger' : ''}`}
+          >
             {t('cyc.delayBig', {
               n: delay.days,
               unit: t.plural('unit.day', delay.days),
             })}
           </p>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-1.5 text-[15px] text-muted tabular-nums">
             {t('cyc.dayN', { n: state.day })} {t('cyc.ofAbout', { n: state.cycleLength })}
           </p>
         </>
       ) : (
-        <p className="mt-1 flex items-baseline gap-2">
-          <span className="text-4xl font-semibold">{t('cyc.dayN', { n: state.day })}</span>
-          <span className="text-sm text-muted">{t('cyc.ofAbout', { n: state.cycleLength })}</span>
-        </p>
+        // Число отдельно от слова «день»: крупным стоит то, что меняется
+        // каждое утро, а подпись над ним - неизменная, ей хватит мелкого
+        <div className="mt-4">
+          <p className="text-sm text-muted">{t('cyc.dayOfCycle')}</p>
+          <p className="mt-0.5 flex items-baseline gap-2">
+            <span className="font-display text-[56px] leading-none font-extrabold tracking-tight tabular-nums">
+              {state.day}
+            </span>
+            <span className="text-[17px] font-semibold text-muted tabular-nums">
+              {t('cyc.ofAbout', { n: state.cycleLength })}
+            </span>
+          </p>
+        </div>
       )}
 
-      <p className="mt-2 text-sm text-muted">{t(dynamicKey('phaseSummary', state.phase))}</p>
+      <p className="mt-3 text-[15px] leading-relaxed text-muted">
+        {t(dynamicKey('phaseSummary', state.phase))}
+      </p>
 
-      <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+      <dl className="mt-4 grid grid-cols-2 gap-2.5">
         {/* Дата берётся из задержки, а не из прогноза, и это не придирка.
             Прогноз рисуется от двадцати восьми дней, пока своего среднего нет,
             а задержка считается от тридцати пяти - и на экране оказывалось
             два разных числа сразу: «Задержка 11 дней» крупно и «задержка
             18 дней» в карточке под ней. Соседние строки обязаны отвечать
             одинаково; календарь живёт своей жизнью и рисует прогноз. */}
-        <div className="rounded-xl bg-raised px-3 py-2.5">
-          <dt className="text-xs text-muted">
+        <div className="min-w-0 rounded-2xl bg-raised/60 px-3.5 py-3">
+          <dt className="text-[13px] text-muted">
             {state.daysToNext < 0 ? t('cyc.expected') : t('cyc.next')}
           </dt>
-          <dd className="mt-0.5 font-medium">
+          <dd className="mt-1 font-display text-[17px] leading-tight font-bold tabular-nums">
             {state.daysToNext > 0
               ? t('cyc.inDays', {
                   n: state.daysToNext,
@@ -553,21 +591,21 @@ function Today({ state, stats }: { state: CycleDay; stats: ReturnType<typeof cyc
                 : formatDayLabel(delay?.expectedOn ?? state.nextStart)}
           </dd>
           {state.daysToNext >= 0 && (
-            <dd className="text-xs text-muted">{formatDayLabel(state.nextStart)}</dd>
+            <dd className="mt-0.5 text-[13px] text-muted">{formatDayLabel(state.nextStart)}</dd>
           )}
         </div>
-        <div className="rounded-xl bg-raised px-3 py-2.5">
-          <dt className="text-xs text-muted">{t('cyc.avgCycle')}</dt>
+        <div className="min-w-0 rounded-2xl bg-raised/60 px-3.5 py-3">
+          <dt className="text-[13px] text-muted">{t('cyc.avgCycle')}</dt>
           {/* usableCycle, а не avgCycle: показывать надо то число, которым
               приложение реально считает прогноз. Иначе в шапке стояло бы одно,
               а «Следующая» была бы посчитана из другого - и разойтись они
               могут ровно тогда, когда данные подозрительные. */}
-          <dd className="mt-0.5 font-medium">
+          <dd className="mt-1 font-display text-[17px] leading-tight font-bold tabular-nums">
             {stats.usableCycle === null
               ? t('cyc.noData')
               : `${Math.round(stats.usableCycle)} ${t.plural('unit.day', Math.round(stats.usableCycle))}`}
           </dd>
-          <dd className="text-xs text-muted">
+          <dd className="mt-0.5 text-[13px] text-muted">
             {stats.usableCycle === null
               ? t('cyc.needSecond')
               : t('cyc.byLast', { n: stats.cyclesCounted })}
@@ -576,17 +614,17 @@ function Today({ state, stats }: { state: CycleDay; stats: ReturnType<typeof cyc
       </dl>
 
       {state.daysToNext < 0 && (
-        <p className="mt-3 text-xs text-muted">{t('cyc.forecastHold')}</p>
+        <p className="mt-3 text-[13px] leading-relaxed text-muted">{t('cyc.forecastHold')}</p>
       )}
       {/* Откуда взялось число задержки. Без этой строки «задержка 12 дней»
           при пустом «среднем цикле» выглядит как противоречие: приложение
           говорит, что данных нет, и тут же считает от чего-то. */}
       {delay?.basis === 'assumed' && (
-        <p className="mt-1 text-xs text-muted">
+        <p className="mt-1 text-[13px] leading-relaxed text-muted">
           {t('cyc.assumedBasis', { max: NORMS.cycleMax })}
         </p>
       )}
-    </section>
+    </Card>
   )
 }
 
@@ -609,7 +647,7 @@ function PhaseStrip({ state }: { state: CycleDay }) {
   const days = Array.from({ length: span }, (_, i) => shiftDays(firstDay, i))
 
   return (
-    <section className="rounded-2xl bg-surface p-4 ring-1 ring-line">
+    <Card as="section" className="p-4">
       <div className="flex items-center gap-[2px]">
         {days.map((iso, i) => {
           const isToday = i + 1 === state.day
@@ -624,7 +662,7 @@ function PhaseStrip({ state }: { state: CycleDay }) {
               aria-hidden
               // Сегодняшний день выше остальных. Обводка на трёхпиксельном
               // сегменте не читается - проверено на снимке.
-              className={`flex-1 ${isToday ? 'h-6 rounded-sm bg-ink' : 'h-3'} ${
+              className={`flex-1 ${isToday ? 'h-6 rounded-sm bg-ink' : 'h-3 rounded-[2px]'} ${
                 isToday
                   ? ''
                   : overdue
@@ -639,7 +677,7 @@ function PhaseStrip({ state }: { state: CycleDay }) {
           )
         })}
       </div>
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+      <div className="mt-3.5 flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] text-muted">
         <span className="flex items-center gap-1.5">
           <span className="size-2.5 rounded-full bg-ink" aria-hidden />
           {t('cyc.todayLower')}
@@ -656,10 +694,10 @@ function PhaseStrip({ state }: { state: CycleDay }) {
           })}
         </span>
       </div>
-      <p className="mt-2 text-xs text-muted">
+      <p className="mt-2.5 text-[13px] leading-relaxed text-muted">
         {t('cyc.fertileNote')}
       </p>
-    </section>
+    </Card>
   )
 }
 
@@ -676,39 +714,56 @@ function History({
   const sorted = [...periods].sort((a, b) => (a.startedOn < b.startedOn ? 1 : -1))
   return (
     <section className="flex flex-col gap-2">
-      <div className="flex items-baseline justify-between gap-3 px-1">
-        <h2 className="text-sm text-muted">{t('cyc.history')}</h2>
-        {owned && (
-          <button type="button" onClick={() => onEdit('new')} className="text-sm text-accent">
-            {t('cyc.addPast')}
-          </button>
-        )}
-      </div>
-      <ul className="overflow-hidden rounded-2xl bg-surface ring-1 ring-line">
-        {sorted.map((p) => (
-          <li key={p.id} className="border-b border-line last:border-0">
+      <SectionTitle
+        action={
+          owned && (
             <button
               type="button"
-              disabled={!owned}
-              onClick={() => onEdit(p)}
-              className="flex w-full items-baseline justify-between gap-3 px-4 py-3 text-left disabled:opacity-100"
+              onClick={() => onEdit('new')}
+              className="flex min-h-9 items-center gap-1 rounded-full bg-accent-soft px-3 text-[13px]
+                         font-semibold text-accent-soft-ink transition-transform active:scale-95"
             >
-              <span className="min-w-0">
-                <span className="block text-sm">
-                  {formatDayLabel(p.startedOn)}
-                  {p.endedOn ? ` - ${formatDayLabel(p.endedOn)}` : ` - ${t('cyc.ongoing')}`}
-                </span>
-                {p.note && <span className="block text-xs text-muted">{p.note}</span>}
-              </span>
-              <span className="shrink-0 text-sm text-muted">
-                {p.periodDays !== null &&
-                  `${p.periodDays} ${t.plural('unit.day', p.periodDays)}`}
-                {p.cycleDays !== null && ` · ${t('cyc.cycleN', { n: p.cycleDays })}`}
-              </span>
+              <Plus size={15} aria-hidden />
+              {t('cyc.addPast')}
             </button>
-          </li>
-        ))}
-      </ul>
+          )
+        }
+      >
+        {t('cyc.history')}
+      </SectionTitle>
+      <Card as="div" className="overflow-hidden">
+        <ul className="divide-y divide-line">
+          {sorted.map((p) => (
+            <li key={p.id}>
+              <button
+                type="button"
+                disabled={!owned}
+                onClick={() => onEdit(p)}
+                className="flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left transition-colors
+                           enabled:active:bg-raised disabled:opacity-100"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-medium">
+                    {formatDayLabel(p.startedOn)}
+                    {p.endedOn ? ` - ${formatDayLabel(p.endedOn)}` : ` - ${t('cyc.ongoing')}`}
+                  </span>
+                  {p.note && (
+                    <span className="mt-0.5 block text-[13px] text-muted">{p.note}</span>
+                  )}
+                </span>
+                <span className="shrink-0 text-right text-[13px] text-muted tabular-nums">
+                  {p.periodDays !== null &&
+                    `${p.periodDays} ${t.plural('unit.day', p.periodDays)}`}
+                  {p.cycleDays !== null && ` · ${t('cyc.cycleN', { n: p.cycleDays })}`}
+                </span>
+                {owned && (
+                  <ChevronRight size={18} aria-hidden className="-mr-1 shrink-0 text-muted/70" />
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </Card>
     </section>
   )
 }
@@ -770,7 +825,7 @@ function PeriodSheet({ period, onClose }: { period: Period | null; onClose: () =
             value={startedOn}
             max={todayLocal()}
             onChange={(e) => setStartedOn(e.target.value)}
-            className="w-full min-w-0 rounded-xl bg-surface px-4 py-3 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
+            className={`${INPUT_CLASS} min-w-0`}
           />
         </label>
 
@@ -780,9 +835,9 @@ function PeriodSheet({ period, onClose }: { period: Period | null; onClose: () =
             type="date"
             value={endedOn}
             onChange={(e) => setEndedOn(e.target.value)}
-            className="w-full min-w-0 rounded-xl bg-surface px-4 py-3 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
+            className={`${INPUT_CLASS} min-w-0`}
           />
-          <span className="text-xs text-muted">{t('cyc.emptyMeansOngoing')}</span>
+          <span className="text-[13px] text-muted">{t('cyc.emptyMeansOngoing')}</span>
         </label>
 
         <label className="flex flex-col gap-1.5">
@@ -792,7 +847,7 @@ function PeriodSheet({ period, onClose }: { period: Period | null; onClose: () =
             onChange={(e) => setNote(e.target.value)}
             rows={2}
             placeholder={t('cyc.notePlaceholder')}
-            className="w-full min-w-0 resize-none rounded-xl bg-surface px-4 py-3 ring-1 ring-line outline-none focus:ring-2 focus:ring-accent placeholder:text-muted"
+            className={`${INPUT_CLASS} min-w-0 resize-none`}
           />
         </label>
 
@@ -918,9 +973,10 @@ function LutealField({
         onKeyDown={(e) => {
           if (e.key === 'Enter') e.currentTarget.blur()
         }}
-        className="w-20 rounded-lg bg-surface px-3 py-2 text-center ring-1 ring-line outline-none focus:ring-2 focus:ring-accent"
+        className="w-20 rounded-2xl bg-raised px-3 py-3 text-center tabular-nums ring-1 ring-transparent
+                   outline-none transition-shadow focus:bg-surface focus:ring-2 focus:ring-accent"
       />
-      <span className="text-xs text-muted">
+      <span className="text-[13px] leading-relaxed text-muted">
         {t('cyc.lutealHint')}
       </span>
     </label>
@@ -963,38 +1019,40 @@ function Intro({
   }
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-6">
-      <section className="rounded-2xl bg-surface p-5 ring-1 ring-line">
-        <p className="flex items-center gap-2 text-base font-medium">
-          <Droplet size={18} className="text-accent" aria-hidden />
-          {t('cyc.introMineTitle')}
-        </p>
-        <p className="mt-2 text-sm text-muted">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+      <Card as="section" className="p-5">
+        <div className="flex items-center gap-3">
+          <IconBadge icon={Droplet} tone="plum" />
+          <h2 className="min-w-0 flex-1 font-display text-[17px] leading-snug font-bold">
+            {t('cyc.introMineTitle')}
+          </h2>
+        </div>
+        <p className="mt-3 text-[15px] leading-relaxed text-muted">
           {t('cyc.introMineBody')}
         </p>
-        <p className="mt-3 text-sm text-muted">
+        <p className="mt-2 text-[15px] leading-relaxed text-muted">
           {t('cyc.introMineOwn', { name: partnerName })}
         </p>
-        <div className="mt-4">
-          <Button onClick={() => void enable()} loading={save.isPending}>
-            <Plus size={18} aria-hidden />
-            {t('cyc.enable')}
-          </Button>
-        </div>
-      </section>
+        <Button className="mt-5 w-full" onClick={() => void enable()} loading={save.isPending}>
+          <Plus size={18} aria-hidden />
+          {t('cyc.enable')}
+        </Button>
+      </Card>
 
-      <section className="rounded-2xl bg-surface p-5 ring-1 ring-line">
-        <p className="flex items-center gap-2 text-base font-medium">
-          <ShieldCheck size={18} className="text-muted" aria-hidden />
-          {t('cyc.introTheirsTitle')}
-        </p>
-        <p className="mt-2 text-sm text-muted">
+      <Card as="section" className="p-5">
+        <div className="flex items-center gap-3">
+          <IconBadge icon={ShieldCheck} tone="slate" />
+          <h2 className="min-w-0 flex-1 font-display text-[17px] leading-snug font-bold">
+            {t('cyc.introTheirsTitle')}
+          </h2>
+        </div>
+        <p className="mt-3 text-[15px] leading-relaxed text-muted">
           {t('cyc.introTheirsBody', { name: partnerName })}
         </p>
-        <p className="mt-3 text-sm text-muted">
+        <p className="mt-2 text-[15px] leading-relaxed text-muted">
           {t('cyc.introTheirsWait', { name: partnerName })}
         </p>
-      </section>
+      </Card>
 
       {open && <SettingsSheet onClose={onClose} />}
     </div>
@@ -1015,41 +1073,19 @@ function Toggle({
   onChange: (value: boolean) => void
 }) {
   return (
-    <label className={`flex flex-col gap-1.5 ${disabled ? 'opacity-50' : ''}`}>
-      <span className="flex items-center justify-between gap-3">
-        <span className="text-sm font-medium">{label}</span>
-        <input
-          type="checkbox"
-          checked={checked}
-          disabled={disabled}
-          onChange={(e) => onChange(e.target.checked)}
-          className="size-6 accent-accent"
-        />
+    // label вокруг: нажатие по подписи тоже переключает - в полстроки текста
+    // попасть проще, чем в сам переключатель. Приглушается текст, а не вся
+    // строка: выключенный переключатель бледнеет сам, и общая прозрачность
+    // сверху сделала бы его невидимым
+    <label className="flex flex-col gap-1.5">
+      <span className="flex min-h-11 items-center justify-between gap-3">
+        <span className={`text-[15px] font-medium ${disabled ? 'opacity-50' : ''}`}>{label}</span>
+        <Switch checked={checked} disabled={disabled} onChange={onChange} label={label} />
       </span>
-      <span className="text-xs text-muted">{hint}</span>
+      <span className={`text-[13px] leading-relaxed text-muted ${disabled ? 'opacity-50' : ''}`}>
+        {hint}
+      </span>
     </label>
   )
 }
 
-function Tab({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
-        active ? 'bg-surface text-ink shadow-sm' : 'text-muted'
-      }`}
-    >
-      {children}
-    </button>
-  )
-}

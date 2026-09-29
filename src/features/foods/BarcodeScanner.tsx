@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ScanLine } from 'lucide-react'
+import { CameraOff, ScanLine, ShieldCheck } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
@@ -111,7 +111,7 @@ export function BarcodeScanner({
     <Sheet open onClose={onClose} title={t('scan.title')}>
       <div className="flex flex-col gap-4">
         {canScan && camError === null && (
-          <div className="overflow-hidden rounded-xl bg-ink/90">
+          <div className="overflow-hidden rounded-3xl bg-ink/90 shadow-card">
             {/* playsInline обязателен: без него iOS открывает видео
                 во весь экран своим проигрывателем */}
             <video
@@ -124,8 +124,15 @@ export function BarcodeScanner({
           </div>
         )}
 
-        {!canScan && <p className="text-sm text-muted">{t('scan.noCamera')}</p>}
-        {camError !== null && <p className="text-sm text-danger">{camError}</p>}
+        {!canScan && (
+          <p className="flex items-start gap-2.5 rounded-2xl bg-raised px-3.5 py-3 text-sm text-muted">
+            <CameraOff size={17} aria-hidden className="mt-0.5 shrink-0" />
+            {t('scan.noCamera')}
+          </p>
+        )}
+        {camError !== null && (
+          <p className="rounded-2xl bg-danger-soft px-3.5 py-3 text-sm text-danger">{camError}</p>
+        )}
 
         <Field
           label={t('scan.manual')}
@@ -135,12 +142,15 @@ export function BarcodeScanner({
           onChange={(e) => setManual(e.target.value.replace(/\D/g, '').slice(0, 14))}
         />
 
-        <Button disabled={!ready} onClick={() => onCode(digits)}>
-          <ScanLine size={18} aria-hidden />
+        <Button className="min-h-14 text-[17px]" disabled={!ready} onClick={() => onCode(digits)}>
+          <ScanLine size={20} aria-hidden />
           {t('scan.find')}
         </Button>
 
-        <p className="text-xs text-muted">{t('scan.privacy')}</p>
+        <p className="flex items-start gap-2 text-[13px] text-muted">
+          <ShieldCheck size={15} aria-hidden className="mt-0.5 shrink-0" />
+          {t('scan.privacy')}
+        </p>
       </div>
     </Sheet>
   )

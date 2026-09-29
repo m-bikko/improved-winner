@@ -1,13 +1,20 @@
 import { dynamicKey, tr, trPlural, useT } from '@/lib/i18n'
 import { useState } from 'react'
-import { Cake, CalendarHeart, Plus, Star, Trash2 } from 'lucide-react'
+import { Cake, CalendarHeart, Star, Trash2, type LucideIcon } from 'lucide-react'
+import { motion } from 'motion/react'
 import { useLocalFlag } from '@/lib/localFlag'
 import { LettersTab } from '@/features/letters/LettersTab'
 import { formatDayMonth, fromLocalISO, todayLocal } from '@/lib/date'
 import { Button } from '@/ui/Button'
+import { Chip } from '@/ui/Chip'
 import { Field } from '@/ui/Field'
+import { IconBadge } from '@/ui/IconBadge'
+import { ListGroup, ListRow } from '@/ui/List'
+import { PRESS, SPRING } from '@/ui/motion'
 import { Sheet } from '@/ui/Sheet'
+import { Switch } from '@/ui/Switch'
 import { EmptyState, ErrorState, Loading } from '@/ui/States'
+import type { Tone } from '@/ui/tones'
 import {
   useDeleteOccasion,
   useOccasions,
@@ -15,11 +22,18 @@ import {
   type Occasion,
   type OccasionKind,
 } from './api'
+import { Segmented } from '@/ui/Segmented'
+import { Fab } from '@/ui/Fab'
 
-const KINDS: { id: OccasionKind; icon: typeof Cake }[] = [
-  { id: 'birthday', icon: Cake },
-  { id: 'anniversary', icon: CalendarHeart },
-  { id: 'other', icon: Star },
+/*
+ * Тон у каждого вида свой, а не один тон раздела на всех: в списке из десятка
+ * дат день рождения от годовщины отличается цветом раньше, чем прочтёшь.
+ * Основной тон раздела (teal) - у самого частого вида.
+ */
+const KINDS: { id: OccasionKind; icon: LucideIcon; tone: Tone }[] = [
+  { id: 'birthday', icon: Cake, tone: 'teal' },
+  { id: 'anniversary', icon: CalendarHeart, tone: 'rose' },
+  { id: 'other', icon: Star, tone: 'amber' },
 ]
 
 const KIND_BY_ID = Object.fromEntries(KINDS.map((k) => [k.id, k])) as Record<
@@ -53,15 +67,16 @@ export function DatesPage() {
   const items = list.data
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pt-3 pb-28">
-      <div className="mb-4 flex gap-1 rounded-xl bg-raised p-1">
-        <TabButton active={!tab} onClick={() => setTab(false)}>
-          {t('dates.tabDates')}
-        </TabButton>
-        <TabButton active={tab} onClick={() => setTab(true)}>
-          {t('dates.tabLetters')}
-        </TabButton>
-      </div>
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+      <Segmented
+        value={tab ? 'letters' : 'dates'}
+        onChange={(v) => setTab(v === 'letters')}
+        ariaLabel={t('nav.dates')}
+        options={[
+          { value: 'dates', label: t('dates.tabDates') },
+          { value: 'letters', label: t('dates.tabLetters') },
+        ]}
+      />
 
       {tab ? (
         <LettersTab />
@@ -69,29 +84,6 @@ export function DatesPage() {
         <DatesTab items={items} onEdit={setEditing} editing={editing} />
       )}
     </div>
-  )
-}
-
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`flex-1 rounded-lg py-2 text-sm transition-colors ${
-        active ? 'bg-surface font-medium text-ink shadow-sm' : 'text-muted'
-      }`}
-    >
-      {children}
-    </button>
   )
 }
 
@@ -105,34 +97,33 @@ function DatesTab({
   editing: Occasion | 'new' | null
 }) {
   const t = useT()
+  // Список уже отсортирован базой по близости, так что первая - ближайшая
+  const [next, ...rest] = items
+
   return (
     <>
-      {items.length === 0 ? (
+      {next === undefined ? (
         <EmptyState
           title={t('common.nothingYet')}
           hint={t('dates.emptyHint')}
+          icon={CalendarHeart}
+          tone="teal"
         />
       ) : (
-        <ul className="flex flex-col gap-2">
-          {items.map((o) => (
-            <li key={o.id}>
-              <Card occasion={o} onOpen={() => onEdit(o)} />
-            </li>
-          ))}
-        </ul>
+        <>
+          <Hero occasion={next} onOpen={() => onEdit(next)} />
+
+          {rest.length > 0 && (
+            <ListGroup>
+              {rest.map((o) => (
+                <Row key={o.id} occasion={o} onOpen={() => onEdit(o)} />
+              ))}
+            </ListGroup>
+          )}
+        </>
       )}
 
-      <button
-        type="button"
-        onClick={() => onEdit('new')}
-        aria-label={t('dates.new')}
-        className="fixed right-5 bottom-6 z-20 flex size-14 items-center justify-center
-                   rounded-full bg-accent text-accent-ink shadow-lg
-                   transition-transform active:scale-95"
-        style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
-      >
-        <Plus size={26} aria-hidden />
-      </button>
+      <Fab onClick={() => onEdit('new')} label={t('dates.new')} />
 
       {editing && (
         <Editor occasion={editing === 'new' ? null : editing} onClose={() => onEdit(null)} />
@@ -166,35 +157,91 @@ function anniversary(o: Occasion): string | null {
   return tr('dates.nthAnniversary', { n: o.years })
 }
 
-function Card({ occasion, onOpen }: { occasion: Occasion; onOpen: () => void }) {
-  const Icon = KIND_BY_ID[occasion.kind].icon
+/** «12 марта · 30 лет» - одна строка под названием. */
+function subtitle(o: Occasion): string {
+  const mark = anniversary(o)
+  return mark ? `${dayMonth(o.nextOn)} · ${mark}` : dayMonth(o.nextOn)
+}
+
+/**
+ * Ближайшая дата - крупно.
+ *
+ * Число дней, а не «через 2 месяца»: у самой близкой даты главное - сколько
+ * осталось, и счёт днями даёт почувствовать, что время идёт. Для остальных
+ * хватает грубого «через месяц» в строке списка.
+ */
+function Hero({ occasion, onOpen }: { occasion: Occasion; onOpen: () => void }) {
+  const t = useT()
+  const kind = KIND_BY_ID[occasion.kind]
   const soon = occasion.days <= 7
-  const mark = anniversary(occasion)
 
   return (
-    <button
+    <motion.button
       type="button"
       onClick={onOpen}
-      className="flex w-full items-center gap-3 rounded-2xl bg-surface p-4 text-left ring-1 ring-line"
+      whileTap={PRESS}
+      transition={SPRING}
+      // Мягкая заливка тоном акцента из угла - то, что отличает «ближайшую»
+      // от просто первой карточки списка, без второй рамки и без бейджа
+      className="flex w-full flex-col gap-4 rounded-3xl bg-surface bg-linear-to-br from-accent-soft
+                 to-transparent to-65% p-5 text-left shadow-card"
     >
-      <span
-        className={`flex size-10 shrink-0 items-center justify-center rounded-full ${
-          soon ? 'bg-accent text-accent-ink' : 'bg-raised text-muted'
-        }`}
-      >
-        <Icon size={19} aria-hidden />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate font-medium">{occasion.title}</span>
-        <span className="block text-sm text-muted">
-          {dayMonth(occasion.nextOn)}
-          {mark && ` · ${mark}`}
+      <span className="flex items-center gap-2.5">
+        <IconBadge icon={kind.icon} tone={kind.tone} size="md" />
+        <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-muted">
+          {t(dynamicKey('occasion', occasion.kind))}
         </span>
       </span>
-      <span className={`shrink-0 text-sm ${soon ? 'text-accent' : 'text-muted'}`}>
-        {countdown(occasion.days)}
+
+      <span className="flex items-end justify-between gap-4">
+        <span className="min-w-0 flex-1">
+          <span className="block font-display text-[22px] leading-tight font-extrabold tracking-tight break-words">
+            {occasion.title}
+          </span>
+          <span className="mt-1 block text-sm text-muted">{subtitle(occasion)}</span>
+        </span>
+
+        {occasion.days === 0 ? (
+          <span className="shrink-0 font-display text-3xl leading-none font-extrabold text-accent">
+            {t('common.today')}
+          </span>
+        ) : (
+          <span className="flex shrink-0 flex-col items-end">
+            <span
+              className={`font-display text-6xl leading-none font-extrabold tracking-tight tabular-nums ${
+                soon ? 'text-accent' : 'text-ink'
+              }`}
+            >
+              {occasion.days}
+            </span>
+            <span className="mt-1 text-[13px] font-semibold text-muted">
+              {t.plural('unit.day', occasion.days)}
+            </span>
+          </span>
+        )}
       </span>
-    </button>
+    </motion.button>
+  )
+}
+
+function Row({ occasion, onOpen }: { occasion: Occasion; onOpen: () => void }) {
+  const kind = KIND_BY_ID[occasion.kind]
+  const soon = occasion.days <= 7
+
+  return (
+    <ListRow
+      title={occasion.title}
+      subtitle={subtitle(occasion)}
+      icon={kind.icon}
+      tone={kind.tone}
+      // Шеврон убран: хвост занят обратным отсчётом, а что строка открывается,
+      // и так понятно по всему разделу
+      chevron={false}
+      trailing={
+        <span className={soon ? 'font-semibold text-accent' : ''}>{countdown(occasion.days)}</span>
+      }
+      onClick={onOpen}
+    />
   )
 }
 
@@ -241,25 +288,19 @@ function Editor({ occasion, onClose }: { occasion: Occasion | null; onClose: () 
           autoFocus={!occasion}
         />
 
+        {/* Чипы, а не сегменты: «День рождения» в трети ширины экрана
+            обрезалось бы, а казахские подписи ещё длиннее */}
         <div className="flex flex-wrap gap-2">
-          {KINDS.map((k) => {
-            const Icon = k.icon
-            const active = kind === k.id
-            return (
-              <button
-                key={k.id}
-                type="button"
-                onClick={() => setKind(k.id)}
-                aria-pressed={active}
-                className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-sm transition-colors ${
-                  active ? 'bg-accent text-accent-ink' : 'bg-raised text-ink ring-1 ring-line'
-                }`}
-              >
-                <Icon size={15} aria-hidden />
-                {t(dynamicKey('occasion', k.id))}
-              </button>
-            )
-          })}
+          {KINDS.map((k) => (
+            <Chip
+              key={k.id}
+              icon={k.icon}
+              selected={kind === k.id}
+              onClick={() => setKind(k.id)}
+            >
+              {t(dynamicKey('occasion', k.id))}
+            </Chip>
+          ))}
         </div>
 
         <Field
@@ -270,15 +311,12 @@ function Editor({ occasion, onClose }: { occasion: Occasion | null; onClose: () 
           hint={t('dates.whenHint')}
         />
 
-        <label className="flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-3 ring-1 ring-line">
-          <span className="text-sm">{t('dates.yearly')}</span>
-          <input
-            type="checkbox"
-            checked={yearly}
-            onChange={(e) => setYearly(e.target.checked)}
-            className="size-5 accent-[var(--color-accent)]"
-          />
-        </label>
+        {/* Без заливки строки: выключенный трек цвета линии на заливке
+            raised почти пропадает, и «выкл» не отличить от «нет переключателя» */}
+        <div className="flex min-h-12 items-center justify-between gap-3 px-1">
+          <span className="text-[15px]">{t('dates.yearly')}</span>
+          <Switch checked={yearly} onChange={setYearly} label={t('dates.yearly')} />
+        </div>
 
         <Field
           label={t('common.note')}
