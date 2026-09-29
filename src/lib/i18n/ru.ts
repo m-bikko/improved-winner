@@ -729,6 +729,7 @@ export const ru = {
   'dates.yearly': 'Повторяется каждый год',
   'today.notMarkedYou': 'ты ещё не отмечался',
   'today.notMarkedPartner': 'отметки пока нет',
+  'today.bothMarked': 'оба сегодня отметились',
   'today.howAreWe': 'Как мы',
   'today.food': 'Еда',
   'today.kcalLeft': 'ккал · осталось {n}',

@@ -724,6 +724,7 @@ export const kk: Dict = {
   'dates.yearly': 'Жыл сайын қайталанады',
   'today.notMarkedYou': 'сен әлі белгілеген жоқсың',
   'today.notMarkedPartner': 'әзірге белгі жоқ',
+  'today.bothMarked': 'бүгін екеуі де белгі қойды',
   'today.howAreWe': 'Қалымыз қалай',
   'today.food': 'Тамақ',
   'today.kcalLeft': 'ккал · {n} қалды',

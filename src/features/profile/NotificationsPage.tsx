@@ -48,7 +48,7 @@ export function NotificationsPage() {
   }).length
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <QuietHours quietFrom={me?.quietFrom ?? null} quietTo={me?.quietTo ?? null} />
 
       <ListGroup className="mt-2">

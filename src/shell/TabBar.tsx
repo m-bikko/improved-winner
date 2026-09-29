@@ -127,12 +127,21 @@ function TabIcon({ active, icon: Icon }: { active: boolean; icon: typeof LayoutG
           aria-hidden
         />
       )}
-      <Icon
-        size={22}
-        strokeWidth={active ? 2.4 : 1.9}
-        aria-hidden
-        className={`relative transition-colors ${active ? 'text-accent-soft-ink' : 'text-muted'}`}
-      />
+      {/* Иконка подпрыгивает в момент, когда вкладка стала активной.
+          initial={false}: при открытии приложения ничего не прыгает */}
+      <motion.span
+        className="relative flex"
+        initial={false}
+        animate={active ? { scale: [1, 1.22, 0.94, 1], y: [0, -3, 0, 0] } : { scale: 1, y: 0 }}
+        transition={{ duration: 0.45, times: [0, 0.35, 0.7, 1], ease: 'easeOut' }}
+      >
+        <Icon
+          size={22}
+          strokeWidth={active ? 2.4 : 1.9}
+          aria-hidden
+          className={`transition-colors ${active ? 'text-accent-soft-ink' : 'text-muted'}`}
+        />
+      </motion.span>
     </span>
   )
 }

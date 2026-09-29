@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Heart } from 'lucide-react'
 import { motion } from 'motion/react'
 import { SPRING } from '@/ui/motion'
+import { useBurst } from '@/ui/Burst'
 import { NUDGE_COOLDOWN_MS, useLastNudge, useSendNudge } from './nudge'
 
 /**
@@ -20,6 +21,7 @@ export function NudgeButton() {
   const t = useT()
   const last = useLastNudge()
   const send = useSendNudge()
+  const burst = useBurst()
   const [now, setNow] = useState(() => Date.now())
 
   const until = last.data ? new Date(last.data).getTime() + NUDGE_COOLDOWN_MS : 0
@@ -39,9 +41,12 @@ export function NudgeButton() {
   return (
     <motion.button
       type="button"
-      onClick={() => {
+      onClick={(e) => {
         navigator.vibrate?.(12)
-        send.mutate()
+        const button = e.currentTarget
+        // Сердца - только когда «Думаю о тебе» правда ушло: разлёт при ошибке
+        // сети обещал бы то, чего не случилось
+        send.mutate(undefined, { onSuccess: () => burst(button, 'hearts') })
       }}
       disabled={cooling || send.isPending}
       whileTap={cooling ? {} : { scale: 0.97 }}

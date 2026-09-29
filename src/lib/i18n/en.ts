@@ -723,6 +723,7 @@ export const en: Dict = {
   'dates.yearly': 'Repeats every year',
   'today.notMarkedYou': 'you have not marked yet',
   'today.notMarkedPartner': 'no entry yet',
+  'today.bothMarked': 'both checked in today',
   'today.howAreWe': 'How we are',
   'today.food': 'Food',
   'today.kcalLeft': 'kcal · {n} left',

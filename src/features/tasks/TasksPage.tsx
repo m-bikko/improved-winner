@@ -13,7 +13,9 @@ import {
 import { formatDayLabel, formatDueAt, todayLocal } from '@/lib/date'
 import { useLocalFlag } from '@/lib/localFlag'
 import { useAuth } from '@/auth/AuthProvider'
+import { motion } from 'motion/react'
 import { EmptyState, ErrorState, Loading } from '@/ui/States'
+import { useBurst } from '@/ui/Burst'
 import { useProfiles } from '@/features/profile/api'
 import { useTasks, useToggleTask, type Task } from './api'
 import { TaskEditor } from './TaskEditor'
@@ -66,7 +68,7 @@ export function TasksPage() {
     void toggle.mutateAsync({ task, done, userId })
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <Segmented
         value={asCalendar ? 'calendar' : 'list'}
         onChange={(v) => setAsCalendar(v === 'calendar')}
@@ -210,6 +212,7 @@ function TaskRow({
   onOpen: () => void
 }) {
   const t = useT()
+  const burst = useBurst()
   const { task, at } = occurrence
   const isDone = task.doneAt !== null
   // Просрочка считается только у невыполненных: закрытая вчера задача
@@ -223,7 +226,11 @@ function TaskRow({
           открывал редактор вместо отметки */}
       <button
         type="button"
-        onClick={onToggle}
+        onClick={(e) => {
+          // Искры только на «сделано»: вернуть задачу в работу - не событие
+          if (!isDone) burst(e.currentTarget, 'sparks')
+          onToggle()
+        }}
         aria-label={t(isDone ? 'task.reopen' : 'task.doneSection')}
         className="group mt-0.5 ml-1.5 flex size-11 shrink-0 items-center justify-center rounded-full"
       >
@@ -237,7 +244,16 @@ function TaskRow({
                             : 'border-muted/45'
                       }`}
         >
-          {isDone && <Check size={16} strokeWidth={3} aria-hidden />}
+          {isDone && (
+            <motion.span
+              initial={{ scale: 0, rotate: -30 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring', stiffness: 520, damping: 16 }}
+              className="flex"
+            >
+              <Check size={16} strokeWidth={3} aria-hidden />
+            </motion.span>
+          )}
         </span>
       </button>
 

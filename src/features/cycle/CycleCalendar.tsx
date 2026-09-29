@@ -80,7 +80,10 @@ export function CycleCalendar({
     }
     for (const f of forecasts) {
       for (let iso = f.start; iso <= f.end; iso = toLocalISO(new Date(fromLocalISO(iso).getTime() + 86_400_000))) {
-        mark(iso, { predicted: true })
+        // Прогноз - только на сегодня и вперёд. Прошедший день без отметки
+        // уже не «ожидается»: обводка на нём читалась так, будто менструация
+        // была, а её просто не внесли. Такой день рисуется обычным
+        if (iso >= today) mark(iso, { predicted: true })
       }
       for (let iso = f.fertileFrom; iso <= f.fertileTo; iso = toLocalISO(new Date(fromLocalISO(iso).getTime() + 86_400_000))) {
         mark(iso, { fertile: true })
@@ -101,7 +104,7 @@ export function CycleCalendar({
     for (const log of logs) mark(log.date, { logged: true })
 
     return { cells: list, marks: map }
-  }, [cursor, periods, current, forecasts, logs])
+  }, [cursor, periods, current, forecasts, logs, today])
 
   const shift = (by: number) => {
     setCursor((c) => {

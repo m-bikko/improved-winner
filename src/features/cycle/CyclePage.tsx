@@ -125,7 +125,7 @@ export function CyclePage() {
   const owned = active === 'mine'
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       {showTabs && (
         <Segmented
           value={active}
@@ -1035,7 +1035,7 @@ function Intro({
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <Card as="section" className="p-5">
         <div className="flex items-center gap-3">
           <IconBadge icon={Droplet} tone="plum" />

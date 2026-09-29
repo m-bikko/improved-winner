@@ -216,7 +216,7 @@ export function DiaryPage() {
   if (day.isError) return <ErrorState error={day.error} onRetry={() => void day.refetch()} />
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pt-1">
+    <div className="stagger mx-auto max-w-2xl px-4 pt-1">
       {/* Переключатель дня - капсулой: стрелки получают крупную область
           нажатия, а тап по дате возвращает к сегодняшнему дню */}
       <div className="flex items-center gap-1 rounded-2xl bg-surface p-1 shadow-card">
@@ -302,7 +302,7 @@ export function DiaryPage() {
             beforeDrag.current = null
           }}
         >
-          <div className="mt-4 flex flex-col gap-3">
+          <div className="stagger mt-4 flex flex-col gap-3">
             {MEALS.map((meal) => {
               const mealEntries = byMeal(entries, meal)
               const yesterdayMeal = byMeal(yesterday.data ?? [], meal)

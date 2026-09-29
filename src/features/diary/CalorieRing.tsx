@@ -1,4 +1,6 @@
 import { tr, useT } from '@/lib/i18n'
+import { motion } from 'motion/react'
+import { AnimatedNumber } from '@/ui/AnimatedNumber'
 import type { GoalDirection, Macros } from '@/lib/nutrition'
 
 const STROKE_RATIO = 0.078
@@ -74,7 +76,10 @@ export function RingArc({ size, ratio }: { size: number; ratio: number }) {
           stroke="var(--color-track)"
           strokeWidth={stroke}
         />
-        <circle
+        {/* Дуга прорисовывается от нуля при появлении и доезжает до нового
+            значения при изменении - добавленная еда видна как движение, а не
+            как подмена картинки */}
+        <motion.circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
@@ -83,11 +88,12 @@ export function RingArc({ size, ratio }: { size: number; ratio: number }) {
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
-          strokeDashoffset={circumference * (1 - filled)}
-          className="transition-[stroke-dashoffset] duration-500"
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset: circumference * (1 - filled) }}
+          transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
         />
         {excess > 0 && (
-          <circle
+          <motion.circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
@@ -96,8 +102,10 @@ export function RingArc({ size, ratio }: { size: number; ratio: number }) {
             strokeWidth={stroke}
             strokeLinecap="round"
             strokeDasharray={circumference}
-            strokeDashoffset={circumference * (1 - excess)}
-            className="transition-[stroke-dashoffset] duration-500"
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset: circumference * (1 - excess) }}
+            // перебор дорисовывается после основной дуги - сначала «закрыл», потом «сверх»
+            transition={{ duration: 0.8, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
           />
         )}
       </g>
@@ -141,11 +149,11 @@ export function CalorieRing({ totals, goals, goalDirection }: Props) {
 
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className={`text-5xl font-semibold ${over ? 'text-danger' : 'text-ink'}`}>
-            {percent}
+            <AnimatedNumber value={percent} className="tabular-nums" />
             <span className="text-2xl font-normal text-muted">%</span>
           </span>
-          <span className="mt-0.5 text-sm text-muted">
-            {Math.round(totals.kcal)} / {goals.kcal} {t('unit.kcal')}
+          <span className="mt-0.5 text-sm text-muted tabular-nums">
+            <AnimatedNumber value={totals.kcal} /> / {goals.kcal} {t('unit.kcal')}
           </span>
         </div>
       </div>
@@ -188,7 +196,7 @@ export function CalorieRingMini({ totals, goals, goalDirection }: Props) {
       <div className="min-w-0 flex-1">
         <p className="flex items-baseline gap-2">
           <span className={`text-2xl font-semibold ${over ? 'text-danger' : 'text-ink'}`}>
-            {percent}%
+            <AnimatedNumber value={percent} format={(n) => `${Math.round(n)}%`} className="tabular-nums" />
           </span>
           <span className="truncate text-sm text-muted">
             {Math.round(totals.kcal)} / {goals.kcal} {t('unit.kcal')}

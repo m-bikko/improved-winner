@@ -9,6 +9,7 @@ import { useProfiles } from '@/features/profile/api'
 import { useUserId } from '@/auth/AuthProvider'
 import { useAppBadge } from '@/lib/badge'
 import { useViewportShift } from '@/lib/viewportShift'
+import { BurstProvider } from '@/ui/Burst'
 import { HeaderActionProvider, useHeaderActionSlot } from './HeaderAction'
 import { RefreshButton } from './RefreshButton'
 import { TabBar } from './TabBar'
@@ -28,7 +29,10 @@ export function AppShell({ children }: { children: ReactNode }) {
     // motion сам выключает сдвиги и масштаб, оставляя только прозрачность
     <MotionConfig reducedMotion="user">
       <HeaderActionProvider>
-        <Chrome>{children}</Chrome>
+        {/* Разлёт сердец и искр - один слой на всё приложение, см. Burst.tsx */}
+        <BurstProvider>
+          <Chrome>{children}</Chrome>
+        </BurstProvider>
       </HeaderActionProvider>
     </MotionConfig>
   )
@@ -117,10 +121,14 @@ function Chrome({ children }: { children: ReactNode }) {
               <ChevronLeft size={26} aria-hidden />
             </button>
           )}
+          {/* Крупный заголовок раздела сжимается, когда экран прокрутили:
+              наверху он называет место, ниже - уступает место содержимому.
+              Масштаб, а не font-size: так не пересчитывается раскладка */}
           <h1
-            className={`min-w-0 flex-1 truncate font-display font-extrabold tracking-tight ${
-              nested ? 'text-xl' : 'pl-1 text-[26px]'
-            }`}
+            className={`min-w-0 flex-1 origin-left truncate font-display font-extrabold tracking-tight
+                        transition-transform duration-300 ease-out ${
+                          nested ? 'text-xl' : `pl-1 text-[26px] ${scrolled ? 'scale-[0.8]' : ''}`
+                        }`}
           >
             {title}
           </h1>

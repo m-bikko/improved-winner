@@ -5,6 +5,7 @@ import { useProfiles } from '@/features/profile/api'
 import { formatDayLabel, todayLocal } from '@/lib/date'
 import { dynamicKey, useT } from '@/lib/i18n'
 import { Button } from '@/ui/Button'
+import { useBurst } from '@/ui/Burst'
 import { Loading } from '@/ui/States'
 import { Card as Surface, SectionTitle } from '@/ui/Card'
 import { Chip, Tag } from '@/ui/Chip'
@@ -67,7 +68,7 @@ export function CheckinPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <p className="px-1 text-sm text-muted">{formatDayLabel(today)}</p>
 
       {editing || !mine ? (
@@ -263,6 +264,7 @@ function Editor({
   const t = useT()
   const save = useSaveCheckin()
   const remove = useDeleteCheckin()
+  const burst = useBurst()
   const [states, setStates] = useState<string[]>(current?.states ?? [])
   const [note, setNote] = useState(current?.note ?? '')
   const [error, setError] = useState<string | null>(null)
@@ -275,8 +277,10 @@ function Editor({
 
   const empty = states.length === 0 && note.trim() === ''
 
-  const submit = async () => {
+  const submit = async (from: HTMLElement) => {
     setError(null)
+    // Точка разлёта - до сохранения: после него форма закроется
+    const r = from.getBoundingClientRect()
     try {
       // База пустую отметку не принимает, и это правильно. Поэтому «сохранить
       // пустое» превращается в удаление строки, а не в ошибку в лицо.
@@ -284,6 +288,7 @@ function Editor({
         if (current) await remove.mutateAsync(date)
       } else {
         await save.mutateAsync({ date, states, note: note || null })
+        burst({ x: r.left + r.width / 2, y: r.top + r.height / 2 }, 'sparks')
       }
       onDone()
     } catch (e) {
@@ -364,7 +369,7 @@ function Editor({
           </span>
           <Button
             className="min-h-11 shrink-0 px-6"
-            onClick={() => void submit()}
+            onClick={(e) => void submit(e.currentTarget)}
             loading={save.isPending || remove.isPending}
           >
             <Check size={18} aria-hidden />

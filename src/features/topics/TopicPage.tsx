@@ -67,7 +67,7 @@ function NewTopic() {
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <Card as="section" className="flex flex-col gap-3 p-4">
         <div className="flex items-center gap-3">
           <IconBadge icon={MessagesSquare} tone="indigo" size="md" />
@@ -144,7 +144,7 @@ function TopicDetail({
   const isOpen = topic.status === 'open'
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <Card as="section" className="p-4">
         <Tag icon={isOpen ? CircleDot : CircleCheck} tone={isOpen ? 'accent' : 'neutral'}>
           {t(isOpen ? 'topic.discussion' : 'topic.closed')}

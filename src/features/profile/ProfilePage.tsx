@@ -228,7 +228,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
     chatId.trim() !== (profile.telegramChatId ?? '')
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       {missing.length > 0 && (
         <p className="flex items-start gap-2.5 rounded-2xl bg-accent-soft px-4 py-3 text-sm text-accent-soft-ink">
           <Target size={17} className="mt-0.5 shrink-0" aria-hidden />

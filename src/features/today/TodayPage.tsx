@@ -19,6 +19,8 @@ import { CardLink } from '@/ui/Card'
 import { IconBadge } from '@/ui/IconBadge'
 import { Tag } from '@/ui/Chip'
 import { Avatar, personTone } from '@/ui/Avatar'
+import { AnimatedNumber } from '@/ui/AnimatedNumber'
+import { motion } from 'motion/react'
 import type { Tone } from '@/ui/tones'
 import { useCheckins, useStreaks } from '@/features/checkin/api'
 import { STATE_BY_ID } from '@/features/checkin/states'
@@ -77,15 +79,20 @@ export function TodayPage() {
 
   const myName = me?.nickname ?? t('diary.me')
   const partnerName = partner?.nickname ?? t('partner')
+  const marked = new Set(
+    (checkins.data ?? []).filter((c) => c.date === today).map((c) => c.userId),
+  )
+  const together = partnerId !== '' && marked.has(userId) && marked.has(partnerId)
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <Hero
         today={today}
         name={myName}
         partnerName={partnerName}
         myTone={personTone(userId, ids)}
         partnerTone={personTone(partnerId, ids)}
+        together={together}
       />
 
       <NudgeButton />
@@ -140,37 +147,142 @@ function greetingKey(hour: number): Key {
   return 'greet.night'
 }
 
+/** CSS-переменная тона - для SVG и градиентов, куда классы Tailwind не дотянутся. */
+function toneVar(tone: Tone): string {
+  return tone === 'accent' ? 'var(--c-accent)' : `var(--t-${tone})`
+}
+
+/**
+ * Приветствие на цветном «сиянии» двух тонов пары.
+ *
+ * Пятна медленно дрейфуют - экран, с которого начинается день, не должен
+ * выглядеть бланком. Двигается только transform градиентов без blur-фильтра:
+ * это делает композитор, и батарею такой фон не ест.
+ */
 function Hero({
   today,
   name,
   partnerName,
   myTone,
   partnerTone,
+  together,
 }: {
   today: string
   name: string
   partnerName: string
   myTone: Tone
   partnerTone: Tone
+  together: boolean
 }) {
   const t = useT()
   return (
-    <div className="flex items-center gap-3 px-1 pb-1">
+    <section className="relative isolate flex items-center gap-3 overflow-hidden rounded-[28px] bg-surface py-5 pr-4 pl-5 shadow-card">
+      <div aria-hidden className="aurora">
+        <span style={{ background: `radial-gradient(closest-side, ${toneVar(myTone)}, transparent)` }} />
+        <span style={{ background: `radial-gradient(closest-side, ${toneVar(partnerTone)}, transparent)` }} />
+        <span style={{ background: 'radial-gradient(closest-side, var(--c-accent), transparent)' }} />
+      </div>
       <div className="min-w-0 flex-1">
-        <p className="font-display text-xl leading-tight font-extrabold tracking-tight">
+        <p className="font-display text-[22px] leading-tight font-extrabold tracking-tight">
           {t(greetingKey(new Date().getHours()))}, {name}
         </p>
         {/* Не formatDayLabel: он вернёт «Сегодня», а так уже называется сам
             раздел - вышло бы слово «Сегодня» дважды подряд. Здесь нужна дата */}
-        <p className="mt-0.5 text-sm text-muted first-letter:uppercase">
+        <p className="mt-1 text-sm font-medium text-muted first-letter:uppercase">
           {formatWeekdayDate(fromLocalISO(today))}
         </p>
       </div>
-      <div className="flex shrink-0 -space-x-3" aria-label={`${name}, ${partnerName}`}>
-        <Avatar name={name} tone={myTone} size="md" ring />
-        <Avatar name={partnerName} tone={partnerTone} size="md" ring />
-      </div>
-    </div>
+      <PairMark
+        name={name}
+        partnerName={partnerName}
+        myTone={myTone}
+        partnerTone={partnerTone}
+        together={together}
+      />
+    </section>
+  )
+}
+
+/**
+ * Двое - два сцепленных кольца, как в знаке приложения.
+ *
+ * Середина, где кольца пересекаются, загорается, когда сегодня отметились
+ * оба: общее у двоих живёт в пересечении. Пока отметился один или никто,
+ * она пустая - без упрёка, просто не зажжена.
+ */
+function PairMark({
+  name,
+  partnerName,
+  myTone,
+  partnerTone,
+  together,
+}: {
+  name: string
+  partnerName: string
+  myTone: Tone
+  partnerTone: Tone
+  together: boolean
+}) {
+  const t = useT()
+  const R = 21
+  const A = 28
+  const B = 60
+  const letter = (s: string): string => s.trim().charAt(0).toUpperCase() || '?'
+  const rings = [
+    { cx: A, tone: myTone, text: letter(name), dx: -4 },
+    { cx: B, tone: partnerTone, text: letter(partnerName), dx: 4 },
+  ]
+  return (
+    <svg
+      viewBox="0 0 88 52"
+      className="h-[52px] w-[88px] shrink-0 overflow-visible"
+      role="img"
+      aria-label={`${name}, ${partnerName}${together ? ` · ${t('today.bothMarked')}` : ''}`}
+    >
+      <defs>
+        <clipPath id="pair-lens">
+          <circle cx={A} cy={26} r={R} />
+        </clipPath>
+      </defs>
+      {rings.map((r) => (
+        <circle key={r.cx} cx={r.cx} cy={26} r={R} style={{ fill: `var(--t-${r.tone}-soft)` }} />
+      ))}
+      <motion.circle
+        cx={B}
+        cy={26}
+        r={R}
+        clipPath="url(#pair-lens)"
+        style={{ fill: 'var(--c-accent)' }}
+        // С нуля при каждом открытии: зажечься на глазах - в этом и смысл
+        initial={{ opacity: 0 }}
+        animate={{ opacity: together ? 1 : 0 }}
+        transition={{ duration: 0.5, delay: together ? 0.35 : 0 }}
+      />
+      {rings.map((r) => (
+        <circle
+          key={r.cx}
+          cx={r.cx}
+          cy={26}
+          r={R}
+          fill="none"
+          strokeWidth={2.5}
+          style={{ stroke: toneVar(r.tone) }}
+        />
+      ))}
+      {rings.map((r) => (
+        <text
+          key={r.cx}
+          x={r.cx + r.dx}
+          y={26}
+          dy="0.36em"
+          textAnchor="middle"
+          className="font-display text-[17px] font-extrabold"
+          style={{ fill: toneVar(r.tone) }}
+        >
+          {r.text}
+        </text>
+      ))}
+    </svg>
   )
 }
 
@@ -263,7 +375,8 @@ function Mood({
           <span className="truncate font-semibold">{name}</span>
           {(streaks[who] ?? 0) > 0 && (
             <span className="flex shrink-0 items-center gap-0.5 text-xs font-semibold text-accent">
-              <Flame size={12} aria-hidden />
+              {/* Огонёк чуть «горит» - серия живая, пока её держат */}
+              <Flame size={12} aria-hidden className="flicker" />
               {streaks[who]}
             </span>
           )}
@@ -323,14 +436,14 @@ function Food({
         {goals && (
           <div className="relative shrink-0" aria-hidden>
             <RingArc size={64} ratio={ratio} />
-            <span className="absolute inset-0 flex items-center justify-center font-display text-[13px] font-extrabold">
-              {Math.round(ratio * 100)}%
+            <span className="absolute inset-0 flex items-center justify-center font-display text-[13px] font-extrabold tabular-nums">
+              <AnimatedNumber value={Math.round(ratio * 100)} format={(n) => `${Math.round(n)}%`} />
             </span>
           </div>
         )}
         <div className="min-w-0 flex-1">
           <p className="font-display text-[28px] leading-none font-extrabold tabular-nums">
-            {Math.round(eaten)}
+            <AnimatedNumber value={eaten} />
             {goals !== null && (
               <span className="text-base font-bold text-muted"> / {Math.round(goals.kcal)}</span>
             )}

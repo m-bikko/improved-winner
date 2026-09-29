@@ -100,7 +100,7 @@ export function WishlistPage() {
     profiles.data?.find((p) => p.userId === who)?.nickname ?? t('partner')
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       {/* Фильтр прокручивается вбок: категорий восемь, в две строки они
           съедали бы верх экрана на каждом заходе. Лента выходит под края
           экрана (-mx-4 и обратно px-4): обрезанный на краю чип и есть

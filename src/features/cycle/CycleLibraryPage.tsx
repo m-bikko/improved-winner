@@ -161,7 +161,7 @@ export function CycleLibraryPage() {
   const allOpen = opened.length === byCategory.length && byCategory.length > 0
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <SearchInput value={query} onChange={setQuery} placeholder={t('lib.search')} />
 
       {/* Чипы тем. Прокручиваются вбок, а не переносятся: восемь тем в две

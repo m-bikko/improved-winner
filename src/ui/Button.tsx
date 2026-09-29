@@ -4,7 +4,9 @@ import { LoaderCircle } from 'lucide-react'
 type Variant = 'primary' | 'secondary' | 'soft' | 'ghost' | 'danger'
 
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-accent text-accent-ink shadow-[0_6px_16px_-6px_var(--c-accent)]',
+  // Светлая кромка сверху - кнопка читается выпуклой, а не плоской плашкой
+  primary:
+    'bg-accent text-accent-ink shadow-[inset_0_1px_0_rgb(255_255_255/0.22),0_6px_16px_-6px_var(--c-accent)]',
   secondary: 'bg-raised text-ink',
   // Второе по важности действие: заметно, но не спорит с главным
   soft: 'bg-accent-soft text-accent-soft-ink',
