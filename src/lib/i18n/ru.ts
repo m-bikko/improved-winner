@@ -1418,12 +1418,12 @@ export const ru = {
   'chart.show': 'Показать',
   'chart.pct': '%',
   'chart.index': 'индекс',
-  'chart.range.week': 'Неделя',
-  'chart.range.month': 'Месяц',
-  'chart.range.quarter': '3 месяца',
+  'chart.range.week': '7 д',
+  'chart.range.month': '30 д',
+  'chart.range.quarter': '90 д',
   'chart.range.year': 'Год',
   'chart.range.all': 'Всё',
-  'chart.max': 'Больше трёх показателей сразу не помещается - выключите один, чтобы добавить другой.',
+  'chart.max': 'Максимум три сразу',
   'chart.noData': 'За этот период взвешиваний нет.',
   'chart.needMore': 'Нужно хотя бы два измерения за период.',
   'chart.asTable': 'Таблицей',
@@ -1435,6 +1435,10 @@ export const ru = {
   'chart.mode.delta': 'Изменение',
   'chart.mode.abs': 'Значения',
   'chart.panelAria': '{name}: с {from} до {to}. То же таблицей - кнопка под графиком.',
+  'chart.range.custom': 'Свой',
+  'chart.span': '{from} — {to} · {n} {unit}',
+  'chart.from': 'Начало периода',
+  'chart.to': 'Конец периода',
 } as const
 
 export type Key = keyof typeof ru

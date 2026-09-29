@@ -355,10 +355,50 @@ async function dbChecks(client: Client): Promise<void> {
       `delete from public.weight_log where user_id = $1 and date = (now() at time zone $2)::date`,
       [uid, morning],
     )
+
+    /*
+     * Настройку уведомлений проверка задаёт сама.
+     *
+     * Раньше она бралась как есть - и однажды провалилась не потому, что
+     * сломалась рассылка, а потому, что участница выключила напоминание
+     * о взвешивании у себя в настройках. Это её право, и проверка не должна
+     * от него зависеть: здесь проверяется логика рассылки, а не чужие
+     * предпочтения. Всё в транзакции и откатывается.
+     */
+    await client.query(
+      `insert into public.notification_settings (user_id, kind, telegram, push)
+       values ($1, 'weigh_in', true, true)
+       on conflict (user_id, kind) do update set telegram = true, push = true`,
+      [uid],
+    )
+
     const beforeAsk = await queued()
     await client.query('select public.send_weigh_in_reminders()')
     const sent = (await queued()) - beforeAsk
     check(sent >= 2, 'В девять утра напоминает', `запросов прибавилось ${sent} (телеграм и push)`)
+
+    // И обратное: выключенное напоминание молчит. Ровно это поведение
+    // и подменило собой поломку - значит, у него должна быть своя проверка.
+    await client.query('delete from public.weigh_in_asks')
+    await client.query(
+      `update public.notification_settings set telegram = false, push = false
+        where user_id = $1 and kind = 'weigh_in'`,
+      [uid],
+    )
+    const beforeMuted = await queued()
+    await client.query('select public.send_weigh_in_reminders()')
+    check(
+      (await queued()) === beforeMuted,
+      'Выключенное напоминание молчит',
+      'настройка уведомлений сильнее расписания',
+    )
+    await client.query(
+      `update public.notification_settings set telegram = true, push = true
+        where user_id = $1 and kind = 'weigh_in'`,
+      [uid],
+    )
+    await client.query('delete from public.weigh_in_asks')
+    await client.query('select public.send_weigh_in_reminders()')
 
     const beforeRepeat = await queued()
     await client.query('select public.send_weigh_in_reminders()')

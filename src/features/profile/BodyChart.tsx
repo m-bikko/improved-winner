@@ -111,13 +111,22 @@ export function valueOf(p: WeightPoint, metric: MetricId, unit: Unit): number | 
   }
 }
 
-/** Диапазоны. Ноль - вся история. По умолчанию месяц. */
+/**
+ * Диапазоны. Ноль - вся история, -1 - выбранный руками. По умолчанию месяц.
+ *
+ * Подписи короткие намеренно: под переключателем всегда стоит строка
+ * с настоящими датами, и расшифровывать «Мес» словом незачем. Раньше
+ * подписи были длинными, а дат не было вовсе - человек видел «Месяц»
+ * и не знал, от какого числа и по какое.
+ */
+const CUSTOM = -1
 const RANGES = [
   { days: 7, key: 'chart.range.week' },
   { days: 30, key: 'chart.range.month' },
   { days: 90, key: 'chart.range.quarter' },
   { days: 365, key: 'chart.range.year' },
   { days: 0, key: 'chart.range.all' },
+  { days: CUSTOM, key: 'chart.range.custom' },
 ] as const satisfies readonly { days: number; key: Key }[]
 
 /**
@@ -158,8 +167,21 @@ export function BodyChart({ points }: { points: WeightPoint[] }) {
   // не перекрашивает оставшиеся.
   const [slots, setSlots] = useState<(MetricId | null)[]>(() => initial(points))
 
-  const from = days === 0 ? '0000-01-01' : shiftDays(todayLocal(), -(days - 1))
-  const window = useMemo(() => points.filter((p) => p.date >= from), [points, from])
+  const today = todayLocal()
+  const earliest = points[0]?.date ?? today
+  const [customFrom, setCustomFrom] = useState(() => shiftDays(today, -29))
+  const [customTo, setCustomTo] = useState(today)
+
+  // Границы считаются одним местом и здесь же показываются человеку -
+  // иначе «Месяц» остаётся обещанием, которое нечем проверить.
+  const from =
+    days === CUSTOM ? customFrom : days === 0 ? earliest : shiftDays(today, -(days - 1))
+  const to = days === CUSTOM ? customTo : today
+  const window = useMemo(
+    () => points.filter((p) => p.date >= from && p.date <= to),
+    [points, from, to],
+  )
+  const spanDays = daysInclusive(from, to)
 
   // Показатель предлагается, только если он есть в выбранной единице И хоть раз
   // измерен за период. Пустой чип, который ничего не рисует, - обещание данных,
@@ -211,70 +233,89 @@ export function BodyChart({ points }: { points: WeightPoint[] }) {
         </div>
       )}
 
-      <Chips
-        label={t('chart.unit')}
+      {/* Управление: три компактных ряда вместо четырёх подписанных блоков.
+          Подписи «Единица», «Период», «Показать» ушли в aria-label - на экране
+          они занимали по строке каждая и ничего не объясняли: «кг» и «7 д»
+          понятны без заголовка. */}
+      <Segmented
+        ariaLabel={t('chart.unit')}
         items={UNITS.filter((u) =>
           METRICS.some((m) => UNITS_OF[m].includes(u) && points.some((p) => valueOf(p, m, u) !== null)),
         ).map((u) => ({ id: u, label: t(UNIT_LABEL[u]), active: u === unit }))}
         onPick={(id) => switchUnit(id as Unit)}
       />
 
-      {/* Только для графика. В таблице режим не при чём: там всегда точные
-          значения - за этим в неё и заходят, - и переключатель рядом
-          с колонкой абсолютных чисел обещал бы обратное. */}
-      {!table && (
-        <Chips
-          label={t('chart.mode')}
-          items={MODES.map((m) => ({
-            id: m,
-            label: t(m === 'delta' ? 'chart.mode.delta' : 'chart.mode.abs'),
-            active: m === mode,
+      <div className="flex flex-col gap-1.5">
+        <Segmented
+          ariaLabel={t('chart.range')}
+          items={RANGES.map((r) => ({
+            id: String(r.days),
+            label: t(r.key),
+            active: r.days === days,
           }))}
-          onPick={(id) => setMode(id as Mode)}
+          onPick={(id) => setDays(Number(id))}
         />
-      )}
 
-      <Chips
-        label={t('chart.range')}
-        items={RANGES.map((r) => ({
-          id: String(r.days),
-          label: t(r.key),
-          active: r.days === days,
-        }))}
-        onPick={(id) => setDays(Number(id))}
-      />
+        {days === CUSTOM ? (
+          <div className="flex items-center gap-2">
+            <DateField
+              label={t('chart.from')}
+              value={customFrom}
+              min={earliest}
+              max={customTo}
+              onChange={setCustomFrom}
+            />
+            <span aria-hidden className="text-xs text-muted">
+              &mdash;
+            </span>
+            <DateField
+              label={t('chart.to')}
+              value={customTo}
+              min={customFrom}
+              max={today}
+              onChange={setCustomTo}
+            />
+          </div>
+        ) : (
+          <p className="px-0.5 text-xs text-muted">
+            {t('chart.span', {
+              from: formatDayMonth(fromLocalISO(from)),
+              to: formatDayMonth(fromLocalISO(to)),
+              n: spanDays,
+              unit: t.plural('unit.day', spanDays),
+            })}
+          </p>
+        )}
+      </div>
 
-      <div>
-        <p className="mb-1.5 px-0.5 text-xs text-muted">{t('chart.show')}</p>
-        <div className="flex flex-wrap gap-2">
-          {available.map((metric) => {
-            const on = slots.includes(metric)
-            const color = SLOT_COLOR[slots.indexOf(metric)]
-            return (
-              <button
-                key={metric}
-                type="button"
-                onClick={() => setSlots((prev) => toggleSlot(prev, metric))}
-                disabled={!on && full}
-                aria-pressed={on}
-                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm
-                            ring-1 disabled:opacity-40 ${
-                              on ? 'bg-raised ring-line' : 'bg-surface text-muted ring-line'
-                            }`}
-              >
-                {/* Метка цветом стоит рядом с названием, а не вместо него:
-                    цвет здесь - опознаватель линии, а не единственный признак. */}
-                <span
-                  aria-hidden
-                  className="size-2.5 shrink-0 rounded-full"
-                  style={{ background: on && color ? color : 'var(--color-line)' }}
-                />
-                {t(LABEL_OF[metric])}
-              </button>
-            )
-          })}
-        </div>
-        {full && <p className="mt-1 px-0.5 text-xs text-muted">{t('chart.max')}</p>}
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label={t('chart.show')}>
+        {available.map((metric) => {
+          const on = slots.includes(metric)
+          const color = SLOT_COLOR[slots.indexOf(metric)]
+          return (
+            <button
+              key={metric}
+              type="button"
+              onClick={() => setSlots((prev) => toggleSlot(prev, metric))}
+              disabled={!on && full}
+              aria-pressed={on}
+              className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs
+                          ring-1 disabled:opacity-40 ${
+                            on ? 'bg-raised ring-line' : 'bg-surface text-muted ring-line'
+                          }`}
+            >
+              {/* Метка цветом стоит рядом с названием, а не вместо него:
+                  цвет здесь - опознаватель линии, а не единственный признак. */}
+              <span
+                aria-hidden
+                className="size-2 shrink-0 rounded-full"
+                style={{ background: on && color ? color : 'var(--color-line)' }}
+              />
+              {t(LABEL_OF[metric])}
+            </button>
+          )
+        })}
+        {full && <span className="self-center px-0.5 text-xs text-muted">{t('chart.max')}</span>}
       </div>
 
       {drawable.length === 0 ? (
@@ -289,16 +330,35 @@ export function BodyChart({ points }: { points: WeightPoint[] }) {
         <Plot series={drawable} unit={unit} mode={mode} />
       )}
 
-      <button
-        type="button"
-        onClick={() => setTable((v) => !v)}
-        className="self-start px-0.5 text-sm text-accent"
-      >
-        <span className="flex items-center gap-1.5">
-          {table ? <TrendingUp size={15} aria-hidden /> : <Table2 size={15} aria-hidden />}
+      {/* Режим и таблица - одной строкой внизу, а не отдельными рядами сверху.
+          Оба вторичны: сверху человек выбирает ЧТО смотреть, здесь - КАК.
+          В таблице режим не при чём - там всегда точные значения, за этим
+          в неё и заходят. */}
+      <div className="flex items-center justify-between gap-3">
+        {table ? (
+          <span />
+        ) : (
+          <Segmented
+            ariaLabel={t('chart.mode')}
+            full={false}
+            items={MODES.map((m) => ({
+              id: m,
+              label: t(m === 'delta' ? 'chart.mode.delta' : 'chart.mode.abs'),
+              active: m === mode,
+            }))}
+            onPick={(id) => setMode(id as Mode)}
+          />
+        )}
+
+        <button
+          type="button"
+          onClick={() => setTable((v) => !v)}
+          className="flex shrink-0 items-center gap-1.5 px-0.5 text-xs text-accent"
+        >
+          {table ? <TrendingUp size={14} aria-hidden /> : <Table2 size={14} aria-hidden />}
           {table ? t('chart.asChart') : t('chart.asTable')}
-        </span>
-      </button>
+        </button>
+      </div>
     </div>
   )
 }
@@ -779,36 +839,95 @@ function format(value: number, unit: Unit, mode: Mode = 'abs'): string {
   return mode === 'delta' && value > 0 ? `+${n}` : n
 }
 
-function Chips({
-  label,
+/**
+ * Сегментированный переключатель - одна пилюля с делениями, а не россыпь
+ * отдельных кнопок.
+ *
+ * Разница не косметическая. Отдельные пилюли с зазорами занимали по ряду
+ * на каждый выбор плюс ряд на подпись: четыре набора разворачивались
+ * в восемь строк, и график уезжал под сгиб экрана. Сегменты в общей рамке
+ * читаются как один выбор из нескольких, подпись им не нужна, и весь набор
+ * помещается в одну строку.
+ *
+ * `full` растягивает сегменты на всю ширину поровну - так ряд выглядит
+ * рядом, а не обрывком. Для пары «значения / изменение» это лишнее:
+ * два широких сегмента во всю ширину выглядели бы главным выбором экрана,
+ * которым они не являются.
+ */
+function Segmented({
+  ariaLabel,
   items,
   onPick,
+  full = true,
 }: {
-  label: string
+  ariaLabel: string
   items: { id: string; label: string; active: boolean }[]
   onPick: (id: string) => void
+  full?: boolean
 }) {
   if (items.length < 2) return null
   return (
-    <div>
-      <p className="mb-1.5 px-0.5 text-xs text-muted">{label}</p>
-      <div className="flex flex-wrap gap-2">
-        {items.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onPick(item.id)}
-            aria-pressed={item.active}
-            className={`rounded-full px-3 py-1.5 text-sm ring-1 ${
-              item.active
-                ? 'bg-accent text-accent-ink ring-accent'
-                : 'bg-surface text-muted ring-line'
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+    <div
+      role="group"
+      aria-label={ariaLabel}
+      className="flex gap-0.5 rounded-lg bg-raised p-0.5 ring-1 ring-line"
+    >
+      {items.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          onClick={() => onPick(item.id)}
+          aria-pressed={item.active}
+          className={`rounded-md px-2 py-1.5 text-xs whitespace-nowrap ${
+            full ? 'flex-1' : ''
+          } ${item.active ? 'bg-accent font-medium text-accent-ink' : 'text-muted'}`}
+        >
+          {item.label}
+        </button>
+      ))}
     </div>
   )
+}
+
+/**
+ * Поле даты для своего периода.
+ *
+ * Родное `input[type=date]` намеренно: оно даёт системный календарь,
+ * который на телефоне удобнее любого своего, и понимает локаль без нашего
+ * участия. Границы задаются `min`/`max`, поэтому перевернуть период
+ * местами нельзя - начало не пускают дальше конца.
+ */
+function DateField({
+  label,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string
+  value: string
+  min: string
+  max: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className="min-w-0 flex-1">
+      <span className="sr-only">{label}</span>
+      <input
+        type="date"
+        value={value}
+        min={min}
+        max={max}
+        onChange={(e) => e.target.value !== '' && onChange(e.target.value)}
+        className="w-full min-w-0 rounded-lg bg-raised px-2 py-1.5 text-xs ring-1 ring-line
+                   outline-none focus:ring-2 focus:ring-accent"
+      />
+    </label>
+  )
+}
+
+/** Длина периода в днях, включая обе границы. */
+function daysInclusive(from: string, to: string): number {
+  const ms = fromLocalISO(to).getTime() - fromLocalISO(from).getTime()
+  return Math.max(Math.round(ms / 86_400_000) + 1, 1)
 }
