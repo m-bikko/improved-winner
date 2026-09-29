@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<!--
+  Scene 4 — «Дневник» (11.814 → 15.748s, local 0 → 3.934).
+  The app's calorie ring draws in three meal segments, one per beat (Завтрак · Обед · Перекус);
+  each lands with its label pill and steps the centre count; on the downbeat the day resolves
+  to «Осталось 520 ккал». Then the macros fill as ONE chord in the app's CVD-validated
+  Б/Ж/У colours. Demo values — not personal data. Exit: master cut LEFT.
+  Blueprint: dataviz-countup · Rules: svg-path-draw, counting-dynamic-scale, stat-bars-and-fills,
+  waterfall-entry.
+-->
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-cyrillic-ext-wght-normal.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-cyrillic-wght-normal.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-latin-ext-wght-normal.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-latin-wght-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-cyrillic-ext.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-cyrillic.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-cyrillic-ext.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-cyrillic.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        #root {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          background: #121110;
+          font-family: "Nunito", sans-serif;
+          color: #f3efe9;
+        }
+        .s4-glow {
+          position: absolute;
+          border-radius: 50%;
+          pointer-events: none;
+        }
+        #s4-glow-a {
+          left: 770px;
+          top: -60px;
+          width: 1200px;
+          height: 1200px;
+          background: radial-gradient(closest-side, rgba(229, 118, 140, 0.16), rgba(229, 118, 140, 0));
+        }
+        #s4-glow-b {
+          left: -320px;
+          top: -380px;
+          width: 1100px;
+          height: 1100px;
+          background: radial-gradient(closest-side, rgba(239, 179, 94, 0.1), rgba(239, 179, 94, 0));
+        }
+        #s4-eyebrow {
+          position: absolute;
+          left: 152px;
+          top: 164px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          font-size: 30px;
+          font-weight: 800;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: #efb35e;
+        }
+        #s4-eyebrow-rule {
+          display: block;
+          width: 48px;
+          height: 4px;
+          border-radius: 2px;
+          background: #efb35e;
+          transform-origin: 0 50%;
+        }
+        #s4-head {
+          position: absolute;
+          left: 150px;
+          top: 234px;
+        }
+        #s4-h1 {
+          display: block;
+          font-size: 112px;
+          line-height: 1.14;
+          font-weight: 900;
+          letter-spacing: -0.03em;
+          white-space: nowrap;
+        }
+        #s4-h2 {
+          display: block;
+          font-family: "Cormorant Garamond", serif;
+          font-style: italic;
+          font-weight: 600;
+          font-size: 96px;
+          line-height: 1.1;
+          color: #f4a3b3;
+        }
+        .s4-w {
+          display: inline-block;
+          opacity: 0;
+        }
+        #s4-macros {
+          position: absolute;
+          left: 150px;
+          top: 566px;
+          width: 700px;
+        }
+        .s4-row {
+          position: relative;
+          height: 108px;
+        }
+        .s4-row-top {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+        }
+        .s4-name {
+          display: flex;
+          align-items: baseline;
+          gap: 14px;
+          font-size: 32px;
+          font-weight: 700;
+          color: #a39b92;
+        }
+        .s4-letter {
+          font-size: 38px;
+          font-weight: 900;
+        }
+        .s4-val {
+          font-size: 34px;
+          font-weight: 800;
+          font-variant-numeric: tabular-nums;
+        }
+        .s4-val em {
+          font-style: normal;
+          color: #a39b92;
+          font-weight: 700;
+        }
+        .s4-track {
+          position: absolute;
+          left: 0;
+          top: 58px;
+          width: 700px;
+          height: 16px;
+          border-radius: 8px;
+          background: #28241f;
+          overflow: hidden;
+        }
+        .s4-fill {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 700px;
+          height: 16px;
+          border-radius: 8px;
+          transform-origin: 0 50%;
+        }
+        #s4-svg {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 1920px;
+          height: 1080px;
+          overflow: visible;
+        }
+        #s4-center {
+          position: absolute;
+          left: 1070px;
+          top: 440px;
+          width: 600px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        #s4-num {
+          font-size: 150px;
+          line-height: 1;
+          font-weight: 900;
+          letter-spacing: -0.04em;
+          font-variant-numeric: tabular-nums;
+        }
+        #s4-of {
+          margin-top: 6px;
+          font-size: 36px;
+          font-weight: 700;
+          color: #a39b92;
+        }
+        .s4-pill {
+          position: absolute;
+          height: 64px;
+          border-radius: 32px;
+          background: #1c1a18;
+          box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.08), 0 16px 40px -16px rgba(0, 0, 0, 0.7);
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 0 26px;
+          font-size: 29px;
+          font-weight: 800;
+          white-space: nowrap;
+          opacity: 0;
+        }
+        .s4-pill em {
+          font-style: normal;
+          color: #a39b92;
+          font-weight: 700;
+          font-variant-numeric: tabular-nums;
+        }
+        .s4-dot {
+          width: 14px;
+          height: 14px;
+          border-radius: 7px;
+          background: #e5768c;
+        }
+        #s4-left-pill {
+          left: 1215px;
+          top: 848px;
+          background: #3a2228;
+          color: #f4a3b3;
+          box-shadow: none;
+        }
+        #s4-grain {
+          position: absolute;
+          inset: 0;
+          opacity: 0.06;
+          pointer-events: none;
+        }
+      </style>
+
+      <div data-hf-id="hf-gwh3" id="root" data-composition-id="s4-diary" data-start="0" data-width="1920" data-height="1080" data-duration="3.934">
+        <div data-hf-id="hf-358h" id="s4-glow-a" class="s4-glow" data-layout-allow-overflow=""></div>
+        <div data-hf-id="hf-73ci" id="s4-glow-b" class="s4-glow" data-layout-allow-overflow=""></div>
+
+        <div data-hf-id="hf-o1cu" id="s4-eyebrow"><span data-hf-id="hf-qstg" id="s4-eyebrow-rule"></span><span data-hf-id="hf-e4x4" id="s4-eyebrow-text">Дневник</span></div>
+        <div data-hf-id="hf-fgxb" id="s4-head">
+          <span data-hf-id="hf-a0r5" id="s4-h1"></span>
+          <span data-hf-id="hf-g6gy" id="s4-h2"></span>
+        </div>
+
+        <div data-hf-id="hf-415i" id="s4-macros">
+          <div data-hf-id="hf-pnti" class="s4-row">
+            <div data-hf-id="hf-15bw" class="s4-row-top"><span data-hf-id="hf-c0sl" class="s4-name"><span data-hf-id="hf-ec9p" class="s4-letter" style="color: #2f7fd0">Б</span>Белки</span><span data-hf-id="hf-n4gy" class="s4-val"><span data-hf-id="hf-3x9y" id="s4-v0">0</span> <em data-hf-id="hf-9ar4">/ 120 г</em></span></div>
+            <div data-hf-id="hf-jsc7" class="s4-track"><div data-hf-id="hf-rzmj" class="s4-fill" id="s4-f0" style="background: #2f7fd0"></div></div>
+          </div>
+          <div data-hf-id="hf-z6wq" class="s4-row">
+            <div data-hf-id="hf-z9v8" class="s4-row-top"><span data-hf-id="hf-fav3" class="s4-name"><span data-hf-id="hf-svnq" class="s4-letter" style="color: #c08000">Ж</span>Жиры</span><span data-hf-id="hf-b3uu" class="s4-val"><span data-hf-id="hf-j9x5" id="s4-v1">0</span> <em data-hf-id="hf-v4qa">/ 70 г</em></span></div>
+            <div data-hf-id="hf-elo7" class="s4-track"><div data-hf-id="hf-ljgs" class="s4-fill" id="s4-f1" style="background: #c08000"></div></div>
+          </div>
+          <div data-hf-id="hf-zl7r" class="s4-row">
+            <div data-hf-id="hf-y2y5" class="s4-row-top"><span data-hf-id="hf-g1ej" class="s4-name"><span data-hf-id="hf-0kij" class="s4-letter" style="color: #009c65">У</span>Углеводы</span><span data-hf-id="hf-bi5v" class="s4-val"><span data-hf-id="hf-hbu0" id="s4-v2">0</span> <em data-hf-id="hf-cfav">/ 240 г</em></span></div>
+            <div data-hf-id="hf-e7d6" class="s4-track"><div data-hf-id="hf-zf7p" class="s4-fill" id="s4-f2" style="background: #009c65"></div></div>
+          </div>
+        </div>
+
+        <svg data-hf-id="hf-zoik" id="s4-svg" viewBox="0 0 1920 1080">
+          <g data-hf-id="hf-jtb1" id="s4-ring-g">
+            <circle data-hf-id="hf-5q9f" id="s4-track" cx="1370" cy="540" r="250" fill="none" stroke="#3d2329" stroke-width="46" />
+            <g data-hf-id="hf-8qi4" id="s4-segs" transform="rotate(-90 1370 540)" />
+          </g>
+        </svg>
+
+        <div data-hf-id="hf-xjcu" id="s4-center">
+          <span data-hf-id="hf-yacw" id="s4-num">0</span>
+          <span data-hf-id="hf-pneh" id="s4-of">из 2000 ккал</span>
+        </div>
+
+        <div data-hf-id="hf-k3w6" class="s4-pill" id="s4-pill-0"><span data-hf-id="hf-meji" class="s4-dot"></span>Завтрак <em data-hf-id="hf-rpar">420</em></div>
+        <div data-hf-id="hf-b13q" class="s4-pill" id="s4-pill-1"><span data-hf-id="hf-bf2a" class="s4-dot"></span>Обед <em data-hf-id="hf-q04z">680</em></div>
+        <div data-hf-id="hf-vcok" class="s4-pill" id="s4-pill-2"><span data-hf-id="hf-btdb" class="s4-dot"></span>Перекус <em data-hf-id="hf-oquc">380</em></div>
+        <div data-hf-id="hf-hhjx" class="s4-pill" id="s4-left-pill">Осталось 520 ккал</div>
+
+        <svg data-hf-id="hf-zm2b" id="s4-grain" width="1920" height="1080">
+          <filter data-hf-id="hf-pmpc" id="s4-noise"><feturbulence data-hf-id="hf-hc7e" type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="23" /><fecolormatrix data-hf-id="hf-skw8" type="saturate" values="0" /></filter>
+          <rect data-hf-id="hf-oj5e" width="1920" height="1080" filter="url(#s4-noise)" />
+        </svg>
+      </div>
+
+      <script>
+        (function () {
+          const tl = gsap.timeline({ paused: true });
+          const NS = "http://www.w3.org/2000/svg";
+          const B = 0.4918;
+          const CX = 1370;
+          const CY = 540;
+          const R = 250;
+          const CIRC = 2 * Math.PI * R;
+          const GOAL = 2000;
+
+          // Scale an SVG node around a FIXED point by writing its transform attribute.
+          // Not GSAP svgOrigin: that needs the node's bbox, and inside a montage this
+          // sub-composition is not laid out yet when the timeline is built — every origin
+          // came out shifted. Pure numbers, seek-safe.
+          const svgT = (sel, cx, cy, s0 = 1) => {
+            const node = typeof sel === "string" ? document.querySelector(sel) : sel;
+            const p = { sx: s0, sy: s0 };
+            const apply = () => node.setAttribute("transform", `translate(${cx} ${cy}) scale(${p.sx.toFixed(4)} ${p.sy.toFixed(4)}) translate(${-cx} ${-cy})`);
+            apply();
+            return { p, apply };
+          };
+
+          // ── Entrances: eyebrow rule draws, headline waterfalls, ring track settles in
+          tl.fromTo("#s4-eyebrow-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.3, ease: "power3.out" }, 0.04);
+          tl.fromTo("#s4-eyebrow-text", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.3, ease: "power3.out" }, 0.08);
+          const words = [];
+          [["s4-h1", "Каждый приём"], ["s4-h2", "на двоих"]].forEach(([id, text]) => {
+            const host = document.getElementById(id);
+            text.split(" ").forEach((w, i, arr) => {
+              const s = document.createElement("span");
+              s.className = "s4-w";
+              s.textContent = w + (i < arr.length - 1 ? " " : "");
+              host.appendChild(s);
+              words.push(s);
+            });
+          });
+          let at = 0.1;
+          let gap = 0.07;
+          words.forEach((w, i) => {
+            tl.set(w, { opacity: 1 }, at);
+            tl.fromTo(w, { y: i === 0 ? 76 : 50 }, { y: 0, duration: i === 0 ? 0.2 : 0.16, ease: "power4.out", immediateRender: false }, at);
+            at += gap;
+            gap *= 0.84;
+          });
+          gsap.set(words, { y: 76 });
+          const ringT = svgT("#s4-ring-g", CX, CY, 0.86);
+          tl.fromTo(ringT.p, { sx: 0.86, sy: 0.86 }, { sx: 1, sy: 1, duration: 0.5, ease: "power3.out", onUpdate: ringT.apply, immediateRender: false }, 0.02);
+          tl.fromTo("#s4-ring-g", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power3.out" }, 0.02);
+          tl.fromTo("#s4-center", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 0.18);
+          tl.fromTo(".s4-row", { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.4, ease: "power3.out", stagger: 0.06 }, 0.3);
+
+          // ── Meal segments: one per beat, each a stroke-drawn arc with a 1.2° gap
+          const MEALS = [
+            { kcal: 420, t: B, pill: "#s4-pill-0" },
+            { kcal: 680, t: 2 * B, pill: "#s4-pill-1" },
+            { kcal: 380, t: 3 * B, pill: "#s4-pill-2" },
+          ];
+          const GAP = (1.2 / 360) * CIRC;
+          let acc = 0;
+          const num = document.getElementById("s4-num");
+          const count = { v: 0 };
+          const showCount = () => { num.textContent = String(Math.round(count.v)); };
+          MEALS.forEach((m, i) => {
+            const len = (m.kcal / GOAL) * CIRC;
+            const seg = document.createElementNS(NS, "circle");
+            seg.setAttribute("cx", String(CX));
+            seg.setAttribute("cy", String(CY));
+            seg.setAttribute("r", String(R));
+            seg.setAttribute("fill", "none");
+            seg.setAttribute("stroke", "#e5768c");
+            seg.setAttribute("stroke-width", "46");
+            seg.setAttribute("stroke-linecap", "butt");
+            // dash = [drawn, rest]; offset rotates the dash to start where the last one ended
+            const start = acc + (i ? GAP : 0);
+            const drawn = len - (i ? GAP : 0);
+            seg.setAttribute("stroke-dasharray", `0 ${CIRC}`);
+            seg.setAttribute("stroke-dashoffset", String(-start));
+            document.getElementById("s4-segs").appendChild(seg);
+            const d = { v: 0 };
+            tl.fromTo(d, { v: 0 }, {
+              v: drawn,
+              duration: 0.36,
+              ease: "power3.out",
+              onUpdate: () => seg.setAttribute("stroke-dasharray", `${d.v.toFixed(2)} ${CIRC}`),
+            }, m.t);
+            acc += len;
+            // the count steps with the segment (same timing, same ease)
+            tl.to(count, { v: acc / CIRC * GOAL, duration: 0.36, ease: "power3.out", onUpdate: showCount }, m.t);
+            // label pill pops at the segment's midpoint, outside the ring
+            const mid = (start + drawn / 2) / CIRC * 2 * Math.PI - Math.PI / 2;
+            const px = CX + 382 * Math.cos(mid);
+            const py = CY + 382 * Math.sin(mid);
+            const pill = document.querySelector(m.pill);
+            pill.style.left = `${Math.round(px - 125)}px`;
+            pill.style.top = `${Math.round(py - 32)}px`;
+            tl.fromTo(pill, { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.42, ease: "back.out(2)" }, m.t + 0.16);
+          });
+
+          // ── Downbeat: the day resolves — remaining pill, ring breath of light
+          tl.fromTo("#s4-left-pill", { opacity: 0, y: 26, scale: 0.8 }, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "back.out(1.8)" }, 4 * B);
+          tl.fromTo("#s4-num", { scale: 1 }, { scale: 1.08, duration: 0.1, ease: "power2.out", immediateRender: false }, 4 * B);
+          tl.to("#s4-num", { scale: 1, duration: 0.45, ease: "back.out(2)" }, 4 * B + 0.1);
+
+          // ── Macros fill as ONE chord: same start, same duration, same ease
+          const MAC = [[96, 120], [52, 70], [180, 240]];
+          const CHORD = 4.5 * B;
+          MAC.forEach(([v, goal], i) => {
+            tl.fromTo(`#s4-f${i}`, { scaleX: 0 }, { scaleX: v / goal, duration: 0.8, ease: "power3.out" }, CHORD);
+            const c = { v: 0 };
+            const el = document.getElementById(`s4-v${i}`);
+            tl.fromTo(c, { v: 0 }, { v, duration: 0.8, ease: "power3.out", onUpdate: () => { el.textContent = String(Math.round(c.v)); } }, CHORD);
+          });
+
+          window.__timelines["s4-diary"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

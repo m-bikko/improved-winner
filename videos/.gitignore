@@ -6,6 +6,11 @@
 # командой из README проекта.
 */assets/bgm/
 
+# Звуковые эффекты - из библиотеки, которую приносит скилл media-use. Права на
+# раздачу файлом те же, что у подложки: внутри ролика можно, в публичном
+# репозитории нет. Берутся заново из ~/.claude/skills/media-use/audio/assets/sfx/.
+*/assets/sfx/
+
 # Снимки экранов в assets/ - это копии из capture/, которые раскладывает
 # stage-assets.mjs (и повторно assemble-index.mjs). Хранить оба набора значит
 # держать в репозитории одни и те же три мегабайта дважды. Источник - capture/.
@@ -16,6 +21,8 @@
 # воспроизводятся из исходников
 */renders/
 */snapshots/
+*/snapshots-*/
+*/.hyperframes/anim-map/
 */.hyperframes/preview*
 */node_modules/
 

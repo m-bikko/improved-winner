@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<!--
+  HUD — persistent showreel chrome (3.945 → 21.650s, local 0 → 17.705).
+  Top-left: the app mark + «ТАНДЕМ / шоурил». Bottom-left: chapter «01 / 05» + name, rolling
+  on each seam (vertical ticker). Bottom-right: five progress segments filling in real time.
+  Leaves before the final lockup so the mark owns the last frames.
+-->
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-cyrillic-ext-wght-normal.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-cyrillic-wght-normal.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-latin-ext-wght-normal.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-latin-wght-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-cyrillic-ext.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-cyrillic.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-cyrillic-ext.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-cyrillic.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        #root {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          font-family: "Nunito", sans-serif;
+          color: #f3efe9;
+        }
+        #hud-brand {
+          position: absolute;
+          left: 96px;
+          top: 58px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          opacity: 0;
+        }
+        #hud-brand-name {
+          font-family: "IBM Plex Mono", monospace;
+          font-size: 22px;
+          letter-spacing: 0.2em;
+          color: #f3efe9;
+        }
+        #hud-brand-sub {
+          font-family: "IBM Plex Mono", monospace;
+          font-size: 22px;
+          letter-spacing: 0.08em;
+          color: #a39b92;
+        }
+        #hud-chapter {
+          position: absolute;
+          left: 96px;
+          top: 968px;
+          display: flex;
+          align-items: center;
+          gap: 22px;
+          opacity: 0;
+        }
+        .hud-win {
+          height: 40px;
+          overflow: hidden;
+        }
+        .hud-stack {
+          display: flex;
+          flex-direction: column;
+        }
+        .hud-num {
+          height: 40px;
+          display: flex;
+          align-items: center;
+          font-family: "IBM Plex Mono", monospace;
+          font-size: 22px;
+          letter-spacing: 0.08em;
+          color: #e5768c;
+        }
+        #hud-total {
+          font-family: "IBM Plex Mono", monospace;
+          font-size: 22px;
+          letter-spacing: 0.08em;
+          color: #8a837b;
+        }
+        #hud-sep {
+          width: 2px;
+          height: 30px;
+          background: #312c27;
+        }
+        .hud-name {
+          height: 40px;
+          display: flex;
+          align-items: center;
+          font-size: 28px;
+          font-weight: 800;
+          white-space: nowrap;
+        }
+        #hud-progress {
+          position: absolute;
+          left: 1316px;
+          top: 986px;
+          display: flex;
+          gap: 10px;
+          opacity: 0;
+        }
+        .hud-seg {
+          position: relative;
+          width: 92px;
+          height: 5px;
+          border-radius: 3px;
+          background: rgba(243, 239, 233, 0.14);
+          overflow: hidden;
+        }
+        .hud-fill {
+          position: absolute;
+          inset: 0;
+          border-radius: 3px;
+          background: #e5768c;
+          transform-origin: 0 50%;
+        }
+      </style>
+
+      <div data-hf-id="hf-xtpw" id="root" data-composition-id="hud" data-start="0" data-width="1920" data-height="1080" data-duration="17.705">
+        <div data-hf-id="hf-kx24" id="hud-brand">
+          <svg data-hf-id="hf-vb72" width="44" height="44" viewBox="0 0 64 64">
+            <rect data-hf-id="hf-id23" width="64" height="64" rx="14" fill="#b4485f" />
+            <g data-hf-id="hf-ikqf" fill="none" stroke="#fff" stroke-width="5.5">
+              <defs data-hf-id="hf-mh0t"><clippath data-hf-id="hf-v42x" id="hud-link"><circle data-hf-id="hf-xyea" cx="22" cy="32" r="12" /></clippath></defs>
+              <circle data-hf-id="hf-sa0c" cx="42" cy="32" r="12" fill="#fff" stroke="none" clip-path="url(#hud-link)" />
+              <circle data-hf-id="hf-ffpi" cx="22" cy="32" r="12" />
+              <circle data-hf-id="hf-zd0k" cx="42" cy="32" r="12" />
+            </g>
+          </svg>
+          <span data-hf-id="hf-7kdt" id="hud-brand-name">ТАНДЕМ</span>
+          <span data-hf-id="hf-h7hj" id="hud-brand-sub">/ шоурил</span>
+        </div>
+
+        <div data-hf-id="hf-ht3w" id="hud-chapter">
+          <div data-hf-id="hf-ilue" class="hud-win"><div data-hf-id="hf-bntg" class="hud-stack" id="hud-nums" data-layout-allow-overflow=""></div></div>
+          <span data-hf-id="hf-g708" id="hud-total">/ 05</span>
+          <span data-hf-id="hf-469y" id="hud-sep"></span>
+          <div data-hf-id="hf-8u7u" class="hud-win"><div data-hf-id="hf-ssfd" class="hud-stack" id="hud-names" data-layout-allow-overflow=""></div></div>
+        </div>
+
+        <div data-hf-id="hf-hmck" id="hud-progress"></div>
+      </div>
+
+      <script>
+        (function () {
+          const tl = gsap.timeline({ paused: true });
+          // chapter starts, local to the HUD (master − 3.945)
+          const CH = [0, 3.934, 7.869, 11.803, 15.737];
+          const END = 17.705;
+          const NAMES = ["Думаю о тебе", "Как ты", "Дневник", "Как решили", "Даты"];
+          const nums = document.getElementById("hud-nums");
+          const names = document.getElementById("hud-names");
+          const prog = document.getElementById("hud-progress");
+          NAMES.forEach((n, i) => {
+            const a = document.createElement("div");
+            a.className = "hud-num";
+            a.textContent = String(i + 1).padStart(2, "0");
+            nums.appendChild(a);
+            const b = document.createElement("div");
+            b.className = "hud-name";
+            b.textContent = n;
+            names.appendChild(b);
+            const s = document.createElement("div");
+            s.className = "hud-seg";
+            s.innerHTML = '<div class="hud-fill"></div>';
+            prog.appendChild(s);
+          });
+          const fills = prog.querySelectorAll(".hud-fill");
+
+          // arrive on the drop
+          tl.fromTo("#hud-brand", { opacity: 0, y: -18 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 0.12);
+          tl.fromTo("#hud-chapter", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 0.2);
+          tl.fromTo("#hud-progress", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 0.26);
+
+          // chapter tickers roll on each seam; progress segments fill in real time
+          CH.forEach((t, i) => {
+            if (i > 0) {
+              tl.to("#hud-nums", { y: -40 * i, duration: 0.34, ease: "power3.inOut" }, t - 0.12);
+              tl.to("#hud-names", { y: -40 * i, duration: 0.34, ease: "power3.inOut" }, t - 0.08);
+            }
+            const next = i < CH.length - 1 ? CH[i + 1] : END;
+            tl.fromTo(fills[i], { scaleX: 0 }, { scaleX: 1, duration: next - t, ease: "none" }, t);
+          });
+          gsap.set(fills, { scaleX: 0 });
+
+          // leave before the lockup
+          tl.to(["#hud-brand", "#hud-chapter", "#hud-progress"], { opacity: 0, duration: 0.35, ease: "power2.in" }, END - 0.45);
+
+          window.__timelines["hud"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

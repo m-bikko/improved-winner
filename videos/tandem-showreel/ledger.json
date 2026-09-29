@@ -1,0 +1,73 @@
+{
+  "fps": 30,
+  "seams": [
+    {
+      "id": "hook→nudge (Z-push through the lens)",
+      "cut": 3.945,
+      "type": "morph",
+      "technique": "hand-authored Tier-A Z-push: the camera dives into the white lens (s1 #s1-world ×6, power4.in, ~58/s at the cut); s2's #s2-iris continues at the matched speed (power2.out 6→18) and dissolves. No carrier row: the gate's carrier-size check compares cut−1f with cut+1f and cannot hold for a push this fast; verified by snapshots instead."
+    },
+    {
+      "id": "nudge→checkin",
+      "cut": 7.879,
+      "technique": "cut-the-curve LEFT",
+      "exit": {
+        "selector": "#el-s2",
+        "axis": "x",
+        "dir": -1
+      },
+      "entry": {
+        "selector": "#el-s3",
+        "axis": "x",
+        "dir": -1
+      }
+    },
+    {
+      "id": "checkin→diary (audio splice under this cut)",
+      "cut": 11.814,
+      "technique": "cut-the-curve LEFT",
+      "exit": {
+        "selector": "#el-s3",
+        "axis": "x",
+        "dir": -1
+      },
+      "entry": {
+        "selector": "#el-s4",
+        "axis": "x",
+        "dir": -1
+      }
+    },
+    {
+      "id": "diary→decided",
+      "cut": 15.748,
+      "technique": "cut-the-curve LEFT",
+      "exit": {
+        "selector": "#el-s4",
+        "axis": "x",
+        "dir": -1
+      },
+      "entry": {
+        "selector": "#el-s5",
+        "axis": "x",
+        "dir": -1
+      }
+    },
+    {
+      "id": "decided→finale (ARRIVAL)",
+      "cut": 19.682,
+      "technique": "inverse zoom-through",
+      "blur": 18,
+      "exit": {
+        "selector": "#el-s5",
+        "axis": "z",
+        "dir": -1
+      },
+      "entry": {
+        "selector": "#el-s6",
+        "axis": "z",
+        "dir": -1,
+        "scanRoot": "#el-s6"
+      }
+    }
+  ]
+}

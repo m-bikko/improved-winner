@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "preferences": {
+    "aspect": {
+      "value": "1080x1920",
+      "confirmed_in": [
+        "tandem-showreel-story"
+      ],
+      "updated_at": "2026-09-29T15:51:34.006Z"
+    },
+    "destination": {
+      "value": "reels-tiktok-stories",
+      "confirmed_in": [
+        "tandem-showreel-story"
+      ],
+      "updated_at": "2026-09-29T15:51:34.041Z"
+    }
+  },
+  "sightings": {}
+}

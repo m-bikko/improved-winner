@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<!--
+  Scene 9 — «Письмо в будущее» (31.475 → 35.410, local 0 → 3.935). Letters, tone teal.
+  The app's letter card: «Прочитаешь это через год…» types in (0.2 → 1.6, deterministic by
+  time, with a caret). On the downbeat (1.97) «Запечатать» is pressed and the card folds away
+  (pseudo-3D rotationX + scaleY on HTML) while the envelope unfolds in its place; its flap
+  comes down; on 2.46 the accent seal with a lock stamps it (squash & spring, shockwave).
+  «Запечатано» + the app's own line from letter.sealedBody. 2.95 → 3.5 the envelope flies
+  up along an arc (the scene's own exit direction), a dotted trail stretching back to the
+  tag «через 365 дней». Enter from below, exit up (both owned by the root).
+  Rules: typewriter-reveal, card-morph-anchor, spring-pop-entrance.
+-->
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <template>
+      <style>
+                @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-cyrillic-ext-wght-normal.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-cyrillic-wght-normal.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-latin-ext-wght-normal.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-latin-wght-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-cyrillic-ext.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-cyrillic.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-cyrillic-ext.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-cyrillic.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        #root {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          background: #121110;
+          font-family: "Nunito", sans-serif;
+          color: #f3efe9;
+        }
+        .s09-glow {
+          position: absolute;
+          border-radius: 50%;
+          pointer-events: none;
+        }
+        #s09-glow-a {
+          left: 180px;
+          top: -380px;
+          width: 1400px;
+          height: 1400px;
+          background: radial-gradient(closest-side, rgba(111, 209, 203, 0.11), rgba(111, 209, 203, 0));
+        }
+        #s09-glow-b {
+          left: -560px;
+          top: 760px;
+          width: 1300px;
+          height: 1300px;
+          background: radial-gradient(closest-side, rgba(229, 118, 140, 0.14), rgba(229, 118, 140, 0));
+        }
+        #s09-eyebrow {
+          /* one eyebrow style across the reel: rule + tracked caps, like Дневник / Задачи / Цикл */
+          position: absolute;
+          left: 110px;
+          top: 356px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          font-size: 30px;
+          font-weight: 800;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: #6fd1cb;
+          opacity: 0;
+        }
+        #s09-eyebrow-rule {
+          display: block;
+          width: 48px;
+          height: 4px;
+          border-radius: 2px;
+          background: #6fd1cb;
+        }
+        #s09-head {
+          position: absolute;
+          left: 108px;
+          top: 434px;
+          width: 864px;
+        }
+        #s09-h1 {
+          display: block;
+          font-size: 124px;
+          line-height: 1.12;
+          font-weight: 900;
+          letter-spacing: -0.03em;
+          white-space: nowrap;
+        }
+        #s09-h2 {
+          display: block;
+          font-family: "Cormorant Garamond", serif;
+          font-style: italic;
+          font-weight: 600;
+          font-size: 100px;
+          line-height: 1.12;
+          color: #f4a3b3;
+          white-space: nowrap;
+        }
+        .s09-w {
+          display: inline-block;
+          opacity: 0;
+        }
+        /* The letter card (the app's sheet) */
+        #s09-card {
+          position: absolute;
+          left: 108px;
+          top: 790px;
+          width: 864px;
+          height: 440px;
+          border-radius: 44px;
+          background: #1c1a18;
+          box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.06), 0 40px 90px -40px rgba(0, 0, 0, 0.85);
+          opacity: 0;
+        }
+        #s09-what {
+          position: absolute;
+          left: 48px;
+          top: 40px;
+          font-size: 30px;
+          font-weight: 700;
+          color: #a39b92;
+        }
+        #s09-field {
+          position: absolute;
+          left: 44px;
+          top: 94px;
+          width: 776px;
+          height: 150px;
+          border-radius: 30px;
+          background: #28241f;
+          display: flex;
+          align-items: center;
+          padding: 0 32px;
+          font-size: 46px;
+          font-weight: 700;
+          white-space: nowrap;
+        }
+        #s09-caret {
+          display: inline-block;
+          width: 4px;
+          height: 56px;
+          margin-left: 4px;
+          border-radius: 2px;
+          background: #e5768c;
+          flex: none;
+        }
+        #s09-seal-btn {
+          position: absolute;
+          left: 44px;
+          top: 290px;
+          width: 776px;
+          height: 104px;
+          border-radius: 52px;
+          background: #e5768c;
+          color: #1c1a17;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 16px;
+          font-size: 36px;
+          font-weight: 800;
+        }
+        #s09-seal-btn svg {
+          width: 38px;
+          height: 38px;
+        }
+        /* The envelope + seal fly together: one wrapper, its centre (540, 1010) */
+        #s09-trail {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 1080px;
+          height: 1920px;
+          overflow: visible;
+        }
+        #s09-tag {
+          position: absolute;
+          left: 360px;
+          top: 974px;
+          width: 360px;
+          height: 72px;
+          border-radius: 36px;
+          background: #15302e;
+          color: #6fd1cb;
+          box-shadow: inset 0 0 0 2px rgba(111, 209, 203, 0.35);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          font-size: 32px;
+          font-weight: 800;
+          white-space: nowrap;
+          opacity: 0;
+        }
+        #s09-tag svg {
+          width: 34px;
+          height: 34px;
+        }
+        #s09-flyer {
+          position: absolute;
+          left: 220px;
+          top: 800px;
+          width: 640px;
+          height: 420px;
+        }
+        #s09-env {
+          position: absolute;
+          inset: 0;
+          opacity: 0;
+        }
+        #s09-env-body {
+          position: absolute;
+          inset: 0;
+          border-radius: 28px;
+          background: #183b38;
+          box-shadow: inset 0 0 0 3px rgba(111, 209, 203, 0.32), 0 44px 90px -36px rgba(0, 0, 0, 0.9);
+        }
+        #s09-env-lines {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 640px;
+          height: 420px;
+        }
+        #s09-flap {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 640px;
+          height: 220px;
+          background: #22524d;
+          clip-path: polygon(26px 0, 614px 0, 320px 220px);
+          transform-origin: 50% 0%;
+        }
+        #s09-seal {
+          position: absolute;
+          left: 245px;
+          top: 137px;
+          width: 150px;
+          height: 150px;
+          border-radius: 50%;
+          background: #e5768c;
+          box-shadow: inset 0 0 0 12px #e5768c, inset 0 0 0 15px rgba(28, 26, 23, 0.28), 0 18px 40px -12px rgba(0, 0, 0, 0.7);
+          color: #1c1a17;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+        }
+        #s09-seal svg {
+          width: 64px;
+          height: 64px;
+        }
+        #s09-fx {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 1080px;
+          height: 1920px;
+          overflow: visible;
+          pointer-events: none;
+        }
+        #s09-sealed {
+          position: absolute;
+          left: 108px;
+          top: 1262px;
+          width: 864px;
+          text-align: center;
+          font-size: 60px;
+          line-height: 1.15;
+          font-weight: 900;
+          letter-spacing: -0.01em;
+          opacity: 0;
+        }
+        #s09-sealed-body {
+          position: absolute;
+          left: 150px;
+          top: 1348px;
+          width: 780px;
+          text-align: center;
+          font-size: 36px;
+          line-height: 1.35;
+          font-weight: 600;
+          color: #a39b92;
+          text-wrap: balance;
+          opacity: 0;
+        }
+        #s09-grain {
+          position: absolute;
+          inset: 0;
+          opacity: 0.06;
+          pointer-events: none;
+        }
+      </style>
+
+      <div data-hf-id="hf-6heb" id="root" data-composition-id="s09-letters" data-start="0" data-width="1080" data-height="1920" data-duration="3.935">
+        <div data-hf-id="hf-sxk1" id="s09-glow-a" class="s09-glow" data-layout-allow-overflow=""></div>
+        <div data-hf-id="hf-wvo2" id="s09-glow-b" class="s09-glow" data-layout-allow-overflow=""></div>
+
+        <div data-hf-id="hf-wry7" id="s09-eyebrow">
+          <span data-hf-id="hf-rnfd" id="s09-eyebrow-rule"></span>
+          <span data-hf-id="hf-1pi7">Письма</span>
+        </div>
+
+        <div data-hf-id="hf-t14g" id="s09-head">
+          <span data-hf-id="hf-tda4" id="s09-h1"></span>
+          <span data-hf-id="hf-48rr" id="s09-h2"></span>
+        </div>
+
+        <div data-hf-id="hf-tjjg" id="s09-card">
+          <div data-hf-id="hf-w4ua" id="s09-what">Что написать</div>
+          <div data-hf-id="hf-udce" id="s09-field"><span data-hf-id="hf-m38b" id="s09-typed"></span><span data-hf-id="hf-qwo2" id="s09-caret"></span></div>
+          <div data-hf-id="hf-kbx6" id="s09-seal-btn">
+            <svg data-hf-id="hf-12oc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect data-hf-id="hf-9jn9" width="18" height="11" x="3" y="11" rx="2" ry="2" /><path data-hf-id="hf-4qh8" d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+            <span data-hf-id="hf-x46p">Запечатать</span>
+          </div>
+        </div>
+
+        <!-- dotted trail: drawn under the tag and the flying envelope -->
+        <svg data-hf-id="hf-h8lw" id="s09-trail" viewBox="0 0 1080 1920" data-layout-allow-overflow="" />
+
+        <div data-hf-id="hf-ukgi" id="s09-tag">
+          <svg data-hf-id="hf-n58i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-h2hd" d="M16 14v2.2l1.6 1" /><path data-hf-id="hf-j6ed" d="M16 2v3" /><path data-hf-id="hf-ejjq" d="M21 7.338V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h2.338" /><path data-hf-id="hf-heua" d="M3 9h5.859" /><path data-hf-id="hf-zifa" d="M8 2v3" /><circle data-hf-id="hf-xel4" cx="16" cy="16" r="6" /></svg>
+          <span data-hf-id="hf-4bas">через 365 дней</span>
+        </div>
+
+        <div data-hf-id="hf-p37f" id="s09-flyer" data-layout-allow-overflow="">
+          <div data-hf-id="hf-l3h7" id="s09-env">
+            <div data-hf-id="hf-2n0o" id="s09-env-body"></div>
+            <svg data-hf-id="hf-dcix" id="s09-env-lines" viewBox="0 0 640 420"><path data-hf-id="hf-svnr" d="M22 404 L320 222 L618 404" fill="none" stroke="rgba(111, 209, 203, 0.4)" stroke-width="3" stroke-linejoin="round" /></svg>
+            <div data-hf-id="hf-hafz" id="s09-flap"></div>
+          </div>
+          <div data-hf-id="hf-mfrt" id="s09-seal">
+            <svg data-hf-id="hf-8nvo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect data-hf-id="hf-laeh" width="18" height="11" x="3" y="11" rx="2" ry="2" /><path data-hf-id="hf-zoro" d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+          </div>
+        </div>
+
+        <svg data-hf-id="hf-fz8m" id="s09-fx" viewBox="0 0 1080 1920" data-layout-allow-overflow="">
+          <circle data-hf-id="hf-fss6" id="s09-wave-a" cx="540" cy="1012" r="78" fill="none" stroke="#e5768c" stroke-width="6" opacity="0" />
+          <circle data-hf-id="hf-apgx" id="s09-wave-b" cx="540" cy="1012" r="78" fill="none" stroke="#6fd1cb" stroke-width="4" opacity="0" />
+        </svg>
+
+        <div data-hf-id="hf-llmj" id="s09-sealed">Запечатано</div>
+        <div data-hf-id="hf-yoz3" id="s09-sealed-body">До этого дня письма не видно никому - включая вас.</div>
+
+        <svg data-hf-id="hf-psf8" id="s09-grain" width="1080" height="1920">
+          <filter data-hf-id="hf-a4o7" id="s09-noise"><feturbulence data-hf-id="hf-1fn2" type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="41" /><fecolormatrix data-hf-id="hf-skw8" type="saturate" values="0" /></filter>
+          <rect data-hf-id="hf-5761" width="1080" height="1920" filter="url(#s09-noise)" />
+        </svg>
+      </div>
+
+      <script>
+        (function () {
+          const tl = gsap.timeline({ paused: true });
+          const NS = "http://www.w3.org/2000/svg";
+          const B = 0.4918; // one beat
+
+          // ── Eyebrow + headline: waterfall entry (letter.title split over two voices)
+          tl.fromTo("#s09-eyebrow", { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.36, ease: "power3.out" }, 0.02);
+          const words = [];
+          [["s09-h1", "Письмо"], ["s09-h2", "в будущее"]].forEach(([id, text]) => {
+            const host = document.getElementById(id);
+            text.split(" ").forEach((w, i, arr) => {
+              const s = document.createElement("span");
+              s.className = "s09-w";
+              s.textContent = w;
+              host.appendChild(s);
+              // the space lives outside the inline-block: a trailing space inside one collapses
+              if (i < arr.length - 1) host.appendChild(document.createTextNode(" "));
+              words.push(s);
+            });
+          });
+          let at = 0.06;
+          let gap = 0.09;
+          words.forEach((w, i) => {
+            tl.set(w, { opacity: 1 }, at);
+            tl.fromTo(w, { y: i === 0 ? 80 : 54 }, { y: 0, duration: i === 0 ? 0.22 : 0.17, ease: "power4.out", immediateRender: false }, at);
+            at += gap;
+            gap *= 0.84;
+          });
+          gsap.set(words, { y: 80 });
+
+          // ── The letter card rises in
+          tl.fromTo("#s09-card", { opacity: 0, y: 90 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 0.08);
+
+          // ── Typewriter 0.2 → 1.6: text is a pure function of a proxy (seek-safe both ways)
+          const TEXT = Array.from("Прочитаешь это через год…");
+          const typed = document.getElementById("s09-typed");
+          const ty = { n: 0 };
+          const drawTyped = () => {
+            typed.textContent = TEXT.slice(0, Math.floor(ty.n + 0.0001)).join("");
+          };
+          drawTyped();
+          tl.fromTo(ty, { n: 0 }, { n: TEXT.length, duration: 1.4, ease: "none", onUpdate: drawTyped, immediateRender: false }, 0.2);
+          // caret: solid while typing, one blink in the pause
+          tl.set("#s09-caret", { opacity: 0 }, 1.66);
+          tl.set("#s09-caret", { opacity: 1 }, 1.82);
+
+          // ── Downbeat 1.97: «Запечатать» pressed, the card folds away (HTML rotationX + scaleY)
+          const DOWN = 4 * B;
+          tl.fromTo("#s09-seal-btn", { scale: 1 }, { scale: 0.94, duration: 0.07, ease: "power2.in", immediateRender: false }, DOWN - 0.06);
+          tl.fromTo(
+            "#s09-card",
+            { rotationX: 0, scaleY: 1, scaleX: 1 },
+            { rotationX: 78, scaleY: 0.42, scaleX: 0.82, transformPerspective: 1600, duration: 0.2, ease: "power3.in", immediateRender: false },
+            DOWN + 0.02,
+          );
+          tl.to("#s09-card", { opacity: 0, duration: 0.08, ease: "none" }, DOWN + 0.14);
+
+          // …and the envelope unfolds in its place, flap still open
+          tl.fromTo(
+            "#s09-env",
+            { rotationX: -78, scaleY: 0.42, opacity: 0 },
+            { rotationX: 0, scaleY: 1, opacity: 1, transformPerspective: 1600, duration: 0.26, ease: "power3.out", immediateRender: false },
+            DOWN + 0.16,
+          );
+          // the flap comes down (rotates about its top edge — HTML, not SVG)
+          tl.fromTo("#s09-flap", { rotationX: 125 }, { rotationX: 0, transformPerspective: 900, duration: 0.18, ease: "power2.in", immediateRender: false }, 5 * B - 0.2);
+          gsap.set("#s09-flap", { rotationX: 125, transformPerspective: 900 });
+
+          // ── 2.46: the seal stamps — falls from above the page, squash, spring
+          const SEAL = 5 * B;
+          tl.fromTo("#s09-seal", { opacity: 0 }, { opacity: 1, duration: 0.06, ease: "none", immediateRender: false }, SEAL - 0.14);
+          tl.fromTo("#s09-seal", { scale: 2.1, rotation: -24 }, { scale: 1, rotation: 0, duration: 0.14, ease: "power3.in", immediateRender: false }, SEAL - 0.14);
+          tl.fromTo("#s09-seal", { scaleX: 1, scaleY: 1 }, { scaleX: 1.16, scaleY: 0.84, duration: 0.05, ease: "power2.out", immediateRender: false }, SEAL);
+          tl.to("#s09-seal", { scaleX: 1, scaleY: 1, duration: 0.45, ease: "back.out(2.6)" }, SEAL + 0.05);
+          gsap.set("#s09-seal", { scale: 2.1, rotation: -24 });
+          // the envelope takes the hit
+          tl.fromTo("#s09-env", { scaleY: 1 }, { scaleY: 0.95, duration: 0.05, ease: "power2.out", immediateRender: false }, SEAL);
+          tl.to("#s09-env", { scaleY: 1, duration: 0.4, ease: "back.out(2.4)" }, SEAL + 0.05);
+          // shockwave from the seal
+          tl.fromTo("#s09-wave-a", { attr: { r: 78 }, opacity: 0.8 }, { attr: { r: 300 }, opacity: 0, duration: 0.6, ease: "power2.out", immediateRender: false }, SEAL);
+          tl.fromTo("#s09-wave-b", { attr: { r: 78 }, opacity: 0.6 }, { attr: { r: 230 }, opacity: 0, duration: 0.55, ease: "power2.out", immediateRender: false }, SEAL + 0.08);
+
+          // captions: the app's own sealed state
+          tl.fromTo("#s09-sealed", { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, SEAL + 0.08);
+          tl.fromTo("#s09-sealed-body", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, SEAL + 0.2);
+
+          // ── 2.95 → 3.5: the envelope flies up along an arc; a dotted trail stretches back
+          // to the tag. Path = cubic bezier of the flyer's centre, authored constants; it bends
+          // right of the headline so the shrinking envelope never crosses the words.
+          const P = [[540, 1010], [620, 860], [860, 760], [880, 480]];
+          const bez = (i, t) => {
+            const u = 1 - t;
+            return u * u * u * P[0][i] + 3 * u * u * t * P[1][i] + 3 * u * t * t * P[2][i] + t * t * t * P[3][i];
+          };
+          const trail = document.getElementById("s09-trail");
+          const dots = [];
+          const DOTS = 26;
+          for (let k = 1; k <= DOTS; k++) {
+            const t = 0.02 + (k / DOTS) * 0.94;
+            const d = document.createElementNS(NS, "circle");
+            d.setAttribute("cx", bez(0, t).toFixed(1));
+            d.setAttribute("cy", bez(1, t).toFixed(1));
+            d.setAttribute("r", "5");
+            d.setAttribute("fill", "#6fd1cb");
+            d.setAttribute("opacity", "0");
+            trail.appendChild(d);
+            dots.push({ el: d, t });
+          }
+          const flyer = document.getElementById("s09-flyer");
+          const fly = { t: 0 };
+          const drawFly = () => {
+            const x = bez(0, fly.t) - P[0][0];
+            const y = bez(1, fly.t) - P[0][1];
+            const s = 1 - 0.7 * fly.t;
+            const r = -9 * fly.t;
+            flyer.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) rotate(${r.toFixed(3)}deg) scale(${s.toFixed(4)})`;
+            // dots light as the envelope passes them, and stay: the trail stretches behind it
+            dots.forEach((d) => {
+              d.el.setAttribute("opacity", fly.t >= d.t ? "0.85" : "0");
+            });
+          };
+          drawFly();
+          const FLY = 6 * B;
+          tl.fromTo(fly, { t: 0 }, { t: 1, duration: 0.56, ease: "power2.inOut", onUpdate: drawFly, immediateRender: false }, FLY);
+          // the tag appears where the letter was
+          tl.fromTo("#s09-tag", { opacity: 0, scale: 0.6, y: 20 }, { opacity: 1, scale: 1, y: 0, duration: 0.42, ease: "back.out(2)" }, FLY + 0.06);
+
+          window.__timelines["s09-letters"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

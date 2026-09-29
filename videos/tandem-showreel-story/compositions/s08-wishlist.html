@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<!--
+  Scene 8 — «Хочу / и ты узнаешь» (27.541 → 31.475, local 0 → 3.934). Wishlist, tone orange.
+  The app's filter ribbon (Все · Хочу купить · Хочу посетить · Хочу попробовать · Сделать
+  вместе) switches on each beat to the category of the wish being dealt. Three demo wishes
+  deal in from below like a hand of cards and land in a pile (0.49, 0.98, 1.48); stillness;
+  on 2.46 the pile spreads into the app's tidy list (FLIP: layout is the list, the pile is an
+  inverted transform) while the ribbon scrolls home and «Все» lights with its count 3.
+  2.95: the author rings answer. Enter from below, exit up (both owned by the root).
+  Rules: waterfall-entry, center-outward-expansion, spring-pop-entrance.
+-->
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <template>
+      <style>
+                @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-cyrillic-ext-wght-normal.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-cyrillic-wght-normal.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-latin-ext-wght-normal.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-latin-wght-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-cyrillic-ext.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-cyrillic.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-cyrillic-ext.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-cyrillic.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        #root {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          background: #121110;
+          font-family: "Nunito", sans-serif;
+          color: #f3efe9;
+        }
+        .s08-glow {
+          position: absolute;
+          border-radius: 50%;
+          pointer-events: none;
+        }
+        #s08-glow-a {
+          left: -520px;
+          top: -260px;
+          width: 1300px;
+          height: 1300px;
+          background: radial-gradient(closest-side, rgba(229, 118, 140, 0.15), rgba(229, 118, 140, 0));
+        }
+        #s08-glow-b {
+          left: 260px;
+          top: 820px;
+          width: 1300px;
+          height: 1300px;
+          background: radial-gradient(closest-side, rgba(243, 164, 115, 0.12), rgba(243, 164, 115, 0));
+        }
+        #s08-eyebrow {
+          /* one eyebrow style across the reel: rule + tracked caps, like Дневник / Задачи / Цикл */
+          position: absolute;
+          left: 110px;
+          top: 356px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          font-size: 30px;
+          font-weight: 800;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: #f3a473;
+          opacity: 0;
+        }
+        #s08-eyebrow-rule {
+          display: block;
+          width: 48px;
+          height: 4px;
+          border-radius: 2px;
+          background: #f3a473;
+        }
+        #s08-head {
+          position: absolute;
+          left: 108px;
+          top: 434px;
+          width: 864px;
+        }
+        #s08-h1 {
+          display: block;
+          font-size: 124px;
+          line-height: 1.12;
+          font-weight: 900;
+          letter-spacing: -0.03em;
+          white-space: nowrap;
+        }
+        #s08-h2 {
+          display: block;
+          font-family: "Cormorant Garamond", serif;
+          font-style: italic;
+          font-weight: 600;
+          font-size: 96px;
+          line-height: 1.12;
+          color: #f4a3b3;
+          white-space: nowrap;
+        }
+        .s08-w {
+          display: inline-block;
+          opacity: 0;
+        }
+        #s08-ribbon {
+          position: absolute;
+          left: 108px;
+          top: 726px;
+          height: 84px;
+          display: flex;
+          gap: 14px;
+          opacity: 0;
+        }
+        .s08-chip {
+          flex: none;
+          height: 84px;
+          border-radius: 42px;
+          background: #1c1a18;
+          color: #f3efe9;
+          box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.05);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          font-size: 32px;
+          font-weight: 700;
+          white-space: nowrap;
+        }
+        .s08-chip svg {
+          width: 32px;
+          height: 32px;
+          flex: none;
+        }
+        .s08-count {
+          position: relative;
+          width: 20px;
+          height: 36px;
+          flex: none;
+        }
+        .s08-n {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 20px;
+          height: 36px;
+          line-height: 36px;
+          text-align: center;
+          font-size: 26px;
+          font-weight: 800;
+          font-variant-numeric: tabular-nums;
+          opacity: 0;
+        }
+        #s08-chip-all {
+          width: 148px;
+          background: #e5768c;
+          color: #1c1a17;
+        }
+        #s08-chip-try {
+          color: #a39b92;
+        }
+        .s08-card {
+          position: absolute;
+          left: 108px;
+          width: 864px;
+          height: 184px;
+          border-radius: 40px;
+          background: #1c1a18;
+          box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.06), 0 34px 70px -30px rgba(0, 0, 0, 0.85);
+          display: flex;
+          align-items: center;
+          gap: 28px;
+          padding: 0 36px;
+          opacity: 0;
+        }
+        .s08-tile {
+          width: 96px;
+          height: 96px;
+          flex: none;
+          border-radius: 28px;
+          background: #3a2417;
+          color: #f3a473;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .s08-tile svg {
+          width: 50px;
+          height: 50px;
+        }
+        .s08-text {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          min-width: 0;
+        }
+        .s08-title {
+          font-size: 40px;
+          line-height: 1.15;
+          font-weight: 800;
+          letter-spacing: -0.01em;
+          white-space: nowrap;
+        }
+        .s08-meta {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 28px;
+          font-weight: 600;
+          color: #a39b92;
+          white-space: nowrap;
+        }
+        .s08-meta svg.s08-mi {
+          width: 26px;
+          height: 26px;
+          flex: none;
+        }
+        .s08-who {
+          font-weight: 800;
+        }
+        .s08-ring {
+          width: 34px;
+          height: 34px;
+          flex: none;
+          overflow: visible;
+        }
+        #s08-grain {
+          position: absolute;
+          inset: 0;
+          opacity: 0.06;
+          pointer-events: none;
+        }
+      </style>
+
+      <div data-hf-id="hf-toir" id="root" data-composition-id="s08-wishlist" data-start="0" data-width="1080" data-height="1920" data-duration="3.934">
+        <div data-hf-id="hf-9y3x" id="s08-glow-a" class="s08-glow" data-layout-allow-overflow=""></div>
+        <div data-hf-id="hf-dw7y" id="s08-glow-b" class="s08-glow" data-layout-allow-overflow=""></div>
+
+        <div data-hf-id="hf-9p36" id="s08-eyebrow">
+          <span data-hf-id="hf-bkdy" id="s08-eyebrow-rule"></span>
+          <span data-hf-id="hf-7qhd">Вишлист</span>
+        </div>
+
+        <div data-hf-id="hf-2c0r" id="s08-head">
+          <span data-hf-id="hf-wvlb" id="s08-h1"></span>
+          <span data-hf-id="hf-o7pg" id="s08-h2"></span>
+        </div>
+
+        <!-- The app's filter ribbon: it scrolls sideways and bleeds off the right edge -->
+        <div data-hf-id="hf-r03w" id="s08-ribbon" data-layout-allow-overflow="">
+          <div data-hf-id="hf-2wyw" class="s08-chip" id="s08-chip-all">
+            <span data-hf-id="hf-0xuf">Все</span>
+            <span data-hf-id="hf-6ekm" class="s08-count"><span data-hf-id="hf-e0d5" class="s08-n" id="s08-all-1">1</span><span data-hf-id="hf-h6ll" class="s08-n" id="s08-all-2">2</span><span data-hf-id="hf-mkc1" class="s08-n" id="s08-all-3">3</span></span>
+          </div>
+          <div data-hf-id="hf-qmk3" class="s08-chip" id="s08-chip-buy" style="width: 330px">
+            <svg data-hf-id="hf-h0hq" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-kxt0" d="M16 10a4 4 0 0 1-8 0" /><path data-hf-id="hf-euvf" d="M3.103 6.034h17.794" /><path data-hf-id="hf-re2g" d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z" /></svg>
+            <span data-hf-id="hf-uawu">Хочу купить</span>
+            <span data-hf-id="hf-z0p6" class="s08-count"><span data-hf-id="hf-90rq" class="s08-n" id="s08-buy-1">1</span></span>
+          </div>
+          <div data-hf-id="hf-hx71" class="s08-chip" id="s08-chip-visit" style="width: 362px">
+            <svg data-hf-id="hf-pmle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-z6xf" d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /><circle data-hf-id="hf-d4n7" cx="12" cy="10" r="3" /></svg>
+            <span data-hf-id="hf-zluj">Хочу посетить</span>
+            <span data-hf-id="hf-zf07" class="s08-count"><span data-hf-id="hf-gaj5" class="s08-n" id="s08-visit-1">1</span></span>
+          </div>
+          <div data-hf-id="hf-vxbo" class="s08-chip" id="s08-chip-try" style="width: 400px">
+            <svg data-hf-id="hf-q0wf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-9h9f" d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" /><path data-hf-id="hf-soll" d="M20 2v4" /><path data-hf-id="hf-h3p6" d="M22 4h-4" /><circle data-hf-id="hf-vut6" cx="4" cy="20" r="2" /></svg>
+            <span data-hf-id="hf-e33f">Хочу попробовать</span>
+          </div>
+          <div data-hf-id="hf-6e1c" class="s08-chip" id="s08-chip-together" style="width: 382px">
+            <svg data-hf-id="hf-qf7g" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-frh1" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><path data-hf-id="hf-pnso" d="M16 3.128a4 4 0 0 1 0 7.744" /><path data-hf-id="hf-p3fz" d="M22 21v-2a4 4 0 0 0-3-3.87" /><circle data-hf-id="hf-nb88" cx="9" cy="7" r="4" /></svg>
+            <span data-hf-id="hf-bmn7">Сделать вместе</span>
+            <span data-hf-id="hf-ztb8" class="s08-count"><span data-hf-id="hf-hgay" class="s08-n" id="s08-together-1">1</span></span>
+          </div>
+        </div>
+
+        <!-- Wish cards: laid out as the final list; the pile is an inverted transform (FLIP).
+             In the pile the cards cover each other on purpose (opaque, snapshot-verified), so
+             their text blocks carry data-layout-allow-overlap. -->
+        <div data-hf-id="hf-bel6" class="s08-card" id="s08-c0" style="top: 862px">
+          <div data-hf-id="hf-0od4" class="s08-tile"><svg data-hf-id="hf-qtih" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-85df" d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /><circle data-hf-id="hf-rxab" cx="12" cy="10" r="3" /></svg></div>
+          <div data-hf-id="hf-j8z5" class="s08-text">
+            <div data-hf-id="hf-jqnq" class="s08-title" data-layout-allow-overlap="">Цветение сакуры в Японии</div>
+            <div data-hf-id="hf-yz8b" class="s08-meta">
+              <svg data-hf-id="hf-0zpd" class="s08-mi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-7r2e" d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /><circle data-hf-id="hf-riza" cx="12" cy="10" r="3" /></svg>
+              <span data-hf-id="hf-5y67" data-layout-allow-overlap="">Хочу посетить ·</span>
+              <svg data-hf-id="hf-ciic" class="s08-ring" viewBox="0 0 34 34"><circle data-hf-id="hf-0c6j" id="s08-r0" cx="17" cy="17" r="10" fill="#3a1f27" stroke="#f28ca2" stroke-width="5" /></svg>
+              <span data-hf-id="hf-osue" class="s08-who" data-layout-allow-overlap="" style="color: #f28ca2">я</span>
+            </div>
+          </div>
+        </div>
+        <div data-hf-id="hf-eoex" class="s08-card" id="s08-c1" style="top: 1070px">
+          <div data-hf-id="hf-csds" class="s08-tile"><svg data-hf-id="hf-r7ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-rffg" d="M16 10a4 4 0 0 1-8 0" /><path data-hf-id="hf-76zv" d="M3.103 6.034h17.794" /><path data-hf-id="hf-cma8" d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z" /></svg></div>
+          <div data-hf-id="hf-8aw5" class="s08-text">
+            <div data-hf-id="hf-qp1m" class="s08-title" data-layout-allow-overlap="">Кофемашина</div>
+            <div data-hf-id="hf-36sb" class="s08-meta">
+              <svg data-hf-id="hf-r9hx" class="s08-mi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-q8id" d="M16 10a4 4 0 0 1-8 0" /><path data-hf-id="hf-6sou" d="M3.103 6.034h17.794" /><path data-hf-id="hf-bfd5" d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z" /></svg>
+              <span data-hf-id="hf-dz1u" data-layout-allow-overlap="">Хочу купить ·</span>
+              <svg data-hf-id="hf-9xak" class="s08-ring" viewBox="0 0 34 34"><circle data-hf-id="hf-j4w1" id="s08-r1" cx="17" cy="17" r="10" fill="#1a2a3c" stroke="#84b9ef" stroke-width="5" /></svg>
+              <span data-hf-id="hf-3hze" class="s08-who" data-layout-allow-overlap="" style="color: #84b9ef">ты</span>
+            </div>
+          </div>
+        </div>
+        <div data-hf-id="hf-d960" class="s08-card" id="s08-c2" style="top: 1278px">
+          <div data-hf-id="hf-blgp" class="s08-tile"><svg data-hf-id="hf-rm4j" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-pzbd" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><path data-hf-id="hf-0vbk" d="M16 3.128a4 4 0 0 1 0 7.744" /><path data-hf-id="hf-ou6n" d="M22 21v-2a4 4 0 0 0-3-3.87" /><circle data-hf-id="hf-ejg0" cx="9" cy="7" r="4" /></svg></div>
+          <div data-hf-id="hf-9ht8" class="s08-text">
+            <div data-hf-id="hf-lfh3" class="s08-title" data-layout-allow-overlap="">Научиться танцевать</div>
+            <div data-hf-id="hf-2sha" class="s08-meta">
+              <svg data-hf-id="hf-sgf0" class="s08-mi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-r68g" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><path data-hf-id="hf-zoeh" d="M16 3.128a4 4 0 0 1 0 7.744" /><path data-hf-id="hf-ofvm" d="M22 21v-2a4 4 0 0 0-3-3.87" /><circle data-hf-id="hf-dcix" cx="9" cy="7" r="4" /></svg>
+              <span data-hf-id="hf-hmc1" data-layout-allow-overlap="">Сделать вместе ·</span>
+              <svg data-hf-id="hf-8qdh" class="s08-ring" viewBox="0 0 34 34"><circle data-hf-id="hf-gmn9" id="s08-r2" cx="17" cy="17" r="10" fill="#3a1f27" stroke="#f28ca2" stroke-width="5" /></svg>
+              <span data-hf-id="hf-18ga" class="s08-who" data-layout-allow-overlap="" style="color: #f28ca2">я</span>
+            </div>
+          </div>
+        </div>
+
+        <svg data-hf-id="hf-7oob" id="s08-grain" width="1080" height="1920">
+          <filter data-hf-id="hf-0gne" id="s08-noise"><feturbulence data-hf-id="hf-iz59" type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="37" /><fecolormatrix data-hf-id="hf-skw8" type="saturate" values="0" /></filter>
+          <rect data-hf-id="hf-4618" width="1080" height="1920" filter="url(#s08-noise)" />
+        </svg>
+      </div>
+
+      <script>
+        (function () {
+          const tl = gsap.timeline({ paused: true });
+          const B = 0.4918; // one beat
+
+          // ── Eyebrow + headline: waterfall entry (binary opacity, whip up from below)
+          tl.fromTo("#s08-eyebrow", { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.36, ease: "power3.out" }, 0.02);
+          const words = [];
+          [["s08-h1", "Хочу"], ["s08-h2", "и ты узнаешь"]].forEach(([id, text]) => {
+            const host = document.getElementById(id);
+            text.split(" ").forEach((w, i, arr) => {
+              const s = document.createElement("span");
+              s.className = "s08-w";
+              s.textContent = w;
+              host.appendChild(s);
+              // the space lives outside the inline-block: a trailing space inside one collapses
+              if (i < arr.length - 1) host.appendChild(document.createTextNode(" "));
+              words.push(s);
+            });
+          });
+          let at = 0.06;
+          let gap = 0.08;
+          words.forEach((w, i) => {
+            tl.set(w, { opacity: 1 }, at);
+            tl.fromTo(w, { y: i === 0 ? 80 : 54 }, { y: 0, duration: i === 0 ? 0.22 : 0.17, ease: "power4.out", immediateRender: false }, at);
+            at += gap;
+            gap *= 0.84;
+          });
+          gsap.set(words, { y: 80 });
+
+          // ── The ribbon rises in with the headline
+          tl.fromTo("#s08-ribbon", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 0.14);
+
+          // ── Chip selection: one owner per chip colour at a time (fromTo, explicit states)
+          const ON = { backgroundColor: "#e5768c", color: "#1c1a17" };
+          const OFF = { backgroundColor: "#1c1a18", color: "#f3efe9" };
+          const flip = (sel, from, to, t) =>
+            tl.fromTo(sel, { ...from }, { ...to, duration: 0.14, ease: "power2.out", immediateRender: false }, t);
+          // «Все» starts selected (the app's default), hands over on the first deal
+          flip("#s08-chip-all", ON, OFF, B - 0.03);
+          flip("#s08-chip-visit", OFF, ON, B - 0.03);
+          flip("#s08-chip-visit", ON, OFF, 2 * B - 0.03);
+          flip("#s08-chip-buy", OFF, ON, 2 * B - 0.03);
+          flip("#s08-chip-buy", ON, OFF, 3 * B - 0.03);
+          flip("#s08-chip-together", OFF, ON, 3 * B - 0.03);
+          flip("#s08-chip-together", ON, OFF, 5 * B - 0.03);
+          flip("#s08-chip-all", OFF, ON, 5 * B - 0.03);
+
+          // ribbon scrolls so «Сделать вместе» is in view for the third deal, then home for «Все»
+          tl.fromTo("#s08-ribbon", { x: 0 }, { x: -820, duration: 0.36, ease: "power3.inOut", immediateRender: false }, 3 * B - 0.38);
+          tl.fromTo("#s08-ribbon", { x: -820 }, { x: 0, duration: 0.42, ease: "power3.out", immediateRender: false }, 5 * B - 0.1);
+
+          // counts: discrete, stacked digits toggled by sets (seek-safe both ways)
+          tl.set("#s08-visit-1", { opacity: 1 }, B);
+          tl.set("#s08-buy-1", { opacity: 1 }, 2 * B);
+          tl.set("#s08-together-1", { opacity: 1 }, 3 * B);
+          tl.set("#s08-all-1", { opacity: 1 }, B);
+          tl.set("#s08-all-1", { opacity: 0 }, 2 * B);
+          tl.set("#s08-all-2", { opacity: 1 }, 2 * B);
+          tl.set("#s08-all-2", { opacity: 0 }, 3 * B);
+          tl.set("#s08-all-3", { opacity: 1 }, 3 * B);
+          // the «3» answers the climax
+          tl.fromTo("#s08-all-3", { scale: 1 }, { scale: 1.5, duration: 0.08, ease: "power2.out", immediateRender: false }, 5 * B + 0.06);
+          tl.to("#s08-all-3", { scale: 1, duration: 0.42, ease: "back.out(2.4)" }, 5 * B + 0.14);
+
+          // ── Deal: each wish flies up from below the frame and lands on the pile ON the beat.
+          // Cards are laid out at their final list slots; PILE is the inverted offset (FLIP).
+          const PILE = [
+            { x: -24, y: 226, r: -5.5 },
+            { x: 22, y: -2, r: 3.8 },
+            { x: 0, y: -224, r: -1.2 },
+          ];
+          const LAND = [B, 2 * B, 3 * B];
+          PILE.forEach((p, i) => {
+            const card = `#s08-c${i}`;
+            const side = i % 2 ? 1 : -1;
+            const t0 = LAND[i] - 0.2;
+            tl.set(card, { opacity: 1 }, t0);
+            tl.fromTo(
+              card,
+              { x: p.x + side * 210, y: p.y + 1000, rotation: p.r + side * 16 },
+              { x: p.x, y: p.y, rotation: p.r, duration: 0.6, ease: "power4.out", immediateRender: false },
+              t0,
+            );
+            gsap.set(card, { x: p.x + side * 210, y: p.y + 1000, rotation: p.r + side * 16 });
+            // the tile answers the landing
+            tl.fromTo(`${card} .s08-tile`, { scale: 0.6 }, { scale: 1, duration: 0.45, ease: "back.out(2.2)", immediateRender: false }, LAND[i] - 0.04);
+          });
+          gsap.set(".s08-tile", { scale: 0.6 });
+
+          // ── Stillness ~1.95 → 2.40, then the climax ON 2.46: the pile spreads into the list
+          const SPREAD = 5 * B;
+          [1, 0, 2].forEach((i, k) => {
+            const p = PILE[i];
+            tl.fromTo(
+              `#s08-c${i}`,
+              { x: p.x, y: p.y, rotation: p.r },
+              { x: 0, y: 0, rotation: 0, duration: 0.56, ease: "back.out(1.35)", immediateRender: false },
+              SPREAD - 0.05 + k * 0.035,
+            );
+          });
+
+          // ── 2.95: each author ring answers, top to bottom
+          [0, 1, 2].forEach((i) => {
+            const t = 6 * B + i * 0.07;
+            tl.fromTo(`#s08-r${i}`, { attr: { r: 10 } }, { attr: { r: 14 }, duration: 0.08, ease: "power2.out", immediateRender: false }, t);
+            tl.to(`#s08-r${i}`, { attr: { r: 10 }, duration: 0.4, ease: "back.out(2.6)" }, t + 0.08);
+          });
+
+          window.__timelines["s08-wishlist"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

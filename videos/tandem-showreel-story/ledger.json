@@ -1,0 +1,150 @@
+{
+  "fps": 30,
+  "seams": [
+    {
+      "id": "hook→nudge (Z-push through the lens)",
+      "cut": 3.934,
+      "type": "morph",
+      "technique": "hand-authored Tier-A Z-push into the white lens; s02 iris continues at the matched speed. No carrier row: the carrier-size check (cut−1f vs cut+1f) cannot hold for a push this fast - verified by snapshots."
+    },
+    {
+      "id": "nudge→checkin",
+      "cut": 7.869,
+      "technique": "cut-the-curve UP",
+      "exit": {
+        "selector": "#el-s02",
+        "axis": "y",
+        "dir": -1
+      },
+      "entry": {
+        "selector": "#el-s03",
+        "axis": "y",
+        "dir": -1
+      }
+    },
+    {
+      "id": "checkin→diary",
+      "cut": 11.803,
+      "technique": "cut-the-curve UP",
+      "exit": {
+        "selector": "#el-s03",
+        "axis": "y",
+        "dir": -1
+      },
+      "entry": {
+        "selector": "#el-s04",
+        "axis": "y",
+        "dir": -1
+      }
+    },
+    {
+      "id": "diary→decided",
+      "cut": 15.738,
+      "technique": "cut-the-curve UP",
+      "exit": {
+        "selector": "#el-s04",
+        "axis": "y",
+        "dir": -1
+      },
+      "entry": {
+        "selector": "#el-s05",
+        "axis": "y",
+        "dir": -1
+      }
+    },
+    {
+      "id": "decided→tasks (act 2, the re-drop)",
+      "cut": 19.672,
+      "technique": "zoom-through (push)",
+      "blur": 18,
+      "exit": {
+        "selector": "#el-s05",
+        "axis": "z",
+        "dir": 1
+      },
+      "entry": {
+        "selector": "#el-s06",
+        "axis": "z",
+        "dir": 1,
+        "scanRoot": "#el-s06"
+      }
+    },
+    {
+      "id": "tasks→cycle",
+      "cut": 23.607,
+      "technique": "cut-the-curve UP",
+      "exit": {
+        "selector": "#el-s06",
+        "axis": "y",
+        "dir": -1
+      },
+      "entry": {
+        "selector": "#el-s07",
+        "axis": "y",
+        "dir": -1
+      }
+    },
+    {
+      "id": "cycle→wishlist",
+      "cut": 27.541,
+      "technique": "cut-the-curve UP",
+      "exit": {
+        "selector": "#el-s07",
+        "axis": "y",
+        "dir": -1
+      },
+      "entry": {
+        "selector": "#el-s08",
+        "axis": "y",
+        "dir": -1
+      }
+    },
+    {
+      "id": "wishlist→letters",
+      "cut": 31.475,
+      "technique": "cut-the-curve UP",
+      "exit": {
+        "selector": "#el-s08",
+        "axis": "y",
+        "dir": -1
+      },
+      "entry": {
+        "selector": "#el-s09",
+        "axis": "y",
+        "dir": -1
+      }
+    },
+    {
+      "id": "letters→more",
+      "cut": 35.41,
+      "technique": "cut-the-curve UP",
+      "exit": {
+        "selector": "#el-s09",
+        "axis": "y",
+        "dir": -1
+      },
+      "entry": {
+        "selector": "#el-s10",
+        "axis": "y",
+        "dir": -1
+      }
+    },
+    {
+      "id": "more→finale (ARRIVAL)",
+      "cut": 39.344,
+      "technique": "inverse zoom-through",
+      "blur": 18,
+      "exit": {
+        "selector": "#el-s10",
+        "axis": "z",
+        "dir": -1
+      },
+      "entry": {
+        "selector": "#el-s11",
+        "axis": "z",
+        "dir": -1,
+        "scanRoot": "#el-s11"
+      }
+    }
+  ]
+}

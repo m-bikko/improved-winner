@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<!--
+  Scene 3 — «Как ты» (7.869 → 11.803s, local 0 → 3.934). Stories 1080×1920.
+  The app's daily check-in: «Как ты сегодня?» and 46 states, seen by both. A wall of 18 real
+  states (the app's labels and lucide icons) waterfalls in; two ring-cursors — «я» rose and
+  «ты» sky — take turns on the beats, each click fills a chip in that person's tone and leaves
+  a badge in its corner. The count climbs to 46 with growing scale. Exit: master cut LEFT
+  (the music splice hides under this cut).
+  Rules: waterfall-entry, multi-cursor-choreography, spring-pop-entrance, counting-dynamic-scale.
+-->
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-cyrillic-ext-wght-normal.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-cyrillic-wght-normal.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-latin-ext-wght-normal.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-latin-wght-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-cyrillic-ext.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-cyrillic.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-cyrillic-ext.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-cyrillic.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        #root {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          background: #121110;
+          font-family: "Nunito", sans-serif;
+          color: #f3efe9;
+        }
+        .s3-glow {
+          position: absolute;
+          border-radius: 50%;
+          pointer-events: none;
+        }
+        #s3-glow-a {
+          left: 60px;
+          top: 700px;
+          width: 1300px;
+          height: 1300px;
+          background: radial-gradient(closest-side, rgba(229, 118, 140, 0.13), rgba(229, 118, 140, 0));
+        }
+        #s3-glow-b {
+          left: -420px;
+          top: -60px;
+          width: 1100px;
+          height: 1100px;
+          background: radial-gradient(closest-side, rgba(132, 185, 239, 0.11), rgba(132, 185, 239, 0));
+        }
+        #s3-head {
+          position: absolute;
+          left: 108px;
+          top: 290px;
+        }
+        .s3-hl {
+          display: block;
+          font-size: 112px;
+          line-height: 1.12;
+          font-weight: 900;
+          letter-spacing: -0.03em;
+          white-space: nowrap;
+        }
+        .s3-w {
+          display: inline-block;
+          opacity: 0;
+        }
+        #s3-count {
+          position: absolute;
+          left: 108px;
+          top: 596px;
+          display: flex;
+          align-items: flex-end;
+          gap: 30px;
+        }
+        #s3-num {
+          display: inline-block;
+          width: 220px;
+          font-size: 184px;
+          line-height: 0.82;
+          font-weight: 900;
+          letter-spacing: -0.04em;
+          color: #e5768c;
+          font-variant-numeric: tabular-nums;
+          transform-origin: 0% 100%;
+        }
+        #s3-num-label {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          padding-bottom: 6px;
+        }
+        #s3-num-a {
+          font-size: 46px;
+          font-weight: 800;
+          line-height: 1.1;
+        }
+        #s3-num-b {
+          font-family: "Cormorant Garamond", serif;
+          font-style: italic;
+          font-weight: 600;
+          font-size: 66px;
+          line-height: 1;
+          color: #f4a3b3;
+        }
+        .s3-chip {
+          position: absolute;
+          height: 80px;
+          border-radius: 40px;
+          background: #28241f;
+          color: #f3efe9;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 0 28px 0 24px;
+          font-size: 31px;
+          font-weight: 700;
+          white-space: nowrap;
+          box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0);
+          opacity: 0;
+        }
+        .s3-ic {
+          width: 32px;
+          height: 32px;
+          flex: none;
+          fill: none;
+          stroke: currentColor;
+          stroke-width: 2;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+        }
+        #s3-svg {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 1080px;
+          height: 1920px;
+          overflow: visible;
+        }
+        #s3-grain {
+          position: absolute;
+          inset: 0;
+          opacity: 0.06;
+          pointer-events: none;
+        }
+      </style>
+
+      <div data-hf-id="hf-kxoe" id="root" data-composition-id="s03-checkin" data-start="0" data-width="1080" data-height="1920" data-duration="3.934">
+        <div data-hf-id="hf-5u4b" id="s3-glow-a" class="s3-glow" data-layout-allow-overflow=""></div>
+        <div data-hf-id="hf-x68g" id="s3-glow-b" class="s3-glow" data-layout-allow-overflow=""></div>
+
+        <div data-hf-id="hf-ktpi" id="s3-head">
+          <span data-hf-id="hf-3wc4" id="s3-l1" class="s3-hl"></span>
+          <span data-hf-id="hf-ck7z" id="s3-l2" class="s3-hl"></span>
+        </div>
+        <div data-hf-id="hf-id59" id="s3-count">
+          <span data-hf-id="hf-ue7p" id="s3-num">0</span>
+          <div data-hf-id="hf-dyph" id="s3-num-label">
+            <span data-hf-id="hf-3o12" id="s3-num-a">состояний</span>
+            <span data-hf-id="hf-mfba" id="s3-num-b">видят оба</span>
+          </div>
+        </div>
+
+        <div data-hf-id="hf-fz5o" id="s3-wall">
+          <div data-hf-id="hf-9wpn" class="s3-chip" id="s3-chip-0" data-order="0" style="left: 210px; top: 860px; width: 245px"><svg data-hf-id="hf-i6hd" class="s3-ic" viewBox="0 0 24 24"><path data-hf-id="hf-jxpz" d="M15 10V9" /><path data-hf-id="hf-rem0" d="M7.084 14.302a5.12 5.12 0 009.833 0 .24.24 0 00-.235-.302H7.32a.24.24 0 00-.235.302" /><path data-hf-id="hf-hzus" d="M9 10V9" /><circle data-hf-id="hf-m1lh" cx="12" cy="12" r="10" /></svg><span data-hf-id="hf-4byn">Радостно</span></div>
+          <div data-hf-id="hf-78rd" class="s3-chip" id="s3-chip-13" data-order="1" style="left: 469px; top: 860px; width: 372px"><svg data-hf-id="hf-ov5x" class="s3-ic" viewBox="0 0 24 24"><path data-hf-id="hf-psaf" d="M15 10V9" /><path data-hf-id="hf-sry2" d="M16.472 15a6 6 0 01-8.943 0" /><path data-hf-id="hf-5bzw" d="M9 10V9" /><circle data-hf-id="hf-jqh5" cx="12" cy="12" r="10" /></svg><span data-hf-id="hf-vwrx">У нас всё хорошо</span></div>
+          <div data-hf-id="hf-u2vi" class="s3-chip" id="s3-chip-1" data-order="2" style="left: 133px; top: 960px; width: 253px"><svg data-hf-id="hf-q230" class="s3-ic" viewBox="0 0 24 24"><path data-hf-id="hf-tn8x" d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" /></svg><span data-hf-id="hf-0se7">Спокойно</span></div>
+          <div data-hf-id="hf-norb" class="s3-chip" id="s3-chip-10" data-order="3" style="left: 400px; top: 960px; width: 218px"><svg data-hf-id="hf-pnrz" class="s3-ic" viewBox="0 0 24 24"><path data-hf-id="hf-x0zc" d="M12.409 5.824c-.702.792-1.15 1.496-1.415 2.166l2.153 2.156a.5.5 0 0 1 0 .707l-2.293 2.293a.5.5 0 0 0 0 .707L12 15" /><path data-hf-id="hf-wa1n" d="M13.508 20.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5a5.5 5.5 0 0 1 9.591-3.677.6.6 0 0 0 .818.001A5.5 5.5 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5z" /></svg><span data-hf-id="hf-w9uy">Скучаю</span></div>
+          <div data-hf-id="hf-shac" class="s3-chip" id="s3-chip-11" data-order="4" style="left: 632px; top: 960px; width: 342px"><svg data-hf-id="hf-qup2" class="s3-ic" viewBox="0 0 24 24"><path data-hf-id="hf-frh1" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><path data-hf-id="hf-pnso" d="M16 3.128a4 4 0 0 1 0 7.744" /><path data-hf-id="hf-p3fz" d="M22 21v-2a4 4 0 0 0-3-3.87" /><circle data-hf-id="hf-nb88" cx="9" cy="7" r="4" /></svg><span data-hf-id="hf-hj8u">Хочу увидеться</span></div>
+          <div data-hf-id="hf-093i" class="s3-chip" id="s3-chip-4" data-order="5" style="left: 101px; top: 1060px; width: 328px"><svg data-hf-id="hf-qge1" class="s3-ic" viewBox="0 0 24 24"><path data-hf-id="hf-9h9f" d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" /><path data-hf-id="hf-soll" d="M20 2v4" /><path data-hf-id="hf-h3p6" d="M22 4h-4" /><circle data-hf-id="hf-vut6" cx="4" cy="20" r="2" /></svg><span data-hf-id="hf-e5dv">Вдохновлённо</span></div>
+          <div data-hf-id="hf-jg0t" class="s3-chip" id="s3-chip-7" data-order="6" style="left: 443px; top: 1060px; width: 261px"><svg data-hf-id="hf-rnb4" class="s3-ic" viewBox="0 0 24 24"><path data-hf-id="hf-4tg2" d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z" /></svg><span data-hf-id="hf-8p82">Полон сил</span></div>
+          <div data-hf-id="hf-iv9i" class="s3-chip" id="s3-chip-9" data-order="7" style="left: 718px; top: 1060px; width: 233px"><svg data-hf-id="hf-r903" class="s3-ic" viewBox="0 0 24 24"><path data-hf-id="hf-pple" d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /></svg><span data-hf-id="hf-bbfq">Сонливо</span></div>
+          <div data-hf-id="hf-ewzo" class="s3-chip" id="s3-chip-2" data-order="8" style="left: 140px; top: 1160px; width: 279px"><svg data-hf-id="hf-m30q" class="s3-ic" viewBox="0 0 24 24"><path data-hf-id="hf-q540" d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" /></svg><span data-hf-id="hf-klcx">Влюблённо</span></div>
+          <div data-hf-id="hf-563e" class="s3-chip" id="s3-chip-6" data-order="9" style="left: 433px; top: 1160px; width: 196px"><svg data-hf-id="hf-lopp" class="s3-ic" viewBox="0 0 24 24"><circle data-hf-id="hf-kysq" cx="12" cy="12" r="4" /><path data-hf-id="hf-tplc" d="M12 2v2" /><path data-hf-id="hf-ysdk" d="M12 20v2" /><path data-hf-id="hf-d1np" d="m4.93 4.93 1.41 1.41" /><path data-hf-id="hf-8s75" d="m17.66 17.66 1.41 1.41" /><path data-hf-id="hf-msdq" d="M2 12h2" /><path data-hf-id="hf-bfo8" d="M20 12h2" /><path data-hf-id="hf-14cr" d="m6.34 17.66-1.41 1.41" /><path data-hf-id="hf-6d4n" d="m19.07 4.93-1.41 1.41" /></svg><span data-hf-id="hf-kcpc">Бодро</span></div>
+          <div data-hf-id="hf-eqsy" class="s3-chip" id="s3-chip-12" data-order="10" style="left: 643px; top: 1160px; width: 325px"><svg data-hf-id="hf-q2en" class="s3-ic" viewBox="0 0 24 24"><path data-hf-id="hf-ylf8" d="M19.414 14.414C21 12.828 22 11.5 22 9.5a5.5 5.5 0 0 0-9.591-3.676.6.6 0 0 1-.818.001A5.5 5.5 0 0 0 2 9.5c0 2.3 1.5 4 3 5.5l5.535 5.362a2 2 0 0 0 2.879.052 2.12 2.12 0 0 0-.004-3 2.124 2.124 0 1 0 3-3 2.124 2.124 0 0 0 3.004 0 2 2 0 0 0 0-2.828l-1.881-1.882a2.41 2.41 0 0 0-3.409 0l-1.71 1.71a2 2 0 0 1-2.828 0 2 2 0 0 1 0-2.828l2.823-2.762" /></svg><span data-hf-id="hf-dcvj">Хочу обняться</span></div>
+          <div data-hf-id="hf-egt8" class="s3-chip" id="s3-chip-3" data-order="11" style="left: 106px; top: 1260px; width: 286px"><svg data-hf-id="hf-qgpo" class="s3-ic" viewBox="0 0 24 24"><path data-hf-id="hf-641p" d="M11 14h2a2 2 0 0 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 16" /><path data-hf-id="hf-8hxd" d="m14.45 13.39 5.05-4.694C20.196 8 21 6.85 21 5.75a2.75 2.75 0 0 0-4.797-1.837.276.276 0 0 1-.406 0A2.75 2.75 0 0 0 11 5.75c0 1.2.802 2.248 1.5 2.946L16 11.95" /><path data-hf-id="hf-ea0j" d="m2 15 6 6" /><path data-hf-id="hf-rvlm" d="m7 20 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a1 1 0 0 0-2.75-2.91" /></svg><span data-hf-id="hf-h0fl">Благодарно</span></div>
+          <div data-hf-id="hf-qmjv" class="s3-chip" id="s3-chip-15" data-order="12" style="left: 406px; top: 1260px; width: 291px"><svg data-hf-id="hf-p9sl" class="s3-ic" viewBox="0 0 24 24"><circle data-hf-id="hf-ozdc" cx="12" cy="12" r="10" /><path data-hf-id="hf-9r19" d="m16 9-5.5 5.5L8 12" /></svg><span data-hf-id="hf-luus">Всё отлично</span></div>
+          <div data-hf-id="hf-ulty" class="s3-chip" id="s3-chip-16" data-order="13" style="left: 711px; top: 1260px; width: 235px"><svg data-hf-id="hf-po3m" class="s3-ic" viewBox="0 0 24 24"><path data-hf-id="hf-0jp7" d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /><rect data-hf-id="hf-31yg" width="20" height="14" x="2" y="6" rx="2" /></svg><span data-hf-id="hf-3h9m">Работаю</span></div>
+        </div>
+
+        <svg data-hf-id="hf-f871" id="s3-svg" viewBox="0 0 1080 1920">
+          <g data-hf-id="hf-tj96" id="s3-badges" />
+          <g data-hf-id="hf-f7kr" id="s3-cur-me-g"><circle data-hf-id="hf-2yw2" id="s3-cur-me" cx="60" cy="1640" r="30" fill="rgba(58, 31, 39, 0.6)" stroke="#f28ca2" stroke-width="13" /></g>
+          <g data-hf-id="hf-kx12" id="s3-cur-you-g"><circle data-hf-id="hf-vvso" id="s3-cur-you" cx="1030" cy="760" r="30" fill="rgba(26, 42, 60, 0.6)" stroke="#84b9ef" stroke-width="13" /></g>
+        </svg>
+
+        <svg data-hf-id="hf-p2vg" id="s3-grain" width="1080" height="1920">
+          <filter data-hf-id="hf-xpnr" id="s3-noise"><feturbulence data-hf-id="hf-sjvf" type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="17" /><fecolormatrix data-hf-id="hf-skw8" type="saturate" values="0" /></filter>
+          <rect data-hf-id="hf-9iy3" width="1080" height="1920" filter="url(#s3-noise)" />
+        </svg>
+      </div>
+
+      <script>
+        (function () {
+          const tl = gsap.timeline({ paused: true });
+          const NS = "http://www.w3.org/2000/svg";
+          const B = 0.4918;
+
+          // ── Headline: waterfall entry (binary opacity, whip up from below)
+          const words = [];
+          [["s3-l1", "Как ты"], ["s3-l2", "сегодня?"]].forEach(([id, text]) => {
+            const host = document.getElementById(id);
+            text.split(" ").forEach((w, i, arr) => {
+              const s = document.createElement("span");
+              s.className = "s3-w";
+              s.textContent = w + (i < arr.length - 1 ? " " : "");
+              host.appendChild(s);
+              words.push(s);
+            });
+          });
+          let at = 0.1;
+          let gap = 0.08;
+          words.forEach((w, i) => {
+            tl.set(w, { opacity: 1 }, at);
+            tl.fromTo(w, { y: i === 0 ? 78 : 52 }, { y: 0, duration: i === 0 ? 0.2 : 0.16, ease: "power4.out", immediateRender: false }, at);
+            at += gap;
+            gap *= 0.84;
+          });
+          gsap.set(words, { y: 78 });
+
+          // ── 46: counting-dynamic-scale (proxy text + scale on one timing), label after
+          const num = document.getElementById("s3-num");
+          const cnt = { v: 0 };
+          tl.fromTo(cnt, { v: 0 }, { v: 46, duration: 1.3, ease: "power2.out", onUpdate: () => { num.textContent = String(Math.round(cnt.v)); } }, 0.3);
+          tl.fromTo(num, { scale: 0.55, opacity: 0 }, { scale: 1, opacity: 1, duration: 1.3, ease: "power2.out" }, 0.3);
+          tl.fromTo("#s3-num-a", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 0.62);
+          tl.fromTo("#s3-num-b", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 0.78);
+
+          // ── Chip wall: one cascade, row by row, capped at ~0.5s total
+          const chips = [...document.querySelectorAll(".s3-chip")].sort((a, b) => a.dataset.order - b.dataset.order);
+          chips.forEach((c, i) => {
+            const t = 0.16 + i * 0.028;
+            tl.set(c, { opacity: 1 }, t);
+            tl.fromTo(c, { y: 44 }, { y: 0, duration: 0.2, ease: "power4.out", immediateRender: false }, t);
+          });
+          gsap.set(chips, { y: 44 });
+
+          // ── Two ring-cursors take turns on the beats (multi-cursor choreography).
+          // Chip boxes are authored constants (s3 layout), not measured — montage-safe.
+          const BOX = {
+            6: [433, 1160, 196], 10: [400, 960, 218], 2: [140, 1160, 279],
+            1: [133, 960, 253], 12: [643, 1160, 325], 3: [106, 1260, 286],
+          };
+          // the cursor lands on the chip's top-right corner and leaves a badge there
+          const corner = (id) => [BOX[id][0] + BOX[id][2] - 14, BOX[id][1] + 12];
+          const PICKS = [
+            { who: "me", id: 6, t: 2.5 * B },
+            { who: "you", id: 1, t: 3.0 * B },
+            { who: "me", id: 10, t: 3.5 * B },
+            { who: "you", id: 12, t: 4.0 * B },
+            { who: "me", id: 2, t: 4.5 * B },
+            { who: "you", id: 3, t: 5.0 * B },
+          ];
+          const TONE = {
+            me: { bg: "#3a1f27", ring: "#f28ca2", ink: "#fbd3dc" },
+            you: { bg: "#1a2a3c", ring: "#84b9ef", ink: "#d3e6fa" },
+          };
+          const cur = { me: { x: 60, y: 1640 }, you: { x: 1030, y: 760 } };
+          const curEl = { me: document.getElementById("s3-cur-me"), you: document.getElementById("s3-cur-you") };
+          const draw = (who) => () => {
+            curEl[who].setAttribute("cx", cur[who].x.toFixed(2));
+            curEl[who].setAttribute("cy", cur[who].y.toFixed(2));
+          };
+          ["me", "you"].forEach((w) => draw(w)());
+          tl.fromTo("#s3-cur-me-g", { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "none" }, 0.5);
+          tl.fromTo("#s3-cur-you-g", { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "none" }, 0.7);
+
+          PICKS.forEach((p) => {
+            const [cx, cy] = corner(p.id);
+            const travel = 0.36;
+            // travel: the cursor arrives just before the beat, the click lands ON it
+            tl.to(cur[p.who], { x: cx, y: cy, duration: travel, ease: "power3.inOut", onUpdate: draw(p.who) }, p.t - travel);
+            // press = the ring squeezes (its radius), so it never depends on a bbox origin
+            tl.fromTo(curEl[p.who], { attr: { r: 30 } }, { attr: { r: 21 }, duration: 0.07, ease: "power2.in", immediateRender: false }, p.t - 0.04);
+            tl.to(curEl[p.who], { attr: { r: 30 }, duration: 0.36, ease: "back.out(2.4)" }, p.t + 0.03);
+            // the chip reacts on the click frame: squash, fill in the person's tone, spring back
+            const chip = document.getElementById(`s3-chip-${p.id}`);
+            const tone = TONE[p.who];
+            tl.to(chip, { scale: 0.93, duration: 0.07, ease: "power2.in" }, p.t - 0.04);
+            tl.to(chip, { scale: 1, duration: 0.42, ease: "back.out(2.2)" }, p.t + 0.03);
+            tl.to(chip, { backgroundColor: tone.bg, color: tone.ink, boxShadow: `inset 0 0 0 3px ${tone.ring}`, duration: 0.18, ease: "power2.out" }, p.t);
+            // badge left behind in the corner
+            const b = document.createElementNS(NS, "circle");
+            b.setAttribute("cx", String(cx));
+            b.setAttribute("cy", String(cy));
+            b.setAttribute("r", "0");
+            b.setAttribute("fill", tone.ring);
+            b.setAttribute("stroke", "#121110");
+            b.setAttribute("stroke-width", "5");
+            document.getElementById("s3-badges").appendChild(b);
+            tl.fromTo(b, { attr: { r: 0 } }, { attr: { r: 13 }, duration: 0.4, ease: "back.out(2.6)", immediateRender: false }, p.t + 0.02);
+          });
+
+          // Staged payoff on the next beat: the wall resolves into what the two of you feel
+          // today — everything unpicked recedes, the six picks stay lit
+          const picked = new Set(PICKS.map((p) => `s3-chip-${p.id}`));
+          const rest = chips.filter((c) => !picked.has(c.id));
+          tl.to(rest, { opacity: 0.28, duration: 0.45, ease: "power2.out" }, 6 * B);
+          PICKS.forEach((p, i) => {
+            tl.to(`#s3-chip-${p.id}`, { scale: 1.06, duration: 0.14, ease: "power2.out" }, 6 * B + i * 0.03);
+            tl.to(`#s3-chip-${p.id}`, { scale: 1, duration: 0.4, ease: "back.out(2)" }, 6 * B + 0.14 + i * 0.03);
+          });
+
+          // after the last pick the cursors drift out of the way toward the exit direction
+          tl.to(cur.me, { x: 160, y: 1480, duration: 0.6, ease: "power2.inOut", onUpdate: draw("me") }, 5.0 * B + 0.1);
+          tl.to(cur.you, { x: 960, y: 800, duration: 0.6, ease: "power2.inOut", onUpdate: draw("you") }, 5.0 * B + 0.3);
+
+          window.__timelines["s03-checkin"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

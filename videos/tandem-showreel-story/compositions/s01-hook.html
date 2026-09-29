@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<!--
+  Scene 1 — «Пересечение», the hook (0 → 3.934s, intro bars before the drop). Stories 1080×1920.
+  Two rings, «я» (rose) and «ты» (sky), fly in on curves, hang opposite each other, spiral in
+  and lock on the beat (2.46); the impact ripples through the ring field, the lens where they
+  overlap flashes white, the wordmark waterfalls in. Stillness, then the camera dives INTO the
+  lens (Z-push) and the cut lands mid-push on the drop — the lens is the carrier into s2.
+  Rules: svg-path-draw (ring field), spring-pop-entrance (lock, lens), waterfall-entry
+  (wordmark), motion-blur-streak (dive), coordinate-target-zoom (push into the lens).
+-->
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-cyrillic-ext-wght-normal.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-cyrillic-wght-normal.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-latin-ext-wght-normal.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-latin-wght-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-cyrillic-ext.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-cyrillic.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-cyrillic-ext.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-cyrillic.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        #root {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          background: #121110;
+          font-family: "Nunito", sans-serif;
+          color: #f3efe9;
+        }
+        .s1-glow {
+          position: absolute;
+          border-radius: 50%;
+          pointer-events: none;
+        }
+        #s1-glow-rose {
+          left: -520px;
+          top: 120px;
+          width: 1300px;
+          height: 1300px;
+          background: radial-gradient(closest-side, rgba(229, 118, 140, 0.2), rgba(229, 118, 140, 0));
+        }
+        #s1-glow-sky {
+          left: 320px;
+          top: 560px;
+          width: 1300px;
+          height: 1300px;
+          background: radial-gradient(closest-side, rgba(132, 185, 239, 0.14), rgba(132, 185, 239, 0));
+        }
+        #s1-world {
+          position: absolute;
+          inset: 0;
+          transform-origin: 540px 820px;
+        }
+        #s1-svg {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 1080px;
+          height: 1920px;
+          overflow: visible;
+        }
+        .s1-field {
+          fill: none;
+          stroke: #f3efe9;
+          stroke-width: 2;
+        }
+        .s1-ring {
+          fill: none;
+          stroke-width: 68;
+        }
+        #s1-wordmark {
+          position: absolute;
+          left: 0;
+          top: 1102px;
+          width: 1080px;
+          display: flex;
+          justify-content: center;
+          font-size: 150px;
+          line-height: 1;
+          font-weight: 900;
+          letter-spacing: -0.02em;
+        }
+        .s1-ch {
+          display: inline-block;
+          opacity: 0;
+        }
+        #s1-tagline {
+          position: absolute;
+          left: 0;
+          top: 1286px;
+          width: 1080px;
+          text-align: center;
+          font-family: "Cormorant Garamond", serif;
+          font-style: italic;
+          font-weight: 600;
+          font-size: 64px;
+          line-height: 1;
+          color: #f4a3b3;
+          opacity: 0;
+        }
+        #s1-grain {
+          position: absolute;
+          inset: 0;
+          opacity: 0.06;
+          pointer-events: none;
+        }
+      </style>
+
+      <div data-hf-id="hf-x11c" id="root" data-composition-id="s01-hook" data-start="0" data-width="1080" data-height="1920" data-duration="3.934">
+        <div data-hf-id="hf-khi7" id="s1-glow-rose" class="s1-glow" data-layout-allow-overflow=""></div>
+        <div data-hf-id="hf-w8r5" id="s1-glow-sky" class="s1-glow" data-layout-allow-overflow=""></div>
+
+        <div data-hf-id="hf-h37y" id="s1-world">
+          <svg data-hf-id="hf-vj3r" id="s1-svg" viewBox="0 0 1080 1920">
+            <g data-hf-id="hf-2jn4" id="s1-field">
+              <circle data-hf-id="hf-ujvt" class="s1-field" cx="540" cy="820" r="240" />
+              <circle data-hf-id="hf-4k0u" class="s1-field" cx="540" cy="820" r="360" />
+              <circle data-hf-id="hf-quje" class="s1-field" cx="540" cy="820" r="500" />
+              <circle data-hf-id="hf-mqbr" class="s1-field" cx="540" cy="820" r="660" />
+              <circle data-hf-id="hf-aes3" class="s1-field" cx="540" cy="820" r="840" />
+              <circle data-hf-id="hf-vaim" class="s1-field" cx="540" cy="820" r="1040" />
+            </g>
+
+            <!-- comet ghosts trail each ring along its own past path -->
+            <g data-hf-id="hf-lut4" id="s1-ghosts" />
+
+            <g data-hf-id="hf-xnh1" id="s1-ring-me-g"><circle data-hf-id="hf-jpeh" id="s1-ring-me" class="s1-ring" cx="-400" cy="2200" r="150" stroke="#f28ca2" /></g>
+            <g data-hf-id="hf-zo9s" id="s1-ring-you-g"><circle data-hf-id="hf-whsa" id="s1-ring-you" class="s1-ring" cx="1500" cy="-400" r="150" stroke="#84b9ef" /></g>
+
+            <!-- the intersection: filled white when the rings lock (the app mark's lens) -->
+            <path data-hf-id="hf-xxvt" id="s1-lens" d="M 540 685 A 184 184 0 0 1 540 955 A 184 184 0 0 1 540 685 Z" fill="#f3efe9" />
+            <circle data-hf-id="hf-00aw" id="s1-flash" cx="540" cy="820" r="60" fill="none" stroke="#f3efe9" stroke-width="6" />
+          </svg>
+
+          <div data-hf-id="hf-pefd" id="s1-wordmark"></div>
+          <div data-hf-id="hf-5o9n" id="s1-tagline">приложение на двоих</div>
+        </div>
+
+        <svg data-hf-id="hf-evai" id="s1-grain" width="1080" height="1920">
+          <filter data-hf-id="hf-sle9" id="s1-noise"><feturbulence data-hf-id="hf-b9la" type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" /><fecolormatrix data-hf-id="hf-skw8" type="saturate" values="0" /></filter>
+          <rect data-hf-id="hf-94qh" width="1080" height="1920" filter="url(#s1-noise)" />
+        </svg>
+      </div>
+
+      <script>
+        (function () {
+          const tl = gsap.timeline({ paused: true });
+          const C = { x: 540, y: 820 };
+          const LOCK_HALF = 125; // center distance 250 = 1.667 × r, the app mark's proportion
+          const T_LOCK = 2.46;
+
+          // Scale an SVG node around a FIXED point by writing its transform attribute.
+          // Not GSAP svgOrigin: that needs the node's bbox, and inside a montage this
+          // sub-composition is not laid out yet when the timeline is built — every origin
+          // came out shifted. Pure numbers, seek-safe.
+          const svgT = (sel, cx, cy, s0 = 1) => {
+            const node = typeof sel === "string" ? document.querySelector(sel) : sel;
+            const p = { sx: s0, sy: s0 };
+            const apply = () => node.setAttribute("transform", `translate(${cx} ${cy}) scale(${p.sx.toFixed(4)} ${p.sy.toFixed(4)}) translate(${-cx} ${-cy})`);
+            apply();
+            return { p, apply };
+          };
+
+          // ── Ring field: stroke-draw outward (svg-path-draw; length = 2πr, no DOM measurement)
+          const field = document.querySelectorAll("#s1-field circle");
+          field.forEach((c, i) => {
+            const len = 2 * Math.PI * Number(c.getAttribute("r"));
+            gsap.set(c, { strokeDasharray: len, strokeDashoffset: len, strokeOpacity: 0.1 });
+            tl.to(c, { strokeDashoffset: 0, duration: 1.1, ease: "power2.out" }, 0.02 + i * 0.09);
+          });
+
+          // ── The rings' path as a pure function of time (seek-safe: onUpdate reads proxies only)
+          const bez = (p0, p1, p2, p3, t) => {
+            const u = 1 - t;
+            return u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3;
+          };
+          // Phase A endpoints: each ring arrives at its orbit start moving tangentially
+          // («я» at θ=π moving up, «ты» at θ=0 moving down — the orbit's clockwise tangent)
+          const A_ME = [[-280, 2080], [60, 1480], [260, 1020], [260, 820]];
+          const A_YOU = [[1360, -300], [1080, 200], [820, 620], [820, 820]];
+          const st = { a: 0, b: 0, sep: 0 };
+          const me = document.getElementById("s1-ring-me");
+          const you = document.getElementById("s1-ring-you");
+
+          // ghosts: 3 lagged copies per ring
+          const NS = "http://www.w3.org/2000/svg";
+          const ghostHost = document.getElementById("s1-ghosts");
+          const ghosts = [];
+          [["#f28ca2", 0], ["#84b9ef", 1]].forEach(([color, who]) => {
+            for (let k = 1; k <= 3; k++) {
+              const g = document.createElementNS(NS, "circle");
+              g.setAttribute("r", "150");
+              g.setAttribute("fill", "none");
+              g.setAttribute("stroke", color);
+              g.setAttribute("stroke-width", String(68 - k * 14));
+              g.setAttribute("stroke-opacity", String(0.3 - k * 0.08));
+              ghostHost.appendChild(g);
+              ghosts.push({ el: g, who, lag: k });
+            }
+          });
+
+          function posAt(a, b, who) {
+            if (b <= 0) {
+              const P = who === 0 ? A_ME : A_YOU;
+              return [bez(P[0][0], P[1][0], P[2][0], P[3][0], a), bez(P[0][1], P[1][1], P[2][1], P[3][1], a)];
+            }
+            const theta = Math.PI + 2 * Math.PI * b + (who === 0 ? 0 : Math.PI);
+            const R = 280 - (280 - LOCK_HALF) * b;
+            return [C.x + R * Math.cos(theta), C.y + R * Math.sin(theta)];
+          }
+          function render() {
+            const [mx, my] = posAt(st.a, st.b, 0);
+            const [yx, yy] = posAt(st.a, st.b, 1);
+            me.setAttribute("cx", (mx - st.sep).toFixed(2));
+            me.setAttribute("cy", my.toFixed(2));
+            you.setAttribute("cx", (yx + st.sep).toFixed(2));
+            you.setAttribute("cy", yy.toFixed(2));
+            ghosts.forEach((g) => {
+              // lag in path-space: step back along whichever phase is active
+              const la = Math.max(0, st.a - g.lag * 0.045);
+              const lb = st.b > 0 ? Math.max(0, st.b - g.lag * 0.035) : 0;
+              const [gx, gy] = posAt(st.b > 0 && lb === 0 ? 1 : la, lb, g.who);
+              g.el.setAttribute("cx", gx.toFixed(2));
+              g.el.setAttribute("cy", gy.toFixed(2));
+              // ghosts die as the rings lock — nothing trails a thing at rest
+              const fade = st.b >= 1 ? 0 : 1;
+              g.el.setAttribute("opacity", String(fade));
+            });
+          }
+          render();
+
+          // Phase A — fly in, decelerating into the near miss
+          tl.to(st, { a: 1, duration: 0.9, ease: "power2.out", onUpdate: render }, 0.12);
+          // Phase B — the pull: one clockwise turn, spiralling in, accelerating into the lock
+          tl.to(st, { b: 1, duration: T_LOCK - 1.08, ease: "power2.in", onUpdate: render }, 1.08);
+          // Impact → recoil → settle (causal chain, same frame as the lock)
+          tl.fromTo(st, { sep: 0 }, { sep: 12, duration: 0.07, ease: "power2.out", onUpdate: render, immediateRender: false }, T_LOCK);
+          tl.to(st, { sep: 0, duration: 0.5, ease: "back.out(2.2)", onUpdate: render }, T_LOCK + 0.07);
+          const sqMe = svgT("#s1-ring-me-g", 415, 820);
+          const sqYou = svgT("#s1-ring-you-g", 665, 820);
+          [sqMe, sqYou].forEach((h) => {
+            tl.fromTo(h.p, { sx: 1, sy: 1 }, { sx: 0.9, sy: 1.07, duration: 0.07, ease: "power2.out", onUpdate: h.apply, immediateRender: false }, T_LOCK);
+            tl.to(h.p, { sx: 1, sy: 1, duration: 0.55, ease: "back.out(2.4)", onUpdate: h.apply }, T_LOCK + 0.07);
+          });
+
+          // The lens flashes in (spring pop) and a flash ring expands from it
+          const lens = svgT("#s1-lens", 540, 820, 0);
+          tl.fromTo(lens.p, { sx: 0, sy: 0 }, { sx: 1, sy: 1, duration: 0.42, ease: "back.out(2)", onUpdate: lens.apply, immediateRender: false }, T_LOCK);
+          tl.fromTo("#s1-flash", { attr: { r: 60 }, strokeWidth: 8, opacity: 0 }, { attr: { r: 640 }, strokeWidth: 1, duration: 0.7, ease: "power3.out", immediateRender: false }, T_LOCK);
+          tl.fromTo("#s1-flash", { opacity: 0.9 }, { opacity: 0, duration: 0.7, ease: "power1.in", immediateRender: false }, T_LOCK);
+          gsap.set("#s1-flash", { opacity: 0 });
+
+          // The shockwave runs through the field, ring by ring, outward
+          field.forEach((c, i) => {
+            tl.to(c, { strokeOpacity: 0.38, strokeWidth: 3, duration: 0.12, ease: "power2.out" }, T_LOCK + 0.04 + i * 0.045);
+            tl.to(c, { strokeOpacity: 0.1, strokeWidth: 2, duration: 0.5, ease: "power2.in" }, T_LOCK + 0.16 + i * 0.045);
+          });
+
+          // Wordmark — waterfall entry: binary opacity, whip up from below, gaps shrinking
+          const word = "Тандем";
+          const wm = document.getElementById("s1-wordmark");
+          [...word].forEach((ch) => {
+            const s = document.createElement("span");
+            s.className = "s1-ch";
+            s.textContent = ch;
+            wm.appendChild(s);
+          });
+          const chars = wm.querySelectorAll(".s1-ch");
+          let at = 2.56;
+          let gap = 0.05;
+          chars.forEach((c, i) => {
+            const heavy = i === 0;
+            tl.set(c, { opacity: 1 }, at);
+            tl.fromTo(c, { y: heavy ? 80 : 56 }, { y: 0, duration: heavy ? 0.2 : 0.15, ease: "power4.out", immediateRender: false }, at);
+            at += gap;
+            gap *= 0.84;
+          });
+          gsap.set(chars, { y: 80 });
+          tl.fromTo("#s1-tagline", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 2.95);
+
+          // Stillness 3.25 → 3.60, then the dive: push INTO the lens, mid-push at the cut
+          tl.fromTo("#s1-world", { scale: 1, filter: "blur(0px)" }, { scale: 6, filter: "blur(18px)", duration: 0.334, ease: "power4.in", immediateRender: false }, 3.6);
+          tl.to(["#s1-glow-rose", "#s1-glow-sky"], { opacity: 0, duration: 0.3, ease: "power2.in" }, 3.64);
+
+          window.__timelines["s01-hook"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

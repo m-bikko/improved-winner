@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<!--
+  «Пересечение» — Тандем, моушн-шоурил (25.0s, 1920×1080, 30fps).
+  Root orchestrator: six scene slots (sequential, zero overlap) + persistent HUD, the
+  beat-cut music bed, peak-aligned SFX, and the master seams stamped from ledger.json.
+  Grid 122 BPM: drop 3.945 · cuts 7.879 / 11.814 / 15.748 · arrival 19.682 · final hit 23.617.
+-->
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>Тандем — Пересечение</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #0d0c0b;
+      }
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        /* opaque stage ground: cut-the-curve opens a summed-opacity < 1 window mid-seam */
+        background: #0d0c0b;
+      }
+      .scene {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      #el-hud {
+        z-index: 50;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-ynjl" id="root" data-composition-id="main" data-start="0" data-duration="25" data-width="1920" data-height="1080">
+      <!-- Scenes: two bars each on the 122 BPM grid -->
+      <div data-hf-id="hf-4ive" id="el-s1" class="scene" data-composition-id="s1-hook" data-composition-src="compositions/s1-hook.html" data-start="0" data-duration="3.945" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div data-hf-id="hf-bii5" id="el-s2" class="scene" data-composition-id="s2-nudge" data-composition-src="compositions/s2-nudge.html" data-start="3.945" data-duration="3.934" data-track-index="2" data-width="1920" data-height="1080"></div>
+      <div data-hf-id="hf-ke1e" id="el-s3" class="scene" data-composition-id="s3-checkin" data-composition-src="compositions/s3-checkin.html" data-start="7.879" data-duration="3.935" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div data-hf-id="hf-3sgv" id="el-s4" class="scene" data-composition-id="s4-diary" data-composition-src="compositions/s4-diary.html" data-start="11.814" data-duration="3.934" data-track-index="2" data-width="1920" data-height="1080"></div>
+      <div data-hf-id="hf-05qj" id="el-s5" class="scene" data-composition-id="s5-decided" data-composition-src="compositions/s5-decided.html" data-start="15.748" data-duration="3.934" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div data-hf-id="hf-nyn8" id="el-s6" class="scene" data-composition-id="s6-finale" data-composition-src="compositions/s6-finale.html" data-start="19.682" data-duration="5.318" data-track-index="2" data-width="1920" data-height="1080"></div>
+
+      <!-- Persistent showreel HUD: chapters 01–05 -->
+      <div data-hf-id="hf-j47x" id="el-hud" class="scene" data-composition-id="hud" data-composition-src="compositions/hud.html" data-start="3.945" data-duration="17.705" data-track-index="5" data-width="1920" data-height="1080"></div>
+
+      <!-- Music bed: HeyGen catalog track (uqr-showreel), 2 intro bars + 10 energy bars,
+           2-bar splice hidden under the 11.814 cut, crash tail after the 23.617 hit -->
+      <audio data-hf-id="hf-137a" id="el-bgm" src="assets/bgm/showreel-bed.wav" data-start="0" data-duration="25" data-track-index="10" data-volume="0.9"></audio>
+
+      <!-- SFX: data-start = event time − the file's measured peak offset -->
+      <!-- s1: rings fly in, lock, the dive into the lens builds into the drop -->
+      <audio data-hf-id="hf-qdw3" id="sfx-rings-in" src="assets/sfx/whoosh.mp3" data-start="0.12" data-duration="0.57" data-track-index="20" data-volume="0.4"></audio>
+      <audio data-hf-id="hf-f9tg" id="sfx-lock" src="assets/sfx/impact-bass-1.mp3" data-start="2.383" data-duration="1.4" data-track-index="21" data-volume="0.55"></audio>
+      <audio data-hf-id="hf-kjd2" id="sfx-lock-spark" src="assets/sfx/sparkle.mp3" data-start="2.43" data-duration="1.3" data-track-index="22" data-volume="0.3"></audio>
+      <audio data-hf-id="hf-fhx3" id="sfx-dive" src="assets/sfx/whoosh-cinematic.mp3" data-start="1.396" data-duration="2.7" data-track-index="23" data-volume="0.45"></audio>
+      <!-- s2: press, heart flight, arrival -->
+      <audio data-hf-id="hf-3i65" id="sfx-press" src="assets/sfx/click-soft.mp3" data-start="4.363" data-duration="0.37" data-track-index="24" data-volume="0.6"></audio>
+      <audio data-hf-id="hf-p28e" id="sfx-heart-fly" src="assets/sfx/whoosh-short.mp3" data-start="4.76" data-duration="0.57" data-track-index="25" data-volume="0.35"></audio>
+      <audio data-hf-id="hf-rqja" id="sfx-arrive" src="assets/sfx/ping.mp3" data-start="5.584" data-duration="1.3" data-track-index="26" data-volume="0.4"></audio>
+      <audio data-hf-id="hf-qgpx" id="sfx-seam-23" src="assets/sfx/whoosh-short.mp3" data-start="7.714" data-duration="0.57" data-track-index="27" data-volume="0.38"></audio>
+      <!-- s3: two cursors pick states -->
+      <audio data-hf-id="hf-9yer" id="sfx-pick-1" src="assets/sfx/pop.mp3" data-start="8.987" data-duration="0.72" data-track-index="28" data-volume="0.34"></audio>
+      <audio data-hf-id="hf-bmg4" id="sfx-pick-2" src="assets/sfx/pop.mp3" data-start="9.237" data-duration="0.72" data-track-index="29" data-volume="0.3"></audio>
+      <audio data-hf-id="hf-ufmb" id="sfx-pick-3" src="assets/sfx/pop.mp3" data-start="9.477" data-duration="0.72" data-track-index="30" data-volume="0.34"></audio>
+      <audio data-hf-id="hf-p2dx" id="sfx-pick-4" src="assets/sfx/pop.mp3" data-start="9.727" data-duration="0.72" data-track-index="31" data-volume="0.3"></audio>
+      <audio data-hf-id="hf-n3ih" id="sfx-pick-5" src="assets/sfx/pop.mp3" data-start="9.967" data-duration="0.72" data-track-index="32" data-volume="0.34"></audio>
+      <audio data-hf-id="hf-y2op" id="sfx-pick-6" src="assets/sfx/pop.mp3" data-start="10.217" data-duration="0.72" data-track-index="33" data-volume="0.3"></audio>
+      <audio data-hf-id="hf-99tq" id="sfx-seam-34" src="assets/sfx/whoosh.mp3" data-start="11.649" data-duration="0.57" data-track-index="34" data-volume="0.45"></audio>
+      <!-- s4: ring segments, count, bars -->
+      <audio data-hf-id="hf-ie15" id="sfx-count" src="assets/sfx/typing.mp3" data-start="12.10" data-duration="1.4" data-track-index="35" data-volume="0.16"></audio>
+      <audio data-hf-id="hf-fx01" id="sfx-ring-close" src="assets/sfx/chime.mp3" data-start="13.36" data-duration="1.6" data-track-index="36" data-volume="0.26"></audio>
+      <audio data-hf-id="hf-aq6l" id="sfx-seam-45" src="assets/sfx/whoosh-short.mp3" data-start="15.583" data-duration="0.57" data-track-index="37" data-volume="0.38"></audio>
+      <!-- s5: messages, the collapse into a decision -->
+      <audio data-hf-id="hf-qv04" id="sfx-msg-1" src="assets/sfx/key-press.mp3" data-start="16.161" data-duration="0.4" data-track-index="38" data-volume="0.45"></audio>
+      <audio data-hf-id="hf-r7my" id="sfx-msg-2" src="assets/sfx/key-press.mp3" data-start="16.653" data-duration="0.4" data-track-index="39" data-volume="0.45"></audio>
+      <audio data-hf-id="hf-lvip" id="sfx-msg-3" src="assets/sfx/key-press.mp3" data-start="16.899" data-duration="0.4" data-track-index="40" data-volume="0.45"></audio>
+      <audio data-hf-id="hf-ojqt" id="sfx-msg-4" src="assets/sfx/key-press.mp3" data-start="17.144" data-duration="0.4" data-track-index="41" data-volume="0.45"></audio>
+      <audio data-hf-id="hf-mlu4" id="sfx-decided" src="assets/sfx/sparkle.mp3" data-start="18.18" data-duration="1.5" data-track-index="42" data-volume="0.34"></audio>
+      <audio data-hf-id="hf-beic" id="sfx-arrival" src="assets/sfx/whoosh.mp3" data-start="19.517" data-duration="0.57" data-track-index="43" data-volume="0.48"></audio>
+      <!-- s6: odometer, rings return, final lock -->
+      <audio data-hf-id="hf-snpf" id="sfx-odometer" src="assets/sfx/typing.mp3" data-start="19.95" data-duration="1.2" data-track-index="44" data-volume="0.18"></audio>
+      <audio data-hf-id="hf-2ezz" id="sfx-final" src="assets/sfx/impact-bass-1.mp3" data-start="23.54" data-duration="1.46" data-track-index="45" data-volume="0.6"></audio>
+      <audio data-hf-id="hf-wn08" id="sfx-final-spark" src="assets/sfx/sparkle.mp3" data-start="23.60" data-duration="1.4" data-track-index="46" data-volume="0.34"></audio>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["main"] = tl;
+
+      // <seams:auto> — generated by seam-stamp.mjs from ledger.json; do not hand-edit.
+      // Regenerate: node <motion-doctrine>/scripts/seam-stamp.mjs --ledger ledger.json --write index.html
+      gsap.set("#el-s2", { autoAlpha: 1, xPercent: 0, yPercent: 0, scale: 1, filter: "blur(0px)", transformOrigin: "50% 50%" });
+      gsap.set(["#el-s3","#el-s4","#el-s5"], { autoAlpha: 0, xPercent: 0, yPercent: 0, scale: 1, filter: "blur(0px)", transformOrigin: "50% 50%" });
+      gsap.set("#el-s6", { autoAlpha: 0, scale: 1.25, filter: "blur(18px)", xPercent: 0, yPercent: 0, transformOrigin: "50% 50%" });
+      
+      // SEAM — hook→nudge (Z-push through the lens) : hand-authored Tier-A Z-push: the camera dives into the white lens (s1 #s1-world ×6, power4.in, ~58/s at the cut); s2's #s2-iris continues at the matched speed (power2.out 6→18) and dissolves. No carrier row: the gate's carrier-size check compares cut−1f with cut+1f and cannot hold for a push this fast; verified by snapshots instead. (cut @3.945)
+      // morph: carrier handoff is Tier-A — author it by hand and keep the carrier row in ledger.json
+      
+      // SEAM — nudge→checkin : cut-the-curve LEFT (cut @7.879)
+      tl.to("#el-s2", { xPercent: -12, autoAlpha: 0, duration: 0.34, ease: "power3.in" }, 7.539);
+      tl.set("#el-s2", { autoAlpha: 0 }, 7.879);
+      tl.fromTo("#el-s3", { xPercent: 10, autoAlpha: 0.35 }, { xPercent: 0, autoAlpha: 1, duration: 0.42, ease: "power4.out", immediateRender: false }, 7.879);
+      
+      // SEAM — checkin→diary (audio splice under this cut) : cut-the-curve LEFT (cut @11.814)
+      tl.to("#el-s3", { xPercent: -12, autoAlpha: 0, duration: 0.34, ease: "power3.in" }, 11.474);
+      tl.set("#el-s3", { autoAlpha: 0 }, 11.814);
+      tl.fromTo("#el-s4", { xPercent: 10, autoAlpha: 0.35 }, { xPercent: 0, autoAlpha: 1, duration: 0.42, ease: "power4.out", immediateRender: false }, 11.814);
+      
+      // SEAM — diary→decided : cut-the-curve LEFT (cut @15.748)
+      tl.to("#el-s4", { xPercent: -12, autoAlpha: 0, duration: 0.34, ease: "power3.in" }, 15.408);
+      tl.set("#el-s4", { autoAlpha: 0 }, 15.748);
+      tl.fromTo("#el-s5", { xPercent: 10, autoAlpha: 0.35 }, { xPercent: 0, autoAlpha: 1, duration: 0.42, ease: "power4.out", immediateRender: false }, 15.748);
+      
+      // SEAM — decided→finale (ARRIVAL) : inverse zoom-through (cut @19.682)
+      tl.to("#el-s5", { scale: 0.8, filter: "blur(18px)", duration: 0.21, ease: "power3.in" }, 19.472);
+      tl.to("#el-s5", { autoAlpha: 0, duration: 0.21, ease: "none" }, 19.472);
+      tl.set("#el-s5", { autoAlpha: 0 }, 19.682);
+      tl.fromTo("#el-s6", { autoAlpha: 0.15, scale: 1.25, filter: "blur(18px)" }, { autoAlpha: 1, scale: 1.0, filter: "blur(0px)", duration: 0.5, ease: "expo.out", immediateRender: false }, 19.682);
+      
+      // </seams:auto>
+
+      tl.to({}, { duration: 25 }, 0); // full-span anchor: main.duration() == composition total
+    </script>
+  </body>
+</html>

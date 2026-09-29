@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<!--
+  Scene 2 — «Думаю о тебе» (3.945 → 7.879s, local 0 → 3.934). THE DROP.
+  Enters as an iris: the white lens from s1 keeps growing (Z-push continues) and dissolves,
+  revealing the scene. The «я» ring-cursor presses the app's nudge button on the beat (0.49):
+  press-release spring + ripples; a heart flies an arc to «ты» leaving a dotted trail with
+  orbiting particles; on the downbeat (1.97) «ты» pulses and the notification lands
+  («думает о тебе» — the app's own push text); then the button shows the app's real cooling
+  state («Отправлено — ещё 30 мин»). Exit: master cut-the-curve LEFT.
+  Rules: press-release-spring, cursor-click-ripple, particle-burst, spring-pop-entrance,
+  waterfall-entry.
+-->
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-cyrillic-ext-wght-normal.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-cyrillic-wght-normal.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-latin-ext-wght-normal.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: block; src: url("assets/fonts/nunito-latin-wght-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-cyrillic-ext.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-cyrillic.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 300 700; font-display: block; src: url("assets/fonts/cormorant-garamond-italic-300-700-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-cyrillic-ext.woff2") format("woff2"); unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-cyrillic.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+        @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url("assets/fonts/ibm-plex-mono-normal-500-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+        #root {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          background: #121110;
+          font-family: "Nunito", sans-serif;
+          color: #f3efe9;
+        }
+        .s2-glow {
+          position: absolute;
+          border-radius: 50%;
+          pointer-events: none;
+        }
+        #s2-glow-a {
+          left: 700px;
+          top: 120px;
+          width: 1400px;
+          height: 1400px;
+          background: radial-gradient(closest-side, rgba(229, 118, 140, 0.16), rgba(229, 118, 140, 0));
+        }
+        #s2-glow-b {
+          left: 1180px;
+          top: -420px;
+          width: 1000px;
+          height: 1000px;
+          background: radial-gradient(closest-side, rgba(132, 185, 239, 0.14), rgba(132, 185, 239, 0));
+        }
+        #s2-head {
+          position: absolute;
+          left: 150px;
+          top: 250px;
+          width: 760px;
+        }
+        .s2-line {
+          display: block;
+          overflow: visible;
+        }
+        #s2-h1 {
+          font-size: 124px;
+          line-height: 1.12;
+          font-weight: 900;
+          letter-spacing: -0.03em;
+        }
+        #s2-h2 {
+          margin-top: 2px;
+          font-family: "Cormorant Garamond", serif;
+          font-style: italic;
+          font-weight: 600;
+          font-size: 104px;
+          line-height: 1.05;
+          color: #f4a3b3;
+        }
+        #s2-body {
+          margin-top: 44px;
+          width: 620px;
+          font-size: 38px;
+          line-height: 1.35;
+          font-weight: 600;
+          color: #a39b92;
+        }
+        .s2-w {
+          display: inline-block;
+          opacity: 0;
+        }
+        #s2-svg {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 1920px;
+          height: 1080px;
+          overflow: visible;
+        }
+        .s2-avatar-label {
+          position: absolute;
+          width: 120px;
+          height: 120px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 46px;
+          font-weight: 900;
+        }
+        #s2-button {
+          position: absolute;
+          left: 1020px;
+          top: 534px;
+          width: 600px;
+          height: 132px;
+          border-radius: 66px;
+          background: #e5768c;
+          overflow: hidden;
+          box-shadow: 0 30px 70px -30px rgba(229, 118, 140, 0.8);
+        }
+        .s2-btn-label {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 18px;
+          font-size: 48px;
+          font-weight: 800;
+          letter-spacing: -0.01em;
+        }
+        #s2-btn-on {
+          color: #1c1a17;
+        }
+        #s2-btn-off {
+          color: #a39b92;
+          font-size: 40px;
+          opacity: 0;
+        }
+        #s2-note {
+          position: absolute;
+          left: 1000px;
+          top: 214px;
+          width: 500px;
+          height: 132px;
+          border-radius: 40px;
+          background: #1c1a18;
+          box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.07), 0 24px 60px -20px rgba(0, 0, 0, 0.7);
+          display: flex;
+          align-items: center;
+          gap: 22px;
+          padding: 0 30px;
+          transform-origin: 100% 50%;
+          opacity: 0;
+        }
+        #s2-note-text {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        #s2-note-title {
+          font-size: 40px;
+          font-weight: 800;
+          line-height: 1.1;
+        }
+        #s2-note-sub {
+          font-size: 28px;
+          font-weight: 600;
+          color: #a39b92;
+        }
+        #s2-iris {
+          position: absolute;
+          left: 901px;
+          top: 305px;
+          width: 118px;
+          height: 270px;
+          border-radius: 50%;
+          background: #f3efe9;
+          z-index: 20;
+        }
+        #s2-grain {
+          position: absolute;
+          inset: 0;
+          opacity: 0.06;
+          pointer-events: none;
+        }
+      </style>
+
+      <div data-hf-id="hf-9ct1" id="root" data-composition-id="s2-nudge" data-start="0" data-width="1920" data-height="1080" data-duration="3.934">
+        <div data-hf-id="hf-u1l1" id="s2-glow-a" class="s2-glow" data-layout-allow-overflow=""></div>
+        <div data-hf-id="hf-07au" id="s2-glow-b" class="s2-glow" data-layout-allow-overflow=""></div>
+
+        <div data-hf-id="hf-f9ll" id="s2-head">
+          <span data-hf-id="hf-e4uc" id="s2-h1" class="s2-line"></span>
+          <span data-hf-id="hf-msq7" id="s2-h2" class="s2-line"></span>
+          <div data-hf-id="hf-cfvo" id="s2-body">Кнопка «Думаю о тебе» — без слов и без повода.</div>
+        </div>
+
+        <svg data-hf-id="hf-5eji" id="s2-svg" viewBox="0 0 1920 1080">
+          <g data-hf-id="hf-yxbr" id="s2-trail" />
+          <g data-hf-id="hf-ih65" id="s2-ripples-me" />
+          <g data-hf-id="hf-hvsk" id="s2-ripples-you" />
+          <g data-hf-id="hf-h4im" id="s2-you-g"><circle data-hf-id="hf-ilhq" cx="1600" cy="280" r="58" fill="#1a2a3c" stroke="#84b9ef" stroke-width="24" /></g>
+          <g data-hf-id="hf-xq2y" id="s2-particles" />
+          <g data-hf-id="hf-nd5z" id="s2-heart-g">
+            <path data-hf-id="hf-99pj" id="s2-heart" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" fill="#e5768c" transform="translate(-12 -12)" />
+          </g>
+        </svg>
+
+        <div data-hf-id="hf-dejp" id="s2-you-label" class="s2-avatar-label" style="left: 1540px; top: 220px; color: #84b9ef">ты</div>
+
+        <div data-hf-id="hf-qqt7" id="s2-button">
+          <div data-hf-id="hf-j21j" id="s2-btn-on" class="s2-btn-label">
+            <svg data-hf-id="hf-7iqa" width="46" height="46" viewBox="0 0 24 24"><path data-hf-id="hf-1r6l" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" fill="#1c1a17" /></svg>
+            <span data-hf-id="hf-1aq7">Думаю о тебе</span>
+          </div>
+          <div data-hf-id="hf-s8wz" id="s2-btn-off" class="s2-btn-label">
+            <svg data-hf-id="hf-ko12" width="40" height="40" viewBox="0 0 24 24"><path data-hf-id="hf-ojzc" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" fill="none" stroke="#a39b92" stroke-width="2.2" /></svg>
+            <span data-hf-id="hf-zez2">Отправлено — ещё 30 мин</span>
+          </div>
+        </div>
+
+        <!-- «я» — the ring-cursor that presses; drawn above the button -->
+        <svg data-hf-id="hf-eoyu" id="s2-me-svg" style="position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: visible" viewBox="0 0 1920 1080">
+          <g data-hf-id="hf-6nj7" id="s2-me-g"><circle data-hf-id="hf-j850" id="s2-me" cx="1040" cy="850" r="58" fill="#3a1f27" stroke="#f28ca2" stroke-width="24" /></g>
+        </svg>
+        <div data-hf-id="hf-bka5" id="s2-me-label" class="s2-avatar-label" style="left: 980px; top: 790px; color: #f28ca2">я</div>
+
+        <div data-hf-id="hf-dg27" id="s2-note">
+          <svg data-hf-id="hf-cvki" width="64" height="64" viewBox="0 0 64 64"><circle data-hf-id="hf-yxl0" cx="32" cy="32" r="22" fill="#3a1f27" stroke="#f28ca2" stroke-width="9" /></svg>
+          <div data-hf-id="hf-ghed" id="s2-note-text">
+            <div data-hf-id="hf-wf39" id="s2-note-title">думает о тебе</div>
+            <div data-hf-id="hf-lq13" id="s2-note-sub">сейчас</div>
+          </div>
+          <svg data-hf-id="hf-fpqu" width="44" height="44" viewBox="0 0 24 24"><path data-hf-id="hf-q64d" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" fill="#e5768c" /></svg>
+        </div>
+
+        <div data-hf-id="hf-dipm" id="s2-iris"></div>
+
+        <svg data-hf-id="hf-uagp" id="s2-grain" width="1920" height="1080">
+          <filter data-hf-id="hf-s3m2" id="s2-noise"><feturbulence data-hf-id="hf-6739" type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="11" /><fecolormatrix data-hf-id="hf-skw8" type="saturate" values="0" /></filter>
+          <rect data-hf-id="hf-af5c" width="1920" height="1080" filter="url(#s2-noise)" />
+        </svg>
+      </div>
+
+      <script>
+        (function () {
+          const tl = gsap.timeline({ paused: true });
+          const NS = "http://www.w3.org/2000/svg";
+          const B = 0.4918; // one beat
+
+          // Scale an SVG node around a FIXED point by writing its transform attribute.
+          // Not GSAP svgOrigin: that needs the node's bbox, and inside a montage this
+          // sub-composition is not laid out yet when the timeline is built — every origin
+          // came out shifted. Pure numbers, seek-safe.
+          const svgT = (sel, cx, cy, s0 = 1) => {
+            const node = typeof sel === "string" ? document.querySelector(sel) : sel;
+            const p = { sx: s0, sy: s0 };
+            const apply = () => node.setAttribute("transform", `translate(${cx} ${cy}) scale(${p.sx.toFixed(4)} ${p.sy.toFixed(4)}) translate(${-cx} ${-cy})`);
+            apply();
+            return { p, apply };
+          };
+
+          // ── Iris: the s1 lens keeps growing (Z-push continues), then dissolves
+          // velocity-matched to s1's push: s1 ends at ds/dt = 5·4/0.345 ≈ 58/s (power4.in);
+          // power2.out starts at 2·Δ/D = 2·12/0.41 ≈ 58/s — one continuous move across the cut
+          tl.fromTo("#s2-iris", { scale: 6, opacity: 1 }, { scale: 18, duration: 0.41, ease: "power2.out" }, 0);
+          tl.to("#s2-iris", { opacity: 0, duration: 0.3, ease: "power1.in" }, 0);
+
+          // ── Headline: waterfall entry, word by word (binary opacity, from below)
+          const h1 = document.getElementById("s2-h1");
+          const h2 = document.getElementById("s2-h2");
+          const addWords = (host, text) =>
+            text.split(" ").map((w, i, arr) => {
+              const s = document.createElement("span");
+              s.className = "s2-w";
+              s.textContent = w + (i < arr.length - 1 ? " " : "");
+              host.appendChild(s);
+              return s;
+            });
+          const words = [...addWords(h1, "Одно касание"), ...addWords(h2, "и вы ближе")];
+          let at = 0.14;
+          let gap = 0.07;
+          words.forEach((w, i) => {
+            tl.set(w, { opacity: 1 }, at);
+            tl.fromTo(w, { y: i === 0 ? 76 : 50 }, { y: 0, duration: i === 0 ? 0.2 : 0.16, ease: "power4.out", immediateRender: false }, at);
+            at += gap;
+            gap *= 0.84;
+          });
+          gsap.set(words, { y: 76 });
+          tl.fromTo("#s2-body", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.55);
+
+          // ── Stage objects pop in under the iris
+          // short enough to settle before the press on the beat (0.44) — one owner of scale at a time
+          tl.fromTo("#s2-button", { scale: 0.82 }, { scale: 1, duration: 0.34, ease: "back.out(1.6)" }, 0.06);
+          const youT = svgT("#s2-you-g", 1600, 280, 0.4);
+          tl.fromTo(youT.p, { sx: 0.4, sy: 0.4 }, { sx: 1, sy: 1, duration: 0.45, ease: "back.out(1.7)", onUpdate: youT.apply, immediateRender: false }, 0.1);
+          tl.fromTo("#s2-you-label", { scale: 0.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.45, ease: "back.out(1.7)" }, 0.1);
+
+          // ── The «я» cursor travels to the button and presses ON the beat (0.49)
+          const meState = { x: 1040, y: 850 };
+          const meEl = document.getElementById("s2-me");
+          const meLabel = document.getElementById("s2-me-label");
+          const drawMe = () => {
+            meEl.setAttribute("cx", meState.x.toFixed(2));
+            meEl.setAttribute("cy", meState.y.toFixed(2));
+            meLabel.style.transform = `translate(${(meState.x - 1040).toFixed(2)}px, ${(meState.y - 850).toFixed(2)}px)`;
+          };
+          drawMe();
+          tl.to(meState, { x: 1150, y: 640, duration: 0.34, ease: "power3.inOut", onUpdate: drawMe }, 0.13);
+          const PRESS = B; // 0.492
+          // the press squashes the ring itself (its radius), wherever it happens to be
+          tl.fromTo(meEl, { attr: { r: 58 } }, { attr: { r: 47 }, duration: 0.07, ease: "power2.in", immediateRender: false }, PRESS - 0.05);
+          tl.to(meEl, { attr: { r: 58 }, duration: 0.4, ease: "back.out(2.2)" }, PRESS + 0.02);
+          // press-release-spring on the button: linear compression, spring recovery
+          tl.to("#s2-button", { scale: 0.94, duration: 0.07, ease: "none" }, PRESS - 0.05);
+          tl.to("#s2-button", { scale: 1, duration: 0.5, ease: "back.out(2.6)" }, PRESS + 0.02);
+          // cursor slides back home while the heart takes over
+          tl.to(meState, { x: 1040, y: 850, duration: 0.5, ease: "power3.inOut", onUpdate: drawMe }, PRESS + 0.3);
+
+          // ripples from the press point
+          const ripple = (host, cx, cy, color, t0) => {
+            for (let k = 0; k < 3; k++) {
+              const c = document.createElementNS(NS, "circle");
+              c.setAttribute("cx", String(cx));
+              c.setAttribute("cy", String(cy));
+              c.setAttribute("r", "40");
+              c.setAttribute("fill", "none");
+              c.setAttribute("stroke", color);
+              c.setAttribute("stroke-width", "6");
+              c.setAttribute("opacity", "0");
+              document.getElementById(host).appendChild(c);
+              tl.fromTo(c, { attr: { r: 50 }, opacity: 0.75 }, { attr: { r: 300 }, opacity: 0, duration: 0.8, ease: "power2.out", immediateRender: false }, t0 + k * 0.1);
+            }
+          };
+          ripple("s2-ripples-me", 1150, 640, "#f28ca2", PRESS);
+
+          // ── The heart flies an arc from the button to «ты»
+          const P = [[1320, 560], [1210, 330], [1470, 110], [1600, 280]];
+          const bez = (i, t) => {
+            const u = 1 - t;
+            return u * u * u * P[0][i] + 3 * u * u * t * P[1][i] + 3 * u * t * t * P[2][i] + t * t * t * P[3][i];
+          };
+          // trail: dots laid along the curve, lit as the heart passes
+          const DOTS = 22;
+          const dots = [];
+          for (let k = 1; k < DOTS; k++) {
+            const t = k / DOTS;
+            const d = document.createElementNS(NS, "circle");
+            d.setAttribute("cx", bez(0, t).toFixed(1));
+            d.setAttribute("cy", bez(1, t).toFixed(1));
+            d.setAttribute("r", "5");
+            d.setAttribute("fill", "#f28ca2");
+            d.setAttribute("opacity", "0");
+            document.getElementById("s2-trail").appendChild(d);
+            dots.push({ el: d, t });
+          }
+          // orbiting particles
+          const parts = [];
+          for (let k = 0; k < 6; k++) {
+            const p = document.createElementNS(NS, "circle");
+            p.setAttribute("r", k % 2 ? "6" : "9");
+            p.setAttribute("fill", k % 2 ? "#84b9ef" : "#f4a3b3");
+            p.setAttribute("opacity", "0");
+            document.getElementById("s2-particles").appendChild(p);
+            parts.push(p);
+          }
+          const heartG = document.getElementById("s2-heart-g");
+          const fly = { t: 0 };
+          const drawHeart = () => {
+            // visible only while in flight: a pure function of progress, seek-safe both ways
+            fly.on = fly.t > 0.001 && fly.t < 0.999 ? 1 : 0;
+            const x = bez(0, fly.t);
+            const y = bez(1, fly.t);
+            const s = 3.2 * (1 + 0.35 * Math.sin(Math.PI * fly.t));
+            heartG.setAttribute("transform", `translate(${x.toFixed(2)} ${y.toFixed(2)}) scale(${s.toFixed(3)})`);
+            heartG.setAttribute("opacity", String(fly.on));
+            dots.forEach((d) => {
+              const lit = fly.on > 0 && d.t <= fly.t ? Math.max(0, 1 - (fly.t - d.t) * 1.6) : 0;
+              d.el.setAttribute("opacity", lit.toFixed(3));
+            });
+            parts.forEach((p, k) => {
+              const a = fly.t * Math.PI * 5 + (k * Math.PI) / 3;
+              const r = 58 + 10 * Math.sin(fly.t * Math.PI * 3 + k);
+              p.setAttribute("cx", (x + r * Math.cos(a)).toFixed(2));
+              p.setAttribute("cy", (y + r * Math.sin(a)).toFixed(2));
+              p.setAttribute("opacity", (fly.on * (1 - fly.t * 0.6)).toFixed(3));
+            });
+          };
+          drawHeart();
+          tl.fromTo(fly, { t: 0 }, { t: 1, duration: 4 * B - PRESS - 0.06, ease: "power2.inOut", onUpdate: drawHeart, immediateRender: false }, PRESS + 0.06);
+
+          // ── Arrival ON the downbeat (1.967): «ты» pulses, ripples, the notification lands
+          const ARRIVE = 4 * B;
+          tl.fromTo(youT.p, { sx: 1, sy: 1 }, { sx: 1.24, sy: 1.24, duration: 0.08, ease: "power2.out", onUpdate: youT.apply, immediateRender: false }, ARRIVE);
+          tl.to(youT.p, { sx: 1, sy: 1, duration: 0.55, ease: "back.out(2.4)", onUpdate: youT.apply }, ARRIVE + 0.08);
+          tl.fromTo("#s2-you-label", { scale: 1 }, { scale: 1.24, duration: 0.08, ease: "power2.out", immediateRender: false }, ARRIVE);
+          tl.to("#s2-you-label", { scale: 1, duration: 0.55, ease: "back.out(2.4)" }, ARRIVE + 0.08);
+          ripple("s2-ripples-you", 1600, 280, "#84b9ef", ARRIVE);
+          tl.fromTo("#s2-note", { opacity: 0, scale: 0.6, x: 60 }, { opacity: 1, scale: 1, x: 0, duration: 0.5, ease: "back.out(1.6)" }, ARRIVE + 0.04);
+
+          // ── The button reports the app's cooling state (sequenced UI life), on the beat
+          const COOL = 5 * B;
+          tl.to("#s2-button", { backgroundColor: "#28241f", boxShadow: "0 30px 70px -30px rgba(229, 118, 140, 0)", duration: 0.3, ease: "power2.out" }, COOL);
+          tl.to("#s2-btn-on", { y: -60, opacity: 0, duration: 0.24, ease: "power3.in" }, COOL);
+          tl.fromTo("#s2-btn-off", { y: 60, opacity: 0 }, { y: 0, opacity: 1, duration: 0.38, ease: "power3.out" }, COOL + 0.12);
+
+          window.__timelines["s2-nudge"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>
