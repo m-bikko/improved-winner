@@ -1324,6 +1324,7 @@ export const en: Dict = {
   'cyc.tipsLibrary': 'Worth knowing',
   'cyc.needStart': 'Without a start date there is no entry',
   'cyc.addPast': 'Add a past one',
+  'cyc.editDates': 'Edit dates',
   'cyc.addPastHint': 'A couple of past cycles give a forecast straight away - otherwise it only appears after your next period.',
   'cyc.undoToday': 'Remove today’s entry',
   'tipCat.delay': 'Late period',

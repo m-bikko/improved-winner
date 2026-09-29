@@ -8,6 +8,7 @@ import { useSyncLang } from '@/lib/i18n/sync'
 import { useProfiles } from '@/features/profile/api'
 import { useUserId } from '@/auth/AuthProvider'
 import { useAppBadge } from '@/lib/badge'
+import { useViewportShift } from '@/lib/viewportShift'
 import { HeaderActionProvider, useHeaderActionSlot } from './HeaderAction'
 import { RefreshButton } from './RefreshButton'
 import { TabBar } from './TabBar'
@@ -59,6 +60,9 @@ function Chrome({ children }: { children: ReactNode }) {
   useSyncLang(profiles.data?.find((p) => p.userId === userId)?.language)
   // Здесь, а не в отдельном экране: бейдж относится ко всему приложению
   useAppBadge(true)
+  // Шапка и панель вкладок держатся за видимую область, а не за раскладку:
+  // на iOS после клавиатуры они разъезжались (см. viewportShift.ts)
+  useViewportShift()
 
   const { pathname } = useLocation()
   const section = sectionOf(pathname)
@@ -99,6 +103,7 @@ function Chrome({ children }: { children: ReactNode }) {
                     duration-200 border-b ${
                       scrolled ? 'border-line/70 bg-bg/85' : 'border-transparent bg-bg/0'
                     }`}
+        style={{ transform: 'translateY(var(--vv-top, 0px))' }}
       >
         <div className="mx-auto flex h-14 max-w-2xl items-center gap-1 px-3">
           {nested && (

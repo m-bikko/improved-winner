@@ -73,10 +73,11 @@ export function TabBar() {
     <>
       <nav
         aria-label={t('nav.sections')}
-        className={`fixed inset-x-0 bottom-0 z-40 border-t border-line/70 bg-surface/85 pb-safe
-                    backdrop-blur-xl backdrop-saturate-150 transition-transform duration-200 ${
-                      typing ? 'translate-y-full' : ''
-                    }`}
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-line/70 bg-surface/85 pb-safe
+                   backdrop-blur-xl backdrop-saturate-150 transition-transform duration-200"
+        // --vv-gap опускает панель к низу ВИДИМОЙ области: на iOS после клавиатуры
+        // раскладка и видимая область расходятся, и панель повисала посреди экрана
+        style={{ transform: typing ? 'translateY(100%)' : 'translateY(var(--vv-gap, 0px))' }}
       >
         <ul className="mx-auto grid h-[var(--tabbar-h)] max-w-lg grid-cols-5 px-1">
           {TABS.map((tab) => (

@@ -10,6 +10,7 @@ import {
   FileText,
   Info,
   Lightbulb,
+  Pencil,
   Plus,
   Settings,
   ShieldCheck,
@@ -304,6 +305,21 @@ function CycleBody({
               {t('cyc.undoToday')}
             </button>
           )}
+
+          {/* Правка дат - здесь, у отметки, а не только в истории в самом низу
+              страницы: под закономерностями, советами и базой знаний её
+              не находили, и ошибку в дате было негде исправить. «Изменить
+              даты» открывает последнюю запись - чаще всего правят именно её */}
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="secondary" className="min-h-12 px-3 text-[15px]" onClick={() => onEdit(last)}>
+              <Pencil size={17} aria-hidden />
+              {t('cyc.editDates')}
+            </Button>
+            <Button variant="secondary" className="min-h-12 px-3 text-[15px]" onClick={() => onEdit('new')}>
+              <CalendarPlus size={17} aria-hidden />
+              {t('cyc.addPast')}
+            </Button>
+          </div>
         </div>
       )}
 
