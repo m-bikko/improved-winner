@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -17,6 +18,38 @@ function shellValues(values: Record<string, string>): Plugin {
     name: 'shell-values',
     transformIndexHtml: (html) =>
       Object.entries(values).reduce((out, [key, value]) => out.replaceAll(key, value), html),
+  }
+}
+
+/**
+ * `version.json` в корне сайта: номер сборки и название приложения.
+ *
+ * По нему база раз в пять минут узнаёт, что вышла новая версия, и шлёт
+ * уведомление (см. миграцию release_notify). Название едет отсюда же:
+ * в базе его нет намеренно, оно задаётся сборкой.
+ *
+ * В кэш Service Worker файл не попадает - `globPatterns` json не берут, -
+ * и это правильно: он нужен серверу, а не приложению.
+ */
+function versionFile(appName: string): Plugin {
+  const commit = (): string => {
+    if (process.env.VERCEL_GIT_COMMIT_SHA) return process.env.VERCEL_GIT_COMMIT_SHA
+    try {
+      return execSync('git rev-parse HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+    } catch {
+      return `local-${Date.now()}`
+    }
+  }
+  return {
+    name: 'version-file',
+    apply: 'build',
+    generateBundle() {
+      this.emitFile({
+        type: 'asset',
+        fileName: 'version.json',
+        source: JSON.stringify({ version: commit(), name: appName, builtAt: new Date().toISOString() }),
+      })
+    },
   }
 }
 
@@ -53,6 +86,7 @@ export default defineConfig(({ mode }) => {
         __APP_LANG__: appLang,
         __APP_DESCRIPTION__: appDescription,
       }),
+      versionFile(appName),
       VitePWA({
         // 'autoUpdate', а не 'prompt'.
         //

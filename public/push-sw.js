@@ -70,6 +70,15 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close()
   const target = (event.notification.data && event.notification.data.url) || '/diary'
 
+  // Любой тап заодно проверяет, не вышла ли новая версия. Особенно нужно
+  // для уведомления «вышло обновление»: приложение, вернувшееся из фона,
+  // само сервер не спрашивает, а человек пришёл именно за новой версией
+  try {
+    self.registration.update()
+  } catch (e) {
+    // проверка обновления - не повод ронять переход по уведомлению
+  }
+
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
       // Если приложение уже открыто, переиспользуем окно: открывать вторую

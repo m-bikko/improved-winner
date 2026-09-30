@@ -42,6 +42,7 @@ import {
   useSavePeriod,
   useStartPeriod,
 } from './api'
+import { CycleBubble } from './CycleBubble'
 import { CycleCalendar } from './CycleCalendar'
 import { DaySheet } from './DaySheet'
 import { Patterns } from './Patterns'
@@ -253,6 +254,8 @@ function CycleBody({
 
   return (
     <div className="flex flex-col gap-3">
+      <CycleBubble state={state} today={today} />
+
       <Today state={state} stats={stats} />
 
       {/* Отметка «началась/закончилась сегодня» - сразу под статусом, а не под

@@ -3,7 +3,7 @@ title: Настройки уведомлений
 type: concept
 tags: [notifications, settings, privacy]
 created: 2026-09-08
-updated: 2026-09-08
+updated: 2026-09-30
 sources: [supabase/migrations/20260908190000_notification_settings.sql, src/features/profile/notifications.ts]
 ---
 
@@ -54,6 +54,11 @@ sources: [supabase/migrations/20260908190000_notification_settings.sql, src/feat
 `coalesce` вокруг проверки тихих часов обязателен: без строки профиля функция
 вернёт пусто, всё выражение станет `null`, то есть «не слать» - тишина
 на ровном месте.
+
+## Вид `updates`
+
+С 2026-09-30 - уведомление о новой версии приложения, см. [[app-updates]].
+Уходит обоим, как только продакшен начинает отдавать новую сборку.
 
 ## См. также
 

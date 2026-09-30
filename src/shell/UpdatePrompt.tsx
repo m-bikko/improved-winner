@@ -6,10 +6,8 @@ import { RefreshCw } from 'lucide-react'
 /**
  * Уведомление о новой версии.
  *
- * Стратегия 'prompt', а не 'autoUpdate' со skipWaiting: приложение живёт
- * на домашнем экране неделями, и подмена ассетов под работающей сессией даёт
- * «Failed to fetch dynamically imported module» на ленивых чанках. Пусть лучше
- * человек нажмёт кнопку тогда, когда ему удобно.
+ * Сейчас стратегия 'autoUpdate' (почему - в vite.config.ts): новая версия
+ * встаёт сама, и этот тост показывается только если воркер всё-таки ждёт.
  *
  * Плюс страховка: если ленивый чанк всё-таки не доехал (обновление приехало
  * между загрузкой страницы и переходом по разделу), перезагружаем страницу
@@ -25,6 +23,16 @@ export function UpdatePrompt() {
     updateServiceWorker,
   } = useRegisterSW({
     onRegisterError: (error) => console.error('Service Worker registration failed:', error),
+    // Браузер сам ищет новую версию только при навигации, а приложение
+    // на домашнем экране месяцами не навигирует: его сворачивают и
+    // разворачивают. Поэтому спрашиваем при каждом возвращении на экран -
+    // так выкаченное исправление доезжает без ручного «обнови страницу»
+    onRegisteredSW: (_url, registration) => {
+      if (!registration) return
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') void registration.update().catch(() => {})
+      })
+    },
   })
 
   useEffect(() => {

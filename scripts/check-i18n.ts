@@ -53,6 +53,7 @@ import { tr } from '../src/lib/i18n/index.tsx'
 import { TIP_CATEGORIES, tipsLibrary, tipsToday } from '../src/features/cycle/tips.ts'
 import { FLOW, MOODS, SYMPTOMS } from '../src/features/cycle/dayLog.ts'
 import { PHASES } from '../src/features/cycle/cycle.ts'
+import { BUBBLE_MOODS, PHRASES } from '../src/features/cycle/bubbleMood.ts'
 import { STATES, STATE_GROUPS } from '../src/features/checkin/states.ts'
 import { MEALS } from '../src/features/diary/types.ts'
 import { WORKOUT_KINDS } from '../src/features/diary/workouts.ts'
@@ -232,6 +233,11 @@ const FAMILIES: { prefix: string; ids: readonly string[]; suffixes?: string[] }[
   { prefix: 'goal', ids: GOAL_DIRECTIONS },
   { prefix: 'notif', ids: NOTIFICATION_KINDS.map((x) => x.id), suffixes: ['', '.hint'] },
   { prefix: 'band', ids: BANDS },
+  { prefix: 'bubble.title', ids: BUBBLE_MOODS },
+  {
+    prefix: 'bubble',
+    ids: BUBBLE_MOODS.flatMap((m) => Array.from({ length: PHRASES[m] }, (_, i) => `${m}.${i}`)),
+  },
   // Пустой префикс: эти ключи приходят из базы целиком. Функция состава тела
   // возвращает не «почему не посчитано», а сам ключ словаря.
   { prefix: '', ids: BODY_GAPS },

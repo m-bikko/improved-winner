@@ -342,7 +342,8 @@
     .aurora > *,
     .flicker,
     .shimmer,
-    .pair-text {
+    .pair-text,
+    .bubble-blink {
       animation: none !important;
     }
     /* Звёзды и блик - чистое украшение: без движения они не нужны вовсе */
@@ -514,5 +515,27 @@
     -webkit-box-decoration-break: clone;
     box-decoration-break: clone;
     animation: pair-pan 9s linear infinite;
+  }
+}
+
+/* Пузырёк цикла моргает: быстро, раз в несколько секунд. Моргание
+   делает лицо живым больше, чем любое другое движение */
+@keyframes bubble-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.12); }
+}
+@layer components {
+  .bubble-blink > ellipse,
+  .bubble-blink > circle {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .bubble-blink {
+    animation: bubble-blink 4.8s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .bubble-blink + .bubble-blink {
+    animation-delay: 0.04s;
   }
 }

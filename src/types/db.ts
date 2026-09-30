@@ -24,6 +24,24 @@ export type Database = {
         }
         Relationships: []
       }
+      app_releases: {
+        Row: {
+          announced: boolean
+          seen_at: string
+          version: string
+        }
+        Insert: {
+          announced?: boolean
+          seen_at?: string
+          version: string
+        }
+        Update: {
+          announced?: boolean
+          seen_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       checkin_asks: {
         Row: {
           created_at: string
@@ -861,6 +879,21 @@ export type Database = {
         }
         Relationships: []
       }
+      release_probes: {
+        Row: {
+          created_at: string
+          id: number
+        }
+        Insert: {
+          created_at?: string
+          id: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           created_at: string
@@ -1001,6 +1034,24 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      weigh_in_asks: {
+        Row: {
+          created_at: string
+          date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1242,6 +1293,7 @@ export type Database = {
         Args: { female: string; male: string; neutral: string; person: string }
         Returns: string
       }
+      check_release: { Args: never; Returns: undefined }
       checkin_cycle_patterns: {
         Args: { months?: number; owner: string; today: string }
         Returns: {
@@ -1392,6 +1444,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      release_seen: {
+        Args: { p_app_name: string; p_version: string }
+        Returns: number
+      }
       reorder_diary: { Args: { p_items: Json }; Returns: undefined }
       reorder_wishlists: { Args: { ids: string[] }; Returns: undefined }
       restore_checkin_day: {
@@ -1424,6 +1480,7 @@ export type Database = {
       send_love_notes: { Args: never; Returns: number }
       send_meal_reminders: { Args: never; Returns: number }
       send_nudge: { Args: never; Returns: string }
+      send_weigh_in_reminders: { Args: never; Returns: number }
       tg_escape: { Args: { input: string }; Returns: string }
       tg_notify_both: {
         Args: { kind: string; message: string }
