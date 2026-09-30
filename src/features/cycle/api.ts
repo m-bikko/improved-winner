@@ -28,6 +28,7 @@ function fromRow(row: Row): Period {
     note: row.note,
     periodDays: row.period_days,
     cycleDays: row.cycle_days,
+    longConfirmed: row.long_confirmed === true,
   }
 }
 
@@ -170,6 +171,24 @@ export function useSavePeriod() {
   })
 }
 
+/**
+ * «Этот длинный цикл был настоящим» - снимает подозрение в пропущенной
+ * менструации, и цикл снова идёт в прогноз и в предупреждения.
+ */
+export function useConfirmLongCycle() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string): Promise<void> => {
+      const { error } = await supabase
+        .from('periods')
+        .update({ long_confirmed: true, updated_at: new Date().toISOString() })
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['periods'] }),
+  })
+}
+
 export function useDeletePeriod() {
   const qc = useQueryClient()
   return useMutation({
@@ -191,6 +210,7 @@ function dayFromRow(row: DayRow): DayLog {
     mood: row.mood as Mood | null,
     symptoms: (row.symptoms ?? []) as Symptom[],
     note: row.note,
+    lhPositive: row.lh_positive,
   }
 }
 
@@ -230,6 +250,7 @@ export function useSaveCycleDay() {
         mood: log.mood,
         symptoms: log.symptoms,
         note: log.note?.trim() || null,
+        lh_positive: log.lhPositive,
         updated_at: new Date().toISOString(),
       })
       if (error) throw error

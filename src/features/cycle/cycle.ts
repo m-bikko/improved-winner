@@ -24,6 +24,11 @@ export type Period = {
   periodDays: number | null
   /** Расстояние до следующего начала. null у самой свежей записи. */
   cycleDays: number | null
+  /**
+   * Владелица подтвердила, что этот длинный цикл был настоящим, а не
+   * пропущенной менструацией. Снимает подозрение в пропуске.
+   */
+  longConfirmed: boolean
 }
 
 // Списком, а не объединением: по объединению нельзя пройтись во время
@@ -132,7 +137,12 @@ export type Delay = {
  * нет, а значит не было и предупреждения, хотя восемнадцатый день задержки
  * виден на экране.
  */
-export function delayOf(periods: Period[], today: string): Delay | null {
+export function delayOf(
+  periods: Period[],
+  today: string,
+  lutealDays = 14,
+  lhDates: readonly string[] = [],
+): Delay | null {
   const sorted = [...periods]
     .filter((p) => p.startedOn <= today)
     .sort((a, b) => (a.startedOn < b.startedOn ? -1 : 1))
@@ -145,8 +155,14 @@ export function delayOf(periods: Period[], today: string): Delay | null {
   if (last.endedOn === null) return null
 
   const stats = cycleStats(periods)
-  const measured = stats.usableCycle !== null
-  const base = measured ? Math.round(stats.usableCycle ?? 0) : NORMS.cycleMax
+  // Тест на овуляцию точнее любой статистики: задержка считается от него
+  const lhDate = lhAnchor(lhDates, last.startedOn, today)
+  const measured = lhDate !== null || stats.usableCycle !== null
+  const base = lhDate
+    ? daysBetween(last.startedOn, shiftDays(lhDate, 1 + lutealDays))
+    : measured
+      ? Math.round(stats.usableCycle ?? 0)
+      : NORMS.cycleMax
   const sinceLast = daysBetween(last.startedOn, today)
   const days = sinceLast - base
 
@@ -181,6 +197,74 @@ function average(values: number[]): number | null {
   return values.reduce((sum, v) => sum + v, 0) / values.length
 }
 
+/** Медиана: при чётном числе - среднее двух средних, как percentile_cont в базе. */
+function median(values: number[]): number | null {
+  if (values.length === 0) return null
+  const s = [...values].sort((a, b) => a - b)
+  const mid = Math.floor(s.length / 2)
+  const hi = s[mid] ?? 0
+  return s.length % 2 === 1 ? hi : ((s[mid - 1] ?? hi) + hi) / 2
+}
+
+/**
+ * Границы подозрения на пропущенную менструацию.
+ *
+ * 42-70 - это два цикла из нормального коридора подряд. «Обычный» цикл,
+ * с которым сравниваем, - до 41 дня: сорокадневный цикл бывает, и считать
+ * его половиной пропуска нельзя. Допуск 8 дней - обычный разброс двух
+ * циклов, сложенный вместе.
+ */
+export const GAP = { min: 42, max: 70, shortMax: 41, tolerance: 8 } as const
+
+/** Цикл, похожий на два обычных подряд: скорее всего, менструацию не отметили. */
+export type Gap = {
+  /** Начало записи, после которой, похоже, пропущена менструация. */
+  startedOn: string
+  /** Начало следующей записи. */
+  nextStart: string
+  days: number
+  /** Примерно когда была пропущенная: середина промежутка. */
+  missedAround: string
+}
+
+type CycleEntry = { startedOn: string; days: number; longConfirmed: boolean }
+
+/** Последние законченные циклы - окно, по которому считается всё остальное. */
+function recentCycles(periods: Period[]): CycleEntry[] {
+  return [...periods]
+    .sort((a, b) => (a.startedOn < b.startedOn ? -1 : 1))
+    .flatMap((p) =>
+      p.cycleDays === null
+        ? []
+        : [{ startedOn: p.startedOn, days: p.cycleDays, longConfirmed: p.longConfirmed === true }],
+    )
+    .slice(-NORMS.window)
+}
+
+/**
+ * Похож ли цикл на пропуск.
+ *
+ * Сравниваем с остальными циклами окна - обычными или подтверждёнными
+ * длинными. Если их нет совсем, 42-70 дней уже подозрительны: при
+ * единственном цикле такой длины вероятнее забытая отметка, чем цикл,
+ * - и об этом спрашивают, а не решают молча.
+ */
+function isGap(c: CycleEntry, all: CycleEntry[]): boolean {
+  if (c.longConfirmed || c.days < GAP.min || c.days > GAP.max) return false
+  const others = all
+    .filter((o) => o.startedOn !== c.startedOn)
+    .filter((o) => o.days >= PLAUSIBLE.cycleMin && (o.days <= GAP.shortMax || o.longConfirmed))
+    .map((o) => o.days)
+  const typical = median(others)
+  return typical === null || Math.abs(c.days - 2 * typical) <= GAP.tolerance
+}
+
+/** Последний положительный тест на овуляцию в цикле, начатом `since`, не позже `today`. */
+export function lhAnchor(lhDates: readonly string[], since: string, today: string): string | null {
+  const inCycle = lhDates.filter((d) => d > since && d <= today).sort()
+  return inCycle[inCycle.length - 1] ?? null
+}
+
 export type CycleStats = {
   /** Средняя длина цикла по последним завершённым. null - данных нет. */
   avgCycle: number | null
@@ -191,11 +275,20 @@ export type CycleStats = {
   /** Сколько завершённых циклов легло в среднее. */
   cyclesCounted: number
   /**
-   * То же среднее, но по значениям, прошедшим проверку на правдоподобие.
-   * Именно оно идёт в прогноз. null - считать не из чего, берётся умолчание.
+   * Длина цикла для прогноза: МЕДИАНА правдоподобных циклов без пропусков.
+   * null - считать не из чего, берётся умолчание.
+   *
+   * Медиана, а не среднее: один выброс - забытая отметка, болезнь,
+   * перелёт - сдвигал среднее на неделю и тянул за собой весь прогноз.
    */
   usableCycle: number | null
   usablePeriod: number | null
+  /** Сколько циклов легло в `usableCycle`. */
+  cyclesUsed: number
+  /** Разброс циклов, по которым считается прогноз. */
+  usableSpread: number | null
+  /** Циклы, похожие на пропущенную менструацию. В прогноз и предупреждения не идут. */
+  gaps: Gap[]
 }
 
 /**
@@ -206,10 +299,11 @@ export type CycleStats = {
  */
 export function cycleStats(periods: Period[]): CycleStats {
   const sorted = [...periods].sort((a, b) => (a.startedOn < b.startedOn ? -1 : 1))
-  const cycles = sorted
-    .map((p) => p.cycleDays)
-    .filter((d): d is number => d !== null)
-    .slice(-NORMS.window)
+  const recent = recentCycles(periods)
+  const gapped = recent.filter((c) => isGap(c, recent))
+  // Пропуски не участвуют ни в прогнозе, ни в предупреждениях: «цикл
+  // длиннее нормы» из-за забытой отметки пугал бы зря
+  const cycles = recent.filter((c) => !gapped.includes(c)).map((c) => c.days)
   const lengths = sorted
     .map((p) => p.periodDays)
     .filter((d): d is number => d !== null)
@@ -227,8 +321,17 @@ export function cycleStats(periods: Period[]): CycleStats {
     avgPeriod: average(lengths),
     spread: cycles.length >= 2 ? Math.max(...cycles) - Math.min(...cycles) : null,
     cyclesCounted: cycles.length,
-    usableCycle: average(plausibleCycles),
+    usableCycle: median(plausibleCycles),
     usablePeriod: average(plausibleLengths),
+    cyclesUsed: plausibleCycles.length,
+    usableSpread:
+      plausibleCycles.length >= 2 ? Math.max(...plausibleCycles) - Math.min(...plausibleCycles) : null,
+    gaps: gapped.map((c) => ({
+      startedOn: c.startedOn,
+      days: c.days,
+      nextStart: shiftDays(c.startedOn, c.days),
+      missedAround: shiftDays(c.startedOn, Math.round(c.days / 2)),
+    })),
   }
 }
 
@@ -253,6 +356,34 @@ export type CycleDay = {
   bleeding: boolean
   /** Задержка, если о ней уже стоит говорить. Считает `delayOf()`. */
   delay: Delay | null
+  /**
+   * На чём держится прогноз: `lh` - положительный тест на овуляцию в этом
+   * цикле, `history` - прошлые циклы, `default` - своих данных нет, 28 дней.
+   */
+  basis: 'lh' | 'history' | 'default'
+  /** Дата положительного теста, от которого посчитано, если он есть. */
+  lhDate: string | null
+  /**
+   * Честные границы следующего начала. Совпадают с `nextStart`, только когда
+   * уверенность высокая; пока циклов мало, это диапазон в несколько дней.
+   */
+  nextFrom: string
+  nextTo: string
+  /** Прогноз пока приблизительный: меньше трёх циклов и нет теста. */
+  approximate: boolean
+}
+
+/**
+ * На сколько дней в обе стороны может ошибиться прогноз.
+ *
+ * С тестом на овуляцию - два дня: лютеиновая фаза почти постоянна.
+ * По трём и больше циклам - половина их разброса, от одного до пяти.
+ * По одному-двум - три дня, без своих данных - четыре.
+ */
+function marginOf(basis: CycleDay['basis'], stats: CycleStats): number {
+  if (basis === 'lh') return 2
+  if (stats.cyclesUsed >= 3) return Math.min(5, Math.max(1, Math.ceil((stats.usableSpread ?? 0) / 2)))
+  return stats.cyclesUsed >= 1 ? 3 : 4
 }
 
 /**
@@ -267,6 +398,7 @@ export function cycleDay(
   periods: Period[],
   today: string,
   lutealDays: number,
+  lhDates: readonly string[] = [],
 ): CycleDay | null {
   // Последняя ИЗ НАЧАВШИХСЯ, а не просто последняя.
   //
@@ -285,12 +417,31 @@ export function cycleDay(
   if (!last) return null
 
   const stats = cycleStats(periods)
-  const cycleLength = Math.round(stats.usableCycle ?? DEFAULT_CYCLE_DAYS)
   const periodLength = Math.round(stats.usablePeriod ?? DEFAULT_PERIOD_DAYS)
-
   const day = daysBetween(last.startedOn, today) + 1
-  const nextStart = shiftDays(last.startedOn, cycleLength)
-  const ovulation = shiftDays(nextStart, -lutealDays)
+
+  // Тест на овуляцию - единственное место, где лютеиновая фаза даёт
+  // точность: овуляция на следующий день после положительного теста,
+  // а до менструации от неё почти всегда одно и то же число дней.
+  // Без теста считаем как раньше: от длины цикла назад.
+  const lhDate = lhAnchor(lhDates, last.startedOn, today)
+  let cycleLength: number
+  let nextStart: string
+  let ovulation: string
+  if (lhDate) {
+    ovulation = shiftDays(lhDate, 1)
+    nextStart = shiftDays(ovulation, lutealDays)
+    cycleLength = daysBetween(last.startedOn, nextStart)
+  } else {
+    cycleLength = Math.round(stats.usableCycle ?? DEFAULT_CYCLE_DAYS)
+    nextStart = shiftDays(last.startedOn, cycleLength)
+    ovulation = shiftDays(nextStart, -lutealDays)
+  }
+  const basis: CycleDay['basis'] = lhDate ? 'lh' : stats.usableCycle !== null ? 'history' : 'default'
+  const margin = marginOf(basis, stats)
+  // Окно расширяется на неуверенность прогноза, но не больше чем на три дня
+  // с каждой стороны: шире оно перестаёт что-либо значить
+  const windowMargin = basis === 'lh' ? 0 : Math.min(margin, 3)
 
   const bleeding =
     last.endedOn === null
@@ -313,12 +464,18 @@ export function cycleDay(
     nextStart,
     ovulation,
     // Сперматозоиды живут в половых путях до пяти суток, яйцеклетка - около
-    // суток. Отсюда окно: пять дней до овуляции и один после.
-    fertileFrom: shiftDays(ovulation, -5),
-    fertileTo: shiftDays(ovulation, 1),
+    // суток. Отсюда окно: пять дней до овуляции и один после - и шире на
+    // неуверенность прогноза, пока она есть.
+    fertileFrom: shiftDays(ovulation, -5 - windowMargin),
+    fertileTo: shiftDays(ovulation, 1 + windowMargin),
     daysToNext: daysBetween(today, nextStart),
     bleeding,
-    delay: delayOf(periods, today),
+    delay: delayOf(periods, today, lutealDays, lhDates),
+    basis,
+    lhDate,
+    nextFrom: shiftDays(nextStart, -margin),
+    nextTo: shiftDays(nextStart, margin),
+    approximate: basis !== 'lh' && stats.cyclesUsed < 3,
   }
 }
 
@@ -347,7 +504,12 @@ export type Warning = {
  * коридор, и сказать, что об этом стоит поговорить с врачом. Всё, что звучало
  * бы как объяснение причины, отсюда убрано сознательно.
  */
-export function warnings(periods: Period[], today: string): Warning[] {
+export function warnings(
+  periods: Period[],
+  today: string,
+  lutealDays = 14,
+  lhDates: readonly string[] = [],
+): Warning[] {
   const out: Warning[] = []
   const stats = cycleStats(periods)
   const sorted = [...periods].sort((a, b) => (a.startedOn < b.startedOn ? -1 : 1))
@@ -430,7 +592,7 @@ export function warnings(periods: Period[], today: string): Warning[] {
   // вести недавно, - и молчали до девяноста дней. Восемнадцатый день
   // задержки был виден на экране числом «День 47» и не сопровождался
   // ни словом.
-  const delay = delayOf(periods, today)
+  const delay = delayOf(periods, today, lutealDays, lhDates)
   if (delay !== null) {
     if (delay.level === 'absent') {
       out.push({
@@ -490,6 +652,7 @@ export function forecast(
   periods: Period[],
   lutealDays: number,
   count: number,
+  lhDates: readonly string[] = [],
 ): Forecast[] {
   const sorted = [...periods].sort((a, b) => (a.startedOn < b.startedOn ? -1 : 1))
   const last = sorted[sorted.length - 1]
@@ -499,17 +662,26 @@ export function forecast(
   const cycleLength = Math.round(stats.usableCycle ?? DEFAULT_CYCLE_DAYS)
   const periodLength = Math.round(stats.usablePeriod ?? DEFAULT_PERIOD_DAYS)
 
+  // С тестом на овуляцию ближайшее начало считается от него, дальше -
+  // обычным шагом: иначе календарь и карточка «Следующая» разошлись бы
+  const lhDate = lhAnchor(lhDates, last.startedOn, '9999-12-31')
+  const first = lhDate ? shiftDays(lhDate, 1 + lutealDays) : shiftDays(last.startedOn, cycleLength)
+
+  // Будущие окна - с тем же запасом на неуверенность, что и текущее:
+  // тест на овуляцию уточняет только свой цикл, а не следующие
+  const windowMargin = Math.min(marginOf(stats.usableCycle !== null ? 'history' : 'default', stats), 3)
+
   const out: Forecast[] = []
   for (let i = 1; i <= count; i++) {
-    const start = shiftDays(last.startedOn, cycleLength * i)
+    const start = shiftDays(first, cycleLength * (i - 1))
     const nextStart = shiftDays(start, cycleLength)
     const ovulation = shiftDays(nextStart, -lutealDays)
     out.push({
       start,
       end: shiftDays(start, periodLength - 1),
       ovulation,
-      fertileFrom: shiftDays(ovulation, -5),
-      fertileTo: shiftDays(ovulation, 1),
+      fertileFrom: shiftDays(ovulation, -5 - windowMargin),
+      fertileTo: shiftDays(ovulation, 1 + windowMargin),
     })
   }
   return out

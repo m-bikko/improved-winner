@@ -27,7 +27,7 @@ import type { Tone } from '@/ui/tones'
 import { useCheckins, useStreaks } from '@/features/checkin/api'
 import { STATE_BY_ID } from '@/features/checkin/states'
 import { dynamicKey, useT, type Key } from '@/lib/i18n'
-import { DEFAULT_SETTINGS, useCycleSettings, useCycleShared, usePeriods } from '@/features/cycle/api'
+import { DEFAULT_SETTINGS, useCycleDays, useCycleSettings, useCycleShared, usePeriods } from '@/features/cycle/api'
 import { cycleDay } from '@/features/cycle/cycle'
 import { useOccasions } from '@/features/dates/api'
 import { useDiaryDay } from '@/features/diary/api'
@@ -589,10 +589,14 @@ function Cycle({
   const own = settings.data?.trackingEnabled ?? false
   const periods = own ? (mine.data ?? []) : shared.data === true ? (theirs.data ?? []) : null
   const luteal = settings.data?.lutealDays ?? DEFAULT_SETTINGS.lutealDays
+  // Тот же кэш, что у раздела цикла: тест на овуляцию сдвигает фазу,
+  // и без него плитка разошлась бы с экраном, на который ведёт
+  const days = useCycleDays(own ? userId : shared.data === true ? partnerId : '')
 
   if (periods === null || periods.length === 0) return null
 
-  const state = cycleDay(periods, todayLocal(), luteal)
+  const lhDates = (days.data ?? []).filter((d) => d.lhPositive).map((d) => d.date)
+  const state = cycleDay(periods, todayLocal(), luteal, lhDates)
   if (!state) return null
 
   return (

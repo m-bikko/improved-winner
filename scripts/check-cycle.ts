@@ -67,6 +67,7 @@ function period(startedOn: string, endedOn: string | null, cycleDays: number | n
     note: null,
     periodDays: endedOn === null ? null : null,
     cycleDays,
+    longConfirmed: false,
   }
 }
 
@@ -258,6 +259,107 @@ async function schemaChecks(client: Client): Promise<void> {
   )
   await client.query('rollback to savepoint back')
 
+  // --- пропуск и тест на овуляцию: SQL и клиент ---
+  //
+  // Живой случай 30 сентября: 31 июля и 28 сентября без августа между ними.
+  // 59 дней шли в прогноз как средний цикл. Теперь это пропуск - и база,
+  // которая рассылает «началась по прогнозу», обязана считать так же,
+  // как экран.
+  await client.query('savepoint gap')
+  await client.query('delete from public.periods where user_id = $1', [uid])
+  await client.query('delete from public.cycle_days where user_id = $1', [uid])
+  await client.query(
+    `insert into public.periods (user_id, started_on, ended_on) values
+       ($1, '2026-07-31', '2026-08-04'), ($1, '2026-09-28', '2026-10-02')`,
+    [uid],
+  )
+  const gapMirror: Period[] = [
+    withPeriodDays(period('2026-07-31', '2026-08-04', 59), 5),
+    withPeriodDays(period('2026-09-28', '2026-10-02', null), 5),
+  ]
+  const compare = async (iso: string, lh: string[], label: string): Promise<void> => {
+    const { rows: sql } = await client.query<{
+      day: number
+      phase: string
+      cycle_length: number
+      next_start: string
+      ovulation: string
+    }>(
+      `select day, phase, cycle_length, next_start::text as next_start, ovulation::text as ovulation
+         from public.cycle_state($1, $2::date)`,
+      [uid, iso],
+    )
+    const ts = cycleDay(gapMirror, iso, 14, lh)
+    const row = sql[0]
+    const same =
+      row !== undefined &&
+      ts !== null &&
+      row.day === ts.day &&
+      row.phase === ts.phase &&
+      row.cycle_length === ts.cycleLength &&
+      row.next_start === ts.nextStart &&
+      row.ovulation === ts.ovulation
+    check(
+      same,
+      `${label}: SQL и клиент согласны на ${iso}`,
+      `SQL цикл ${row?.cycle_length} след ${row?.next_start} овул ${row?.ovulation} | ` +
+        `TS цикл ${ts?.cycleLength} след ${ts?.nextStart} овул ${ts?.ovulation}`,
+    )
+    const { rows: dsql } = await client.query<{ days: number | null; basis: string | null }>(
+      'select days, basis from public.cycle_delay($1, $2::date)',
+      [uid, iso],
+    )
+    const dts = delayOf(gapMirror, iso, 14, lh)
+    const drow = dsql[0]
+    check(
+      drow === undefined ? dts === null : dts !== null && drow.days === dts.days && drow.basis === dts.basis,
+      `${label}: задержка согласна на ${iso}`,
+      drow === undefined ? `оба молчат: ${dts === null}` : `SQL ${drow.days} ${drow.basis} | TS ${dts?.days} ${dts?.basis}`,
+    )
+  }
+  await compare('2026-10-05', [], 'Пропуск')
+  await compare('2026-11-10', [], 'Пропуск')
+  const { rows: usable } = await client.query<{ cycle_len: number | null }>(
+    'select cycle_len from public.cycle_usable($1)',
+    [uid],
+  )
+  check(
+    usable[0]?.cycle_len === null,
+    'Пропуск не идёт в длину цикла',
+    `база: ${usable[0]?.cycle_len ?? 'нет длины'} - ждали «нет», а не 59`,
+  )
+
+  await client.query(
+    `insert into public.cycle_days (user_id, date, lh_positive) values ($1, '2026-10-12', true)`,
+    [uid],
+  )
+  await compare('2026-10-14', ['2026-10-12'], 'Тест на овуляцию')
+  await compare('2026-11-20', ['2026-10-12'], 'Тест на овуляцию')
+  // Тест из прошлого цикла не влияет на нынешний
+  await compare('2026-10-10', ['2026-10-12'], 'Тест позже дня расчёта')
+
+  await mustFail(
+    client,
+    'Отметка только с отрицательным тестом всё ещё пустая',
+    `insert into public.cycle_days (user_id, date, lh_positive) values ($1, '2026-10-20', false)`,
+    [uid],
+  )
+
+  await client.query('update public.periods set long_confirmed = true where user_id = $1 and started_on = $2', [
+    uid,
+    '2026-07-31',
+  ])
+  const { rows: confirmed } = await client.query<{ cycle_len: number | null }>(
+    'select cycle_len from public.cycle_usable($1)',
+    [uid],
+  )
+  check(
+    confirmed[0]?.cycle_len === 59,
+    'Подтверждённый длинный цикл снова учитывается',
+    `база: ${confirmed[0]?.cycle_len ?? 'нет длины'}`,
+  )
+  await client.query('rollback to savepoint gap')
+
   // --- рассылка ---
   //
   // Час проверяем подбором пояса, где сейчас 13: ждать тринадцати часов
@@ -445,11 +547,89 @@ function logicChecks(): void {
     `овуляция ${longDay?.ovulation} (отсчёт вперёд дал бы 2026-07-21 - ошибка в 7 дней)`,
   )
 
-  // Фертильное окно: пять дней до овуляции и один после
+  // Фертильное окно: пять дней до овуляции и один после - и шире на
+  // неуверенность прогноза. Здесь два цикла, запас три дня с каждой стороны
   check(
-    longDay?.fertileFrom === '2026-07-23' && longDay.fertileTo === '2026-07-29',
-    'Фертильное окно - пять дней до и один после',
-    `${longDay?.fertileFrom} … ${longDay?.fertileTo}`,
+    longDay?.fertileFrom === '2026-07-20' && longDay.fertileTo === '2026-08-01',
+    'Фертильное окно - пять дней до и один после плюс запас на неуверенность',
+    `${longDay?.fertileFrom} … ${longDay?.fertileTo}, запас ${longDay ? '±3' : '-'}`,
+  )
+  check(
+    longDay?.approximate === true && longDay.nextFrom === '2026-08-08' && longDay.nextTo === '2026-08-14',
+    'По двум циклам прогноз - диапазон и помечен приблизительным',
+    `${longDay?.nextFrom} … ${longDay?.nextTo}, приблизительно: ${longDay?.approximate}`,
+  )
+
+  // Тест на овуляцию: окно ровно пять дней до и один после, без запаса,
+  // и следующая - от теста через лютеиновую фазу
+  const withLh = cycleDay(long, '2026-07-26', 14, ['2026-07-24'])
+  check(
+    withLh?.basis === 'lh' &&
+      withLh.ovulation === '2026-07-25' &&
+      withLh.nextStart === '2026-08-08' &&
+      withLh.fertileFrom === '2026-07-20' &&
+      withLh.fertileTo === '2026-07-26',
+    'Тест на овуляцию задаёт овуляцию и следующую менструацию',
+    `овуляция ${withLh?.ovulation}, следующая ${withLh?.nextStart}, окно ${withLh?.fertileFrom} … ${withLh?.fertileTo}`,
+  )
+  check(
+    cycleDay(long, '2026-07-20', 14, ['2026-07-24'])?.basis !== 'lh',
+    'Тест из будущего не учитывается',
+    'на день раньше теста прогноз по календарю',
+  )
+
+  // Пропущенная менструация: живой случай 30 сентября
+  const gapped: Period[] = [
+    withPeriodDays(period('2026-07-31', '2026-08-04', 59), 5),
+    withPeriodDays(period('2026-09-28', null, null), 5),
+  ]
+  const gapStats = cycleStats(gapped)
+  check(
+    gapStats.gaps.length === 1 && gapStats.gaps[0]?.missedAround === '2026-08-30' && gapStats.usableCycle === null,
+    'Цикл 59 дней без других - пропуск, а не средняя длина',
+    `пропусков ${gapStats.gaps.length}, около ${gapStats.gaps[0]?.missedAround}, длина ${gapStats.usableCycle}`,
+  )
+  check(
+    cycleDay(gapped, '2026-09-30', 14)?.nextStart === '2026-10-26',
+    'С пропуском прогноз по умолчанию, а не через 57 дней',
+    `следующая ${cycleDay(gapped, '2026-09-30', 14)?.nextStart}`,
+  )
+  check(
+    !warnings(gapped, '2026-09-30').some((w) => w.id === 'cycle-long'),
+    'Пропуск не пугает «длинным циклом»',
+    `выдано: ${warnings(gapped, '2026-09-30').map((w) => w.id).join(', ') || 'ничего'}`,
+  )
+  const twoTimes: Period[] = [
+    withPeriodDays(period('2026-04-01', '2026-04-05', 29), 5),
+    withPeriodDays(period('2026-04-30', '2026-05-04', 30), 5),
+    withPeriodDays(period('2026-05-30', '2026-06-03', 58), 5),
+    withPeriodDays(period('2026-07-27', null, null), 5),
+  ]
+  check(
+    cycleStats(twoTimes).gaps.length === 1 && cycleStats(twoTimes).usableCycle === 29.5,
+    'Цикл вдвое длиннее обычных - пропуск, медиана по остальным',
+    `пропусков ${cycleStats(twoTimes).gaps.length}, длина ${cycleStats(twoTimes).usableCycle}`,
+  )
+  const realLong: Period[] = [
+    withPeriodDays(period('2026-03-01', '2026-03-05', 44), 5),
+    withPeriodDays(period('2026-04-14', '2026-04-18', 43), 5),
+    withPeriodDays(period('2026-05-27', null, null), 5),
+  ].map((p, i) => (i === 0 ? { ...p, longConfirmed: true } : p))
+  check(
+    cycleStats(realLong).gaps.length === 0 && cycleStats(realLong).usableCycle === 43.5,
+    'Подтверждённый длинный цикл делает длинные обычными',
+    `пропусков ${cycleStats(realLong).gaps.length}, длина ${cycleStats(realLong).usableCycle}`,
+  )
+  const withOutlier: Period[] = [
+    withPeriodDays(period('2026-01-01', '2026-01-05', 28), 5),
+    withPeriodDays(period('2026-01-29', '2026-02-02', 29), 5),
+    withPeriodDays(period('2026-02-27', '2026-03-03', 40), 5),
+    withPeriodDays(period('2026-04-08', null, null), 5),
+  ]
+  check(
+    cycleStats(withOutlier).usableCycle === 29,
+    'Один выброс не перекашивает длину - медиана',
+    `длина ${cycleStats(withOutlier).usableCycle} (среднее дало бы 32.3)`,
   )
 
   // Предупреждения

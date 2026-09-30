@@ -34,7 +34,7 @@ const p = (
   endedOn: string | null,
   periodDays: number | null,
   cycleDays: number | null,
-): Period => ({ id: startedOn, startedOn, endedOn, note: null, periodDays, cycleDays })
+): Period => ({ id: startedOn, startedOn, endedOn, note: null, periodDays, cycleDays, longConfirmed: false })
 
 const TODAY = '2026-09-11'
 

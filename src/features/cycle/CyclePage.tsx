@@ -4,6 +4,7 @@ import {
   BookOpen,
   CalendarCheck,
   CalendarPlus,
+  CalendarSearch,
   ChevronDown,
   ChevronRight,
   Droplet,
@@ -20,7 +21,7 @@ import {
 } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
 import { useProfiles } from '@/features/profile/api'
-import { todayLocal, shiftDays, formatDayLabel } from '@/lib/date'
+import { todayLocal, shiftDays, formatDayLabel, formatDayMonth, fromLocalISO } from '@/lib/date'
 import { Button } from '@/ui/Button'
 import { Loading } from '@/ui/States'
 import { Sheet } from '@/ui/Sheet'
@@ -41,6 +42,7 @@ import {
   useAddPeriod,
   useSavePeriod,
   useStartPeriod,
+  useConfirmLongCycle,
 } from './api'
 import { CycleBubble } from './CycleBubble'
 import { CycleCalendar } from './CycleCalendar'
@@ -51,10 +53,12 @@ import { emptyLog, type DayLog } from './dayLog'
 import {
   cycleDay,
   cycleStats,
+  daysBetween,
   forecast,
   warnings,
   NORMS,
   type CycleDay,
+  type Gap,
   type Period,
 } from './cycle'
 import { tipsLibrary, tipsToday } from './tips'
@@ -73,6 +77,12 @@ import { Segmented } from '@/ui/Segmented'
  * и ничего. Последнее - не пустой экран, а объяснение, что это за раздел
  * и что включение ничего никому не откроет само по себе.
  */
+/**
+ * Что открыто в шторке менструации: запись, новая пустая или новая
+ * с предложенной датой - так её открывает подсказка о пропуске.
+ */
+type Editing = Period | 'new' | { suggest: string }
+
 export function CyclePage() {
   const t = useT()
   const userId = useUserId()
@@ -90,7 +100,7 @@ export function CyclePage() {
   const shared = useCycleShared(partner?.userId ?? '')
 
   const [tab, setTab] = useState<'mine' | 'theirs' | null>(null)
-  const [editing, setEditing] = useState<Period | 'new' | null>(null)
+  const [editing, setEditing] = useState<Editing | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   const tracking = settings.data?.trackingEnabled ?? false
@@ -150,7 +160,8 @@ export function CyclePage() {
 
       {editing && (
         <PeriodSheet
-          period={editing === 'new' ? null : editing}
+          period={editing === 'new' || 'suggest' in editing ? null : editing}
+          initialStart={editing !== 'new' && 'suggest' in editing ? editing.suggest : undefined}
           onClose={() => setEditing(null)}
         />
       )}
@@ -173,7 +184,7 @@ function CycleBody({
   lutealDays: number
   owned: boolean
   ownerId: string
-  onEdit: (p: Period | 'new') => void
+  onEdit: (p: Editing) => void
   onSettings: () => void
 }) {
   const t = useT()
@@ -185,14 +196,28 @@ function CycleBody({
 
   // Три цикла вперёд, не больше: дальше прогноз всё равно расходится
   // с жизнью, и рисовать его значило бы выдавать догадку за расписание.
+  // Положительные тесты на овуляцию: от них считаются окно и следующая
+  // менструация текущего цикла, если тест в нём есть
+  const lhDates = useMemo(() => logs.filter((l) => l.lhPositive).map((l) => l.date), [logs])
+
   const forecasts = useMemo(
-    () => forecast(periods, lutealDays, 3),
-    [periods, lutealDays],
+    () => forecast(periods, lutealDays, 3, lhDates),
+    [periods, lutealDays, lhDates],
   )
 
-  const state = useMemo(() => cycleDay(periods, today, lutealDays), [periods, today, lutealDays])
+  const state = useMemo(
+    () => cycleDay(periods, today, lutealDays, lhDates),
+    [periods, today, lutealDays, lhDates],
+  )
   const stats = useMemo(() => cycleStats(periods), [periods])
-  const alerts = useMemo(() => warnings(periods, today), [periods, today])
+  const alerts = useMemo(
+    () => warnings(periods, today, lutealDays, lhDates),
+    [periods, today, lutealDays, lhDates],
+  )
+  // Показываем последний пропуск: он ближе всего к прогнозу, а старые
+  // уже почти не влияют - окно берёт шесть последних циклов
+  const gap = stats.gaps[stats.gaps.length - 1] ?? null
+  const gapPeriod = gap ? (periods.find((p) => p.startedOn === gap.startedOn) ?? null) : null
 
   const last = [...periods].sort((a, b) => (a.startedOn < b.startedOn ? -1 : 1)).at(-1)
   const ongoing = last && last.endedOn === null ? last : null
@@ -255,6 +280,15 @@ function CycleBody({
   return (
     <div className="flex flex-col gap-3">
       <CycleBubble state={state} today={today} />
+
+      {gap && (
+        <GapNotice
+          gap={gap}
+          owned={owned}
+          onAdd={() => onEdit({ suggest: gap.missedAround })}
+          periodId={gapPeriod?.id ?? null}
+        />
+      )}
 
       <Today state={state} stats={stats} />
 
@@ -545,6 +579,11 @@ function Today({ state, stats }: { state: CycleDay; stats: ReturnType<typeof cyc
   const t = useT()
   const delay = state.delay
   const alarming = delay !== null && (delay.level === 'long' || delay.level === 'absent')
+  // Диапазон, когда неуверенность больше дня в каждую сторону
+  const ranged = daysBetween(state.nextFrom, state.nextTo) >= 4
+  const today = todayLocal()
+  const fromDays = Math.max(0, daysBetween(today, state.nextFrom))
+  const toDays = daysBetween(today, state.nextTo)
 
   return (
     <Card as="section" className="p-5">
@@ -600,17 +639,27 @@ function Today({ state, stats }: { state: CycleDay; stats: ReturnType<typeof cyc
             {state.daysToNext < 0 ? t('cyc.expected') : t('cyc.next')}
           </dt>
           <dd className="mt-1 font-display text-[17px] leading-tight font-bold tabular-nums">
-            {state.daysToNext > 0
-              ? t('cyc.inDays', {
-                  n: state.daysToNext,
-                  unit: t.plural('unit.day', state.daysToNext),
+            {ranged && toDays > 0
+              ? t('cyc.inDaysRange', {
+                  from: fromDays,
+                  to: toDays,
+                  unit: t.plural('unit.day', toDays),
                 })
-              : state.daysToNext === 0
-                ? t('cyc.todayLower')
-                : formatDayLabel(delay?.expectedOn ?? state.nextStart)}
+              : state.daysToNext > 0
+                ? t('cyc.inDays', {
+                    n: state.daysToNext,
+                    unit: t.plural('unit.day', state.daysToNext),
+                  })
+                : state.daysToNext === 0
+                  ? t('cyc.todayLower')
+                  : formatDayLabel(delay?.expectedOn ?? state.nextStart)}
           </dd>
           {state.daysToNext >= 0 && (
-            <dd className="mt-0.5 text-[13px] text-muted">{formatDayLabel(state.nextStart)}</dd>
+            <dd className="mt-0.5 text-[13px] text-muted">
+              {ranged && toDays > 0
+                ? `${formatDayMonth(fromLocalISO(state.nextFrom))} - ${formatDayMonth(fromLocalISO(state.nextTo))}`
+                : formatDayLabel(state.nextStart)}
+            </dd>
           )}
         </div>
         <div className="min-w-0 rounded-2xl bg-raised/60 px-3.5 py-3">
@@ -626,12 +675,23 @@ function Today({ state, stats }: { state: CycleDay; stats: ReturnType<typeof cyc
           </dd>
           <dd className="mt-0.5 text-[13px] text-muted">
             {stats.usableCycle === null
-              ? t('cyc.needSecond')
-              : t('cyc.byLast', { n: stats.cyclesCounted })}
+              ? t(stats.gaps.length > 0 ? 'cyc.gapLeftOut' : 'cyc.needSecond')
+              : t('cyc.byLast', { n: stats.cyclesUsed })}
           </dd>
         </div>
       </dl>
 
+      {/* На чём держится прогноз. Без этой строки диапазон «через 25-31 день»
+          выглядит как неуверенность приложения, а не как честная оценка */}
+      {state.basis === 'lh' && state.lhDate ? (
+        <p className="mt-3 text-[13px] leading-relaxed text-muted">
+          {t('cyc.basisLh', { date: formatDayMonth(fromLocalISO(state.lhDate)) })}
+        </p>
+      ) : (
+        state.approximate && (
+          <p className="mt-3 text-[13px] leading-relaxed text-muted">{t('cyc.basisApprox')}</p>
+        )
+      )}
       {state.daysToNext < 0 && (
         <p className="mt-3 text-[13px] leading-relaxed text-muted">{t('cyc.forecastHold')}</p>
       )}
@@ -642,6 +702,71 @@ function Today({ state, stats }: { state: CycleDay; stats: ReturnType<typeof cyc
         <p className="mt-1 text-[13px] leading-relaxed text-muted">
           {t('cyc.assumedBasis', { max: NORMS.cycleMax })}
         </p>
+      )}
+    </Card>
+  )
+}
+
+/**
+ * «Похоже, пропущена менструация».
+ *
+ * Появилась после живого случая: отмечены 31 июля и 28 сентября, между
+ * ними 59 дней. Приложение приняло это за средний цикл и пообещало
+ * следующую через 57 дней, а окно зачатия нарисовало на месяц позже
+ * настоящего. Теперь такой промежуток в прогноз не идёт, а здесь
+ * предлагают две честные развилки: добавить пропущенную или подтвердить,
+ * что цикл правда был длинным - тогда он снова учитывается.
+ *
+ * Исправить может только владелица: цикл её. Партнёр видит объяснение,
+ * но не кнопки - они упёрлись бы в отказ базы.
+ */
+function GapNotice({
+  gap,
+  owned,
+  onAdd,
+  periodId,
+}: {
+  gap: Gap
+  owned: boolean
+  onAdd: () => void
+  periodId: string | null
+}) {
+  const t = useT()
+  const confirm = useConfirmLongCycle()
+  return (
+    <Card as="section" className="p-4">
+      <div className="flex items-start gap-3">
+        <IconBadge icon={CalendarSearch} tone="orange" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[15px] font-semibold">{t('cyc.gapTitle')}</p>
+          <p className="mt-1 text-[14px] leading-relaxed text-muted">
+            {t('cyc.gapBody', {
+              from: formatDayMonth(fromLocalISO(gap.startedOn)),
+              to: formatDayMonth(fromLocalISO(gap.nextStart)),
+              n: gap.days,
+              unit: t.plural('unit.day', gap.days),
+              around: formatDayMonth(fromLocalISO(gap.missedAround)),
+            })}
+          </p>
+          {!owned && <p className="mt-2 text-[13px] text-muted">{t('cyc.gapPartner')}</p>}
+        </div>
+      </div>
+      {owned && (
+        <div className="mt-3.5 flex flex-col gap-2">
+          <Button onClick={onAdd}>
+            <CalendarPlus size={18} aria-hidden />
+            {t('cyc.gapAdd')}
+          </Button>
+          {periodId && (
+            <Button
+              variant="secondary"
+              loading={confirm.isPending}
+              onClick={() => void confirm.mutateAsync(periodId)}
+            >
+              {t('cyc.gapConfirm')}
+            </Button>
+          )}
+        </div>
       )}
     </Card>
   )
@@ -727,7 +852,7 @@ function History({
 }: {
   periods: Period[]
   owned: boolean
-  onEdit: (p: Period | 'new') => void
+  onEdit: (p: Editing) => void
 }) {
   const t = useT()
   const sorted = [...periods].sort((a, b) => (a.startedOn < b.startedOn ? 1 : -1))
@@ -797,12 +922,21 @@ function History({
  * это опечатка, а не запись. Ограничение стоит на поле, а не в базе: день
  * считает клиент, и `current_date` в проверке смотрел бы на пояс сервера.
  */
-function PeriodSheet({ period, onClose }: { period: Period | null; onClose: () => void }) {
+function PeriodSheet({
+  period,
+  initialStart,
+  onClose,
+}: {
+  period: Period | null
+  /** Предложенная дата начала - подсказка о пропуске знает, где искать. */
+  initialStart?: string | undefined
+  onClose: () => void
+}) {
   const t = useT()
   const add = useAddPeriod()
   const save = useSavePeriod()
   const remove = useDeletePeriod()
-  const [startedOn, setStartedOn] = useState(period?.startedOn ?? '')
+  const [startedOn, setStartedOn] = useState(period?.startedOn ?? initialStart ?? '')
   const [endedOn, setEndedOn] = useState(period?.endedOn ?? '')
   const [note, setNote] = useState(period?.note ?? '')
   const [error, setError] = useState<string | null>(null)

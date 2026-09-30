@@ -31,10 +31,12 @@ export type DayLog = {
   mood: Mood | null
   symptoms: Symptom[]
   note: string | null
+  /** Положительный тест на овуляцию (ЛГ) в этот день. */
+  lhPositive: boolean
 }
 
 export function emptyLog(date: string): DayLog {
-  return { date, flow: null, pain: null, mood: null, symptoms: [], note: null }
+  return { date, flow: null, pain: null, mood: null, symptoms: [], note: null, lhPositive: false }
 }
 
 /** Есть ли в отметке хоть что-то. База пустые не принимает - и правильно. */
@@ -44,7 +46,8 @@ export function isEmpty(log: DayLog): boolean {
     log.pain === null &&
     log.mood === null &&
     log.symptoms.length === 0 &&
-    (log.note === null || log.note.trim() === '')
+    (log.note === null || log.note.trim() === '') &&
+    !log.lhPositive
   )
 }
 

@@ -78,5 +78,7 @@ export const persister = createAsyncStoragePersister({
  *
  * v2: useServings отдавал Map, а он не переживает JSON-сериализацию в IndexedDB
  * и восстанавливался пустым объектом. Теперь список, но кэш от v1 надо выбросить.
+ *
+ * v3: у записей цикла появилось longConfirmed, у отметок дня - lhPositive.
  */
-export const CACHE_BUSTER = 'v2'
+export const CACHE_BUSTER = 'v3'

@@ -137,6 +137,7 @@ export type Database = {
           created_at: string
           date: string
           flow: string | null
+          lh_positive: boolean
           mood: string | null
           note: string | null
           pain: number | null
@@ -148,6 +149,7 @@ export type Database = {
           created_at?: string
           date: string
           flow?: string | null
+          lh_positive?: boolean
           mood?: string | null
           note?: string | null
           pain?: number | null
@@ -159,6 +161,7 @@ export type Database = {
           created_at?: string
           date?: string
           flow?: string | null
+          lh_positive?: boolean
           mood?: string | null
           note?: string | null
           pain?: number | null
@@ -752,6 +755,7 @@ export type Database = {
           created_at: string
           ended_on: string | null
           id: string
+          long_confirmed: boolean
           note: string | null
           started_on: string
           updated_at: string
@@ -761,6 +765,7 @@ export type Database = {
           created_at?: string
           ended_on?: string | null
           id?: string
+          long_confirmed?: boolean
           note?: string | null
           started_on: string
           updated_at?: string
@@ -770,6 +775,7 @@ export type Database = {
           created_at?: string
           ended_on?: string | null
           id?: string
+          long_confirmed?: boolean
           note?: string | null
           started_on?: string
           updated_at?: string
@@ -1196,6 +1202,7 @@ export type Database = {
           cycle_days: number | null
           ended_on: string | null
           id: string | null
+          long_confirmed: boolean | null
           note: string | null
           period_days: number | null
           started_on: string | null
@@ -1346,6 +1353,10 @@ export type Database = {
           weight_delta: number
         }[]
       }
+      cycle_lh_anchor: {
+        Args: { on_date: string; owner: string; since: string }
+        Returns: string
+      }
       cycle_shared_with_me: { Args: { owner: string }; Returns: boolean }
       cycle_state: {
         Args: { on_date: string; owner: string }
@@ -1360,6 +1371,13 @@ export type Database = {
         }[]
       }
       cycle_tip_key: { Args: { day: number; phase: string }; Returns: string }
+      cycle_usable: {
+        Args: { owner: string }
+        Returns: {
+          cycle_len: number
+          cycles_used: number
+        }[]
+      }
       deliver_letters: { Args: never; Returns: number }
       diary_month: {
         Args: { p_from: string; p_to: string; p_user: string }

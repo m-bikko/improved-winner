@@ -392,7 +392,11 @@ export function CycleBubble({ state, today }: { state: CycleDay; today: string }
             {text}
           </motion.p>
         </AnimatePresence>
-        {fertile && <p className="mt-2 text-xs text-muted">{t('bubble.fertileNote')}</p>}
+        {fertile && (
+          <p className="mt-2 text-xs text-muted">
+            {t(state.basis === 'lh' ? 'bubble.fertileNoteLh' : 'bubble.fertileNote')}
+          </p>
+        )}
       </Speech>
 
       <div className="mt-3 flex flex-wrap items-center justify-center gap-2">

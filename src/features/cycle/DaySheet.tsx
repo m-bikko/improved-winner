@@ -6,6 +6,7 @@ import { Button } from '@/ui/Button'
 import { Sheet } from '@/ui/Sheet'
 import { Chip } from '@/ui/Chip'
 import { INPUT_CLASS } from '@/ui/Field'
+import { Switch } from '@/ui/Switch'
 import { useDeleteCycleDay, useSaveCycleDay } from './api'
 import {
   FLOW,
@@ -47,6 +48,7 @@ export function DaySheet({
   const [mood, setMood] = useState<Mood | null>(log.mood)
   const [symptoms, setSymptoms] = useState<Symptom[]>(log.symptoms)
   const [note, setNote] = useState(log.note ?? '')
+  const [lhPositive, setLhPositive] = useState(log.lhPositive)
   const [error, setError] = useState<string | null>(null)
 
   // Функциональное обновление: три быстрых нажатия подряд React батчит,
@@ -57,7 +59,7 @@ export function DaySheet({
 
   const submit = async () => {
     setError(null)
-    const next: DayLog = { date: log.date, flow, pain, mood, symptoms, note: note || null }
+    const next: DayLog = { date: log.date, flow, pain, mood, symptoms, note: note || null, lhPositive }
     try {
       if (isEmpty(next)) await remove.mutateAsync(log.date)
       else await save.mutateAsync(next)
@@ -74,6 +76,17 @@ export function DaySheet({
           <ReadOnly log={log} />
         ) : (
           <>
+            {/* Первым, а не среди симптомов: это единственная отметка, которая
+                меняет прогноз. Отмеченный тест пересчитывает окно и дату
+                следующей менструации от себя, а не от календаря */}
+            <div className="flex items-start gap-3 rounded-2xl bg-raised/60 px-4 py-3.5">
+              <div className="min-w-0 flex-1">
+                <p className="text-[15px] font-semibold">{t('day.lhPositive')}</p>
+                <p className="mt-0.5 text-[13px] leading-relaxed text-muted">{t('day.lhHint')}</p>
+              </div>
+              <Switch checked={lhPositive} onChange={setLhPositive} label={t('day.lhPositive')} />
+            </div>
+
             <Group label={t('day.flow')}>
               {FLOW.map((f) => (
                 <Chip key={f} selected={flow === f} onClick={() => setFlow(flow === f ? null : f)}>
@@ -145,6 +158,7 @@ function ReadOnly({ log }: { log: DayLog }) {
   if (isEmpty(log)) return <p className="text-[15px] text-muted">{t('day.empty')}</p>
   return (
     <dl className="divide-y divide-line overflow-hidden rounded-2xl bg-raised/60">
+      {log.lhPositive && <Row label={t('day.lhPositive')} value={t('day.lhYes')} />}
       {log.flow && <Row label={t('day.flow')} value={t(dynamicKey('flow', log.flow))} />}
       {log.pain !== null && <Row label={t('day.pain')} value={t(PAIN_KEYS[log.pain] ?? 'pain.none')} />}
       {log.mood && <Row label={t('day.mood')} value={t(dynamicKey('mood', log.mood))} />}

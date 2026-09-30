@@ -30,6 +30,7 @@ const periods: Period[] = starts.map((s, i) => ({
   note: null,
   periodDays: 5,
   cycleDays: i < starts.length - 1 ? 28 : null,
+  longConfirmed: false,
 }))
 const LUTEAL = 14
 
@@ -45,13 +46,27 @@ if (!state1) throw new Error('cycleDay не посчитал день')
 check(moodOn(1) === 'tender' && moodOn(5) === 'tender', 'Менструация - бережные дни', `день 1: ${moodOn(1)}, день 5: ${moodOn(5)}`)
 check(moodOn(7) === 'rising', 'После менструации - подъём', `день 7: ${moodOn(7)}`)
 
-// Следующее начало 29 сентября, овуляция за 14 дней - 15 сентября (день 15),
-// окно - с 10 по 16 сентября
+// Следующее начало 29 сентября, овуляция за 14 дней - 15 сентября (день 15).
+// Окно - пять дней до и один после плюс запас на неуверенность прогноза:
+// его границы берём у самого прогноза, а проверяем, что пузырёк говорит
+// о зачатии ровно внутри них
 const ovulationDay = 15
 check(moodOn(ovulationDay) === 'peak', 'День овуляции - пик', `день ${ovulationDay}: ${moodOn(ovulationDay)}`)
-const window = [10, 11, 12, 13, 14, 16].map(moodOn)
-check(window.every((m) => m === 'radiant'), 'Остальное окно - благоприятные дни', window.join(', '))
-check(moodOn(9) === 'rising' && moodOn(17) !== 'radiant', 'Вне окна о зачатии не говорит', `день 9: ${moodOn(9)}, день 17: ${moodOn(17)}`)
+const mid = cycleDay(periods, dayOf(ovulationDay), LUTEAL)
+if (!mid) throw new Error('cycleDay не посчитал окно')
+const dayNumber = (iso: string): number =>
+  Math.round((new Date(`${iso}T00:00`).getTime() - new Date('2026-09-01T00:00').getTime()) / 86_400_000) + 1
+const from = dayNumber(mid.fertileFrom)
+const to = dayNumber(mid.fertileTo)
+const inside = Array.from({ length: to - from + 1 }, (_, i) => from + i)
+  .filter((n) => n !== ovulationDay)
+  .map(moodOn)
+check(inside.every((m) => m === 'radiant'), 'Остальное окно - благоприятные дни', `дни ${from}-${to}: ${inside.join(', ')}`)
+check(
+  moodOn(from - 1) !== 'radiant' && moodOn(to + 1) !== 'radiant',
+  'Вне окна о зачатии не говорит',
+  `день ${from - 1}: ${moodOn(from - 1)}, день ${to + 1}: ${moodOn(to + 1)}`,
+)
 check(moodOn(20) === 'calm', 'Середина лютеиновой - спокойствие', `день 20: ${moodOn(20)}`)
 check(moodOn(25) === 'sensitive' && moodOn(28) === 'sensitive', 'Последние дни - чувствительные', `день 25: ${moodOn(25)}, день 28: ${moodOn(28)}`)
 
