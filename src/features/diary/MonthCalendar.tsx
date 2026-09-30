@@ -1,46 +1,16 @@
 import { useT } from '@/lib/i18n'
 import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
 import { fromLocalISO, monthName, toLocalISO, todayLocal, weekdayShortNames } from '@/lib/date'
 import type { Macros } from '@/lib/nutrition'
 import { Sheet } from '@/ui/Sheet'
 import { Loading } from '@/ui/States'
-
-type DaySummary = { kcal: number; protein: number; goalKcal: number | null; goalProtein: number | null }
+import { useDiarySummaries } from './api'
 
 function useMonth(userId: string, year: number, month: number) {
   const from = toLocalISO(new Date(year, month, 1))
   const to = toLocalISO(new Date(year, month + 1, 0))
-
-  return useQuery({
-    queryKey: ['diary-month', userId, from],
-    // Обычный объект, а не Map: кэш сериализуется в IndexedDB, и Map после
-    // восстановления превращается в {} без методов. Здесь это уже ломалось.
-    queryFn: async (): Promise<Record<string, DaySummary>> => {
-      const { data, error } = await supabase.rpc('diary_month', {
-        p_user: userId,
-        p_from: from,
-        p_to: to,
-      })
-      if (error) throw error
-
-      const byDay: Record<string, DaySummary> = {}
-      for (const row of data ?? []) {
-        // PostgREST отдаёт date строкой YYYY-MM-DD; обрезаем на случай,
-        // если когда-нибудь приедет с временем
-        byDay[String(row.day).slice(0, 10)] = {
-          kcal: Number(row.kcal ?? 0),
-          protein: Number(row.protein ?? 0),
-          goalKcal: row.goal_kcal === null ? null : Number(row.goal_kcal),
-          goalProtein: row.goal_protein === null ? null : Number(row.goal_protein),
-        }
-      }
-      return byDay
-    },
-    enabled: userId !== '',
-  })
+  return useDiarySummaries(userId, from, to)
 }
 
 /**

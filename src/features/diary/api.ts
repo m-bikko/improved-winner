@@ -27,6 +27,52 @@ export function useDiaryDay(date: string, userId: string) {
   })
 }
 
+/** Итог дня: съедено и норма из снимка дня (null, если снимка нет). */
+export type DaySummary = {
+  kcal: number
+  protein: number
+  goalKcal: number | null
+  goalProtein: number | null
+}
+
+/**
+ * Итоги по дням за диапазон - для календаря месяца и ленты недели.
+ *
+ * Ключ начинается с 'diary', чтобы правка и удаление записи, которые
+ * сбрасывают весь дневник, сбрасывали и итоги: иначе кольцо дня в ленте
+ * показывало бы старую сумму.
+ *
+ * Обычный объект, а не Map: кэш сериализуется в IndexedDB, и Map после
+ * восстановления превращается в {} без методов. Здесь это уже ломалось.
+ */
+export function useDiarySummaries(userId: string, from: string, to: string) {
+  return useQuery({
+    queryKey: ['diary', userId, 'summary', from, to],
+    queryFn: async (): Promise<Record<string, DaySummary>> => {
+      const { data, error } = await supabase.rpc('diary_month', {
+        p_user: userId,
+        p_from: from,
+        p_to: to,
+      })
+      if (error) throw error
+
+      const byDay: Record<string, DaySummary> = {}
+      for (const row of data ?? []) {
+        // PostgREST отдаёт date строкой YYYY-MM-DD; обрезаем на случай,
+        // если когда-нибудь приедет с временем
+        byDay[String(row.day).slice(0, 10)] = {
+          kcal: Number(row.kcal ?? 0),
+          protein: Number(row.protein ?? 0),
+          goalKcal: row.goal_kcal === null ? null : Number(row.goal_kcal),
+          goalProtein: row.goal_protein === null ? null : Number(row.goal_protein),
+        }
+      }
+      return byDay
+    },
+    enabled: userId !== '',
+  })
+}
+
 /** Что человек ел за последние недели - для списков «Недавние» и «Часто». */
 export function useRecentFoodIds(userId: string) {
   return useQuery({
@@ -175,6 +221,7 @@ export function useAddEntry() {
     },
     onSuccess: (_id, input) => {
       void qc.invalidateQueries({ queryKey: ['diary', input.userId, input.date] })
+      void qc.invalidateQueries({ queryKey: ['diary', input.userId, 'summary'] })
       void qc.invalidateQueries({ queryKey: ['diary-recent', input.userId] })
     },
   })

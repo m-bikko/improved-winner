@@ -171,7 +171,8 @@ function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
 
   return (
     <Sheet open={open} onClose={onClose} title={account?.nickname ?? t('nav.more')}>
-      <ul className="grid grid-cols-3 gap-2.5">
+      {/* stagger: плитки выходят волной вслед за шторкой */}
+      <ul className="stagger grid grid-cols-3 gap-2.5">
         {MORE.map((s) => (
           <li key={s.to}>
             <button

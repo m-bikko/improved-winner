@@ -9,6 +9,7 @@ import { Button } from '@/ui/Button'
 import { Chip } from '@/ui/Chip'
 import { Field } from '@/ui/Field'
 import { IconBadge } from '@/ui/IconBadge'
+import { Sparkles } from '@/ui/Sparkles'
 import { ListGroup, ListRow } from '@/ui/List'
 import { PRESS, SPRING } from '@/ui/motion'
 import { Sheet } from '@/ui/Sheet'
@@ -170,6 +171,8 @@ function subtitle(o: Occasion): string {
  * осталось, и счёт днями даёт почувствовать, что время идёт. Для остальных
  * хватает грубого «через месяц» в строке списка.
  */
+const SPARKS = ['var(--c-accent)', 'var(--t-amber)', 'var(--t-teal)']
+
 function Hero({ occasion, onOpen }: { occasion: Occasion; onOpen: () => void }) {
   const t = useT()
   const kind = KIND_BY_ID[occasion.kind]
@@ -202,18 +205,26 @@ function Hero({ occasion, onOpen }: { occasion: Occasion; onOpen: () => void }) 
         </span>
 
         {occasion.days === 0 ? (
-          <span className="shrink-0 font-display text-3xl leading-none font-extrabold text-accent">
-            {t('common.today')}
-          </span>
+          // Праздник сегодня - звёзд больше всего
+          <Sparkles count={6} colors={SPARKS} className="shrink-0">
+            <span className="font-display text-3xl leading-none font-extrabold text-accent">
+              {t('common.today')}
+            </span>
+          </Sparkles>
         ) : (
           <span className="flex shrink-0 flex-col items-end">
-            <span
-              className={`font-display text-6xl leading-none font-extrabold tracking-tight tabular-nums ${
-                soon ? 'text-accent' : 'text-ink'
-              }`}
-            >
-              {occasion.days}
-            </span>
+            {soon ? (
+              // Меньше недели - число искрится, как и плашка на главной
+              <Sparkles count={4} colors={SPARKS}>
+                <span className="font-display text-6xl leading-none font-extrabold tracking-tight text-accent tabular-nums">
+                  {occasion.days}
+                </span>
+              </Sparkles>
+            ) : (
+              <span className="font-display text-6xl leading-none font-extrabold tracking-tight text-ink tabular-nums">
+                {occasion.days}
+              </span>
+            )}
             <span className="mt-1 text-[13px] font-semibold text-muted">
               {t.plural('unit.day', occasion.days)}
             </span>

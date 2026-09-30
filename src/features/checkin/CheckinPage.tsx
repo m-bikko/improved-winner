@@ -2,9 +2,10 @@ import { useMemo, useState } from 'react'
 import { Check, Flame, Pencil, Trash2 } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
 import { useProfiles } from '@/features/profile/api'
-import { formatDayLabel, todayLocal } from '@/lib/date'
+import { formatDayLabel, formatDayMonth, fromLocalISO, todayLocal } from '@/lib/date'
 import { dynamicKey, useT } from '@/lib/i18n'
 import { Button } from '@/ui/Button'
+import { IconBadge } from '@/ui/IconBadge'
 import { useBurst } from '@/ui/Burst'
 import { Loading } from '@/ui/States'
 import { Card as Surface, SectionTitle } from '@/ui/Card'
@@ -209,43 +210,58 @@ function Missed({ days, today }: { days: Restorable[]; today: string }) {
   const left = days[0]?.monthLeft ?? 0
 
   return (
-    <Surface as="section" className="flex flex-col gap-3 p-4">
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="font-display text-[17px] font-bold">{t('checkin.missed')}</p>
-        <p className="text-sm text-muted">
-          {left > 0
-            ? t.plural('checkin.restoresLeft', left).replace('{n}', String(left))
-            : t('checkin.noRestores')}
-        </p>
+    <Surface as="section" className="p-4">
+      {/* Заголовок и подпись друг под другом: рядом подпись сжималась
+          в узкую колонку справа и переносилась на три строки */}
+      <div className="flex items-center gap-3">
+        <IconBadge icon={Flame} tone="orange" size="sm" />
+        <div className="min-w-0">
+          <p className="font-display text-[17px] leading-tight font-bold">{t('checkin.missed')}</p>
+          <p className="mt-0.5 text-sm text-muted">
+            {left > 0
+              ? t.plural('checkin.restoresLeft', left).replace('{n}', String(left))
+              : t('checkin.noRestores')}
+          </p>
+        </div>
       </div>
 
-      {days.map((d) => (
-        <div key={d.date} className="flex items-center justify-between gap-3">
-          <p className="text-sm">{formatDayLabel(d.date)}</p>
-          {d.monthLeft > 0 ? (
-            <button
-              type="button"
-              disabled={restore.isPending}
-              onClick={() => {
-                setError(null)
-                restore.mutate(d.date, {
-                  onError: (e) => setError(e instanceof Error ? e.message : String(e)),
-                })
-              }}
-              className="flex items-center gap-1.5 rounded-full bg-accent-soft px-3.5 py-1.5 text-sm
-                         font-semibold text-accent-soft-ink transition-transform active:scale-95
-                         disabled:opacity-50"
-            >
-              <Flame size={14} aria-hidden />
-              {t('checkin.restore')}
-            </button>
-          ) : (
-            <span className="text-sm text-muted">-</span>
-          )}
+      {left > 0 ? (
+        <ul className="mt-2 divide-y divide-line">
+          {days.map((d) => (
+            <li key={d.date} className="flex min-h-12 items-center justify-between gap-3 py-1.5">
+              <span className="text-sm first-letter:uppercase">{formatDayLabel(d.date)}</span>
+              {d.monthLeft > 0 && (
+                <button
+                  type="button"
+                  disabled={restore.isPending}
+                  onClick={() => {
+                    setError(null)
+                    restore.mutate(d.date, {
+                      onError: (e) => setError(e instanceof Error ? e.message : String(e)),
+                    })
+                  }}
+                  className="flex items-center gap-1.5 rounded-full bg-accent-soft px-3.5 py-1.5 text-sm
+                             font-semibold text-accent-soft-ink transition-transform active:scale-95
+                             disabled:opacity-50"
+                >
+                  <Flame size={14} aria-hidden />
+                  {t('checkin.restore')}
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        // Восстановить нечем - строки с прочерком вместо кнопки были бы
+        // списком без действия. Даты остаются, но компактно, метками
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {days.map((d) => (
+            <Tag key={d.date}>{formatDayMonth(fromLocalISO(d.date))}</Tag>
+          ))}
         </div>
-      ))}
+      )}
 
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && <p className="mt-2 text-sm text-danger">{error}</p>}
     </Surface>
   )
 }
@@ -449,7 +465,9 @@ function Row({ name, tone, checkin }: { name: string; tone: Tone; checkin: Check
       <Avatar name={name} tone={tone} size="sm" />
       <div className="min-w-0 flex-1 pt-0.5">
         {!checkin ? (
-          <p className="text-sm text-muted">-</p>
+          // Словами, а не прочерком: одинокий «-» рядом с буквой выглядел
+          // как сломанная строка, а не как «в этот день не отмечался»
+          <p className="text-sm text-muted">{t('checkin.noEntry')}</p>
         ) : (
           <>
             {states.length > 0 && (

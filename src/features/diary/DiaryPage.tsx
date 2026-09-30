@@ -13,19 +13,22 @@ import {
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import {
   CalendarDays,
-  ChevronLeft,
-  ChevronRight,
   ChartNoAxesColumn,
   ChevronDown,
   ChevronUp,
   CircleQuestionMark,
   CloudOff,
+  Cookie,
   CopyPlus,
+  Moon,
   Plus,
+  Sun,
+  Sunrise,
   Target,
+  type LucideIcon,
 } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { formatDayLabel, shiftDays, todayLocal } from '@/lib/date'
+import { shiftDays, todayLocal } from '@/lib/date'
 import { useLocalFlag } from '@/lib/localFlag'
 import { queueSize } from '@/lib/outbox'
 import type { GoalDirection, Macros } from '@/lib/nutrition'
@@ -33,6 +36,8 @@ import { useAuth } from '@/auth/AuthProvider'
 import { useHeaderAction } from '@/shell/HeaderAction'
 import { ErrorState, Loading } from '@/ui/States'
 import { Card } from '@/ui/Card'
+import { IconBadge } from '@/ui/IconBadge'
+import type { Tone } from '@/ui/tones'
 import { ListGroup, ListRow } from '@/ui/List'
 import { Segmented } from '@/ui/Segmented'
 import { useFoods, useServingsByFood } from '@/features/foods/api'
@@ -59,6 +64,7 @@ import { diffOrder, moveEntry } from './reorder'
 import { MonthCalendar } from './MonthCalendar'
 import { FoodPicker } from './FoodPicker'
 import { PortionSheet } from './PortionSheet'
+import { WeekStrip } from './WeekStrip'
 import { MEALS, sumEntries, type DiaryEntry, type Meal } from './types'
 
 const isMeal = (value: string | null): value is Meal =>
@@ -217,35 +223,13 @@ export function DiaryPage() {
 
   return (
     <div className="stagger mx-auto max-w-2xl px-4 pt-1">
-      {/* Переключатель дня - капсулой: стрелки получают крупную область
-          нажатия, а тап по дате возвращает к сегодняшнему дню */}
-      <div className="flex items-center gap-1 rounded-2xl bg-surface p-1 shadow-card">
-        <button
-          type="button"
-          onClick={() => setDate(shiftDays(date, -1))}
-          aria-label={t('diary.prevDay')}
-          className="flex size-11 items-center justify-center rounded-xl text-muted transition-colors active:bg-raised"
-        >
-          <ChevronLeft size={22} aria-hidden />
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setDate(todayLocal())}
-          className="min-w-0 flex-1 truncate font-display text-[17px] font-bold"
-        >
-          {formatDayLabel(date)}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setDate(shiftDays(date, 1))}
-          aria-label={t('diary.nextDay')}
-          className="flex size-11 items-center justify-center rounded-xl text-muted transition-colors active:bg-raised"
-        >
-          <ChevronRight size={22} aria-hidden />
-        </button>
-      </div>
+      <WeekStrip
+        userId={userId}
+        date={date}
+        onPick={setDate}
+        liveGoalKcal={liveGoal?.kcal ?? null}
+        current={{ kcal: totals.kcal, goalKcal: goals?.kcal ?? null }}
+      />
 
       {pending > 0 && (
         <p className="mt-3 flex items-center justify-center gap-1.5 rounded-xl bg-raised py-2 text-xs text-muted">
@@ -661,6 +645,17 @@ function Bar({
   )
 }
 
+/**
+ * Приём пищи узнаётся по значку раньше, чем по слову: четыре одинаковые
+ * карточки с заголовками читались как таблица, а не как день.
+ */
+const MEAL_ICON: Record<Meal, { icon: LucideIcon; tone: Tone }> = {
+  breakfast: { icon: Sunrise, tone: 'amber' },
+  lunch: { icon: Sun, tone: 'orange' },
+  dinner: { icon: Moon, tone: 'indigo' },
+  snack: { icon: Cookie, tone: 'plum' },
+}
+
 function MealSection({
   meal,
   entries,
@@ -694,6 +689,7 @@ function MealSection({
           aria-expanded={!collapsed}
           className="flex w-full items-center gap-3 px-4 pt-3.5 pb-3 text-left transition-colors active:bg-raised"
         >
+          <IconBadge icon={MEAL_ICON[meal].icon} tone={MEAL_ICON[meal].tone} size="sm" />
           <span className="min-w-0 flex-1">
             <span className="block font-display text-[17px] font-bold">{t(dynamicKey('meal', meal))}</span>
             {collapsed && entries.length > 0 && (
