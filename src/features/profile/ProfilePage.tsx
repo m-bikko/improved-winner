@@ -45,7 +45,7 @@ import {
   type PushState,
 } from '@/lib/push'
 import { Button } from '@/ui/Button'
-import { Field, NumberField } from '@/ui/Field'
+import { Field, INPUT_CLASS, NumberField } from '@/ui/Field'
 import { Card, SectionTitle } from '@/ui/Card'
 import { IconBadge } from '@/ui/IconBadge'
 import { ListGroup, ListRow } from '@/ui/List'
@@ -56,7 +56,6 @@ import { Sheet } from '@/ui/Sheet'
 import { ErrorState, Loading } from '@/ui/States'
 import {
   goalsFor,
-  useLogWeight,
   useProfiles,
   useSaveProfile,
   useWeightLog,
@@ -90,12 +89,16 @@ function ProfileForm({ profile }: { profile: Profile }) {
   const t = useT()
   const save = useSaveProfile()
   const weights = useWeightLog(profile.userId)
-  const logWeight = useLogWeight()
   const freezeGoal = useFreezeDayGoal()
 
   const [birthYear, setBirthYear] = useState<number | ''>(profile.birthYear ?? '')
   const [heightCm, setHeightCm] = useState<number | ''>(profile.heightCm ?? '')
-  const [weightKg, setWeightKg] = useState<number | ''>(profile.weightKg ?? '')
+  // Вес - НЕ поле формы. Его меняет только взвешивание, а форма читает
+  // текущий из профиля. Раньше здесь была своя копия: взвешивание обновляло
+  // профиль, копия оставалась старой, форма считала себя изменённой
+  // и предлагала «Сохранить» - а сохранение писало в журнал старый вес
+  // без состава тела и стирало только что внесённые данные с умных весов
+  const weightKg = profile.weightKg
   const [sex, setSex] = useState<Sex | null>(profile.sex)
   const [activity, setActivity] = useState<ActivityLevel>(profile.activityLevel)
   const [goal, setGoal] = useState<GoalDirection>(profile.goalDirection)
@@ -128,7 +131,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
     birthYear: birthYear === '' ? null : birthYear,
     sex,
     heightCm: heightCm === '' ? null : heightCm,
-    weightKg: weightKg === '' ? null : weightKg,
+    weightKg,
     activityLevel: activity,
     goalDirection: goal,
   })
@@ -144,7 +147,6 @@ function ProfileForm({ profile }: { profile: Profile }) {
         patch: {
           birthYear: birthYear === '' ? null : birthYear,
           heightCm: heightCm === '' ? null : heightCm,
-          weightKg: weightKg === '' ? null : weightKg,
           sex,
           activityLevel: activity,
           goalDirection: goal,
@@ -158,16 +160,6 @@ function ProfileForm({ profile }: { profile: Profile }) {
             : { goalProtein: null, goalFat: null, goalCarbs: null }),
         },
       })
-      // Вес попадает и в историю: profiles.weight_kg - это «последнее значение»,
-      // а график строится по weight_log
-      if (weightKg !== '' && weightKg !== profile.weightKg) {
-        await logWeight.mutateAsync({
-          userId: profile.userId,
-          date: todayLocal(),
-          weightKg,
-        })
-      }
-
       // Пересчитанная норма должна попасть в снимок сегодняшнего дня, иначе
       // завтра он замёрзнет со старым значением
       if (preview) {
@@ -195,7 +187,6 @@ function ProfileForm({ profile }: { profile: Profile }) {
   const range = {
     birthYear: outOfRange(birthYear, 1900, 2100, t('profile.unit.years')),
     heightCm: outOfRange(heightCm, 100, 250, t('profile.unit.cm')),
-    weightKg: outOfRange(weightKg, 20, 400, t('unit.kg')),
   }
   const hasRangeError = Object.values(range).some((r) => r !== null)
 
@@ -210,7 +201,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
     birthYear === '' && t('profile.birthYearLow'),
     sex === null && t('profile.sexLow'),
     heightCm === '' && t('profile.heightLow'),
-    weightKg === '' && t('profile.weightLow'),
+    weightKg === null && t('profile.weightLow'),
   ].filter((x): x is string => typeof x === 'string')
 
   // Есть ли что сохранять. Панель «Сохранить» появляется только тогда:
@@ -219,7 +210,6 @@ function ProfileForm({ profile }: { profile: Profile }) {
   const dirty =
     birthYear !== (profile.birthYear ?? '') ||
     heightCm !== (profile.heightCm ?? '') ||
-    weightKg !== (profile.weightKg ?? '') ||
     sex !== profile.sex ||
     activity !== profile.activityLevel ||
     goal !== profile.goalDirection ||
@@ -260,7 +250,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
         userId={profile.userId}
         sex={sex}
         heightCm={heightCm === '' ? null : heightCm}
-        weightKg={weightKg === '' ? null : weightKg}
+        weightKg={weightKg}
       />
 
       {weighIn && (
@@ -293,15 +283,22 @@ function ProfileForm({ profile }: { profile: Profile }) {
             invalid={range.heightCm !== null}
             hint={range.heightCm ?? undefined}
           />
-          <NumberField
-            label={t('profile.weight')}
-            suffix={t('unit.kg')}
-            value={weightKg}
-            onValueChange={setWeightKg}
-            max={400}
-            invalid={range.weightKg !== null}
-            hint={range.weightKg ?? undefined}
-          />
+          {/* Вес здесь только показывается: менять его - это взвешивание,
+              со всеми полями умных весов. Плитка открывает ту же шторку */}
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm text-muted">{t('profile.weight')}</span>
+            <button
+              type="button"
+              onClick={() => setWeighIn(true)}
+              className={`${INPUT_CLASS} flex items-center justify-between gap-2 text-left transition-transform active:scale-[0.98]`}
+            >
+              <span className={`truncate tabular-nums ${weightKg === null ? 'text-muted' : ''}`}>
+                {weightKg === null ? t('body.weighInAction') : `${weightKg} ${t('unit.kg')}`}
+              </span>
+              <Scale size={17} aria-hidden className="shrink-0 text-muted" />
+            </button>
+            <span className="text-[13px] text-muted">{t('profile.weightFromLog')}</span>
+          </div>
         </div>
 
         <div>

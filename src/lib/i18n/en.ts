@@ -286,6 +286,7 @@ export const en: Dict = {
   'profile.height': 'Height',
   'profile.heightLow': 'height',
   'profile.weight': 'Weight',
+  'profile.weightFromLog': 'from your last weigh-in',
   'profile.weightLow': 'weight',
   'profile.sex': 'Sex',
   'profile.sexLow': 'sex',

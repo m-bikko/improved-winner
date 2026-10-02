@@ -287,6 +287,7 @@ export const kk: Dict = {
   'profile.height': 'Бойы',
   'profile.heightLow': 'бойы',
   'profile.weight': 'Салмағы',
+  'profile.weightFromLog': 'соңғы өлшеуден',
   'profile.weightLow': 'салмағы',
   'profile.sex': 'Жынысы',
   'profile.sexLow': 'жынысы',

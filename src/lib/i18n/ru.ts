@@ -292,6 +292,7 @@ export const ru = {
   'profile.height': 'Рост',
   'profile.heightLow': 'рост',
   'profile.weight': 'Вес',
+  'profile.weightFromLog': 'из последнего взвешивания',
   'profile.weightLow': 'вес',
   'profile.sex': 'Пол',
   'profile.sexLow': 'пол',
