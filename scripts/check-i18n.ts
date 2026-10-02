@@ -62,6 +62,11 @@ import { OCCASION_KINDS } from '../src/features/dates/kinds.ts'
 import { ACTIVITY_LEVELS, GOAL_DIRECTIONS } from '../src/lib/nutrition.ts'
 import { NOTIFICATION_KINDS } from '../src/features/profile/notifications.ts'
 import { BANDS, BODY_GAPS } from '../src/lib/body.ts'
+import { QUESTIONS, QUESTION_CATEGORIES } from '../src/features/question/bank.ts'
+import { CHALLENGE_ICONS, PRESETS as CHALLENGE_PRESETS } from '../src/features/challenges/presets.ts'
+import { GOAL_ICONS } from '../src/features/savings/icons.ts'
+import { STATUSES as WATCH_STATUSES, WATCH_KINDS } from '../src/features/watch/logic.ts'
+import { PREP_ITEMS } from '../src/features/prep/items.ts'
 
 let failed = 0
 function check(ok: boolean, name: string, detail: string): void {
@@ -238,6 +243,17 @@ const FAMILIES: { prefix: string; ids: readonly string[]; suffixes?: string[] }[
     prefix: 'bubble',
     ids: BUBBLE_MOODS.flatMap((m) => Array.from({ length: PHRASES[m] }, (_, i) => `${m}.${i}`)),
   },
+  // Разделы на двоих (2026-10-02)
+  { prefix: 'q', ids: QUESTIONS.map((x) => x.id) },
+  { prefix: 'qcat', ids: QUESTION_CATEGORIES },
+  { prefix: 'chp', ids: CHALLENGE_PRESETS.map((x) => x.id) },
+  { prefix: 'chi', ids: Object.keys(CHALLENGE_ICONS) },
+  { prefix: 'svi', ids: Object.keys(GOAL_ICONS) },
+  { prefix: 'w.tab', ids: WATCH_STATUSES },
+  { prefix: 'w.empty', ids: WATCH_STATUSES },
+  { prefix: 'w.kind', ids: WATCH_KINDS },
+  { prefix: 'prep.item', ids: PREP_ITEMS.map((x) => x.id) },
+  { prefix: 'prep.hint', ids: PREP_ITEMS.map((x) => x.id) },
   // Пустой префикс: эти ключи приходят из базы целиком. Функция состава тела
   // возвращает не «почему не посчитано», а сам ключ словаря.
   { prefix: '', ids: BODY_GAPS },

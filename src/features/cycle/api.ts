@@ -79,6 +79,29 @@ export function useCycleSettings() {
   })
 }
 
+/**
+ * Длина лютеиновой фазы ВЛАДЕЛИЦЫ цикла.
+ *
+ * Свой цикл - из своих настроек. Чужой (открытый партнёром) - из её
+ * настроек через cycle_luteal_of: прочитать строку настроек партнёр не может,
+ * и раньше прогноз её цикла на его телефоне молча считался с ЕГО лютеиновой
+ * фазой, расходясь с её прогнозом на пару дней.
+ */
+export function useLutealOf(ownerId: string, own: boolean): number {
+  const settings = useCycleSettings()
+  const other = useQuery({
+    queryKey: ['cycle-luteal', ownerId],
+    enabled: !own && ownerId !== '',
+    queryFn: async (): Promise<number | null> => {
+      const { data, error } = await supabase.rpc('cycle_luteal_of', { owner: ownerId })
+      if (error) throw error
+      return data ?? null
+    },
+  })
+  if (own) return settings.data?.lutealDays ?? DEFAULT_SETTINGS.lutealDays
+  return other.data ?? DEFAULT_SETTINGS.lutealDays
+}
+
 export function useSaveCycleSettings() {
   const qc = useQueryClient()
   // id берётся из контекста, а не из supabase.auth.getUser(): тот ходит

@@ -30,3 +30,8 @@ export const TONE_CLASS: Record<Tone, { soft: string; fg: string; solid: string 
   plum: { soft: 'bg-tone-plum-soft', fg: 'text-tone-plum', solid: 'bg-tone-plum' },
   accent: { soft: 'bg-accent-soft', fg: 'text-accent-soft-ink', solid: 'bg-accent' },
 }
+
+/** CSS-переменная тона - для SVG и градиентов, куда классы Tailwind не дотянутся. */
+export function toneVar(tone: Tone): string {
+  return tone === 'accent' ? 'var(--c-accent)' : `var(--t-${tone})`
+}

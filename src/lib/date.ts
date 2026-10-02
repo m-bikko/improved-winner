@@ -38,6 +38,16 @@ export function shiftDays(iso: string, days: number): string {
 }
 
 /**
+ * Сколько дней от одной даты до другой (YYYY-MM-DD), со знаком.
+ *
+ * Округление, а не деление нацело: в день перевода часов сутки длятся
+ * 23 или 25 часов, и floor дал бы сдвиг на день.
+ */
+export function diffDays(from: string, to: string): number {
+  return Math.round((fromLocalISO(to).getTime() - fromLocalISO(from).getTime()) / 86_400_000)
+}
+
+/**
  * Момент времени → значение для <input type="datetime-local">.
  *
  * Собирается по частям вручную. toISOString() здесь дал бы UTC, и вечерний

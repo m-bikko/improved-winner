@@ -93,3 +93,73 @@ self.addEventListener('notificationclick', (event) => {
     }),
   )
 })
+
+/**
+ * Снимки из хранилища - по пути, без токена.
+ *
+ * Бакеты приватные, и картинки приходят по подписанным ссылкам. Токен
+ * в ссылке меняется каждый час, поэтому браузерный кэш (ключ - URL целиком)
+ * промахивался бы и качал ту же картинку заново. Объект с одним и тем же
+ * путём не меняется никогда: имена случайные, замена - это новый путь.
+ * Значит, путь без токена - честный ключ, и снимок, однажды скачанный,
+ * дальше отдаётся с устройства мгновенно, в том числе без сети и после
+ * того, как ссылка протухла.
+ *
+ * Данные (PostgREST) здесь по-прежнему не кэшируются - почему, см.
+ * src/lib/queryClient.ts. Картинки - другое дело: они неизменяемы.
+ */
+const PHOTO_CACHE = 'tandem-photos-v1'
+const PHOTO_LIMIT = 400
+const SIGNED_PATH = '/storage/v1/object/sign/'
+
+self.addEventListener('fetch', (event) => {
+  const request = event.request
+  if (request.method !== 'GET') return
+  let url
+  try {
+    url = new URL(request.url)
+  } catch (e) {
+    return
+  }
+  if (!url.pathname.includes(SIGNED_PATH)) return
+  event.respondWith(cachedPhoto(url.origin + url.pathname, request))
+})
+
+async function cachedPhoto(key, request) {
+  let cache
+  try {
+    cache = await caches.open(PHOTO_CACHE)
+    const hit = await cache.match(key)
+    if (hit) return hit
+  } catch (e) {
+    // Хранилище недоступно (приватный режим, квота) - просто идём в сеть
+    return fetch(request)
+  }
+
+  let response
+  try {
+    // CORS-запросом, а не как просила картинка: непрозрачный ответ кэш
+    // считает многомегабайтным и быстро съедает квоту
+    response = await fetch(request.url, { mode: 'cors', credentials: 'omit' })
+  } catch (e) {
+    return fetch(request)
+  }
+  if (response.ok) {
+    cache
+      .put(key, response.clone())
+      .then(() => trimPhotos(cache))
+      .catch(() => {})
+  }
+  return response
+}
+
+let photoPuts = 0
+
+/** Держим последние PHOTO_LIMIT снимков - проверка раз в 25 записей, а не на каждой. */
+async function trimPhotos(cache) {
+  photoPuts += 1
+  if (photoPuts % 25 !== 0) return
+  const keys = await cache.keys()
+  const extra = keys.length - PHOTO_LIMIT
+  for (let i = 0; i < extra; i++) await cache.delete(keys[i])
+}

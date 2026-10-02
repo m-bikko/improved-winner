@@ -42,6 +42,68 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_marks: {
+        Row: {
+          challenge_id: string
+          created_at: string
+          date: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string
+          date: string
+          user_id?: string
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string
+          date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_marks_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          created_at: string
+          created_by: string
+          days: number
+          icon: string
+          id: string
+          started_on: string
+          stopped_on: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          days: number
+          icon: string
+          id?: string
+          started_on: string
+          stopped_on?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          days?: number
+          icon?: string
+          id?: string
+          started_on?: string
+          stopped_on?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       checkin_asks: {
         Row: {
           created_at: string
@@ -640,6 +702,106 @@ export type Database = {
         }
         Relationships: []
       }
+      memories: {
+        Row: {
+          author_id: string
+          caption: string | null
+          created_at: string
+          happened_on: string
+          id: string
+          place: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string
+          caption?: string | null
+          created_at?: string
+          happened_on: string
+          id: string
+          place?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          caption?: string | null
+          created_at?: string
+          happened_on?: string
+          id?: string
+          place?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      memory_hearts: {
+        Row: {
+          created_at: string
+          memory_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          memory_id: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          memory_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_hearts_memory_id_fkey"
+            columns: ["memory_id"]
+            isOneToOne: false
+            referencedRelation: "memories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memory_photos: {
+        Row: {
+          created_at: string
+          height: number
+          id: string
+          memory_id: string
+          path: string
+          placeholder: string
+          position: number
+          thumb_path: string
+          width: number
+        }
+        Insert: {
+          created_at?: string
+          height: number
+          id?: string
+          memory_id: string
+          path: string
+          placeholder: string
+          position?: number
+          thumb_path: string
+          width: number
+        }
+        Update: {
+          created_at?: string
+          height?: number
+          id?: string
+          memory_id?: string
+          path?: string
+          placeholder?: string
+          position?: number
+          thumb_path?: string
+          width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_photos_memory_id_fkey"
+            columns: ["memory_id"]
+            isOneToOne: false
+            referencedRelation: "memories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_settings: {
         Row: {
           kind: string
@@ -783,6 +945,90 @@ export type Database = {
         }
         Relationships: []
       }
+      prep_asks: {
+        Row: {
+          created_at: string
+          date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      prep_checks: {
+        Row: {
+          created_at: string
+          done_on: string | null
+          id: string
+          item_key: string | null
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          done_on?: string | null
+          id?: string
+          item_key?: string | null
+          title?: string | null
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          done_on?: string | null
+          id?: string
+          item_key?: string | null
+          title?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      prep_plan: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: boolean
+          started_on: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          id?: boolean
+          started_on: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: boolean
+          started_on?: string
+        }
+        Relationships: []
+      }
+      prep_vitamins: {
+        Row: {
+          created_at: string
+          date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           activity_level: string
@@ -885,6 +1131,51 @@ export type Database = {
         }
         Relationships: []
       }
+      question_answers: {
+        Row: {
+          body: string
+          created_at: string
+          date: string
+          question_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          date: string
+          question_id: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          date?: string
+          question_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      question_asks: {
+        Row: {
+          created_at: string
+          date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       release_probes: {
         Row: {
           created_at: string
@@ -897,6 +1188,80 @@ export type Database = {
         Update: {
           created_at?: string
           id?: number
+        }
+        Relationships: []
+      }
+      savings_deposits: {
+        Row: {
+          amount: number
+          created_at: string
+          date: string
+          goal_id: string
+          id: string
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          date: string
+          goal_id: string
+          id?: string
+          note?: string | null
+          user_id?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          date?: string
+          goal_id?: string
+          id?: string
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "savings_deposits_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "savings_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      savings_goals: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          created_by: string
+          currency: string
+          deadline: string | null
+          icon: string
+          id: string
+          target: number
+          title: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string
+          currency: string
+          deadline?: string | null
+          icon: string
+          id?: string
+          target: number
+          title: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string
+          currency?: string
+          deadline?: string | null
+          icon?: string
+          id?: string
+          target?: number
+          title?: string
         }
         Relationships: []
       }
@@ -1042,6 +1407,103 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      watch_items: {
+        Row: {
+          added_by: string
+          created_at: string
+          id: string
+          kind: string
+          note: string | null
+          status: string
+          title: string
+          watched_on: string | null
+          year: number | null
+        }
+        Insert: {
+          added_by?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          status?: string
+          title: string
+          watched_on?: string | null
+          year?: number | null
+        }
+        Update: {
+          added_by?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          status?: string
+          title?: string
+          watched_on?: string | null
+          year?: number | null
+        }
+        Relationships: []
+      }
+      watch_ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          item_id: string
+          stars: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          item_id: string
+          stars: number
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          item_id?: string
+          stars?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watch_ratings_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "watch_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      watch_wants: {
+        Row: {
+          created_at: string
+          item_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          item_id: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          item_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watch_wants_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "watch_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       weigh_in_asks: {
         Row: {
@@ -1357,6 +1819,7 @@ export type Database = {
         Args: { on_date: string; owner: string; since: string }
         Returns: string
       }
+      cycle_luteal_of: { Args: { owner: string }; Returns: number }
       cycle_shared_with_me: { Args: { owner: string }; Returns: boolean }
       cycle_state: {
         Args: { on_date: string; owner: string }
@@ -1417,6 +1880,7 @@ export type Database = {
       letter_delivered_to_me: { Args: { letter: string }; Returns: boolean }
       letter_recipients: { Args: { letter: string }; Returns: string[] }
       letters_in_flight: { Args: never; Returns: number }
+      money_fmt: { Args: { cur: string; n: number }; Returns: string }
       month_summary: { Args: { month: number; year: number }; Returns: Json }
       next_occurrence: {
         Args: { from_ts: string; rule: Json }
@@ -1426,6 +1890,7 @@ export type Database = {
         Args: { excluded: string[]; from_ts: string; rule: Json }
         Returns: string
       }
+      nick_for: { Args: { actor: string; target: string }; Returns: string }
       notify_allowed: {
         Args: { channel: string; kind: string; target: string }
         Returns: boolean
@@ -1461,6 +1926,19 @@ export type Database = {
           url?: string
         }
         Returns: undefined
+      }
+      question_answered_by_me: { Args: { on_date: string }; Returns: boolean }
+      question_answered_by_partner: {
+        Args: { on_date: string }
+        Returns: boolean
+      }
+      question_progress: {
+        Args: { since: string }
+        Returns: {
+          date: string
+          question_id: string
+          user_id: string
+        }[]
       }
       release_seen: {
         Args: { p_app_name: string; p_version: string }
@@ -1498,6 +1976,8 @@ export type Database = {
       send_love_notes: { Args: never; Returns: number }
       send_meal_reminders: { Args: never; Returns: number }
       send_nudge: { Args: never; Returns: string }
+      send_prep_reminders: { Args: never; Returns: number }
+      send_question_reminders: { Args: never; Returns: number }
       send_weigh_in_reminders: { Args: never; Returns: number }
       tg_escape: { Args: { input: string }; Returns: string }
       tg_notify_both: {
@@ -1520,6 +2000,10 @@ export type Database = {
         Args: { args?: string[]; key: string; target: string }
         Returns: string
       }
+      tx_by: {
+        Args: { actor: string; args?: string[]; key: string; target: string }
+        Returns: string
+      }
       tx_plural: {
         Args: { key: string; n: number; target: string }
         Returns: string
@@ -1527,6 +2011,14 @@ export type Database = {
       tx_sex: {
         Args: { actor: string; key: string; target: string }
         Returns: string
+      }
+      watch_rated_by_me: { Args: { item: string }; Returns: boolean }
+      watch_rating_progress: {
+        Args: never
+        Returns: {
+          item_id: string
+          user_id: string
+        }[]
       }
       year_in_numbers: { Args: { year: number }; Returns: Json }
     }

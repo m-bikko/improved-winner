@@ -1,6 +1,7 @@
 import { dynamicKey, useT } from '@/lib/i18n'
 import { useEffect, useMemo, useState } from 'react'
 import {
+  Baby,
   BookOpen,
   CalendarCheck,
   CalendarPlus,
@@ -36,6 +37,7 @@ import {
   useCycleDays,
   useCycleSettings,
   useCycleShared,
+  useLutealOf,
   useDeletePeriod,
   usePeriods,
   useSaveCycleSettings,
@@ -98,6 +100,10 @@ export function CyclePage() {
   // Спрашиваем прямо, а не гадаем по наличию записей: партнёр мог открыть
   // доступ, ещё ничего не отметив, - и раньше это было неотличимо от «закрыто».
   const shared = useCycleShared(partner?.userId ?? '')
+  // Её цикл считается с ЕЁ лютеиновой фазой, а не со своей (см. useLutealOf).
+  // Хуки - до ранних return, поэтому оба значения берём здесь
+  const myLuteal = useLutealOf(userId, true)
+  const theirLuteal = useLutealOf(partner?.userId ?? '', false)
 
   const [tab, setTab] = useState<'mine' | 'theirs' | null>(null)
   const [editing, setEditing] = useState<Editing | null>(null)
@@ -134,6 +140,7 @@ export function CyclePage() {
   const periods = active === 'mine' ? (mine.data ?? []) : (theirs.data ?? [])
   const logs = active === 'mine' ? (myDays.data ?? []) : (theirDays.data ?? [])
   const owned = active === 'mine'
+  const luteal = owned ? myLuteal : theirLuteal
 
   return (
     <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
@@ -151,7 +158,7 @@ export function CyclePage() {
       <CycleBody
         periods={periods}
         logs={logs}
-        lutealDays={settings.data?.lutealDays ?? DEFAULT_SETTINGS.lutealDays}
+        lutealDays={luteal}
         owned={owned}
         ownerId={owned ? userId : (partner?.userId ?? '')}
         onEdit={setEditing}
@@ -431,11 +438,12 @@ function CycleBody({
 
       <LibraryCard owned={owned} />
 
-      {owned && (
-        <ListGroup>
-          <ListRow to="/cycle/report" icon={FileText} tone="plum" title={t('cyc.report')} />
-        </ListGroup>
-      )}
+      {/* Подготовка к зачатию - общий раздел двоих, поэтому видна обоим,
+          а отчёт для врача - только владелице цикла */}
+      <ListGroup>
+        <ListRow to="/prep" icon={Baby} tone="teal" title={t('nav.prep')} />
+        {owned && <ListRow to="/cycle/report" icon={FileText} tone="plum" title={t('cyc.report')} />}
+      </ListGroup>
 
       <History periods={periods} owned={owned} onEdit={onEdit} />
 

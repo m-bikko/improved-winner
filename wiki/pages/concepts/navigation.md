@@ -3,7 +3,7 @@ title: Навигация
 type: concept
 tags: [ui, navigation, mobile]
 created: 2026-09-29
-updated: 2026-09-29
+updated: 2026-10-02
 sources: [src/shell/TabBar.tsx, src/shell/AppShell.tsx, src/shell/sections.ts]
 ---
 
@@ -35,6 +35,14 @@ sources: [src/shell/TabBar.tsx, src/shell/AppShell.tsx, src/shell/sections.ts]
 Отсюда вкладки **Сегодня · Дневник · Как ты · Профиль · Ещё**. Темы, задачи,
 продукты, цикл, даты, вишлист, год и уведомления - плиткой в «Ещё». Если
 частота поменяется, список меняется в одном месте - `src/shell/sections.ts`.
+
+## Разделы на двоих (2026-10-02)
+
+В «Ещё» добавились шесть плиток: [[daily-question|вопрос дня]] (первой -
+он ежедневный), [[memories|воспоминания]], [[watch-together|смотрим вместе]],
+[[challenges|челленджи]], [[savings|копилка]], [[conception-prep|готовимся
+к малышу]]. Вкладки внизу не менялись: частоту новых разделов ещё не видно
+по базе, а вопрос дня и челленджи и так попадают на главную плитками.
 
 ## Правила
 

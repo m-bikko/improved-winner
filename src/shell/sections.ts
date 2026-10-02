@@ -1,15 +1,21 @@
 import {
   Apple,
+  Baby,
   BellRing,
   CalendarHeart,
+  Clapperboard,
   Droplet,
   Gift,
   Heart,
+  Images,
   ListChecks,
+  MessageCircleHeart,
   MessagesSquare,
   NotebookPen,
+  PiggyBank,
   Smile,
   Sparkles,
+  Trophy,
   UserRound,
   type LucideIcon,
 } from 'lucide-react'
@@ -34,12 +40,18 @@ export const TABS: readonly Section[] = [
 
 /** Всё остальное - плиткой в шторке «Ещё». */
 export const MORE: readonly Section[] = [
+  { to: '/question', key: 'nav.question', icon: MessageCircleHeart, tone: 'violet' },
   { to: '/topics', key: 'nav.topics', icon: MessagesSquare, tone: 'indigo' },
   { to: '/tasks', key: 'nav.tasks', icon: ListChecks, tone: 'sky' },
   { to: '/foods', key: 'nav.foods', icon: Apple, tone: 'green' },
   { to: '/cycle', key: 'nav.cycle', icon: Droplet, tone: 'plum' },
   { to: '/dates', key: 'nav.dates', icon: CalendarHeart, tone: 'teal' },
   { to: '/wishlist', key: 'nav.wishlist', icon: Gift, tone: 'orange' },
+  { to: '/memories', key: 'nav.memories', icon: Images, tone: 'rose' },
+  { to: '/watch', key: 'nav.watch', icon: Clapperboard, tone: 'sky' },
+  { to: '/challenges', key: 'nav.challenges', icon: Trophy, tone: 'green' },
+  { to: '/savings', key: 'nav.savings', icon: PiggyBank, tone: 'amber' },
+  { to: '/prep', key: 'nav.prep', icon: Baby, tone: 'teal' },
   { to: '/year', key: 'title.year', icon: Sparkles, tone: 'accent' },
   { to: '/notifications', key: 'title.notifications', icon: BellRing, tone: 'slate' },
 ]

@@ -4,12 +4,16 @@ import {
   ChevronRight,
   Droplet,
   Flame,
+  Images,
   ListChecks,
+  Lock,
+  MessageCircleHeart,
   MessagesSquare,
   NotebookPen,
   Scale,
   Smile,
   TriangleAlert,
+  Trophy,
   type LucideIcon,
 } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
@@ -27,7 +31,7 @@ import type { Tone } from '@/ui/tones'
 import { useCheckins, useStreaks } from '@/features/checkin/api'
 import { STATE_BY_ID } from '@/features/checkin/states'
 import { dynamicKey, useT, type Key } from '@/lib/i18n'
-import { DEFAULT_SETTINGS, useCycleDays, useCycleSettings, useCycleShared, usePeriods } from '@/features/cycle/api'
+import { useCycleDays, useCycleSettings, useCycleShared, useLutealOf, usePeriods } from '@/features/cycle/api'
 import { cycleDay } from '@/features/cycle/cycle'
 import { useOccasions } from '@/features/dates/api'
 import { useDiaryDay } from '@/features/diary/api'
@@ -40,6 +44,15 @@ import { occurrencesOn } from '@/features/tasks/TasksCalendar'
 import { useLastReply } from './api'
 import { NudgeButton } from './NudgeButton'
 import { GratitudeTile } from '@/features/gratitude/GratitudeTile'
+import { useAnswers, useProgress } from '@/features/question/api'
+import { dayOf } from '@/features/question/logic'
+import { useChallenges } from '@/features/challenges/api'
+import { marked, statusOf } from '@/features/challenges/logic'
+import { iconOf } from '@/features/challenges/presets'
+import { useMemories, useMemoryUrls } from '@/features/memories/api'
+import { onThisDay } from '@/features/memories/logic'
+import { ProgressiveImage } from '@/ui/ProgressiveImage'
+import { TONE_CLASS } from '@/ui/tones'
 
 /**
  * «Сегодня» - первый экран приложения.
@@ -112,6 +125,8 @@ export function TodayPage() {
         streaks={streaks.data ?? {}}
       />
 
+      <Question userId={userId} partnerId={partnerId} partnerName={partnerName} today={today} />
+
       <Food
         totals={sumEntries(myDay.data ?? [])}
         goals={goalsFor(me)}
@@ -122,6 +137,14 @@ export function TodayPage() {
 
       <Tasks tasks={tasks.data ?? []} today={today} />
 
+      <Challenges
+        userId={userId}
+        partnerId={partnerId}
+        myTone={personTone(userId, ids)}
+        partnerTone={personTone(partnerId, ids)}
+        today={today}
+      />
+
       {/* Две короткие плашки рядом: у каждой одно крупное число, и в полную
           ширину они были бы строкой текста в огромной рамке. Если видна
           только одна, она занимает всю ширину */}
@@ -131,6 +154,8 @@ export function TodayPage() {
       </div>
 
       <Reply reply={reply.data ?? null} userId={userId} partnerName={partnerName} />
+
+      <ThisDay today={today} />
 
       {/* Внизу, а не вверху: экран отвечает на «что сейчас», а благодарность -
           это то, что делают, дочитав. Наверху она требовала бы действия
@@ -588,7 +613,8 @@ function Cycle({
 
   const own = settings.data?.trackingEnabled ?? false
   const periods = own ? (mine.data ?? []) : shared.data === true ? (theirs.data ?? []) : null
-  const luteal = settings.data?.lutealDays ?? DEFAULT_SETTINGS.lutealDays
+  // Лютеиновая фаза владелицы цикла, а не того, кто смотрит
+  const luteal = useLutealOf(own ? userId : partnerId, own)
   // Тот же кэш, что у раздела цикла: тест на овуляцию сдвигает фазу,
   // и без него плитка разошлась бы с экраном, на который ведёт
   const days = useCycleDays(own ? userId : shared.data === true ? partnerId : '')
@@ -608,6 +634,146 @@ function Cycle({
       value={t('cyc.dayN', { n: state.day })}
       caption={t(dynamicKey('phase', state.phase))}
     />
+  )
+}
+
+/**
+ * Вопрос дня: сам вопрос и чей ход. Тот же кэш, что у раздела, - ответ,
+ * данный там, здесь виден сразу.
+ */
+function Question({
+  userId,
+  partnerId,
+  partnerName,
+  today,
+}: {
+  userId: string
+  partnerId: string
+  partnerName: string
+  today: string
+}) {
+  const t = useT()
+  const answers = useAnswers()
+  const progress = useProgress()
+  if (!answers.data || !progress.data) return null
+
+  const day = dayOf(today, userId, answers.data, progress.data)
+  const both = day.mine !== null && day.partnerAnswered
+  const status = both
+    ? t('qd.tile.open')
+    : day.mine
+      ? t('qd.tile.waiting', { name: partnerName })
+      : day.partnerAnswered
+        ? t('qd.tile.partnerReady', { name: partnerName })
+        : t('qd.tile.first')
+
+  return (
+    <Tile to="/question" icon={MessageCircleHeart} tone="violet" title={t('nav.question')}>
+      <p className="line-clamp-2 text-[15px] leading-snug font-semibold">
+        {day.question ? t(dynamicKey('q', day.question.id)) : t('qd.unknown')}
+      </p>
+      <p
+        className={`mt-1.5 flex items-center gap-1.5 text-sm ${
+          // Второй уже ответил, а ты нет - это зов, а не справка: акцентом
+          !day.mine && day.partnerAnswered ? 'font-semibold text-accent' : 'text-muted'
+        }`}
+      >
+        {!both && partnerId !== '' && <Lock size={14} aria-hidden className="shrink-0" />}
+        <span className="truncate">{status}</span>
+      </p>
+    </Tile>
+  )
+}
+
+/**
+ * Идущие челленджи: у каждого две точки цветами людей - кто уже отметился
+ * сегодня. Нет идущих - нет плашки.
+ */
+function Challenges({
+  userId,
+  partnerId,
+  myTone,
+  partnerTone,
+  today,
+}: {
+  userId: string
+  partnerId: string
+  myTone: Tone
+  partnerTone: Tone
+  today: string
+}) {
+  const t = useT()
+  const challenges = useChallenges()
+  const active = (challenges.data ?? []).filter((c) => statusOf(c, today) === 'active')
+  if (active.length === 0) return null
+
+  return (
+    <Tile to="/challenges" icon={Trophy} tone="green" title={t('nav.challenges')}>
+      <ul className="flex flex-col gap-2">
+        {active.slice(0, 3).map((c) => {
+          const Icon = iconOf(c.icon)
+          const mine = marked(c, userId, today)
+          return (
+            <li key={c.id} className="flex items-center gap-2.5">
+              <Icon size={17} aria-hidden className="shrink-0 text-tone-green" />
+              <span className={`min-w-0 flex-1 truncate text-[15px] ${mine ? 'text-muted' : 'font-medium'}`}>{c.title}</span>
+              <span className="flex shrink-0 gap-1">
+                <Dot on={mine} tone={myTone} />
+                {partnerId !== '' && <Dot on={marked(c, partnerId, today)} tone={partnerTone} />}
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </Tile>
+  )
+}
+
+/** Точка человека: залита - отметился сегодня, контур - ещё нет. */
+function Dot({ on, tone }: { on: boolean; tone: Tone }) {
+  return (
+    <span
+      aria-hidden
+      className={`size-3 rounded-full ring-2 ring-inset ${on ? TONE_CLASS[tone].solid : 'bg-transparent'} ${
+        tone === 'sky' ? 'ring-tone-sky' : 'ring-tone-rose'
+      }`}
+    />
+  )
+}
+
+/**
+ * «В этот день»: воспоминание того же числа из прошлых лет. Только когда
+ * оно есть - пустая плашка «сегодня вспомнить нечего» ничего не даёт.
+ */
+function ThisDay({ today }: { today: string }) {
+  const t = useT()
+  const memories = useMemories()
+  const past = onThisDay(memories.data ?? [], today)[0]
+  const photo = past?.memory.photos[0]
+  const urls = useMemoryUrls(photo ? [photo.thumbPath] : [])
+  if (!past) return null
+
+  return (
+    <Tile to="/memories" icon={Images} tone="rose" title={t('mem.today')}>
+      <div className="flex items-center gap-3">
+        {photo && (
+          <ProgressiveImage
+            src={urls.data?.[photo.thumbPath]}
+            placeholder={photo.placeholder}
+            alt=""
+            className="size-16 shrink-0 rounded-2xl"
+          />
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-semibold text-muted">
+            {t('mem.ago', { n: past.yearsAgo, unit: t.plural('unit.year', past.yearsAgo) })}
+          </p>
+          <p className="mt-0.5 line-clamp-2 text-[15px] font-medium">
+            {past.memory.caption ?? past.memory.place ?? formatDayMonth(fromLocalISO(past.memory.happenedOn))}
+          </p>
+        </div>
+      </div>
+    </Tile>
   )
 }
 

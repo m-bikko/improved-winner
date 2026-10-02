@@ -12,6 +12,7 @@
  */
 
 import { tr } from '@/lib/i18n'
+import { activeLocale } from '@/lib/i18n/lang'
 
 /** Длинная сторона. 512 хватает карточке на экране с тройной плотностью. */
 const MAX_SIDE = 512
@@ -66,21 +67,23 @@ export async function loadBitmap(file: File): Promise<ImageBitmap> {
  */
 async function encodeWithinBudget(
   canvas: HTMLCanvasElement,
+  maxBytes: number = MAX_BYTES,
+  steps: readonly number[] = QUALITY_STEPS,
 ): Promise<{ blob: Blob; extension: 'webp' | 'jpg' }> {
-  for (const quality of QUALITY_STEPS) {
+  for (const quality of steps) {
     const blob = await encode(canvas, 'image/webp', quality)
     if (blob && blob.type === 'image/webp') {
-      if (blob.size <= MAX_BYTES) return { blob, extension: 'webp' }
+      if (blob.size <= maxBytes) return { blob, extension: 'webp' }
       continue
     }
     const jpeg = await encode(canvas, 'image/jpeg', quality)
-    if (jpeg && jpeg.size <= MAX_BYTES) return { blob: jpeg, extension: 'jpg' }
+    if (jpeg && jpeg.size <= maxBytes) return { blob: jpeg, extension: 'jpg' }
   }
 
   // Ни одно качество не влезло - редкость, но отдать что-то надо.
   // Берём самое низкое: лучше зернистая картинка, чем отказ загрузить.
-  const fallback =
-    (await encode(canvas, 'image/webp', 0.35)) ?? (await encode(canvas, 'image/jpeg', 0.35))
+  const webp = await encode(canvas, 'image/webp', 0.35)
+  const fallback = webp && webp.type === 'image/webp' ? webp : await encode(canvas, 'image/jpeg', 0.35)
   if (!fallback) throw new Error(tr('img.compressFailed'))
   return { blob: fallback, extension: fallback.type === 'image/webp' ? 'webp' : 'jpg' }
 }
@@ -169,8 +172,91 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Фотографии воспоминаний.
+//
+// В отличие от продуктов, снимок здесь рассматривают - во весь экран, двумя
+// пальцами. Поэтому размеров три, и каждый грузится только тогда, когда нужен:
+//
+//   полный   1600 px, до 380 КБ  - только в просмотре во весь экран;
+//   превью    640 px, до 70 КБ   - в ленте: плитка мозаики на телефоне
+//                                   с тройной плотностью уже не просит больше;
+//   заглушка   16 px, ~0.5 КБ    - data URL прямо в строке базы: лента
+//                                   рисуется размытыми пятнами нужных
+//                                   пропорций до первого запроса к хранилищу.
+//
+// Снимок с телефона 3-8 МБ превращается в 200-400 КБ на всё вместе.
+
+const MEMORY_FULL = { side: 1600, bytes: 380 * 1024, steps: [0.82, 0.74, 0.66, 0.58, 0.5] } as const
+const MEMORY_THUMB = { side: 640, bytes: 70 * 1024, steps: [0.74, 0.64, 0.55, 0.46] } as const
+const PLACEHOLDER_SIDE = 16
+
+export type MemoryImage = {
+  full: PreparedImage
+  thumb: PreparedImage
+  /** data URL заглушки, ~0.5 КБ. */
+  placeholder: string
+}
+
+function scaleTo(width: number, height: number, side: number): { width: number; height: number } {
+  const longest = Math.max(width, height)
+  if (longest <= side) return { width, height }
+  const k = side / longest
+  return { width: Math.max(1, Math.round(width * k)), height: Math.max(1, Math.round(height * k)) }
+}
+
+function drawScaled(source: CanvasImageSource, width: number, height: number): HTMLCanvasElement {
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error(tr('img.noCanvas'))
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(source, 0, 0, width, height)
+  return canvas
+}
+
+/**
+ * Три размера из одного снимка.
+ *
+ * Каждый следующий рисуется из предыдущего, а не из оригинала: уменьшение
+ * 4032 → 640 за один шаг даёт муар на мелких деталях (браузер берёт
+ * не все пиксели), ступенями - заметно чище. И быстрее: оригинал
+ * декодируется один раз.
+ */
+export async function prepareMemoryImage(file: File): Promise<MemoryImage> {
+  const bitmap = await loadBitmap(file)
+  try {
+    const fullSize = scaleTo(bitmap.width, bitmap.height, MEMORY_FULL.side)
+    const fullCanvas = drawScaled(bitmap, fullSize.width, fullSize.height)
+    const full = await encodeWithinBudget(fullCanvas, MEMORY_FULL.bytes, MEMORY_FULL.steps)
+
+    const thumbSize = scaleTo(fullSize.width, fullSize.height, MEMORY_THUMB.side)
+    const thumbCanvas = drawScaled(fullCanvas, thumbSize.width, thumbSize.height)
+    const thumb = await encodeWithinBudget(thumbCanvas, MEMORY_THUMB.bytes, MEMORY_THUMB.steps)
+
+    const tiny = scaleTo(thumbSize.width, thumbSize.height, PLACEHOLDER_SIDE)
+    const tinyCanvas = drawScaled(thumbCanvas, tiny.width, tiny.height)
+    // Как и у больших размеров, проверяем фактический тип: без WebP браузер
+    // молча отдал бы PNG, а он у фото в разы тяжелее
+    const webp = tinyCanvas.toDataURL('image/webp', 0.5)
+    const placeholder = webp.startsWith('data:image/webp') ? webp : tinyCanvas.toDataURL('image/jpeg', 0.5)
+
+    return {
+      full: { ...full, ...fullSize },
+      thumb: { ...thumb, ...thumbSize },
+      placeholder,
+    }
+  } finally {
+    bitmap.close()
+  }
+}
+
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} ${tr('unit.byte')}`
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} ${tr('unit.kb')}`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} ${tr('unit.mb')}`
+  // Десятичный знак языка: «1,5 МБ», а не «1.5 МБ»
+  const mb = new Intl.NumberFormat(activeLocale(), { maximumFractionDigits: 1 }).format(bytes / (1024 * 1024))
+  return `${mb} ${tr('unit.mb')}`
 }
