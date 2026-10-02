@@ -145,6 +145,13 @@ async function main(): Promise<void> {
   )
 
   // --- Посторонний --------------------------------------------------------
+  // Остаток от прерванного прогона (finally не успел удалить) раньше ронял
+  // проверку целиком - и вместе с ней всю часть про постороннего. Это наш
+  // же одноразовый аккаунт, не участник: убираем и заводим заново
+  const { data: existing } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  const stale = existing?.users.find((u) => u.email === OUTSIDER.email)
+  if (stale) await admin.auth.admin.deleteUser(stale.id)
+
   const { data: created, error: createError } = await admin.auth.admin.createUser({
     email: OUTSIDER.email,
     password: OUTSIDER.password,

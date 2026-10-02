@@ -194,6 +194,11 @@ async function main(): Promise<void> {
     // Язык получателя, а не отправителя: тему заводит один, читает второй,
     // и текст обязан быть на языке второго
     await client.query('begin')
+    // Настоящие настройки людей - не условие проверки: кто-то выключил
+    // этот вид уведомлений или поставил тихие часы, и проверка падала,
+    // хотя рассылка исправна. В транзакции сбрасываем, откат вернёт как было
+    await client.query('delete from public.notification_settings')
+    await client.query('update public.profiles set quiet_from = null, quiet_to = null')
     const { rows: pair } = await client.query<{ user_id: string }>(
       'select user_id from public.app_members order by user_id',
     )
