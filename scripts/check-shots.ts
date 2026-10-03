@@ -88,7 +88,8 @@ await inTransaction(async (db) => {
   check(p2[0]?.userId === b && p2[0]?.title === 'Аминош сняла кадр дня' && p2[0]?.body === 'Сними свой - и откроются оба.', 'Второму - «твой ход»', `${p2[0]?.title}`)
   await db.mustFail('Один кадр в день', ...shot(crypto.randomUUID(), a), 'shots_one_per_day')
 
-  // Хранилище: объект второго под RLS - как настоящий файл
+  // Хранилище: объект второго под RLS - как настоящий файл. Считаются только
+  // тестовые файлы: в бакете могут лежать настоящие кадры пары
   await db.asOwner()
   await db.q(
     `insert into storage.objects (bucket_id, name, owner_id)
@@ -98,7 +99,7 @@ await inTransaction(async (db) => {
   await db.as(b)
   check((await db.q('select 1 from public.shots where day = $1', [D])).length === 0, 'ДО своего кадра чужой не виден', 'строка')
   check(
-    (await db.q(`select 1 from storage.objects where bucket_id = 'shots' and name like $1`, [`${a}/%`])).length === 0,
+    (await db.q(`select 1 from storage.objects where bucket_id = 'shots' and name like $1`, [`${a}/${ida}%`])).length === 0,
     'И файл второго не виден - папку не перечислить',
     'storage.objects',
   )
@@ -111,7 +112,7 @@ await inTransaction(async (db) => {
   check(p3[0]?.userId === a && p3[0]?.title.includes('тоже') === true, 'Второй кадр - «оба открыты»', `${p3[0]?.title}`)
   check((await db.q('select 1 from public.shots where day = $1', [D])).length === 2, 'ПОСЛЕ своего видны оба', '2')
   check(
-    (await db.q(`select 1 from storage.objects where bucket_id = 'shots' and name like $1`, [`${a}/%`])).length === 2,
+    (await db.q(`select 1 from storage.objects where bucket_id = 'shots' and name like $1`, [`${a}/${ida}%`])).length === 2,
     'И файлы второго открылись',
     'полный и превью',
   )

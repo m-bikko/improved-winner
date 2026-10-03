@@ -4,7 +4,7 @@ type: entity
 tags: [baby, cycle, database, notifications]
 created: 2026-10-03
 updated: 2026-10-03
-sources: [supabase/migrations/20261003100400_pregnancy.sql, supabase/migrations/20261003100410_pregnancy_sizes.sql, supabase/migrations/20261003100900_pregnancy_weeks_fix.sql, src/features/pregnancy/, scripts/check-pregnancy.ts]
+sources: [supabase/migrations/20261003100400_pregnancy.sql, supabase/migrations/20261003120000_pregnancy_cancel.sql, supabase/migrations/20261003100410_pregnancy_sizes.sql, supabase/migrations/20261003100900_pregnancy_weeks_fix.sql, src/features/pregnancy/, scripts/check-pregnancy.ts]
 ---
 
 # Режим беременности
@@ -58,6 +58,23 @@ sources: [supabase/migrations/20261003100400_pregnancy.sql, supabase/migrations/
 
 `scripts/check-pregnancy.ts`: срок, неделя, триместр, ПДР, точки наблюдения;
 одна строка на пару, тишина цикла, неделя в уведомлении и без дублей.
+
+## Завершить или отменить (2026-10-03)
+
+Два разных исхода, и путать их нельзя:
+
+- **Завершить** - для беременности, которая была: ставится дата конца,
+  срок, визиты и шевеления остаются, в [[story|истории]] - строка
+  «начали ждать малыша».
+- **Отменить** - для режима, включённого по ошибке или «посмотреть»:
+  как будто его не включали. `cancel_pregnancy()` одной транзакцией
+  удаляет режим, визиты, сессии шевелений и отметки уведомлений. Функцией,
+  а не удалениями из клиента: сессии шевелений RLS даёт удалить только
+  автору, и отмена от второго оставила бы чужие.
+
+«Завершить» спрятано в настройках режима; «Отменить» - и там, и заметной
+кнопкой внизу экрана, с подтверждением, где сказано, что именно удалится.
+Включение режима второго не уведомляет, отмена - тоже.
 
 ## Малыш родился (2026-10-03)
 

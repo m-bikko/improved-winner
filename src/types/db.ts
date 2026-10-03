@@ -2824,6 +2824,7 @@ export type Database = {
         Args: { female: string; male: string; neutral: string; person: string }
         Returns: string
       }
+      cancel_pregnancy: { Args: never; Returns: undefined }
       check_release: { Args: never; Returns: undefined }
       checkin_cycle_patterns: {
         Args: { months?: number; owner: string; today: string }
@@ -3091,7 +3092,7 @@ export type Database = {
       send_prep_reminders: { Args: never; Returns: number }
       send_pulse_reminders: { Args: never; Returns: number }
       send_question_reminders: { Args: never; Returns: number }
-      send_week_summaries: { Args: never; Returns: number }
+      send_week_summaries: { Args: { at?: string }; Returns: number }
       send_weigh_in_reminders: { Args: never; Returns: number }
       shot_file_open: { Args: { object_name: string }; Returns: boolean }
       shot_open: { Args: { of_day: string }; Returns: boolean }

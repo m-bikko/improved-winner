@@ -2789,4 +2789,11 @@ export const en: Dict = {
 
   // --- Малыш: только что -----------------------------------------------------
   'bb.lastFeedNow': 'Last feed: just now',
+
+  // --- Беременность: отмена режима -------------------------------------------
+  'pg.cancel': 'Cancel pregnancy mode',
+  'pg.cancelTitle': 'Cancel pregnancy mode?',
+  'pg.cancelHint': 'This is for a mode turned on by mistake. Everything in it is deleted: the dates, visits and kick counts, and it will not appear in Our story. The cycle forecast and its notifications come back.',
+  'pg.cancelDo': 'Cancel the mode',
+  'pg.keep': 'Keep it',
 }

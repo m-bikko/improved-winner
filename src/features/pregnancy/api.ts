@@ -87,6 +87,24 @@ export function useEndPregnancy() {
   })
 }
 
+/**
+ * Отменить режим - как будто его не включали: база удаляет режим, визиты,
+ * сессии шевелений (и чужие тоже) и отметки уведомлений одной транзакцией.
+ */
+export function useCancelPregnancy() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('cancel_pregnancy')
+      if (error) throw error
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: KEY })
+      void qc.invalidateQueries({ queryKey: ['story'] })
+    },
+  })
+}
+
 export function useSaveVisit() {
   const done = useDone()
   return useMutation({

@@ -81,7 +81,29 @@ await inTransaction(async (db) => {
     await db.q('delete from public.pregnancy_notices')
     check(Number(await db.one('select public.send_pregnancy_weeks()')) === 0, 'Не первый день недели - молчит', 'неделя началась вчера')
   }
-  void b
+
+  // Отмена: как будто режим не включали. Сессии шевелений A удаляет и B -
+  // напрямую RLS дал бы ему стереть только свои
+  await db.asOwner()
+  await db.q(`insert into public.pregnancy_visits (date, title, created_by) values (current_date, 'УЗИ', $1)`, [a])
+  await db.q(
+    `insert into public.kick_sessions (user_id, started_at, ended_at, kicks) values ($1, now() - interval '1 hour', now() - interval '50 minutes', 10)`,
+    [a],
+  )
+  await db.q(`insert into public.pregnancy_notices (user_id, week, lmp) select $1, 12, lmp from public.pregnancy`, [a])
+  await db.q(`select set_config('request.jwt.claims', json_build_object('sub', gen_random_uuid()::text, 'role', 'authenticated')::text, true)`)
+  await db.q('set local role authenticated')
+  await db.mustFail('Посторонний режим не отменит', 'select public.cancel_pregnancy()', [], 'cancel_pregnancy')
+  await db.as(b)
+  await db.q('select public.cancel_pregnancy()')
+  await db.asOwner()
+  const left = await db.q<{ g: number; v: number; k: number; n: number }>(
+    `select (select count(*) from public.pregnancy)::int as g, (select count(*) from public.pregnancy_visits)::int as v,
+            (select count(*) from public.kick_sessions)::int as k, (select count(*) from public.pregnancy_notices)::int as n`,
+  )
+  const l = left[0]
+  check(l?.g === 0 && l.v === 0 && l.k === 0 && l.n === 0, 'Отмена убирает всё: режим, визиты, шевеления, отметки', JSON.stringify(l))
+  check((await db.q('select 1 from public.cycle_delay($1, $2::date)', [a, day])).length === 1, 'После отмены цикл снова считает задержку', 'как до режима')
 })
 
 finish('Беременность')

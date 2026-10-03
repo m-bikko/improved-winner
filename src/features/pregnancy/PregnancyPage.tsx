@@ -21,6 +21,7 @@ import { ErrorState, Loading } from '@/ui/States'
 import { toneVar } from '@/ui/tones'
 import {
   useDeleteVisit,
+  useCancelPregnancy,
   useEndPregnancy,
   usePregnancy,
   useSaveKicks,
@@ -52,6 +53,7 @@ export function PregnancyPage() {
   const today = todayLocal()
   const [settings, setSettings] = useState(false)
   const [born, setBorn] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
 
   if (data.isError) return <ErrorState error={data.error} onRetry={() => void data.refetch()} />
   if (data.isPending || pair.isPending) return <Loading />
@@ -93,8 +95,20 @@ export function PregnancyPage() {
         <IconBadge icon={Stethoscope} tone="teal" size="sm" />
         <p className="text-sm text-muted">{t('pg.disclaimer')}</p>
       </Card>
-      {settings && <SettingsSheet pregnancy={g} today={today} onClose={() => setSettings(false)} onBorn={() => setBorn(true)} />}
+      <button type="button" onClick={() => setCancelling(true)} className="py-3 text-center text-sm font-semibold text-muted">
+        {t('pg.cancel')}
+      </button>
+      {settings && (
+        <SettingsSheet
+          pregnancy={g}
+          today={today}
+          onClose={() => setSettings(false)}
+          onBorn={() => setBorn(true)}
+          onCancel={() => setCancelling(true)}
+        />
+      )}
       {born && <BornSheet onClose={() => setBorn(false)} />}
+      {cancelling && <CancelSheet onClose={() => setCancelling(false)} />}
     </div>
   )
 }
@@ -628,7 +642,19 @@ function Contractions() {
   )
 }
 
-function SettingsSheet({ pregnancy, today, onClose, onBorn }: { pregnancy: Pregnancy; today: string; onClose: () => void; onBorn: () => void }) {
+function SettingsSheet({
+  pregnancy,
+  today,
+  onClose,
+  onBorn,
+  onCancel,
+}: {
+  pregnancy: Pregnancy
+  today: string
+  onClose: () => void
+  onBorn: () => void
+  onCancel: () => void
+}) {
   const t = useT()
   const update = useUpdateLmp()
   const end = useEndPregnancy()
@@ -657,6 +683,44 @@ function SettingsSheet({ pregnancy, today, onClose, onBorn }: { pregnancy: Pregn
           {t('pg.end')}
         </Button>
         <p className="text-[13px] text-muted">{t('pg.endHint')}</p>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            onClose()
+            onCancel()
+          }}
+        >
+          {t('pg.cancel')}
+        </Button>
+      </div>
+    </Sheet>
+  )
+}
+
+/**
+ * Отмена режима - для включённого по ошибке. В отличие от «Завершить»,
+ * не оставляет ничего: поэтому сначала объясняем, что именно удалится.
+ */
+function CancelSheet({ onClose }: { onClose: () => void }) {
+  const t = useT()
+  const cancel = useCancelPregnancy()
+  const [error, setError] = useState<string | null>(null)
+  return (
+    <Sheet open onClose={onClose} title={t('pg.cancelTitle')}>
+      <div className="flex flex-col gap-4">
+        <p className="text-[15px] leading-snug text-muted">{t('pg.cancelHint')}</p>
+        {error && <p className="text-sm text-danger">{error}</p>}
+        <Button
+          variant="danger"
+          loading={cancel.isPending}
+          onClick={() => cancel.mutate(undefined, { onSuccess: onClose, onError: (e) => setError(e.message) })}
+        >
+          <Trash2 size={18} aria-hidden />
+          {t('pg.cancelDo')}
+        </Button>
+        <Button variant="secondary" onClick={onClose}>
+          {t('pg.keep')}
+        </Button>
       </div>
     </Sheet>
   )
