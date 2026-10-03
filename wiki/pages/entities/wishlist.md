@@ -3,7 +3,7 @@ title: wishlists - вишлист
 type: entity
 tags: [database, together, images, notifications]
 created: 2026-09-08
-updated: 2026-09-09
+updated: 2026-10-03
 sources: [supabase/migrations/20260909100000_wishlist_flat.sql, src/features/wishlist/, src/ui/SquareCropper.tsx]
 ---
 
@@ -75,6 +75,11 @@ sources: [supabase/migrations/20260909100000_wishlist_flat.sql, src/features/wis
 
 Видят и правят оба - список общий. **Удаляет только тот, кто добавил**:
 убрать хотелку может лишь тот, кто её захотел.
+
+## Бронь подарка (2026-10-03)
+
+В желании второго можно тайно отметить «подарю я» - см.
+[[wish-reservations]]. Владелец брони не видит.
 
 ## См. также
 

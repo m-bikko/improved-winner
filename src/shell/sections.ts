@@ -3,7 +3,10 @@ import {
   Apple,
   Baby,
   BellRing,
+  BookHeart,
   CalendarHeart,
+  CalendarRange,
+  Camera,
   Clapperboard,
   Dices,
   Droplet,
@@ -13,23 +16,34 @@ import {
   HeartHandshake,
   HeartPulse,
   Images,
+  Lightbulb,
   ListChecks,
   MessageCircleHeart,
   MessagesSquare,
   Mic,
+  Milk,
   NotebookPen,
   PiggyBank,
   Signature,
   Smile,
   Sparkles,
+  Stethoscope,
   Trophy,
   UserRound,
+  Wind,
   type LucideIcon,
 } from 'lucide-react'
 import type { Key } from '@/lib/i18n'
 import type { Tone } from '@/ui/tones'
 
-export type Section = { to: string; key: Key; icon: LucideIcon; tone: Tone }
+export type Section = {
+  to: string
+  key: Key
+  icon: LucideIcon
+  tone: Tone
+  /** Плитка видна только при условии - например, когда малыш уже родился. */
+  gate?: 'baby'
+}
 
 /**
  * Вкладки внизу - то, чем пользуются каждый день.
@@ -48,23 +62,38 @@ export const TABS: readonly Section[] = [
 /**
  * Всё остальное - плиткой в шторке «Ещё», группами.
  *
- * Разделов стало двадцать один, и одной сеткой они читались как свалка:
+ * Разделов стало под тридцать, и одной сеткой они читались как свалка:
  * нужное искалось глазами по цветам. Группы - по тому, зачем заходят:
- * про нас двоих, про малыша, бытовое и само приложение.
+ * про нас двоих, чем заняться вместе, разговоры, малыш, быт и итоги.
  */
 export const MORE_GROUPS: readonly { key: Key; items: readonly Section[] }[] = [
   {
     key: 'nav.group.us',
     items: [
       { to: '/question', key: 'nav.question', icon: MessageCircleHeart, tone: 'violet' },
-      { to: '/meetings', key: 'nav.meetings', icon: HeartHandshake, tone: 'rose' },
+      { to: '/shots', key: 'nav.shots', icon: Camera, tone: 'sky' },
       { to: '/voice', key: 'nav.voice', icon: Mic, tone: 'violet' },
+      { to: '/meetings', key: 'nav.meetings', icon: HeartHandshake, tone: 'rose' },
       { to: '/memories', key: 'nav.memories', icon: Images, tone: 'rose' },
+      { to: '/story', key: 'nav.story', icon: BookHeart, tone: 'rose' },
+    ],
+  },
+  {
+    key: 'nav.group.fun',
+    items: [
+      { to: '/ideas', key: 'nav.ideas', icon: Lightbulb, tone: 'violet' },
       { to: '/quiz', key: 'nav.quiz', icon: Dices, tone: 'amber' },
       { to: '/watch', key: 'nav.watch', icon: Clapperboard, tone: 'sky' },
       { to: '/challenges', key: 'nav.challenges', icon: Trophy, tone: 'green' },
       { to: '/savings', key: 'nav.savings', icon: PiggyBank, tone: 'amber' },
+    ],
+  },
+  {
+    key: 'nav.group.talk',
+    items: [
+      { to: '/topics', key: 'nav.topics', icon: MessagesSquare, tone: 'indigo' },
       { to: '/pulse', key: 'nav.pulse', icon: Activity, tone: 'indigo' },
+      { to: '/pause', key: 'nav.pause', icon: Wind, tone: 'sky' },
       { to: '/agreements', key: 'nav.agreements', icon: Handshake, tone: 'indigo' },
     ],
   },
@@ -74,22 +103,25 @@ export const MORE_GROUPS: readonly { key: Key; items: readonly Section[] }[] = [
       { to: '/prep', key: 'nav.prep', icon: Baby, tone: 'teal' },
       { to: '/pregnancy', key: 'nav.pregnancy', icon: HeartPulse, tone: 'plum' },
       { to: '/names', key: 'nav.names', icon: Signature, tone: 'orange' },
+      // Только когда малыш уже есть: до рождения плитка вела бы в пустоту
+      { to: '/baby', key: 'nav.baby', icon: Milk, tone: 'teal', gate: 'baby' },
     ],
   },
   {
     key: 'nav.group.life',
     items: [
-      { to: '/topics', key: 'nav.topics', icon: MessagesSquare, tone: 'indigo' },
       { to: '/tasks', key: 'nav.tasks', icon: ListChecks, tone: 'sky' },
       { to: '/foods', key: 'nav.foods', icon: Apple, tone: 'green' },
       { to: '/cycle', key: 'nav.cycle', icon: Droplet, tone: 'plum' },
       { to: '/dates', key: 'nav.dates', icon: CalendarHeart, tone: 'teal' },
       { to: '/wishlist', key: 'nav.wishlist', icon: Gift, tone: 'orange' },
+      { to: '/health', key: 'nav.health', icon: Stethoscope, tone: 'teal' },
     ],
   },
   {
     key: 'nav.group.app',
     items: [
+      { to: '/week', key: 'nav.week', icon: CalendarRange, tone: 'accent' },
       { to: '/year', key: 'title.year', icon: Sparkles, tone: 'accent' },
       { to: '/notifications', key: 'title.notifications', icon: BellRing, tone: 'slate' },
     ],

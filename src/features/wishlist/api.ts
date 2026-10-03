@@ -201,3 +201,39 @@ export function useRemoveWishPhoto() {
     },
   })
 }
+
+/** Своя бронь подарка: когда подарено (пусто - ещё нет). */
+export type Reservation = { wishId: string; giftedOn: string | null }
+
+/**
+ * Тайные брони подарков - только свои. Владелец желания их не видит:
+ * RLS не отдаёт ему ни строки, поэтому и ключ кэша у каждого свой смысл.
+ */
+export function useReservations() {
+  return useQuery({
+    queryKey: ['wishlist', 'reservations'],
+    queryFn: async (): Promise<Record<string, Reservation>> => {
+      const { data, error } = await supabase.from('wish_reservations').select('wish_id, gifted_on')
+      if (error) throw error
+      return Object.fromEntries(data.map((r) => [r.wish_id, { wishId: r.wish_id, giftedOn: r.gifted_on }]))
+    },
+  })
+}
+
+export function useSetReservation() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { wishId: string; state: 'reserved' | 'gifted' | null; today: string }) => {
+      if (input.state === null) {
+        const { error } = await supabase.from('wish_reservations').delete().eq('wish_id', input.wishId)
+        if (error) throw error
+        return
+      }
+      const { error } = await supabase
+        .from('wish_reservations')
+        .upsert({ wish_id: input.wishId, gifted_on: input.state === 'gifted' ? input.today : null }, { onConflict: 'wish_id' })
+      if (error) throw error
+    },
+    onSettled: () => void qc.invalidateQueries({ queryKey: ['wishlist', 'reservations'] }),
+  })
+}

@@ -1,6 +1,6 @@
 import { diffDays } from '@/lib/date'
 
-export type MeetingItem = { id: string; title: string; done: boolean; source: 'wish' | 'watch' | null; createdAt: string }
+export type MeetingItem = { id: string; title: string; done: boolean; source: 'wish' | 'watch' | 'idea' | null; createdAt: string }
 
 export type Meeting = {
   id: string

@@ -3,7 +3,7 @@ title: Лента воспоминаний
 type: entity
 tags: [relationship, photos, storage, database]
 created: 2026-10-02
-updated: 2026-10-02
+updated: 2026-10-03
 sources: [supabase/migrations/20261002100300_memories.sql, src/features/memories/, src/lib/image.ts, src/lib/exif.ts, public/push-sw.js, scripts/check-memories.ts]
 ---
 
@@ -59,6 +59,12 @@ Service Worker по пути без токена. На тестовых сним
 день», мозаика; лимит фото, чужая запись и чужая папка, бакет. Удаление
 файла напрямую через SQL Supabase запрещает - удаление проверено через
 приложение (Storage API): файлов 10 → 8 после удаления воспоминания.
+
+## Кадры дня и история (2026-10-03)
+
+Наверху ленты - входы в [[shots|кадры дня]] (альбом, который собирается
+сам) и [[story|нашу историю]]. Сделанная [[date-ideas|идея]] может сразу
+стать воспоминанием.
 
 ## См. также
 

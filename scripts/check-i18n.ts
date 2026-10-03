@@ -70,6 +70,7 @@ import { PREP_ITEMS } from '../src/features/prep/items.ts'
 import { TOT_PAIRS } from '../src/features/quiz/pairs.ts'
 import { PULSE_AREAS } from '../src/features/pulse/areas.ts'
 import { CHECKPOINTS, WEEKS } from '../src/features/pregnancy/weeks.ts'
+import { IDEA_CATEGORIES } from '../src/features/ideas/logic.ts'
 
 let failed = 0
 function check(ok: boolean, name: string, detail: string): void {
@@ -96,6 +97,8 @@ const ALLOWED = [
   'src/lib/appName.ts',
   // ё→е в нормализации поиска - выражение алгоритма, а не текст
   'src/lib/search.ts',
+  // Казахские суффиксы порядковых (-шы/-ші по гармонии гласных) - тоже правило, а не текст
+  'src/features/story/logic.ts',
 ]
 
 const LITERAL = /(['"`])((?:(?!\1)[^\\]|\\.)*?[А-Яа-яЁё](?:(?!\1)[^\\]|\\.)*?)\1/g
@@ -260,6 +263,7 @@ const FAMILIES: { prefix: string; ids: readonly string[]; suffixes?: string[] }[
   // Разделы на двоих, вторая серия (2026-10-03)
   { prefix: 'tot', ids: TOT_PAIRS.map((x) => x.id), suffixes: ['.a', '.b'] },
   { prefix: 'nm.origin', ids: ['kazakh', 'slavic', 'intl', 'custom'] },
+  { prefix: 'id.cat', ids: IDEA_CATEGORIES },
   { prefix: 'pl.area', ids: PULSE_AREAS.map((x) => x.id) },
   { prefix: 'pl.hint', ids: PULSE_AREAS.map((x) => x.id) },
   { prefix: 'preg.size', ids: WEEKS.map((w) => String(w.week)) },

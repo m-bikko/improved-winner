@@ -10,7 +10,7 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Gift, GripVertical, ImageOff, ImagePlus, Trash2 } from 'lucide-react'
+import { Gift, GripVertical, ImageOff, ImagePlus, PartyPopper, Trash2 } from 'lucide-react'
 import { formatBytes, loadBitmap, prepareSquare, type SquareCrop } from '@/lib/image'
 import { Button } from '@/ui/Button'
 import { Chip } from '@/ui/Chip'
@@ -20,15 +20,20 @@ import { Sheet } from '@/ui/Sheet'
 import { SquareCropper } from '@/ui/SquareCropper'
 import { EmptyState, ErrorState, Loading } from '@/ui/States'
 import { useProfiles } from '@/features/profile/api'
+import { useUserId } from '@/auth/AuthProvider'
+import { todayLocal } from '@/lib/date'
 import { CATEGORIES, CATEGORY_BY_ID } from './categories'
 import {
   useDeleteWish,
   useRemoveWishPhoto,
   useReorderWishes,
+  useReservations,
   useSaveWish,
+  useSetReservation,
   useUploadWishPhoto,
   useWishPhotoUrls,
   useWishes,
+  type Reservation,
   type Wish,
 } from './api'
 import { Fab } from '@/ui/Fab'
@@ -49,6 +54,7 @@ export function WishlistPage() {
   const wishes = useWishes()
   const reorder = useReorderWishes()
   const profiles = useProfiles()
+  const reservations = useReservations()
 
   const [category, setCategory] = useState<string | null>(null)
   const [editing, setEditing] = useState<Wish | 'new' | null>(null)
@@ -153,6 +159,7 @@ export function WishlistPage() {
                   wish={wish}
                   url={wish.imagePath ? urls.data?.[wish.imagePath] : undefined}
                   author={nick(wish.createdBy)}
+                  reservation={reservations.data?.[wish.id]}
                   onOpen={() => setEditing(wish)}
                   onView={(url) => setViewing({ url, alt: wish.title })}
                 />
@@ -167,6 +174,8 @@ export function WishlistPage() {
       {editing && (
         <Editor
           wish={editing === 'new' ? null : editing}
+          ownerName={editing === 'new' ? '' : nick(editing.createdBy)}
+          reservation={editing === 'new' ? undefined : reservations.data?.[editing.id]}
           defaultCategory={category ?? 'buy'}
           onClose={() => setEditing(null)}
         />
@@ -224,12 +233,14 @@ function Row({
   wish,
   url,
   author,
+  reservation,
   onOpen,
   onView,
 }: {
   wish: Wish
   url: string | undefined
   author: string
+  reservation: Reservation | undefined
   onOpen: () => void
   onView: (url: string) => void
 }) {
@@ -284,6 +295,17 @@ function Row({
             {category ? t(dynamicKey('wish', category.id)) : wish.category} · {author}
           </span>
         </span>
+        {/* Бронь видна только тому, кто бронировал: владельцу её не отдаёт база */}
+        {reservation && (
+          <span
+            className={`mt-1.5 flex items-center gap-1 self-start rounded-full px-2 py-0.5 text-[12px] font-semibold ${
+              reservation.giftedOn ? 'bg-tone-green-soft text-tone-green' : 'bg-accent-soft text-accent-soft-ink'
+            }`}
+          >
+            {reservation.giftedOn ? <PartyPopper size={12} aria-hidden /> : <Gift size={12} aria-hidden />}
+            {reservation.giftedOn ? t('wish.gifted') : t('wish.youGive')}
+          </span>
+        )}
       </button>
 
       <button
@@ -301,14 +323,19 @@ function Row({
 
 function Editor({
   wish,
+  ownerName,
+  reservation,
   defaultCategory,
   onClose,
 }: {
   wish: Wish | null
+  ownerName: string
+  reservation: Reservation | undefined
   defaultCategory: string
   onClose: () => void
 }) {
   const t = useT()
+  const userId = useUserId()
   const save = useSaveWish()
   const remove = useDeleteWish()
   const [title, setTitle] = useState(wish?.title ?? '')
@@ -388,6 +415,8 @@ function Editor({
           }}
         />
 
+        {wish && wish.createdBy !== userId && <Reserve wishId={wish.id} ownerName={ownerName} reservation={reservation} />}
+
         {error && <p className="text-sm text-danger">{error}</p>}
 
         <Button onClick={() => void submit()} loading={save.isPending}>
@@ -406,6 +435,46 @@ function Editor({
         )}
       </div>
     </Sheet>
+  )
+}
+
+/**
+ * Бронь подарка в чужом желании: «подарю я» и потом «подарено». Владелец
+ * ничего из этого не видит - ни в списке, ни в напоминаниях.
+ */
+function Reserve({ wishId, ownerName, reservation }: { wishId: string; ownerName: string; reservation: Reservation | undefined }) {
+  const t = useT()
+  const set = useSetReservation()
+  const state = reservation ? (reservation.giftedOn ? 'gifted' : 'reserved') : null
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl bg-accent-soft/60 p-4">
+      <div className="flex items-start gap-3">
+        <Gift size={20} aria-hidden className="mt-0.5 shrink-0 text-accent-soft-ink" />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold">{state === 'gifted' ? t('wish.gifted') : state ? t('wish.youGive') : t('wish.reserve')}</p>
+          <p className="mt-0.5 text-sm text-muted">{t('wish.reserveHint', { name: ownerName })}</p>
+        </div>
+      </div>
+      <div className="flex gap-2">
+        {state === null ? (
+          <Button className="flex-1" variant="primary" loading={set.isPending} onClick={() => set.mutate({ wishId, state: 'reserved', today: todayLocal() })}>
+            {t('wish.reserveDo')}
+          </Button>
+        ) : (
+          <>
+            {state === 'reserved' && (
+              <Button className="flex-1" variant="primary" loading={set.isPending} onClick={() => set.mutate({ wishId, state: 'gifted', today: todayLocal() })}>
+                <PartyPopper size={17} aria-hidden />
+                {t('wish.markGifted')}
+              </Button>
+            )}
+            <Button className="flex-1" variant="secondary" loading={set.isPending} onClick={() => set.mutate({ wishId, state: null, today: todayLocal() })}>
+              {t('wish.unreserve')}
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
   )
 }
 

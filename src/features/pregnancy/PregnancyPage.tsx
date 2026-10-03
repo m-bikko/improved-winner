@@ -1,6 +1,8 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
-import { Baby, CalendarCheck, ChevronLeft, ChevronRight, Ellipsis, Footprints, Heart, Plus, Ruler, Stethoscope, Timer, Trash2, Weight } from 'lucide-react'
+import { Baby, CalendarCheck, ChevronLeft, ChevronRight, Ellipsis, Footprints, Heart, Milk, Plus, Ruler, Stethoscope, Timer, Trash2, Weight } from 'lucide-react'
 import { dynamicKey, useT } from '@/lib/i18n'
+import { BornSheet } from '@/features/baby/BabyPage'
+import { useHasBaby } from '@/features/baby/api'
 import { formatDayMonth, formatDayMonthYear, fromLocalISO, todayLocal } from '@/lib/date'
 import { activeLocale } from '@/lib/i18n/lang'
 import { usePair, type Pair } from '@/features/profile/pair'
@@ -9,7 +11,7 @@ import { Aurora } from '@/ui/Aurora'
 import { Avatar } from '@/ui/Avatar'
 import { Button } from '@/ui/Button'
 import { useBurst } from '@/ui/Burst'
-import { Card, SectionTitle } from '@/ui/Card'
+import { Card, CardLink, SectionTitle } from '@/ui/Card'
 import { Field, INPUT_CLASS } from '@/ui/Field'
 import { IconBadge } from '@/ui/IconBadge'
 import { Segmented } from '@/ui/Segmented'
@@ -29,7 +31,7 @@ import {
   type Pregnancy,
   type Visit,
 } from './api'
-import { CONTRACTIONS_FROM, KICKS_FROM, checkpointState, gestation, weekInfo } from './logic'
+import { BORN_FROM, CONTRACTIONS_FROM, KICKS_FROM, checkpointState, gestation, weekInfo } from './logic'
 import { CHECKPOINTS } from './weeks'
 
 /**
@@ -49,12 +51,20 @@ export function PregnancyPage() {
   const data = usePregnancy()
   const today = todayLocal()
   const [settings, setSettings] = useState(false)
+  const [born, setBorn] = useState(false)
 
   if (data.isError) return <ErrorState error={data.error} onRetry={() => void data.refetch()} />
   if (data.isPending || pair.isPending) return <Loading />
 
   const g = data.data.pregnancy
-  if (!g || g.endedOn !== null) return <Start pair={pair} today={today} />
+  if (!g || g.endedOn !== null) {
+    return (
+      <>
+        <BabyLink />
+        <Start pair={pair} today={today} />
+      </>
+    )
+  }
 
   const state = gestation(g.lmp, today)
 
@@ -66,11 +76,44 @@ export function PregnancyPage() {
       <Visits visits={data.data.visits} today={today} />
       {state.week >= KICKS_FROM && <Kicks sessions={data.data.kicks} />}
       {state.week >= CONTRACTIONS_FROM && <Contractions />}
+      {state.week >= BORN_FROM && (
+        <button
+          type="button"
+          onClick={() => setBorn(true)}
+          className="flex items-center gap-3 rounded-3xl bg-accent p-4 text-left text-accent-ink shadow-card active:scale-[0.98]"
+        >
+          <Baby size={24} aria-hidden />
+          <span>
+            <span className="block font-display text-lg font-extrabold">{t('bb.born')}</span>
+            <span className="block text-sm opacity-85">{t('pg.bornHint')}</span>
+          </span>
+        </button>
+      )}
       <Card className="flex gap-3 p-4">
         <IconBadge icon={Stethoscope} tone="teal" size="sm" />
         <p className="text-sm text-muted">{t('pg.disclaimer')}</p>
       </Card>
-      {settings && <SettingsSheet pregnancy={g} today={today} onClose={() => setSettings(false)} />}
+      {settings && <SettingsSheet pregnancy={g} today={today} onClose={() => setSettings(false)} onBorn={() => setBorn(true)} />}
+      {born && <BornSheet onClose={() => setBorn(false)} />}
+    </div>
+  )
+}
+
+/** После рождения сюда заходят по привычке - ведём в дневник малыша. */
+function BabyLink() {
+  const t = useT()
+  const has = useHasBaby()
+  if (has.data !== true) return null
+  return (
+    <div className="mx-auto max-w-2xl px-4 pt-1">
+      <CardLink to="/baby" className="flex items-center gap-3 p-4">
+        <IconBadge icon={Milk} tone="teal" size="md" />
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">{t('nav.baby')}</span>
+          <span className="block text-sm text-muted">{t('pg.toBaby')}</span>
+        </span>
+        <ChevronRight size={18} aria-hidden className="shrink-0 text-muted/70" />
+      </CardLink>
     </div>
   )
 }
@@ -585,7 +628,7 @@ function Contractions() {
   )
 }
 
-function SettingsSheet({ pregnancy, today, onClose }: { pregnancy: Pregnancy; today: string; onClose: () => void }) {
+function SettingsSheet({ pregnancy, today, onClose, onBorn }: { pregnancy: Pregnancy; today: string; onClose: () => void; onBorn: () => void }) {
   const t = useT()
   const update = useUpdateLmp()
   const end = useEndPregnancy()
@@ -599,6 +642,16 @@ function SettingsSheet({ pregnancy, today, onClose }: { pregnancy: Pregnancy; to
         </label>
         <Button loading={update.isPending} onClick={() => update.mutate(lmp, { onSuccess: onClose })}>
           {t('common.save')}
+        </Button>
+        <Button
+          variant="soft"
+          onClick={() => {
+            onClose()
+            onBorn()
+          }}
+        >
+          <Baby size={18} aria-hidden />
+          {t('bb.born')}
         </Button>
         <Button variant="secondary" loading={end.isPending} onClick={() => end.mutate(today, { onSuccess: onClose })}>
           {t('pg.end')}

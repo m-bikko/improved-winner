@@ -60,6 +60,7 @@ import { useMeetings } from '@/features/meetings/api'
 import { nextMeeting, stateOf } from '@/features/meetings/logic'
 import { useVoiceNotes } from '@/features/voice/api'
 import { useActivePregnancy } from '@/features/pregnancy/api'
+import { BabyTile, MedsTile, PauseTile, ShotTile } from './Extras'
 import { gestation } from '@/features/pregnancy/logic'
 
 /**
@@ -118,13 +119,21 @@ export function TodayPage() {
         together={together}
       />
 
+      <PauseTile />
+
       <Meeting today={today} />
+
+      <ShotTile today={today} />
 
       <NudgeButton />
 
       <Voice userId={userId} partnerName={partnerName} />
 
       <QuickActions />
+
+      <MedsTile today={today} />
+
+      <BabyTile today={today} />
 
       <Mood
         today={today}

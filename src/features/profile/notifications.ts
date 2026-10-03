@@ -38,4 +38,9 @@ export const NOTIFICATION_KINDS: NotificationKind[] = [
   { id: 'names' },
   { id: 'pregnancy' },
   { id: 'pulse' },
+  { id: 'shots' },
+  { id: 'ideas' },
+  { id: 'pause' },
+  { id: 'week' },
+  { id: 'meds' },
 ]

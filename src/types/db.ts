@@ -42,6 +42,174 @@ export type Database = {
         }
         Relationships: []
       }
+      babies: {
+        Row: {
+          born_on: string
+          created_at: string
+          created_by: string
+          height_cm: number | null
+          id: string
+          name: string | null
+          sex: string | null
+          weight_g: number | null
+        }
+        Insert: {
+          born_on: string
+          created_at?: string
+          created_by?: string
+          height_cm?: number | null
+          id?: string
+          name?: string | null
+          sex?: string | null
+          weight_g?: number | null
+        }
+        Update: {
+          born_on?: string
+          created_at?: string
+          created_by?: string
+          height_cm?: number | null
+          id?: string
+          name?: string | null
+          sex?: string | null
+          weight_g?: number | null
+        }
+        Relationships: []
+      }
+      baby_checkups: {
+        Row: {
+          baby_id: string
+          created_at: string
+          created_by: string
+          date: string
+          done: boolean
+          id: string
+          kind: string
+          note: string | null
+          title: string
+        }
+        Insert: {
+          baby_id: string
+          created_at?: string
+          created_by?: string
+          date: string
+          done?: boolean
+          id?: string
+          kind: string
+          note?: string | null
+          title: string
+        }
+        Update: {
+          baby_id?: string
+          created_at?: string
+          created_by?: string
+          date?: string
+          done?: boolean
+          id?: string
+          kind?: string
+          note?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "baby_checkups_baby_id_fkey"
+            columns: ["baby_id"]
+            isOneToOne: false
+            referencedRelation: "babies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      baby_events: {
+        Row: {
+          amount_ml: number | null
+          baby_id: string
+          created_at: string
+          created_by: string
+          diaper: string | null
+          ended_at: string | null
+          id: string
+          kind: string
+          note: string | null
+          side: string | null
+          started_at: string
+        }
+        Insert: {
+          amount_ml?: number | null
+          baby_id: string
+          created_at?: string
+          created_by?: string
+          diaper?: string | null
+          ended_at?: string | null
+          id?: string
+          kind: string
+          note?: string | null
+          side?: string | null
+          started_at: string
+        }
+        Update: {
+          amount_ml?: number | null
+          baby_id?: string
+          created_at?: string
+          created_by?: string
+          diaper?: string | null
+          ended_at?: string | null
+          id?: string
+          kind?: string
+          note?: string | null
+          side?: string | null
+          started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "baby_events_baby_id_fkey"
+            columns: ["baby_id"]
+            isOneToOne: false
+            referencedRelation: "babies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      baby_growth: {
+        Row: {
+          baby_id: string
+          created_at: string
+          created_by: string
+          date: string
+          head_cm: number | null
+          height_cm: number | null
+          id: string
+          weight_g: number | null
+        }
+        Insert: {
+          baby_id: string
+          created_at?: string
+          created_by?: string
+          date: string
+          head_cm?: number | null
+          height_cm?: number | null
+          id?: string
+          weight_g?: number | null
+        }
+        Update: {
+          baby_id?: string
+          created_at?: string
+          created_by?: string
+          date?: string
+          head_cm?: number | null
+          height_cm?: number | null
+          id?: string
+          weight_g?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "baby_growth_baby_id_fkey"
+            columns: ["baby_id"]
+            isOneToOne: false
+            referencedRelation: "babies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       baby_names: {
         Row: {
           created_at: string
@@ -356,6 +524,51 @@ export type Database = {
         }
         Relationships: []
       }
+      date_ideas: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          hint_en: string | null
+          hint_kk: string | null
+          hint_ru: string | null
+          key: string
+          rank: number | null
+          title: string | null
+          title_en: string | null
+          title_kk: string | null
+          title_ru: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by?: string | null
+          hint_en?: string | null
+          hint_kk?: string | null
+          hint_ru?: string | null
+          key: string
+          rank?: number | null
+          title?: string | null
+          title_en?: string | null
+          title_kk?: string | null
+          title_ru?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          hint_en?: string | null
+          hint_kk?: string | null
+          hint_ru?: string | null
+          key?: string
+          rank?: number | null
+          title?: string | null
+          title_en?: string | null
+          title_kk?: string | null
+          title_ru?: string | null
+        }
+        Relationships: []
+      }
       diary_entries: {
         Row: {
           brand_snapshot: string | null
@@ -502,6 +715,42 @@ export type Database = {
           },
         ]
       }
+      doctors: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          note: string | null
+          person_id: string | null
+          phone: string | null
+          place: string | null
+          specialty: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name: string
+          note?: string | null
+          person_id?: string | null
+          phone?: string | null
+          place?: string | null
+          specialty?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          note?: string | null
+          person_id?: string | null
+          phone?: string | null
+          place?: string | null
+          specialty?: string | null
+        }
+        Relationships: []
+      }
       food_servings: {
         Row: {
           created_at: string
@@ -624,6 +873,107 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      health_cards: {
+        Row: {
+          allergies: string | null
+          blood_type: string | null
+          conditions: string | null
+          emergency: string | null
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allergies?: string | null
+          blood_type?: string | null
+          conditions?: string | null
+          emergency?: string | null
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          allergies?: string | null
+          blood_type?: string | null
+          conditions?: string | null
+          emergency?: string | null
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      idea_done: {
+        Row: {
+          created_at: string
+          done_by: string
+          done_on: string
+          idea_key: string
+          memory_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          done_by?: string
+          done_on: string
+          idea_key: string
+          memory_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          done_by?: string
+          done_on?: string
+          idea_key?: string
+          memory_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "idea_done_idea_key_fkey"
+            columns: ["idea_key"]
+            isOneToOne: true
+            referencedRelation: "date_ideas"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "idea_done_memory_id_fkey"
+            columns: ["memory_id"]
+            isOneToOne: false
+            referencedRelation: "memories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      idea_votes: {
+        Row: {
+          created_at: string
+          idea_key: string
+          liked: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          idea_key: string
+          liked: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          idea_key?: string
+          liked?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "idea_votes_idea_key_fkey"
+            columns: ["idea_key"]
+            isOneToOne: false
+            referencedRelation: "date_ideas"
+            referencedColumns: ["key"]
+          },
+        ]
       }
       kick_sessions: {
         Row: {
@@ -767,6 +1117,100 @@ export type Database = {
           date?: string
           meal?: string
           sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      med_doses: {
+        Row: {
+          day: string
+          medication_id: string
+          slot: string
+          taken_at: string
+        }
+        Insert: {
+          day: string
+          medication_id: string
+          slot: string
+          taken_at?: string
+        }
+        Update: {
+          day?: string
+          medication_id?: string
+          slot?: string
+          taken_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "med_doses_medication_id_fkey"
+            columns: ["medication_id"]
+            isOneToOne: false
+            referencedRelation: "medications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      med_notices: {
+        Row: {
+          created_at: string
+          day: string
+          medication_id: string
+          slot: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          medication_id: string
+          slot: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          medication_id?: string
+          slot?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "med_notices_medication_id_fkey"
+            columns: ["medication_id"]
+            isOneToOne: false
+            referencedRelation: "medications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medications: {
+        Row: {
+          created_at: string
+          dose: string | null
+          ends_on: string | null
+          id: string
+          name: string
+          note: string | null
+          starts_on: string
+          times: string[]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dose?: string | null
+          ends_on?: string | null
+          id?: string
+          name: string
+          note?: string | null
+          starts_on: string
+          times?: string[]
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          dose?: string | null
+          ends_on?: string | null
+          id?: string
+          name?: string
+          note?: string | null
+          starts_on?: string
+          times?: string[]
           user_id?: string
         }
         Relationships: []
@@ -1123,6 +1567,85 @@ export type Database = {
           yearly?: boolean
         }
         Relationships: []
+      }
+      pause_notes: {
+        Row: {
+          created_at: string
+          feel: string
+          need: string
+          pause_id: string
+          updated_at: string
+          user_id: string
+          when_text: string | null
+        }
+        Insert: {
+          created_at?: string
+          feel: string
+          need: string
+          pause_id: string
+          updated_at?: string
+          user_id?: string
+          when_text?: string | null
+        }
+        Update: {
+          created_at?: string
+          feel?: string
+          need?: string
+          pause_id?: string
+          updated_at?: string
+          user_id?: string
+          when_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pause_notes_pause_id_fkey"
+            columns: ["pause_id"]
+            isOneToOne: false
+            referencedRelation: "pauses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pauses: {
+        Row: {
+          closed_at: string | null
+          end_notified_at: string | null
+          ends_at: string
+          id: string
+          outcome: string | null
+          started_at: string
+          started_by: string
+          topic_id: string | null
+        }
+        Insert: {
+          closed_at?: string | null
+          end_notified_at?: string | null
+          ends_at: string
+          id?: string
+          outcome?: string | null
+          started_at?: string
+          started_by?: string
+          topic_id?: string | null
+        }
+        Update: {
+          closed_at?: string | null
+          end_notified_at?: string | null
+          ends_at?: string
+          id?: string
+          outcome?: string | null
+          started_at?: string
+          started_by?: string
+          topic_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pauses_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       periods: {
         Row: {
@@ -1600,6 +2123,74 @@ export type Database = {
         }
         Relationships: []
       }
+      shot_prompts: {
+        Row: {
+          created_at: string
+          day: string
+          fire_at: string
+          sent_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          fire_at: string
+          sent_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          fire_at?: string
+          sent_at?: string | null
+        }
+        Relationships: []
+      }
+      shots: {
+        Row: {
+          caption: string | null
+          created_at: string
+          day: string
+          height: number
+          id: string
+          path: string
+          placeholder: string
+          thumb_path: string
+          user_id: string
+          width: number
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          day: string
+          height: number
+          id: string
+          path: string
+          placeholder: string
+          thumb_path: string
+          user_id?: string
+          width: number
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          day?: string
+          height?: number
+          id?: string
+          path?: string
+          placeholder?: string
+          thumb_path?: string
+          user_id?: string
+          width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shots_day_fkey"
+            columns: ["day"]
+            isOneToOne: false
+            referencedRelation: "shot_prompts"
+            referencedColumns: ["day"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           created_at: string
@@ -1929,6 +2520,24 @@ export type Database = {
           },
         ]
       }
+      week_notices: {
+        Row: {
+          created_at: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       weigh_in_asks: {
         Row: {
           created_at: string
@@ -1985,6 +2594,35 @@ export type Database = {
           weight_kg?: number
         }
         Relationships: []
+      }
+      wish_reservations: {
+        Row: {
+          created_at: string
+          gifted_on: string | null
+          user_id: string
+          wish_id: string
+        }
+        Insert: {
+          created_at?: string
+          gifted_on?: string | null
+          user_id?: string
+          wish_id: string
+        }
+        Update: {
+          created_at?: string
+          gifted_on?: string | null
+          user_id?: string
+          wish_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wish_reservations_wish_id_fkey"
+            columns: ["wish_id"]
+            isOneToOne: true
+            referencedRelation: "wishlists"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       wishlists: {
         Row: {
@@ -2297,6 +2935,18 @@ export type Database = {
         }[]
       }
       health_summary: { Args: { days?: number; today: string }; Returns: Json }
+      idea_is_match: { Args: { of_key: string }; Returns: boolean }
+      idea_matches: {
+        Args: never
+        Returns: {
+          idea_key: string
+          matched_at: string
+        }[]
+      }
+      idea_title: {
+        Args: { for_user: string; of_key: string }
+        Returns: string
+      }
       in_quiet_hours: { Args: { target: string }; Returns: boolean }
       is_member: { Args: never; Returns: boolean }
       lang_of: { Args: { person: string }; Returns: string }
@@ -2304,6 +2954,7 @@ export type Database = {
       letter_delivered_to_me: { Args: { letter: string }; Returns: boolean }
       letter_recipients: { Args: { letter: string }; Returns: string[] }
       letters_in_flight: { Args: never; Returns: number }
+      med_is_mine: { Args: { of_med: string }; Returns: boolean }
       money_fmt: { Args: { cur: string; n: number }; Returns: string }
       month_summary: { Args: { month: number; year: number }; Returns: Json }
       name_matches: {
@@ -2348,6 +2999,21 @@ export type Database = {
         }[]
       }
       partner_of: { Args: { author_id: string }; Returns: string }
+      pause_clock: { Args: { at: string; target: string }; Returns: string }
+      pause_noted_by: {
+        Args: { of_pause: string; who: string }
+        Returns: boolean
+      }
+      pause_noted_by_partner: { Args: { of_pause: string }; Returns: boolean }
+      pause_progress: {
+        Args: never
+        Returns: {
+          pause_id: string
+          user_id: string
+        }[]
+      }
+      pause_send_over: { Args: { of_pause: string }; Returns: undefined }
+      pause_writable: { Args: { of_pause: string }; Returns: boolean }
       pregnancy_active: { Args: { owner: string }; Returns: boolean }
       pulse_done_by_me: { Args: { of_month: string }; Returns: boolean }
       pulse_done_by_partner: { Args: { of_month: string }; Returns: boolean }
@@ -2417,13 +3083,41 @@ export type Database = {
       send_cycle_notices: { Args: never; Returns: number }
       send_love_notes: { Args: never; Returns: number }
       send_meal_reminders: { Args: never; Returns: number }
+      send_med_reminders: { Args: { at?: string }; Returns: number }
       send_meeting_reminders: { Args: never; Returns: number }
       send_nudge: { Args: never; Returns: string }
+      send_pause_ends: { Args: never; Returns: number }
       send_pregnancy_weeks: { Args: never; Returns: number }
       send_prep_reminders: { Args: never; Returns: number }
       send_pulse_reminders: { Args: never; Returns: number }
       send_question_reminders: { Args: never; Returns: number }
+      send_week_summaries: { Args: never; Returns: number }
       send_weigh_in_reminders: { Args: never; Returns: number }
+      shot_file_open: { Args: { object_name: string }; Returns: boolean }
+      shot_open: { Args: { of_day: string }; Returns: boolean }
+      shot_progress: {
+        Args: never
+        Returns: {
+          created_at: string
+          day: string
+          user_id: string
+        }[]
+      }
+      shot_tick: { Args: { at?: string }; Returns: number }
+      story: {
+        Args: { lang?: string; today: string }
+        Returns: {
+          at: string
+          day: string
+          detail: string
+          kind: string
+          n: number
+          photo: string
+          placeholder: string
+          ref: string
+          title: string
+        }[]
+      }
       tg_escape: { Args: { input: string }; Returns: string }
       tg_notify_both: {
         Args: { kind: string; message: string }
@@ -2467,6 +3161,7 @@ export type Database = {
         Args: { actor: string; key: string; target: string }
         Returns: string
       }
+      valid_med_times: { Args: { times: string[] }; Returns: boolean }
       watch_rated_by_me: { Args: { item: string }; Returns: boolean }
       watch_rating_progress: {
         Args: never
@@ -2475,6 +3170,9 @@ export type Database = {
           user_id: string
         }[]
       }
+      week_summary: { Args: { d0: string }; Returns: Json }
+      week_summary_of: { Args: { d0: string }; Returns: Json }
+      wish_is_others: { Args: { of_wish: string }; Returns: boolean }
       year_in_numbers: { Args: { year: number }; Returns: Json }
     }
     Enums: {

@@ -8,7 +8,8 @@ import { Sheet } from '@/ui/Sheet'
 import { IconBadge } from '@/ui/IconBadge'
 import { ListGroup, ListRow } from '@/ui/List'
 import { SPRING } from '@/ui/motion'
-import { MORE, MORE_GROUPS, NESTED, TABS } from './sections'
+import { MORE, MORE_GROUPS, NESTED, TABS, type Section } from './sections'
+import { useHasBaby } from '@/features/baby/api'
 
 /**
  * Какая вкладка сейчас активна.
@@ -168,6 +169,8 @@ function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const t = useT()
   const navigate = useNavigate()
   const { account, signOut } = useAuth()
+  const hasBaby = useHasBaby()
+  const visible = (s: Section): boolean => s.gate !== 'baby' || hasBaby.data === true
 
   return (
     <Sheet open={open} onClose={onClose} title={account?.nickname ?? t('nav.more')}>
@@ -176,7 +179,7 @@ function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
           <h3 className="mb-2 px-1 font-display text-[13px] font-bold text-muted">{t(group.key)}</h3>
           {/* stagger: плитки выходят волной вслед за шторкой */}
           <ul className="stagger grid grid-cols-3 gap-2.5">
-            {group.items.map((s) => (
+            {group.items.filter(visible).map((s) => (
               <li key={s.to}>
                 <button
                   type="button"

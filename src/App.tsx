@@ -38,6 +38,13 @@ import { NamesPage } from '@/features/names/NamesPage'
 import { PregnancyPage } from '@/features/pregnancy/PregnancyPage'
 import { AgreementsPage } from '@/features/agreements/AgreementsPage'
 import { PulsePage } from '@/features/pulse/PulsePage'
+import { ShotsPage } from '@/features/shots/ShotsPage'
+import { IdeasPage } from '@/features/ideas/IdeasPage'
+import { PausePage } from '@/features/pause/PausePage'
+import { StoryPage } from '@/features/story/StoryPage'
+import { WeekPage } from '@/features/week/WeekPage'
+import { HealthPage } from '@/features/health/HealthPage'
+import { BabyPage } from '@/features/baby/BabyPage'
 
 export default function App() {
   return (
@@ -111,6 +118,13 @@ function Gate() {
         <Route path="/pregnancy" element={<PregnancyPage />} />
         <Route path="/agreements" element={<AgreementsPage />} />
         <Route path="/pulse" element={<PulsePage />} />
+        <Route path="/shots" element={<ShotsPage />} />
+        <Route path="/ideas" element={<IdeasPage />} />
+        <Route path="/pause" element={<PausePage />} />
+        <Route path="/story" element={<StoryPage />} />
+        <Route path="/week" element={<WeekPage />} />
+        <Route path="/health" element={<HealthPage />} />
+        <Route path="/baby" element={<BabyPage />} />
         <Route path="/checkin" element={<CheckinPage />} />
         <Route path="/diary" element={<DiaryPage />} />
         <Route path="/month" element={<MonthPage />} />

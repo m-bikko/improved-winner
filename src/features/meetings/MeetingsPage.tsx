@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, Clapperboard, Gift, HeartHandshake, Images, MapPin, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Check, Clapperboard, Gift, HeartHandshake, Images, Lightbulb, MapPin, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { formatDayMonth, fromLocalISO, shiftDays, todayLocal } from '@/lib/date'
 import { usePair, type Pair } from '@/features/profile/pair'
@@ -215,6 +215,8 @@ function Plan({ meeting }: { meeting: Meeting }) {
                   <Gift size={14} />
                 ) : item.source === 'watch' ? (
                   <Clapperboard size={14} />
+                ) : item.source === 'idea' ? (
+                  <Lightbulb size={14} />
                 ) : null}
               </span>
               <span className={`min-w-0 flex-1 text-[15px] ${item.done ? 'text-muted line-through decoration-muted/50' : ''}`}>

@@ -58,3 +58,6 @@ export function upcomingCheckpoints(week: number): typeof CHECKPOINTS {
 /** С какой недели показывать счёт шевелений и таймер схваток. */
 export const KICKS_FROM = 24
 export const CONTRACTIONS_FROM = 34
+
+/** С какой недели на экране кнопка «Малыш родился». Раньше - из настроек: роды бывают и раньше срока. */
+export const BORN_FROM = 36

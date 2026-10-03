@@ -1,5 +1,5 @@
-import { useMemo, useState, type ReactNode } from 'react'
-import { AnimatePresence, motion, useMotionValue, useTransform, type PanInfo } from 'motion/react'
+import { useMemo, useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 import { Heart, Plus, Undo2, X } from 'lucide-react'
 import { dynamicKey, useLang, useT } from '@/lib/i18n'
 import { usePair } from '@/features/profile/pair'
@@ -12,6 +12,7 @@ import { Segmented } from '@/ui/Segmented'
 import { Sheet } from '@/ui/Sheet'
 import { Sparkles } from '@/ui/Sparkles'
 import { ErrorState, Loading } from '@/ui/States'
+import { RoundButton, SwipeCard } from '@/ui/SwipeCard'
 import { useAddName, useBabyNames, useMatches, useMyVotes, useVote, type BabyName, type Gender, type Origin } from './api'
 
 const ORIGINS: readonly Origin[] = ['kazakh', 'slavic', 'intl', 'custom']
@@ -109,7 +110,9 @@ export function NamesPage() {
           {top ? (
             <>
               {deck[1] && <NameCard key={deck[1].key + '-under'} name={deck[1]} under />}
-              <SwipeCard key={top.key} name={top} onDecide={(liked) => decide(top.key, liked)} />
+              <SwipeCard key={top.key} yes={t('nm.yes')} no={t('nm.no')} onDecide={(liked) => decide(top.key, liked)}>
+                <NameCard name={top} />
+              </SwipeCard>
             </>
           ) : (
             <motion.div
@@ -186,87 +189,6 @@ function NameCard({ name, under = false }: { name: BabyName; under?: boolean }) 
       {name.latin && <p className="mt-1.5 text-sm text-muted">{name.latin}</p>}
       {meaning(name) && <p className="mt-4 max-w-[16rem] text-[15px] leading-snug">{meaning(name)}</p>}
     </div>
-  )
-}
-
-/**
- * Верхняя карточка: тянется пальцем и поворачивается, по ходу проступает
- * «да» или «нет». Отпустил дальше порога - голос; не дотянул - вернулась.
- */
-function SwipeCard({ name, onDecide }: { name: BabyName; onDecide: (liked: boolean) => void }) {
-  const t = useT()
-  const x = useMotionValue(0)
-  const rotate = useTransform(x, [-200, 200], [-14, 14])
-  const yes = useTransform(x, [20, 110], [0, 1])
-  const no = useTransform(x, [-110, -20], [1, 0])
-  const [gone, setGone] = useState<1 | -1 | 0>(0)
-
-  const onDragEnd = (_: unknown, info: PanInfo) => {
-    if (info.offset.x > 110 || info.velocity.x > 600) {
-      setGone(1)
-      onDecide(true)
-    } else if (info.offset.x < -110 || info.velocity.x < -600) {
-      setGone(-1)
-      onDecide(false)
-    }
-  }
-
-  return (
-    <motion.div
-      className="absolute inset-0 touch-pan-y"
-      style={{ x, rotate }}
-      drag="x"
-      dragSnapToOrigin
-      dragElastic={0.9}
-      onDragEnd={onDragEnd}
-      initial={{ scale: 0.95, opacity: 0.6 }}
-      animate={{ scale: 1, opacity: 1 }}
-      exit={{ x: gone === 0 ? 0 : gone * 420, opacity: 0, rotate: gone * 18, transition: { duration: 0.3 } }}
-      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-    >
-      <NameCard name={name} />
-      <motion.span
-        style={{ opacity: yes }}
-        className="pointer-events-none absolute top-6 left-6 -rotate-12 rounded-xl border-2 border-tone-green px-2.5 py-1 font-display text-lg font-extrabold text-tone-green"
-      >
-        {t('nm.yes')}
-      </motion.span>
-      <motion.span
-        style={{ opacity: no }}
-        className="pointer-events-none absolute top-6 right-6 rotate-12 rounded-xl border-2 border-tone-rose px-2.5 py-1 font-display text-lg font-extrabold text-tone-rose"
-      >
-        {t('nm.no')}
-      </motion.span>
-    </motion.div>
-  )
-}
-
-function RoundButton({
-  label,
-  onClick,
-  disabled,
-  accent = false,
-  small = false,
-  children,
-}: {
-  label: string
-  onClick: () => void
-  disabled?: boolean
-  accent?: boolean
-  small?: boolean
-  children: ReactNode
-}) {
-  const look = small ? 'size-12 bg-surface text-muted' : accent ? 'size-16 bg-accent text-accent-ink' : 'size-16 bg-surface text-tone-rose'
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={onClick}
-      disabled={disabled}
-      className={`flex items-center justify-center rounded-full shadow-card transition-transform active:scale-90 disabled:opacity-40 ${look}`}
-    >
-      {children}
-    </button>
   )
 }
 

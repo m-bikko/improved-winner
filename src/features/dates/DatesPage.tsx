@@ -28,7 +28,7 @@ import { Segmented } from '@/ui/Segmented'
 import { Fab } from '@/ui/Fab'
 import { Card } from '@/ui/Card'
 import { usePair } from '@/features/profile/pair'
-import { useWishes } from '@/features/wishlist/api'
+import { useReservations, useWishes } from '@/features/wishlist/api'
 
 /*
  * Тон у каждого вида свой, а не один тон раздела на всех: в списке из десятка
@@ -148,12 +148,17 @@ function GiftIdeas({ items }: { items: Occasion[] }) {
   const t = useT()
   const pair = usePair()
   const wishes = useWishes()
+  const reservations = useReservations()
   const target = items.find(
     (o) =>
       o.days <= 30 &&
       ((o.kind === 'birthday' && o.personId !== null && o.personId === pair.partnerId) || o.kind === 'anniversary'),
   )
-  const ideas = (wishes.data ?? []).filter((w) => w.createdBy === pair.partnerId).slice(0, 5)
+  const mine = reservations.data ?? {}
+  const theirs = (wishes.data ?? []).filter((w) => w.createdBy === pair.partnerId)
+  // Выбранный подарок - первым, подаренное - уже не идея
+  const chosen = theirs.filter((w) => mine[w.id] && mine[w.id]?.giftedOn === null)
+  const ideas = [...chosen, ...theirs.filter((w) => !mine[w.id])].slice(0, 5)
   if (!target || pair.partnerId === '' || ideas.length === 0) return null
 
   return (
@@ -168,6 +173,11 @@ function GiftIdeas({ items }: { items: Occasion[] }) {
           <li key={w.id} className="flex items-center gap-2 text-[15px]">
             <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-tone-orange" />
             <span className="min-w-0 flex-1 truncate">{w.title}</span>
+            {mine[w.id] && (
+              <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-[12px] font-semibold text-accent-soft-ink">
+                {t('wish.youGive')}
+              </span>
+            )}
           </li>
         ))}
       </ul>

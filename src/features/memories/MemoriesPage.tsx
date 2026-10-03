@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, type PanInfo } from 'motion/react'
-import { ChevronLeft, ChevronRight, Heart, ImagePlus, Images, LoaderCircle, MapPin, Pencil, Trash2, X } from 'lucide-react'
+import { BookHeart, Camera, ChevronLeft, ChevronRight, Heart, ImagePlus, Images, LoaderCircle, MapPin, Pencil, Trash2, X } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { formatDayLabel, formatDayMonthYear, fromLocalISO, monthName, todayLocal } from '@/lib/date'
 import { formatBytes, prepareMemoryImage, type MemoryImage } from '@/lib/image'
@@ -9,7 +9,8 @@ import { usePair, type Pair } from '@/features/profile/pair'
 import { Avatar } from '@/ui/Avatar'
 import { Button } from '@/ui/Button'
 import { useBurst } from '@/ui/Burst'
-import { Card, SectionTitle } from '@/ui/Card'
+import { Card, CardLink, SectionTitle } from '@/ui/Card'
+import { IconBadge } from '@/ui/IconBadge'
 import { Fab } from '@/ui/Fab'
 import { Field, INPUT_CLASS } from '@/ui/Field'
 import { ProgressiveImage } from '@/ui/ProgressiveImage'
@@ -61,6 +62,17 @@ export function MemoriesPage() {
 
   return (
     <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+      {/* Кадры дня и история - тоже альбом пары, только собранный сам */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <CardLink to="/shots" className="flex items-center gap-2.5 p-3">
+          <IconBadge icon={Camera} tone="sky" size="sm" />
+          <span className="min-w-0 truncate text-[15px] font-semibold">{t('nav.shots')}</span>
+        </CardLink>
+        <CardLink to="/story" className="flex items-center gap-2.5 p-3">
+          <IconBadge icon={BookHeart} tone="rose" size="sm" />
+          <span className="min-w-0 truncate text-[15px] font-semibold">{t('nav.story')}</span>
+        </CardLink>
+      </div>
       {past.length > 0 && past[0] && (
         <OnThisDay
           memory={past[0].memory}

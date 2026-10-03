@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { tr } from '@/lib/i18n'
-import type { Meeting } from './logic'
+import type { Meeting, MeetingItem } from './logic'
 
 const KEY = ['meetings'] as const
 
@@ -34,7 +34,7 @@ export function useMeetings() {
             id: i.id,
             title: i.title,
             done: i.done,
-            source: (i.source === 'wish' || i.source === 'watch' ? i.source : null) as 'wish' | 'watch' | null,
+            source: (i.source === 'wish' || i.source === 'watch' || i.source === 'idea' ? i.source : null) as MeetingItem['source'],
             createdAt: i.created_at,
           }))
           .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1)),
@@ -81,7 +81,7 @@ export function useDeleteMeeting() {
 export function useAddItem() {
   const done = useDone()
   return useMutation({
-    mutationFn: async (input: { meetingId: string; title: string; source: 'wish' | 'watch' | null }) => {
+    mutationFn: async (input: { meetingId: string; title: string; source: MeetingItem['source'] }) => {
       const { error } = await supabase
         .from('meeting_items')
         .insert({ meeting_id: input.meetingId, title: input.title.trim(), source: input.source })

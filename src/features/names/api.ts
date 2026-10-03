@@ -16,11 +16,14 @@ export type BabyName = {
   createdBy: string | null
 }
 
-/** Список имён меняется редко - только своими добавлениями. */
+/**
+ * Список имён меняется редко - только добавлениями пары. Добавленное вторым
+ * должно появиться в колоде сразу, поэтому кэш свежий минуту, а не десять.
+ */
 export function useBabyNames() {
   return useQuery({
     queryKey: ['names', 'list'],
-    staleTime: 10 * 60_000,
+    staleTime: 60_000,
     queryFn: async (): Promise<BabyName[]> => {
       const { data, error } = await supabase.from('baby_names').select('*')
       if (error) throw error
