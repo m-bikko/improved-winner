@@ -4,6 +4,9 @@ import {
   ChevronRight,
   Droplet,
   Flame,
+  HeartHandshake,
+  HeartPulse,
+  Mic,
   Images,
   ListChecks,
   Lock,
@@ -53,6 +56,11 @@ import { useMemories, useMemoryUrls } from '@/features/memories/api'
 import { onThisDay } from '@/features/memories/logic'
 import { ProgressiveImage } from '@/ui/ProgressiveImage'
 import { TONE_CLASS } from '@/ui/tones'
+import { useMeetings } from '@/features/meetings/api'
+import { nextMeeting, stateOf } from '@/features/meetings/logic'
+import { useVoiceNotes } from '@/features/voice/api'
+import { useActivePregnancy } from '@/features/pregnancy/api'
+import { gestation } from '@/features/pregnancy/logic'
 
 /**
  * «Сегодня» - первый экран приложения.
@@ -110,7 +118,11 @@ export function TodayPage() {
         together={together}
       />
 
+      <Meeting today={today} />
+
       <NudgeButton />
+
+      <Voice userId={userId} partnerName={partnerName} />
 
       <QuickActions />
 
@@ -606,6 +618,7 @@ function Cycle({
   partnerName: string
 }) {
   const t = useT()
+  const pregnancy = useActivePregnancy()
   const settings = useCycleSettings()
   const shared = useCycleShared(partnerId)
   const mine = usePeriods(userId)
@@ -618,6 +631,22 @@ function Cycle({
   // Тот же кэш, что у раздела цикла: тест на овуляцию сдвигает фазу,
   // и без него плитка разошлась бы с экраном, на который ведёт
   const days = useCycleDays(own ? userId : shared.data === true ? partnerId : '')
+
+  // Беременность - вместо дня цикла: «день 45, задержка» здесь был бы неправдой
+  if (pregnancy) {
+    const g = gestation(pregnancy.lmp, todayLocal())
+    return (
+      <MiniTile
+        to="/pregnancy"
+        icon={HeartPulse}
+        tone="plum"
+        title={t('nav.pregnancy')}
+        value={t('pg.weekN', { n: g.week })}
+        caption={g.week >= 4 ? t(dynamicKey('preg.size', String(Math.min(g.week, 40)))) : t('pg.dayN', { n: g.day + 1 })}
+        sparkle={g.day === 0}
+      />
+    )
+  }
 
   if (periods === null || periods.length === 0) return null
 
@@ -774,6 +803,64 @@ function ThisDay({ today }: { today: string }) {
         </div>
       </div>
     </Tile>
+  )
+}
+
+/**
+ * До встречи: крупное число дней (меньше трёх - искрится) или «вы вместе».
+ * Нет встречи на горизонте - нет плашки.
+ */
+function Meeting({ today }: { today: string }) {
+  const t = useT()
+  const meetings = useMeetings()
+  const next = nextMeeting(meetings.data ?? [], today)
+  if (!next) return null
+  const state = stateOf(next, today)
+  const value =
+    state.kind === 'upcoming'
+      ? `${state.days} ${t.plural('unit.day', state.days)}`
+      : state.kind === 'now'
+        ? t('mt.dayOf', { n: state.day, of: state.of })
+        : ''
+  return (
+    <CardLink to="/meetings" className="relative flex items-center gap-3 overflow-hidden p-4">
+      <IconBadge icon={HeartHandshake} tone="rose" size="md" />
+      <div className="min-w-0 flex-1">
+        <p className="text-[13px] font-semibold text-muted">{state.kind === 'now' ? t('mt.together') : t('mt.until')}</p>
+        {state.kind === 'upcoming' && state.days <= 3 ? (
+          <Sparkles count={4} className="mt-0.5">
+            <span className="font-display text-[24px] leading-tight font-extrabold">{value}</span>
+          </Sparkles>
+        ) : (
+          <p className="mt-0.5 font-display text-[24px] leading-tight font-extrabold">{value}</p>
+        )}
+      </div>
+      <span className="shrink-0 text-right text-[13px] text-muted">
+        {formatDayMonth(fromLocalISO(next.startsOn))}
+        {next.place ? <span className="block max-w-28 truncate">{next.place}</span> : null}
+      </span>
+    </CardLink>
+  )
+}
+
+/** Новое голосовое от второго - пока не прослушано. */
+function Voice({ userId, partnerName }: { userId: string; partnerName: string }) {
+  const t = useT()
+  const notes = useVoiceNotes()
+  const fresh = (notes.data ?? []).filter((n) => n.authorId !== userId && n.listenedAt === null)
+  if (fresh.length === 0) return null
+  return (
+    <CardLink to="/voice" className="flex items-center gap-3 p-4">
+      <span className="relative">
+        <IconBadge icon={Mic} tone="violet" size="md" />
+        <span aria-hidden className="absolute -top-0.5 -right-0.5 size-3 rounded-full bg-accent ring-2 ring-surface" />
+      </span>
+      <p className="min-w-0 flex-1 text-[15px] font-semibold">
+        {t('vc.fromPartner', { name: partnerName })}
+        {fresh.length > 1 && <span className="ml-1 text-muted">· {fresh.length}</span>}
+      </p>
+      <ChevronRight size={18} aria-hidden className="shrink-0 text-muted/70" />
+    </CardLink>
   )
 }
 

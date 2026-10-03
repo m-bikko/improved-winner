@@ -1,6 +1,6 @@
 import { useState, type CSSProperties, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { Baby, CalendarHeart, Check, ChevronDown, ChevronRight, Ellipsis, Pill, Plus, Stethoscope, Trash2 } from 'lucide-react'
+import { Baby, CalendarHeart, Check, ChevronDown, ChevronRight, Ellipsis, HeartPulse, Pill, Plus, Signature, Stethoscope, Trash2 } from 'lucide-react'
 import { dynamicKey, useT } from '@/lib/i18n'
 import { diffDays, formatDayMonth, fromLocalISO, shiftDays, todayLocal } from '@/lib/date'
 import { usePair, type Pair } from '@/features/profile/pair'
@@ -29,6 +29,8 @@ import {
   type Prep,
 } from './api'
 import { FOLATE_GOAL_DAYS, itemsFor } from './items'
+import { useActivePregnancy } from '@/features/pregnancy/api'
+import { gestation } from '@/features/pregnancy/logic'
 import { nextWindow, vitaminDaysSince, vitaminStreak, type Check as CheckRow } from './logic'
 
 /**
@@ -57,6 +59,8 @@ export function PrepPage() {
   return (
     <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <Hero data={data} pair={pair} today={today} onSettings={() => setSettings(true)} />
+
+      <BabyLinks />
 
       <FertileWindow pair={pair} today={today} />
 
@@ -169,6 +173,36 @@ function Hero({ data, pair, today, onSettings }: { data: Prep; pair: Pair; today
 }
 
 /**
+ * Дальше по пути: режим беременности (идёт - срок, нет - «тест
+ * положительный?») и выбор имени.
+ */
+function BabyLinks() {
+  const t = useT()
+  const pregnancy = useActivePregnancy()
+  const week = pregnancy ? gestation(pregnancy.lmp, todayLocal()).week : null
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <Link to="/pregnancy" className="block rounded-3xl transition-transform active:scale-[0.98]">
+        <Card className="flex h-full flex-col gap-2 p-4">
+          <IconBadge icon={HeartPulse} tone="plum" size="sm" />
+          <p className="text-[15px] leading-tight font-semibold">
+            {week !== null ? t('pg.weekN', { n: week }) : t('pg.startTitle')}
+          </p>
+          <p className="text-[13px] text-muted">{week !== null ? t('nav.pregnancy') : t('prep.pregnancyHint')}</p>
+        </Card>
+      </Link>
+      <Link to="/names" className="block rounded-3xl transition-transform active:scale-[0.98]">
+        <Card className="flex h-full flex-col gap-2 p-4">
+          <IconBadge icon={Signature} tone="orange" size="sm" />
+          <p className="text-[15px] leading-tight font-semibold">{t('nav.names')}</p>
+          <p className="text-[13px] text-muted">{t('prep.namesHint')}</p>
+        </Card>
+      </Link>
+    </div>
+  )
+}
+
+/**
  * Ближайшее благоприятное окно - из того же расчёта, что у раздела цикла.
  * Виден только тот цикл, что виден человеку: свой при включённом
  * отслеживании или открытый партнёром. Иначе карточки нет.
@@ -178,13 +212,14 @@ function FertileWindow({ pair, today }: { pair: Pair; today: string }) {
   const settings = useCycleSettings()
   const shared = useCycleShared(pair.partnerId)
   const own = settings.data?.trackingEnabled ?? false
+  const pregnancy = useActivePregnancy()
   const owner = own ? pair.userId : shared.data === true ? pair.partnerId : ''
   const periods = usePeriods(owner)
   const days = useCycleDays(owner)
   // Лютеиновая фаза владелицы цикла - окно у обоих должно совпадать
   const luteal = useLutealOf(owner, own)
 
-  if (owner === '' || !periods.data || periods.data.length === 0) return null
+  if (pregnancy || owner === '' || !periods.data || periods.data.length === 0) return null
   const lhDates = (days.data ?? []).filter((d) => d.lhPositive).map((d) => d.date)
   const w = nextWindow(periods.data, today, luteal, lhDates)
   if (!w) return null

@@ -3,7 +3,7 @@ title: Готовимся к малышу
 type: entity
 tags: [cycle, health, relationship, database, notifications]
 created: 2026-10-02
-updated: 2026-10-02
+updated: 2026-10-03
 sources: [supabase/migrations/20261002100200_conception_prep.sql, supabase/migrations/20261002100600_cycle_luteal_of.sql, src/features/prep/, scripts/check-prep.ts]
 ---
 
@@ -63,6 +63,12 @@ sources: [supabase/migrations/20261002100200_conception_prep.sql, supabase/migra
 `scripts/check-prep.ts`: пункты по полу, серия витаминов; окно - те же
 границы, что у цикла, и не во время менструации; ограничения чек-листа,
 чужие галочки; лютеиновая фаза владелицы открыта/закрыта; напоминание.
+
+## Дальше - беременность и имя (2026-10-03)
+
+Внизу раздела две ссылки: «Тест положительный» включает
+[[pregnancy|режим беременности]], «Имя малышу» ведёт в [[baby-names]].
+Пока беременность идёт, «ближайшее окно» не показывается.
 
 ## См. также
 

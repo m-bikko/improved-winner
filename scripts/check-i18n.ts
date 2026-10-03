@@ -67,6 +67,9 @@ import { CHALLENGE_ICONS, PRESETS as CHALLENGE_PRESETS } from '../src/features/c
 import { GOAL_ICONS } from '../src/features/savings/icons.ts'
 import { STATUSES as WATCH_STATUSES, WATCH_KINDS } from '../src/features/watch/logic.ts'
 import { PREP_ITEMS } from '../src/features/prep/items.ts'
+import { TOT_PAIRS } from '../src/features/quiz/pairs.ts'
+import { PULSE_AREAS } from '../src/features/pulse/areas.ts'
+import { CHECKPOINTS, WEEKS } from '../src/features/pregnancy/weeks.ts'
 
 let failed = 0
 function check(ok: boolean, name: string, detail: string): void {
@@ -254,6 +257,18 @@ const FAMILIES: { prefix: string; ids: readonly string[]; suffixes?: string[] }[
   { prefix: 'w.kind', ids: WATCH_KINDS },
   { prefix: 'prep.item', ids: PREP_ITEMS.map((x) => x.id) },
   { prefix: 'prep.hint', ids: PREP_ITEMS.map((x) => x.id) },
+  // Разделы на двоих, вторая серия (2026-10-03)
+  { prefix: 'tot', ids: TOT_PAIRS.map((x) => x.id), suffixes: ['.a', '.b'] },
+  { prefix: 'nm.origin', ids: ['kazakh', 'slavic', 'intl', 'custom'] },
+  { prefix: 'pl.area', ids: PULSE_AREAS.map((x) => x.id) },
+  { prefix: 'pl.hint', ids: PULSE_AREAS.map((x) => x.id) },
+  { prefix: 'preg.size', ids: WEEKS.map((w) => String(w.week)) },
+  { prefix: 'preg.baby', ids: WEEKS.map((w) => String(w.week)) },
+  { prefix: 'preg.mom', ids: WEEKS.map((w) => String(w.week)) },
+  { prefix: 'preg.partner', ids: WEEKS.map((w) => String(w.week)) },
+  { prefix: 'preg.cp', ids: CHECKPOINTS.map((c) => c.id) },
+  { prefix: 'preg.cpHint', ids: CHECKPOINTS.map((c) => c.id) },
+  { prefix: 'pg.trimester', ids: ['1', '2', '3'] },
   // Пустой префикс: эти ключи приходят из базы целиком. Функция состава тела
   // возвращает не «почему не посчитано», а сам ключ словаря.
   { prefix: '', ids: BODY_GAPS },

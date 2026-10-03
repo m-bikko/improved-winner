@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Droplet,
   FileText,
+  HeartPulse,
   Info,
   Lightbulb,
   Pencil,
@@ -22,6 +23,8 @@ import {
 } from 'lucide-react'
 import { useUserId } from '@/auth/AuthProvider'
 import { useProfiles } from '@/features/profile/api'
+import { useActivePregnancy } from '@/features/pregnancy/api'
+import { gestation } from '@/features/pregnancy/logic'
 import { todayLocal, shiftDays, formatDayLabel, formatDayMonth, fromLocalISO } from '@/lib/date'
 import { Button } from '@/ui/Button'
 import { Loading } from '@/ui/States'
@@ -177,6 +180,22 @@ export function CyclePage() {
   )
 }
 
+/** Плашка вместо прогноза, пока идёт беременность. */
+function PregnancyBanner({ lmp, today }: { lmp: string; today: string }) {
+  const t = useT()
+  const g = gestation(lmp, today)
+  return (
+    <CardLink to="/pregnancy" className="flex items-center gap-3 p-4">
+      <IconBadge icon={HeartPulse} tone="plum" size="md" />
+      <div className="min-w-0 flex-1">
+        <p className="font-display text-lg font-extrabold">{t('pg.weekN', { n: g.week })}</p>
+        <p className="text-[13px] text-muted">{t('cyc.paused')}</p>
+      </div>
+      <ChevronRight size={18} aria-hidden className="shrink-0 text-muted/70" />
+    </CardLink>
+  )
+}
+
 function CycleBody({
   periods,
   logs,
@@ -200,6 +219,10 @@ function CycleBody({
   const save = useSavePeriod()
   const remove = useDeletePeriod()
   const [pickedDay, setPickedDay] = useState<string | null>(null)
+  // Идёт беременность у владелицы этого цикла: фаза, прогноз, «задержка»
+  // и пузырёк на паузе - вместо них одна плашка со сроком
+  const pregnancy = useActivePregnancy()
+  const paused = pregnancy !== null && pregnancy.motherId === ownerId
 
   // Три цикла вперёд, не больше: дальше прогноз всё равно расходится
   // с жизнью, и рисовать его значило бы выдавать догадку за расписание.
@@ -286,18 +309,24 @@ function CycleBody({
 
   return (
     <div className="flex flex-col gap-3">
-      <CycleBubble state={state} today={today} />
+      {paused && pregnancy ? (
+        <PregnancyBanner lmp={pregnancy.lmp} today={today} />
+      ) : (
+        <>
+          <CycleBubble state={state} today={today} />
 
-      {gap && (
-        <GapNotice
-          gap={gap}
-          owned={owned}
-          onAdd={() => onEdit({ suggest: gap.missedAround })}
-          periodId={gapPeriod?.id ?? null}
-        />
+          {gap && (
+            <GapNotice
+              gap={gap}
+              owned={owned}
+              onAdd={() => onEdit({ suggest: gap.missedAround })}
+              periodId={gapPeriod?.id ?? null}
+            />
+          )}
+
+          <Today state={state} stats={stats} />
+        </>
       )}
-
-      <Today state={state} stats={stats} />
 
       {/* Отметка «началась/закончилась сегодня» - сразу под статусом, а не под
           календарём: это главное действие раздела, и ниже первого экрана
@@ -367,12 +396,14 @@ function CycleBody({
         </div>
       )}
 
-      <PhaseStrip state={state} />
+      {!paused && <PhaseStrip state={state} />}
 
       <CycleCalendar
         periods={periods}
-        current={state}
-        forecasts={forecasts}
+        current={paused ? null : state}
+        // В беременность прогноз месячных и окна - неправда, календарь
+        // показывает только то, что было
+        forecasts={paused ? [] : forecasts}
         logs={logs}
         selected={pickedDay ?? today}
         onSelect={setPickedDay}
@@ -386,7 +417,7 @@ function CycleBody({
         />
       )}
 
-      {alerts.length > 0 && (
+      {!paused && alerts.length > 0 && (
         <section className="flex flex-col gap-3">
           {alerts.map((w) => {
             const attention = w.level === 'attention'

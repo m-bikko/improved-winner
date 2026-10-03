@@ -1,6 +1,7 @@
 import { dynamicKey, tr, trPlural, useT } from '@/lib/i18n'
 import { useState } from 'react'
-import { Cake, CalendarHeart, Star, Trash2, type LucideIcon } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Cake, CalendarHeart, Gift, Star, Trash2, type LucideIcon } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useLocalFlag } from '@/lib/localFlag'
 import { LettersTab } from '@/features/letters/LettersTab'
@@ -25,6 +26,9 @@ import {
 } from './api'
 import { Segmented } from '@/ui/Segmented'
 import { Fab } from '@/ui/Fab'
+import { Card } from '@/ui/Card'
+import { usePair } from '@/features/profile/pair'
+import { useWishes } from '@/features/wishlist/api'
 
 /*
  * Тон у каждого вида свой, а не один тон раздела на всех: в списке из десятка
@@ -114,6 +118,8 @@ function DatesTab({
         <>
           <Hero occasion={next} onOpen={() => onEdit(next)} />
 
+          <GiftIdeas items={items} />
+
           {rest.length > 0 && (
             <ListGroup>
               {rest.map((o) => (
@@ -130,6 +136,45 @@ function DatesTab({
         <Editor occasion={editing === 'new' ? null : editing} onClose={() => onEdit(null)} />
       )}
     </>
+  )
+}
+
+/**
+ * Идеи подарка: ближайший в пределах месяца день рождения второго или
+ * годовщина пары - и первые желания из вишлиста второго. Имениннику
+ * блок не показывается: подсказка - для того, кто дарит.
+ */
+function GiftIdeas({ items }: { items: Occasion[] }) {
+  const t = useT()
+  const pair = usePair()
+  const wishes = useWishes()
+  const target = items.find(
+    (o) =>
+      o.days <= 30 &&
+      ((o.kind === 'birthday' && o.personId !== null && o.personId === pair.partnerId) || o.kind === 'anniversary'),
+  )
+  const ideas = (wishes.data ?? []).filter((w) => w.createdBy === pair.partnerId).slice(0, 5)
+  if (!target || pair.partnerId === '' || ideas.length === 0) return null
+
+  return (
+    <Card className="p-4">
+      <div className="flex items-center gap-2.5">
+        <IconBadge icon={Gift} tone="orange" size="sm" />
+        <p className="min-w-0 flex-1 text-[15px] font-semibold">{t('dates.giftFor', { title: target.title })}</p>
+      </div>
+      <p className="mt-2 text-[13px] text-muted">{t('dates.giftHint', { name: pair.partnerName })}</p>
+      <ul className="mt-2 flex flex-col gap-1.5">
+        {ideas.map((w) => (
+          <li key={w.id} className="flex items-center gap-2 text-[15px]">
+            <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-tone-orange" />
+            <span className="min-w-0 flex-1 truncate">{w.title}</span>
+          </li>
+        ))}
+      </ul>
+      <Link to="/wishlist" className="mt-3 inline-block text-sm font-semibold text-accent">
+        {t('dates.openWishlist')}
+      </Link>
+    </Card>
   )
 }
 
@@ -265,7 +310,9 @@ function Editor({ occasion, onClose }: { occasion: Occasion | null; onClose: () 
   const [kind, setKind] = useState<OccasionKind>(occasion?.kind ?? 'birthday')
   const [yearly, setYearly] = useState(occasion?.yearly ?? true)
   const [note, setNote] = useState(occasion?.note ?? '')
+  const [personId, setPersonId] = useState<string>(occasion?.personId ?? '')
   const [error, setError] = useState<string | null>(null)
+  const pair = usePair()
 
   const submit = async () => {
     setError(null)
@@ -281,6 +328,7 @@ function Editor({ occasion, onClose }: { occasion: Occasion | null; onClose: () 
         kind,
         yearly,
         note: note || null,
+        personId: personId || null,
       })
       onClose()
     } catch (e) {
@@ -313,6 +361,23 @@ function Editor({ occasion, onClose }: { occasion: Occasion | null; onClose: () 
             </Chip>
           ))}
         </div>
+
+        {/* Чей день рождения: по нему за неделю второму приходят идеи из
+            вишлиста именинника - а самому имениннику не приходят */}
+        {kind === 'birthday' && pair.partnerId !== '' && (
+          <div className="flex flex-col gap-2">
+            <span className="text-sm text-muted">{t('dates.whose')}</span>
+            <Segmented
+              value={personId}
+              onChange={setPersonId}
+              options={[
+                { value: pair.userId, label: pair.myName },
+                { value: pair.partnerId, label: pair.partnerName },
+                { value: '', label: t('dates.someoneElse') },
+              ]}
+            />
+          </div>
+        )}
 
         <Field
           label={t('dates.when')}

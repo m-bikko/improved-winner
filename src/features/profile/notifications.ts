@@ -32,4 +32,10 @@ export const NOTIFICATION_KINDS: NotificationKind[] = [
   { id: 'watch' },
   { id: 'savings' },
   { id: 'prep' },
+  { id: 'meetings' },
+  { id: 'voice' },
+  { id: 'quiz' },
+  { id: 'names' },
+  { id: 'pregnancy' },
+  { id: 'pulse' },
 ]

@@ -3,7 +3,7 @@ title: topics - темы для обсуждения
 type: entity
 tags: [database, topics, kanban]
 created: 2026-09-03
-updated: 2026-09-03
+updated: 2026-10-03
 sources: [supabase/migrations/20260903100100_schema.sql, src/features/topics/]
 ---
 
@@ -48,6 +48,13 @@ sources: [supabase/migrations/20260903100100_schema.sql, src/features/topics/]
 
 Читают и правят оба (закрыть тему может любой), удаляет только автор.
 
+## Договорённости (2026-10-03)
+
+Решение закрытой темы - договорённость; все они собраны на отдельной
+странице [[agreements]], важные закрепляются (`pinned_at`, только у
+закрытых). Переоткрытие снимает закрепление само, триггером. Из
+[[pulse|разговора месяца]] тема «Обсудить» заводится одной кнопкой.
+
 ## См. также
 
-- [[search]], [[russian-fts-limits]], [[security]]
+- [[search]], [[russian-fts-limits]], [[security]], [[agreements]]

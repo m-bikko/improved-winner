@@ -42,6 +42,48 @@ export type Database = {
         }
         Relationships: []
       }
+      baby_names: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          gender: string
+          key: string
+          latin: string | null
+          meaning_en: string | null
+          meaning_kk: string | null
+          meaning_ru: string | null
+          name: string
+          origin: string
+          rank: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          gender: string
+          key: string
+          latin?: string | null
+          meaning_en?: string | null
+          meaning_kk?: string | null
+          meaning_ru?: string | null
+          name: string
+          origin: string
+          rank?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          gender?: string
+          key?: string
+          latin?: string | null
+          meaning_en?: string | null
+          meaning_kk?: string | null
+          meaning_ru?: string | null
+          name?: string
+          origin?: string
+          rank?: number | null
+        }
+        Relationships: []
+      }
       challenge_marks: {
         Row: {
           challenge_id: string
@@ -583,6 +625,33 @@ export type Database = {
         }
         Relationships: []
       }
+      kick_sessions: {
+        Row: {
+          created_at: string
+          ended_at: string
+          id: string
+          kicks: number
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at: string
+          id?: string
+          kicks: number
+          started_at: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string
+          id?: string
+          kicks?: number
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       letter_deliveries: {
         Row: {
           created_at: string
@@ -702,6 +771,114 @@ export type Database = {
         }
         Relationships: []
       }
+      meeting_items: {
+        Row: {
+          created_at: string
+          created_by: string
+          done: boolean
+          id: string
+          meeting_id: string
+          source: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          done?: boolean
+          id?: string
+          meeting_id: string
+          source?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          done?: boolean
+          id?: string
+          meeting_id?: string
+          source?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_items_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_notices: {
+        Row: {
+          created_at: string
+          meeting_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          meeting_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          meeting_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_notices_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meetings: {
+        Row: {
+          created_at: string
+          created_by: string
+          ends_on: string
+          id: string
+          memory_id: string | null
+          note: string | null
+          place: string | null
+          starts_on: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          ends_on: string
+          id?: string
+          memory_id?: string | null
+          note?: string | null
+          place?: string | null
+          starts_on: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          ends_on?: string
+          id?: string
+          memory_id?: string | null
+          note?: string | null
+          place?: string | null
+          starts_on?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meetings_memory_id_fkey"
+            columns: ["memory_id"]
+            isOneToOne: false
+            referencedRelation: "memories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memories: {
         Row: {
           author_id: string
@@ -802,6 +979,38 @@ export type Database = {
           },
         ]
       }
+      name_votes: {
+        Row: {
+          created_at: string
+          liked: boolean
+          name_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          liked: boolean
+          name_key: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          liked?: boolean
+          name_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "name_votes_name_key_fkey"
+            columns: ["name_key"]
+            isOneToOne: false
+            referencedRelation: "baby_names"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
       notification_settings: {
         Row: {
           kind: string
@@ -884,6 +1093,7 @@ export type Database = {
           id: string
           kind: string
           note: string | null
+          person_id: string | null
           title: string
           updated_at: string
           yearly: boolean
@@ -895,6 +1105,7 @@ export type Database = {
           id?: string
           kind?: string
           note?: string | null
+          person_id?: string | null
           title: string
           updated_at?: string
           yearly?: boolean
@@ -906,6 +1117,7 @@ export type Database = {
           id?: string
           kind?: string
           note?: string | null
+          person_id?: string | null
           title?: string
           updated_at?: string
           yearly?: boolean
@@ -942,6 +1154,84 @@ export type Database = {
           started_on?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      pregnancy: {
+        Row: {
+          created_at: string
+          ended_on: string | null
+          id: boolean
+          lmp: string
+          mother_id: string
+          started_by: string
+        }
+        Insert: {
+          created_at?: string
+          ended_on?: string | null
+          id?: boolean
+          lmp: string
+          mother_id: string
+          started_by?: string
+        }
+        Update: {
+          created_at?: string
+          ended_on?: string | null
+          id?: boolean
+          lmp?: string
+          mother_id?: string
+          started_by?: string
+        }
+        Relationships: []
+      }
+      pregnancy_notices: {
+        Row: {
+          created_at: string
+          lmp: string
+          user_id: string
+          week: number
+        }
+        Insert: {
+          created_at?: string
+          lmp: string
+          user_id: string
+          week: number
+        }
+        Update: {
+          created_at?: string
+          lmp?: string
+          user_id?: string
+          week?: number
+        }
+        Relationships: []
+      }
+      pregnancy_visits: {
+        Row: {
+          created_at: string
+          created_by: string
+          date: string
+          done: boolean
+          id: string
+          note: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          date: string
+          done?: boolean
+          id?: string
+          note?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          date?: string
+          done?: boolean
+          id?: string
+          note?: string | null
+          title?: string
         }
         Relationships: []
       }
@@ -1101,6 +1391,51 @@ export type Database = {
           updated_at?: string
           user_id?: string
           weight_kg?: number | null
+        }
+        Relationships: []
+      }
+      pulse_asks: {
+        Row: {
+          created_at: string
+          month: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          month: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          month?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pulse_entries: {
+        Row: {
+          created_at: string
+          month: string
+          note: string | null
+          scores: number[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          month: string
+          note?: string | null
+          scores: number[]
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          month?: string
+          note?: string | null
+          scores?: number[]
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1374,6 +1709,7 @@ export type Database = {
           created_at: string
           created_by: string
           id: string
+          pinned_at: string | null
           resolution: string | null
           search_tsv: unknown
           status: string
@@ -1387,6 +1723,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
+          pinned_at?: string | null
           resolution?: string | null
           search_tsv?: unknown
           status?: string
@@ -1400,11 +1737,98 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
+          pinned_at?: string | null
           resolution?: string | null
           search_tsv?: unknown
           status?: string
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      tot_answers: {
+        Row: {
+          created_at: string
+          guess: number
+          pair_id: string
+          pick: number
+          round_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          guess: number
+          pair_id: string
+          pick: number
+          round_id: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          guess?: number
+          pair_id?: string
+          pick?: number
+          round_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tot_answers_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "tot_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tot_rounds: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          pairs: string[]
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          pairs: string[]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          pairs?: string[]
+        }
+        Relationships: []
+      }
+      voice_notes: {
+        Row: {
+          author_id: string
+          created_at: string
+          duration_ms: number
+          id: string
+          listened_at: string | null
+          path: string
+          peaks: number[]
+        }
+        Insert: {
+          author_id?: string
+          created_at?: string
+          duration_ms: number
+          id: string
+          listened_at?: string | null
+          path: string
+          peaks: number[]
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          duration_ms?: number
+          id?: string
+          listened_at?: string | null
+          path?: string
+          peaks?: number[]
         }
         Relationships: []
       }
@@ -1882,6 +2306,13 @@ export type Database = {
       letters_in_flight: { Args: never; Returns: number }
       money_fmt: { Args: { cur: string; n: number }; Returns: string }
       month_summary: { Args: { month: number; year: number }; Returns: Json }
+      name_matches: {
+        Args: never
+        Returns: {
+          matched_at: string
+          name_key: string
+        }[]
+      }
       next_occurrence: {
         Args: { from_ts: string; rule: Json }
         Returns: string
@@ -1917,6 +2348,16 @@ export type Database = {
         }[]
       }
       partner_of: { Args: { author_id: string }; Returns: string }
+      pregnancy_active: { Args: { owner: string }; Returns: boolean }
+      pulse_done_by_me: { Args: { of_month: string }; Returns: boolean }
+      pulse_done_by_partner: { Args: { of_month: string }; Returns: boolean }
+      pulse_progress: {
+        Args: never
+        Returns: {
+          month: string
+          user_id: string
+        }[]
+      }
       push_notify: {
         Args: {
           body: string
@@ -1959,6 +2400,7 @@ export type Database = {
           created_at: string
           created_by: string
           id: string
+          pinned_at: string | null
           resolution: string | null
           search_tsv: unknown
           status: string
@@ -1975,8 +2417,11 @@ export type Database = {
       send_cycle_notices: { Args: never; Returns: number }
       send_love_notes: { Args: never; Returns: number }
       send_meal_reminders: { Args: never; Returns: number }
+      send_meeting_reminders: { Args: never; Returns: number }
       send_nudge: { Args: never; Returns: string }
+      send_pregnancy_weeks: { Args: never; Returns: number }
       send_prep_reminders: { Args: never; Returns: number }
+      send_pulse_reminders: { Args: never; Returns: number }
       send_question_reminders: { Args: never; Returns: number }
       send_weigh_in_reminders: { Args: never; Returns: number }
       tg_escape: { Args: { input: string }; Returns: string }
@@ -1995,6 +2440,16 @@ export type Database = {
       tg_send_raw: {
         Args: { chat_id: string; message: string }
         Returns: number
+      }
+      tot_done_by: { Args: { round: string; who: string }; Returns: boolean }
+      tot_done_by_me: { Args: { round: string }; Returns: boolean }
+      tot_progress: {
+        Args: never
+        Returns: {
+          answered: number
+          round_id: string
+          user_id: string
+        }[]
       }
       tx: {
         Args: { args?: string[]; key: string; target: string }

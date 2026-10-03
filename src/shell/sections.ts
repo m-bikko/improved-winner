@@ -1,18 +1,25 @@
 import {
+  Activity,
   Apple,
   Baby,
   BellRing,
   CalendarHeart,
   Clapperboard,
+  Dices,
   Droplet,
   Gift,
+  Handshake,
   Heart,
+  HeartHandshake,
+  HeartPulse,
   Images,
   ListChecks,
   MessageCircleHeart,
   MessagesSquare,
+  Mic,
   NotebookPen,
   PiggyBank,
+  Signature,
   Smile,
   Sparkles,
   Trophy,
@@ -38,23 +45,59 @@ export const TABS: readonly Section[] = [
   { to: '/profile', key: 'nav.profile', icon: UserRound, tone: 'slate' },
 ]
 
-/** Всё остальное - плиткой в шторке «Ещё». */
-export const MORE: readonly Section[] = [
-  { to: '/question', key: 'nav.question', icon: MessageCircleHeart, tone: 'violet' },
-  { to: '/topics', key: 'nav.topics', icon: MessagesSquare, tone: 'indigo' },
-  { to: '/tasks', key: 'nav.tasks', icon: ListChecks, tone: 'sky' },
-  { to: '/foods', key: 'nav.foods', icon: Apple, tone: 'green' },
-  { to: '/cycle', key: 'nav.cycle', icon: Droplet, tone: 'plum' },
-  { to: '/dates', key: 'nav.dates', icon: CalendarHeart, tone: 'teal' },
-  { to: '/wishlist', key: 'nav.wishlist', icon: Gift, tone: 'orange' },
-  { to: '/memories', key: 'nav.memories', icon: Images, tone: 'rose' },
-  { to: '/watch', key: 'nav.watch', icon: Clapperboard, tone: 'sky' },
-  { to: '/challenges', key: 'nav.challenges', icon: Trophy, tone: 'green' },
-  { to: '/savings', key: 'nav.savings', icon: PiggyBank, tone: 'amber' },
-  { to: '/prep', key: 'nav.prep', icon: Baby, tone: 'teal' },
-  { to: '/year', key: 'title.year', icon: Sparkles, tone: 'accent' },
-  { to: '/notifications', key: 'title.notifications', icon: BellRing, tone: 'slate' },
+/**
+ * Всё остальное - плиткой в шторке «Ещё», группами.
+ *
+ * Разделов стало двадцать один, и одной сеткой они читались как свалка:
+ * нужное искалось глазами по цветам. Группы - по тому, зачем заходят:
+ * про нас двоих, про малыша, бытовое и само приложение.
+ */
+export const MORE_GROUPS: readonly { key: Key; items: readonly Section[] }[] = [
+  {
+    key: 'nav.group.us',
+    items: [
+      { to: '/question', key: 'nav.question', icon: MessageCircleHeart, tone: 'violet' },
+      { to: '/meetings', key: 'nav.meetings', icon: HeartHandshake, tone: 'rose' },
+      { to: '/voice', key: 'nav.voice', icon: Mic, tone: 'violet' },
+      { to: '/memories', key: 'nav.memories', icon: Images, tone: 'rose' },
+      { to: '/quiz', key: 'nav.quiz', icon: Dices, tone: 'amber' },
+      { to: '/watch', key: 'nav.watch', icon: Clapperboard, tone: 'sky' },
+      { to: '/challenges', key: 'nav.challenges', icon: Trophy, tone: 'green' },
+      { to: '/savings', key: 'nav.savings', icon: PiggyBank, tone: 'amber' },
+      { to: '/pulse', key: 'nav.pulse', icon: Activity, tone: 'indigo' },
+      { to: '/agreements', key: 'nav.agreements', icon: Handshake, tone: 'indigo' },
+    ],
+  },
+  {
+    key: 'nav.group.baby',
+    items: [
+      { to: '/prep', key: 'nav.prep', icon: Baby, tone: 'teal' },
+      { to: '/pregnancy', key: 'nav.pregnancy', icon: HeartPulse, tone: 'plum' },
+      { to: '/names', key: 'nav.names', icon: Signature, tone: 'orange' },
+    ],
+  },
+  {
+    key: 'nav.group.life',
+    items: [
+      { to: '/topics', key: 'nav.topics', icon: MessagesSquare, tone: 'indigo' },
+      { to: '/tasks', key: 'nav.tasks', icon: ListChecks, tone: 'sky' },
+      { to: '/foods', key: 'nav.foods', icon: Apple, tone: 'green' },
+      { to: '/cycle', key: 'nav.cycle', icon: Droplet, tone: 'plum' },
+      { to: '/dates', key: 'nav.dates', icon: CalendarHeart, tone: 'teal' },
+      { to: '/wishlist', key: 'nav.wishlist', icon: Gift, tone: 'orange' },
+    ],
+  },
+  {
+    key: 'nav.group.app',
+    items: [
+      { to: '/year', key: 'title.year', icon: Sparkles, tone: 'accent' },
+      { to: '/notifications', key: 'title.notifications', icon: BellRing, tone: 'slate' },
+    ],
+  },
 ]
+
+/** Все разделы «Ещё» подряд - для заголовка шапки и тона по пути. */
+export const MORE: readonly Section[] = MORE_GROUPS.flatMap((g) => g.items)
 
 /** Тон раздела по пути - для значков на главной и в «Ещё». */
 export function sectionTone(to: string): Tone {

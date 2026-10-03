@@ -131,13 +131,16 @@ async function main(): Promise<void> {
        values ('Хвост', now() - interval '1 hour', $1)`,
       [a.user_id],
     )
-    const before = Number(await one('select count(*)::text as v from net.http_request_queue'))
+    // По id, а не по числу строк: воркер pg_net тем временем разгребает
+    // очередь от крона, и общее число может и уменьшиться
+    const before = await one('select coalesce(max(id), 0)::text as v from net.http_request_queue')
     await client.query(`select public.push_notify($1, 'Тест', 'тело', 'tasks')`, [a.user_id])
     const body = await one(
-      `select convert_from(body, 'utf8') as v from net.http_request_queue
-        order by id desc limit 1`,
+      `select coalesce(max(convert_from(body, 'utf8')), '') as v from net.http_request_queue
+        where id = (select max(id) from net.http_request_queue where id > $1::bigint)`,
+      [before],
     )
-    const grew = Number(await one('select count(*)::text as v from net.http_request_queue')) > before
+    const grew = body !== ''
     check(
       grew && /"badge":\s*\d+/.test(body),
       'Push несёт число с собой',

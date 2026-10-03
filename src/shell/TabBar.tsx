@@ -8,7 +8,7 @@ import { Sheet } from '@/ui/Sheet'
 import { IconBadge } from '@/ui/IconBadge'
 import { ListGroup, ListRow } from '@/ui/List'
 import { SPRING } from '@/ui/motion'
-import { MORE, NESTED, TABS } from './sections'
+import { MORE, MORE_GROUPS, NESTED, TABS } from './sections'
 
 /**
  * Какая вкладка сейчас активна.
@@ -171,29 +171,34 @@ function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
 
   return (
     <Sheet open={open} onClose={onClose} title={account?.nickname ?? t('nav.more')}>
-      {/* stagger: плитки выходят волной вслед за шторкой */}
-      <ul className="stagger grid grid-cols-3 gap-2.5">
-        {MORE.map((s) => (
-          <li key={s.to}>
-            <button
-              type="button"
-              onClick={() => {
-                onClose()
-                navigate(s.to)
-              }}
-              className="flex h-full w-full flex-col items-center gap-2 rounded-3xl bg-surface px-1.5
-                         pt-4 pb-3 shadow-card transition-transform active:scale-95"
-            >
-              <IconBadge icon={s.icon} tone={s.tone} size="lg" />
-              <span className="line-clamp-2 text-center text-[13px] leading-tight font-semibold">
-                {t(s.key)}
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
+      {MORE_GROUPS.map((group) => (
+        <section key={group.key} className="mb-4">
+          <h3 className="mb-2 px-1 font-display text-[13px] font-bold text-muted">{t(group.key)}</h3>
+          {/* stagger: плитки выходят волной вслед за шторкой */}
+          <ul className="stagger grid grid-cols-3 gap-2.5">
+            {group.items.map((s) => (
+              <li key={s.to}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose()
+                    navigate(s.to)
+                  }}
+                  className="flex h-full w-full flex-col items-center gap-2 rounded-3xl bg-surface px-1.5
+                             pt-4 pb-3 shadow-card transition-transform active:scale-95"
+                >
+                  <IconBadge icon={s.icon} tone={s.tone} size="lg" />
+                  <span className="line-clamp-2 text-center text-[13px] leading-tight font-semibold">
+                    {t(s.key)}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
 
-      <ListGroup className="mt-4">
+      <ListGroup className="mt-2">
         <ListRow
           title={t('nav.signOut')}
           icon={LogOut}

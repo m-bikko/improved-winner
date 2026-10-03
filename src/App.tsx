@@ -31,6 +31,13 @@ import { SavingsPage } from '@/features/savings/SavingsPage'
 import { WatchPage } from '@/features/watch/WatchPage'
 import { MemoriesPage } from '@/features/memories/MemoriesPage'
 import { PrepPage } from '@/features/prep/PrepPage'
+import { MeetingsPage } from '@/features/meetings/MeetingsPage'
+import { VoicePage } from '@/features/voice/VoicePage'
+import { QuizPage } from '@/features/quiz/QuizPage'
+import { NamesPage } from '@/features/names/NamesPage'
+import { PregnancyPage } from '@/features/pregnancy/PregnancyPage'
+import { AgreementsPage } from '@/features/agreements/AgreementsPage'
+import { PulsePage } from '@/features/pulse/PulsePage'
 
 export default function App() {
   return (
@@ -97,6 +104,13 @@ function Gate() {
         <Route path="/watch" element={<WatchPage />} />
         <Route path="/memories" element={<MemoriesPage />} />
         <Route path="/prep" element={<PrepPage />} />
+        <Route path="/meetings" element={<MeetingsPage />} />
+        <Route path="/voice" element={<VoicePage />} />
+        <Route path="/quiz" element={<QuizPage />} />
+        <Route path="/names" element={<NamesPage />} />
+        <Route path="/pregnancy" element={<PregnancyPage />} />
+        <Route path="/agreements" element={<AgreementsPage />} />
+        <Route path="/pulse" element={<PulsePage />} />
         <Route path="/checkin" element={<CheckinPage />} />
         <Route path="/diary" element={<DiaryPage />} />
         <Route path="/month" element={<MonthPage />} />
