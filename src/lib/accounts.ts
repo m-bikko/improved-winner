@@ -25,3 +25,10 @@ export const ACCOUNTS: readonly Account[] = [
 ]
 
 export const PIN_LENGTH = 6
+
+/**
+ * Аккаунт повара. Не участник пары: в app_members его нет, и права ему даёт
+ * только набор политик повара. Пароля как такового нет - секрет приходит
+ * в ссылке, которую выпускает владелец (cook_link_issue).
+ */
+export const COOK_EMAIL = 'cook@lovepromises.app'

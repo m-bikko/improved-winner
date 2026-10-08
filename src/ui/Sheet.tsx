@@ -1,5 +1,6 @@
 import { useT } from '@/lib/i18n'
 import { useEffect, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { AnimatePresence, motion, useDragControls } from 'motion/react'
 import { useKeyboardInset } from '@/lib/keyboardInset'
@@ -44,6 +45,12 @@ const CLOSE_VELOCITY = 600
  * рано или поздно забывают - поэтому теперь по умолчанию отступы есть,
  * а отказ от них выражается явным `bleed`.
  *
+ * Рисуется порталом в body, а не там, где её открыли. Иначе `fixed` и z-50
+ * считаются внутри ближайшего предка со своим слоем: шторка «Снять кадр»
+ * лежала в карточке с `isolation: isolate` и оказывалась ПОД нижней
+ * панелью (z-40) - кнопка «Отправить» уезжала под меню, а прокручивать
+ * было нечего. Портал делает шторку независимой от того, кто её открыл.
+ *
  * Закрывается свайпом вниз - жестом, которого на телефоне ждут от любой
  * шторки. Тянуть можно только за ручку и заголовок: если бы тянулась вся
  * шторка, прокрутка списка внутри спорила бы со свайпом, и длинный список
@@ -68,7 +75,7 @@ export function Sheet({ open, onClose, title, children, bleed = false }: Props) 
     }
   }, [open, onClose])
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <div
@@ -147,6 +154,7 @@ export function Sheet({ open, onClose, title, children, bleed = false }: Props) 
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   )
 }

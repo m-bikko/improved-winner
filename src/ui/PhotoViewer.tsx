@@ -1,5 +1,6 @@
 import { useT } from '@/lib/i18n'
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
 /**
@@ -32,7 +33,9 @@ export function PhotoViewer({
     }
   }, [onClose])
 
-  return (
+  // Порталом в body, как шторка: внутри карточки со своим слоем
+  // (isolation) просмотр оказался бы под нижней панелью
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -56,6 +59,7 @@ export function PhotoViewer({
       >
         <X size={22} aria-hidden />
       </button>
-    </div>
+    </div>,
+    document.body,
   )
 }

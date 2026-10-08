@@ -1,3 +1,4 @@
+import { CookAccess } from '@/features/cook/CookAccess'
 import { HealthSummary } from './HealthSummary'
 import { EnergyBalance } from './EnergyBalance'
 import { useEffect, useState } from 'react'
@@ -416,6 +417,8 @@ function ProfileForm({ profile }: { profile: Profile }) {
         />
         {chatIdInvalid && <p className="mt-1 text-xs text-danger">{t('profile.chatIdDigits')}</p>}
       </Card>
+
+      <CookAccess />
 
       <ChangePinSheet open={pinOpen} onClose={() => setPinOpen(false)} />
 

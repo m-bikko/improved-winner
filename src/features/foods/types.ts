@@ -28,6 +28,8 @@ export type Food = {
   imagePath: string | null
   /** EAN/UPC. Появляется после первого сканирования и делает продукт своим. */
   barcode: string | null
+  /** Кто добавил. У старых записей пусто; повар правит только свои. */
+  createdBy: string | null
 }
 
 export type Serving = {
@@ -60,6 +62,7 @@ export function foodFromRow(row: FoodRow): Food {
     ingredientsGrams: row.ingredients_grams ?? 0,
     imagePath: row.image_path,
     barcode: row.barcode,
+    createdBy: row.created_by,
   }
 }
 

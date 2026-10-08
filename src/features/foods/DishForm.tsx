@@ -1,11 +1,13 @@
 import { useT } from '@/lib/i18n'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useUserId } from '@/auth/AuthProvider'
+import { isCookMode } from '@/lib/mode'
 import { Archive, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/ui/Button'
 import { Card } from '@/ui/Card'
 import { Field, NumberField } from '@/ui/Field'
-import { useArchiveFood, useFoods, useSaveDish, useSaveServings, type DishItem } from './api'
+import { useArchiveFood, useFoods, useSaveDish, useSaveServings, useUploadFoodPhoto, type DishItem } from './api'
 import { FoodPhotoEditor } from './FoodPhoto'
 import { ProductPicker } from './ProductPicker'
 import { trim } from './FoodsPage'
@@ -35,7 +37,12 @@ export function DishForm({
   const foods = useFoods()
   const saveDish = useSaveDish()
   const saveServings = useSaveServings()
+  const uploadPhoto = useUploadFoodPhoto()
   const archive = useArchiveFood()
+  const userId = useUserId()
+  // Повар правит только свои блюда - чужие открываются для просмотра
+  const readOnly = isCookMode && existing !== undefined && existing.createdBy !== userId
+  const [pendingPhoto, setPendingPhoto] = useState<File | null>(null)
 
   const [name, setName] = useState(existing?.name ?? '')
   const [yieldGrams, setYieldGrams] = useState<number | ''>(existing?.yieldGrams ?? '')
@@ -98,6 +105,14 @@ export function DishForm({
         foodId: dishId,
         servings: servings.map((s) => ({ label: s.label, grams: s.grams === '' ? 0 : s.grams })),
       })
+      if (!existing && pendingPhoto) {
+        try {
+          await uploadPhoto.mutateAsync({ foodId: dishId, file: pendingPhoto, previousPath: null })
+        } catch {
+          navigate(`/foods/${dishId}?photo=failed`, { replace: true })
+          return
+        }
+      }
       navigate('/foods', { replace: true })
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -111,6 +126,9 @@ export function DishForm({
         {existing?.name ?? t('food.newDish')}
       </h2>
 
+      {readOnly && <p className="rounded-2xl bg-raised px-4 py-3 text-sm text-muted">{t('food.readOnly')}</p>}
+
+      <fieldset disabled={readOnly} className="contents">
       <Card as="section" className="p-4">
         <Field
           label={t('food.name')}
@@ -216,7 +234,12 @@ export function DishForm({
         )}
       </Card>
 
-      <FoodPhotoEditor foodId={existing?.id} imagePath={existing?.imagePath ?? null} />
+      <FoodPhotoEditor
+        foodId={existing?.id}
+        imagePath={existing?.imagePath ?? null}
+        pending={pendingPhoto}
+        onPending={setPendingPhoto}
+      />
 
       <Card as="section" className="flex flex-col gap-3 p-4">
         <div>
@@ -273,18 +296,22 @@ export function DishForm({
         </Button>
       </Card>
 
+      </fieldset>
+
       {error && <p className="px-1 text-sm text-danger">{error}</p>}
 
-      <Button
-        className="mt-1 min-h-14 text-[17px]"
-        onClick={() => void submit()}
-        disabled={!canSave}
-        loading={saveDish.isPending}
-      >
-        {t('common.save')}
-      </Button>
+      {!readOnly && (
+        <Button
+          className="mt-1 min-h-14 text-[17px]"
+          onClick={() => void submit()}
+          disabled={!canSave}
+          loading={saveDish.isPending || uploadPhoto.isPending}
+        >
+          {t('common.save')}
+        </Button>
+      )}
 
-      {existing && (
+      {existing && !readOnly && (
         <Button
           variant="danger"
           loading={archive.isPending}

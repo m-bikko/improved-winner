@@ -1,6 +1,7 @@
 import { QueryClient } from '@tanstack/react-query'
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'
 import { del, get, set } from 'idb-keyval'
+import { isCookMode } from './mode'
 
 /**
  * Кэш данных живёт здесь, а не в Service Worker.
@@ -67,7 +68,8 @@ export const persister = createAsyncStoragePersister({
     setItem: (key, value) => set(key, value),
     removeItem: (key) => del(key),
   },
-  key: 'love-promises-query-cache',
+  // У повара свой кэш: данные двух аккаунтов на одном устройстве не смешиваются
+  key: isCookMode ? 'love-promises-cook-cache' : 'love-promises-query-cache',
   throttleTime: 1000,
 })
 
@@ -80,5 +82,6 @@ export const persister = createAsyncStoragePersister({
  * и восстанавливался пустым объектом. Теперь список, но кэш от v1 надо выбросить.
  *
  * v3: у записей цикла появилось longConfirmed, у отметок дня - lhPositive.
+ * v4: у продукта появился createdBy - по нему повар отличает свои записи.
  */
-export const CACHE_BUSTER = 'v3'
+export const CACHE_BUSTER = 'v4'

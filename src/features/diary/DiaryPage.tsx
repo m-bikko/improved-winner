@@ -413,6 +413,7 @@ function entryAsFood(entry: DiaryEntry): Food {
     // У снимка кода нет и быть не может: он восстанавливается из записи
     // дневника, а не из карточки продукта
     barcode: null,
+    createdBy: null,
   }
 }
 

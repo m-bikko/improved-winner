@@ -45,6 +45,8 @@ import { StoryPage } from '@/features/story/StoryPage'
 import { WeekPage } from '@/features/week/WeekPage'
 import { HealthPage } from '@/features/health/HealthPage'
 import { BabyPage } from '@/features/baby/BabyPage'
+import { CookApp } from '@/features/cook/CookApp'
+import { isCookMode } from '@/lib/mode'
 
 export default function App() {
   return (
@@ -57,7 +59,8 @@ export default function App() {
         <LangProvider>
           <AuthProvider>
             <BrowserRouter>
-              <Gate />
+              {/* Повар - своё приложение со своим входом по ссылке, без PIN */}
+              {isCookMode ? <CookApp /> : <Gate />}
             </BrowserRouter>
           </AuthProvider>
         </LangProvider>

@@ -76,8 +76,16 @@ async function main(): Promise<void> {
         [who, date],
       )
     }
-    const streak = async (date = TODAY, who = a.user_id): Promise<number> =>
-      Number(await one('select public.checkin_streak($1, $2)::text as v', [who, date]))
+    // checkin_streak - внутренняя функция: клиент зовёт checkin_streaks, а саму
+    // её роль authenticated не вызывает. Поэтому считаем под владельцем базы,
+    // а потом возвращаемся в роль, в которой шла проверка
+    let asUser = false
+    const streak = async (date = TODAY, who = a.user_id): Promise<number> => {
+      if (asUser) await client.query('reset role')
+      const v = Number(await one('select public.checkin_streak($1, $2)::text as v', [who, date]))
+      if (asUser) await client.query('set local role authenticated')
+      return v
+    }
 
     // --- Арифметика серии -------------------------------------------------
 
@@ -114,6 +122,7 @@ async function main(): Promise<void> {
     check(await streak() === 2, 'Дыра 18-го обрывает серию', 'серия 2 до восстановления')
 
     await client.query('set local role authenticated')
+    asUser = true
     const as = async (uid: string): Promise<void> => {
       await client.query(
         `select set_config('request.jwt.claims', json_build_object('sub', $1::text)::text, true)`,

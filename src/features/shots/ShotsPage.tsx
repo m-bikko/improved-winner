@@ -312,7 +312,7 @@ function Capture({ day, pair }: { day: string; pair: Pair }) {
       {file && preview && (
         <Sheet open onClose={close} title={t('nav.shots')}>
           <div className="flex flex-col gap-4">
-            <img src={preview} alt="" className="max-h-[50vh] w-full rounded-2xl bg-raised object-contain" />
+            <img src={preview} alt="" className="max-h-[40vh] w-full rounded-2xl bg-raised object-contain" />
             <Field
               label={t('sh.caption')}
               value={caption}

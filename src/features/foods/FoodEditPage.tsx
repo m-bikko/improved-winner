@@ -7,6 +7,8 @@ import { Button } from '@/ui/Button'
 import { Card } from '@/ui/Card'
 import { Field, NumberField } from '@/ui/Field'
 import { ErrorState, Loading } from '@/ui/States'
+import { useUserId } from '@/auth/AuthProvider'
+import { isCookMode } from '@/lib/mode'
 import {
   useArchiveFood,
   useDishItems,
@@ -14,6 +16,7 @@ import {
   useSaveFood,
   useSaveServings,
   useServingsByFood,
+  useUploadFoodPhoto,
 } from './api'
 import { DishForm } from './DishForm'
 import { FoodPhotoEditor } from './FoodPhoto'
@@ -125,10 +128,17 @@ function FoodForm({
 }) {
   const t = useT()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const userId = useUserId()
   const saveFood = useSaveFood()
   const saveServings = useSaveServings()
+  const uploadPhoto = useUploadFoodPhoto()
   const archive = useArchiveFood()
   const foods = useFoods()
+  // Повар правит только своё - остальное база ему не отдаст на запись,
+  // и форма не должна делать вид, что сохраняет
+  const readOnly = isCookMode && existing !== undefined && existing.createdBy !== userId
+  const [pendingPhoto, setPendingPhoto] = useState<File | null>(null)
 
   const [form, setForm] = useState<FormState>(() =>
     existing
@@ -163,7 +173,7 @@ function FoodForm({
 
   const patch = (next: Partial<FormState>) => setForm((prev) => ({ ...prev, ...next }))
   const canSave = form.name.trim().length > 0 && form.kcal !== ''
-  const busy = saveFood.isPending || saveServings.isPending
+  const busy = saveFood.isPending || saveServings.isPending || uploadPhoto.isPending
 
   const submit = async () => {
     setError(null)
@@ -189,6 +199,15 @@ function FoodForm({
           grams: s.grams === '' ? 0 : s.grams,
         })),
       })
+      if (!existing && pendingPhoto) {
+        try {
+          await uploadPhoto.mutateAsync({ foodId: savedId, file: pendingPhoto, previousPath: null })
+        } catch {
+          // Продукт уже есть - ведём в его карточку, где фото можно загрузить заново
+          navigate(`/foods/${savedId}?photo=failed`, { replace: true })
+          return
+        }
+      }
       navigate('/foods', { replace: true })
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -215,6 +234,12 @@ function FoodForm({
         {existing ? existing.name : t(isDish ? 'food.newDish' : 'food.newProduct')}
       </h2>
 
+      {readOnly && <p className="rounded-2xl bg-raised px-4 py-3 text-sm text-muted">{t('food.readOnly')}</p>}
+      {params.get('photo') === 'failed' && (
+        <p className="rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">{t('food.photoFailed')}</p>
+      )}
+
+      <fieldset disabled={readOnly} className="contents">
       <Card as="section" className="flex flex-col gap-4 p-4">
         <Field
           label={t('food.name')}
@@ -285,17 +310,25 @@ function FoodForm({
         <AtwaterHint {...form} />
       </Card>
 
-      <FoodPhotoEditor foodId={existing?.id} imagePath={existing?.imagePath ?? null} />
+      <FoodPhotoEditor
+        foodId={existing?.id}
+        imagePath={existing?.imagePath ?? null}
+        pending={pendingPhoto}
+        onPending={setPendingPhoto}
+      />
 
       <ServingsEditor value={servingDrafts} onChange={setServingDrafts} />
+      </fieldset>
 
       {error && <p className="px-1 text-sm text-danger">{error}</p>}
 
-      <Button className="mt-1 min-h-14 text-[17px]" onClick={() => void submit()} disabled={!canSave} loading={busy}>
-        {t('common.save')}
-      </Button>
+      {!readOnly && (
+        <Button className="mt-1 min-h-14 text-[17px]" onClick={() => void submit()} disabled={!canSave} loading={busy}>
+          {t('common.save')}
+        </Button>
+      )}
 
-      {existing && (
+      {existing && !readOnly && (
         <Button variant="danger" onClick={() => void doArchive()} loading={archive.isPending}>
           <Archive size={18} aria-hidden />
           {t('food.archive')}

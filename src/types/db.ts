@@ -404,6 +404,30 @@ export type Database = {
         }
         Relationships: []
       }
+      cooks: {
+        Row: {
+          created_at: string
+          link_issued_at: string | null
+          owner_id: string
+          revoked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          link_issued_at?: string | null
+          owner_id: string
+          revoked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          link_issued_at?: string | null
+          owner_id?: string
+          revoked_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       cycle_days: {
         Row: {
           created_at: string
@@ -2857,6 +2881,26 @@ export type Database = {
           user_id: string
         }[]
       }
+      cook_context: {
+        Args: never
+        Returns: {
+          owner_id: string
+          owner_name: string
+        }[]
+      }
+      cook_link_issue: { Args: never; Returns: string }
+      cook_link_revoke: { Args: never; Returns: undefined }
+      cook_owner: { Args: never; Returns: string }
+      cook_owns_food: { Args: { of_food: string }; Returns: boolean }
+      cook_owns_food_path: { Args: { object_name: string }; Returns: boolean }
+      cook_status: {
+        Args: never
+        Returns: {
+          issued_at: string
+          last_sign_in_at: string
+          revoked_at: string
+        }[]
+      }
       cycle_delay: {
         Args: { on_date: string; owner: string }
         Returns: {
@@ -2949,6 +2993,7 @@ export type Database = {
         Returns: string
       }
       in_quiet_hours: { Args: { target: string }; Returns: boolean }
+      is_cook: { Args: never; Returns: boolean }
       is_member: { Args: never; Returns: boolean }
       lang_of: { Args: { person: string }; Returns: string }
       last_nudge: { Args: never; Returns: string }
