@@ -2,7 +2,7 @@ import { useT } from '@/lib/i18n'
 import { useDroppable } from '@dnd-kit/core'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical } from 'lucide-react'
+import { ChefHat, GripVertical } from 'lucide-react'
 import { trim } from '@/features/foods/FoodsPage'
 import type { DiaryEntry, Meal } from './types'
 
@@ -44,9 +44,15 @@ export function DraggableEntry({
       >
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[15px] font-medium">{entry.name}</span>
-          <span className="text-[13px] text-muted">
-            {entry.servingLabel ? `${entry.servingLabel} · ` : ''}
-            {trim(entry.grams)} {t('unit.gram')}
+          <span className="flex items-center gap-1 text-[13px] text-muted">
+            {/* Внёс повар - видно сразу, чтобы не гадать, откуда тарелка */}
+            {entry.createdBy !== null && entry.createdBy !== entry.userId && (
+              <ChefHat size={13} aria-label={t('diary.byCook')} className="shrink-0 text-tone-amber" />
+            )}
+            <span>
+              {entry.servingLabel ? `${entry.servingLabel} · ` : ''}
+              {trim(entry.grams)} {t('unit.gram')}
+            </span>
           </span>
         </span>
         <span className="shrink-0 text-sm font-semibold tabular-nums">

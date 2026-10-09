@@ -18,14 +18,9 @@ import {
   ChevronUp,
   CircleQuestionMark,
   CloudOff,
-  Cookie,
   CopyPlus,
-  Moon,
   Plus,
-  Sun,
-  Sunrise,
   Target,
-  type LucideIcon,
 } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { shiftDays, todayLocal } from '@/lib/date'
@@ -37,7 +32,6 @@ import { useHeaderAction } from '@/shell/HeaderAction'
 import { ErrorState, Loading } from '@/ui/States'
 import { Card } from '@/ui/Card'
 import { IconBadge } from '@/ui/IconBadge'
-import type { Tone } from '@/ui/tones'
 import { ListGroup, ListRow } from '@/ui/List'
 import { Segmented } from '@/ui/Segmented'
 import { useFoods, useServingsByFood } from '@/features/foods/api'
@@ -59,6 +53,7 @@ import { CalorieRing, CalorieRingMini } from './CalorieRing'
 import { WorkoutsSection } from './WorkoutsSection'
 import { useWorkouts } from './workoutsApi'
 import { DraggableEntry, MealDropZone } from './DraggableEntry'
+import { MEAL_ICON, entryAsFood } from './entryFood'
 import { MacroInfoSheet, type Nutrient } from './MacroInfo'
 import { diffOrder, moveEntry } from './reorder'
 import { MonthCalendar } from './MonthCalendar'
@@ -392,31 +387,6 @@ export function DiaryPage() {
   )
 }
 
-/** Заархивированный продукт восстанавливаем из снимка записи. */
-function entryAsFood(entry: DiaryEntry): Food {
-  return {
-    id: entry.foodId ?? entry.id,
-    kind: 'product',
-    name: entry.name,
-    brand: entry.brand,
-    nameNorm: entry.name.toLowerCase(),
-    kcal100: entry.kcal100,
-    protein100: entry.protein100,
-    fat100: entry.fat100,
-    carbs100: entry.carbs100,
-    yieldGrams: null,
-    ingredientsCount: 0,
-    ingredientsGrams: 0,
-    // Снимок записи фотографию не хранит: она живёт в справочнике, а запись
-    // должна оставаться читаемой и без него
-    imagePath: null,
-    // У снимка кода нет и быть не может: он восстанавливается из записи
-    // дневника, а не из карточки продукта
-    barcode: null,
-    createdBy: null,
-  }
-}
-
 function Progress({
   totals,
   goals,
@@ -650,12 +620,6 @@ function Bar({
  * Приём пищи узнаётся по значку раньше, чем по слову: четыре одинаковые
  * карточки с заголовками читались как таблица, а не как день.
  */
-const MEAL_ICON: Record<Meal, { icon: LucideIcon; tone: Tone }> = {
-  breakfast: { icon: Sunrise, tone: 'amber' },
-  lunch: { icon: Sun, tone: 'orange' },
-  dinner: { icon: Moon, tone: 'indigo' },
-  snack: { icon: Cookie, tone: 'plum' },
-}
 
 function MealSection({
   meal,

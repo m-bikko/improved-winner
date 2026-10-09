@@ -24,6 +24,8 @@ export type DiaryEntry = {
   fat: number
   carbs: number
   sortOrder: number
+  /** Кто внёс. Пусто у старых записей; не совпадает с userId - внёс повар. */
+  createdBy: string | null
 }
 
 type Row = Database['public']['Tables']['diary_entries']['Row']
@@ -48,6 +50,7 @@ export function entryFromRow(row: Row): DiaryEntry {
     fat: row.fat ?? 0,
     carbs: row.carbs ?? 0,
     sortOrder: row.sort_order,
+    createdBy: row.created_by,
   }
 }
 

@@ -2805,13 +2805,12 @@ export const en: Dict = {
   'cook.nextDay': 'Next day',
   'cook.backToToday': 'back to today',
   'cook.noGoal': 'No daily goal for {name} yet',
-  'cook.emptyDay': 'Nothing logged',
-  'cook.emptyDayHint': 'Nothing in the diary of {name} for this day.',
+  'cook.emptyDayHint': 'Nothing in the diary of {name} for this day yet. Add what you served.',
   'cook.lockedTitle': 'This link no longer works',
   'cook.lockedHint': 'It was revoked or replaced with a new one. Ask for a fresh link.',
   'cook.notCook': 'Not the cook? Open the couple app',
   'cook.accessTitle': 'Cook',
-  'cook.accessAbout': 'With the link, the cook sees only your food diary and the food list, and can add foods with photos and nutrition. No PIN, no notifications.',
+  'cook.accessAbout': 'With the link, the cook sees only your food diary and the food list: logs what was served and adds foods with photos and nutrition. No PIN, no notifications.',
   'cook.issuedAt': 'Link issued: {when}',
   'cook.revokedAt': 'Access revoked: {when}',
   'cook.noLink': 'No link yet',
@@ -2833,4 +2832,7 @@ export const en: Dict = {
 
   // --- Повар: выход ----------------------------------------------------------
   'cook.exit': 'Sign out',
+
+  // --- Дневник: запись повара ------------------------------------------------
+  'diary.byCook': 'Added by the cook',
 }

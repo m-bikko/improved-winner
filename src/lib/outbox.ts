@@ -1,8 +1,11 @@
 import type { Database } from '@/types/db'
+import { isCookMode } from './mode'
 
 type DiaryInsert = Database['public']['Tables']['diary_entries']['Insert']
 
-const KEY = 'love-promises-outbox'
+// У повара своя очередь: на одном устройстве записи двух аккаунтов не должны
+// досылаться под чужой сессией
+const KEY = isCookMode ? 'love-promises-cook-outbox' : 'love-promises-outbox'
 
 /** Таблицы, в которые очередь умеет досылать. */
 export type OutboxTable = 'diary_entries' | 'checkins' | 'weight_log'

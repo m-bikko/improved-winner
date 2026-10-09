@@ -83,5 +83,6 @@ export const persister = createAsyncStoragePersister({
  *
  * v3: у записей цикла появилось longConfirmed, у отметок дня - lhPositive.
  * v4: у продукта появился createdBy - по нему повар отличает свои записи.
+ * v5: у записи дневника тоже появился createdBy - запись внёс повар.
  */
-export const CACHE_BUSTER = 'v4'
+export const CACHE_BUSTER = 'v5'

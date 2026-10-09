@@ -123,13 +123,29 @@ await inTransaction(async (db) => {
     [foodOfPair, cook],
     'row-level security',
   )
-  await db.mustFail(
-    'В дневник повар не пишет',
+  // Дневник: запись в дневник владельца - да, правка и удаление - только своих
+  const entry = (who: string) =>
     `insert into public.diary_entries (id, user_id, date, meal, name_snapshot, grams, kcal_100, protein_100, fat_100, carbs_100)
-     values (gen_random_uuid(), $1, '2031-04-01', 'lunch', 'x', 1, 1, 1, 1, 1)`,
+     values (gen_random_uuid(), '${who}', '2031-04-01', 'dinner', 'ТЕСТ от повара', 150, 130, 2.7, 0.3, 28) returning id::text, created_by::text`
+  const added = await db.q<{ id: string; created_by: string }>(entry(owner))
+  check(added[0]?.created_by === cook, 'Повар записывает съеденное в дневник владельца', 'created_by ставит база')
+  const cookEntry = added[0]?.id ?? ''
+  await db.mustFail('В дневник второго - нет', entry(other), [], 'row-level security')
+  await db.mustFail(
+    'Запись «от имени» владельца не подделать',
+    `insert into public.diary_entries (id, user_id, date, meal, name_snapshot, grams, kcal_100, protein_100, fat_100, carbs_100, created_by)
+     values (gen_random_uuid(), $1, '2031-04-01', 'lunch', 'x', 1, 1, 1, 1, 1, $1)`,
     [owner],
     'row-level security',
   )
+  check((await db.q(`update public.diary_entries set grams = 200 where id = $1 returning 1`, [cookEntry])).length === 1, 'Свою запись повар правит', '1')
+  const ownerEntry = await db.one(`select id::text from public.diary_entries where user_id = $1 and created_by is distinct from $2 limit 1`, [owner, cook])
+  check((await db.q(`update public.diary_entries set grams = 1 where id = $1 returning 1`, [ownerEntry])).length === 0, 'Запись владельца повар не изменит', '0 строк')
+  check((await db.q(`delete from public.diary_entries where id = $1 returning 1`, [ownerEntry])).length === 0, 'И не удалит', '0 строк')
+  await db.as(owner)
+  check((await db.q(`update public.diary_entries set grams = 180 where id = $1 returning 1`, [cookEntry])).length === 1, 'Владелец правит запись повара - это его дневник', '1')
+  await db.as(cook)
+  check((await db.q(`delete from public.diary_entries where id = $1 returning 1`, [cookEntry])).length === 1, 'Свою запись повар удаляет', '1')
   await db.mustFail('Тем не заводит', `insert into public.topics (title) values ('x')`, [], 'row-level security')
 
   // Функции: под поваром ничего чужого

@@ -14,6 +14,8 @@
 const MODE_KEY = 'love-promises-mode'
 
 function detect(): 'pair' | 'cook' {
+  // Вне браузера (проверки в Node) - всегда приложение пары
+  if (typeof window === 'undefined') return 'pair'
   try {
     if (window.location.pathname.startsWith('/cook') && window.location.hash.length > 1) {
       localStorage.setItem(MODE_KEY, 'cook')
