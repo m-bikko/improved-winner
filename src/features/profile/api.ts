@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { enqueue, isRetriable } from '@/lib/outbox'
 import { supabase } from '@/lib/supabase'
-import { computeGoals, type ActivityLevel, type GoalDirection, type Macros, type Sex } from '@/lib/nutrition'
+import { computeGoals, macrosFor, type ActivityLevel, type GoalDirection, type Macros, type Sex } from '@/lib/nutrition'
 import { leanKg } from '@/lib/body'
 
 export type Profile = {
@@ -81,6 +81,10 @@ export function goalsFor(profile: Profile | undefined): Macros | null {
   if (!profile) return null
 
   if (profile.goalsMode === 'manual' && profile.goalKcal) {
+    // Своя норма меняет только калории. Б/Ж/У делятся по тем же правилам,
+    // что и у расчётной, и от СЕГОДНЯШНЕГО веса и тощей массы - сохранённые
+    // в профиле граммы нужны лишь на случай, когда веса нет вовсе.
+    if (profile.weightKg !== null) return macrosFor(profile.goalKcal, profile.weightKg, leanFrom(profile))
     return {
       kcal: profile.goalKcal,
       protein: profile.goalProtein ?? 0,

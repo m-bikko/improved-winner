@@ -22,7 +22,7 @@
  * Всё в транзакции и откатывается.
  */
 import { Client } from 'pg'
-import { computeGoals } from '../src/lib/nutrition.ts'
+import { computeGoals, macrosFor } from '../src/lib/nutrition.ts'
 import { bmi, fatBand, leanKg, partKg, visceralBand, waterBand } from '../src/lib/body.ts'
 import { pgConfig } from './env.ts'
 
@@ -141,6 +141,27 @@ function logicChecks(): void {
     plain !== null && measured !== null && measured.kcal !== plain.kcal,
     'Измеренный базовый обмен заменяет формулу',
     `Миффлин ${plain?.kcal} ккал, по измеренному 2008 - ${measured?.kcal} ккал`,
+  )
+
+  // --- Цели: своя норма меняет калории, но не правило деления.
+  // Раньше форма брала белок из анкетного расчёта без тощей массы, а углеводы -
+  // под расчётные калории, и сумма граммов не сходилась с вписанным числом
+  const own = macrosFor(1900, base.weightKg, 68.37)
+  check(
+    withLean !== null && own.protein === withLean.protein && own.fat === withLean.fat,
+    'Своя норма: белок и жир те же, что у расчётной',
+    `белок ${own.protein} г против ${withLean?.protein} г, жир ${own.fat} г против ${withLean?.fat} г`,
+  )
+  const ownSum = own.protein * 4 + own.fat * 9 + own.carbs * 4
+  check(
+    own.kcal === 1900 && Math.abs(ownSum - 1900) <= 7,
+    'Своя норма: БЖУ сходятся с вписанными калориями',
+    `${own.protein}*4 + ${own.fat}*9 + ${own.carbs}*4 = ${ownSum} ккал при норме 1900`,
+  )
+  check(
+    macrosFor(1900, base.weightKg, null).protein === Math.round(1.8 * base.weightKg),
+    'Своя норма без состава: белок от общего веса',
+    `${macrosFor(1900, base.weightKg, null).protein} г`,
   )
 
   // --- И главное: без расширенных полей всё считается как раньше

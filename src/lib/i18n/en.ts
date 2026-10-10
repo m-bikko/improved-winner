@@ -584,7 +584,7 @@ export const en: Dict = {
   'profile.autoHint': 'Fill in your year of birth, sex, height and weight - the target works itself out.',
   'profile.manual': 'Set the calories by hand',
   'profile.ownGoal': 'Your own target',
-  'profile.manualHint': 'Protein, fat and carbohydrates stay calculated.',
+  'profile.manualHint': 'Protein and fat follow your weight; carbohydrates take what is left of your calories.',
   'profile.telegram': 'Telegram notifications',
   'profile.telegramAbout': 'They go to your partner when you start a topic, reply in it or close it. Leave it empty and we send nothing.',
   'profile.chatIdHint': 'To find it: message @userinfobot in Telegram and it replies with your id. Then open {link} and press Start - without that the bot cannot write to you.',

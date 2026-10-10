@@ -80,6 +80,18 @@ export function computeGoals(input: GoalInput): Macros | null {
       : 10 * weightKg + 6.25 * heightCm - 5 * age + (sex === 'male' ? 5 : -161)
   const kcal = bmr * ACTIVITY_FACTORS[activityLevel] * GOAL_FACTORS[goalDirection]
 
+  return macrosFor(kcal, weightKg, input.leanKg ?? null)
+}
+
+/**
+ * Б/Ж/У под заданную калорийность.
+ *
+ * Общее для расчётной нормы и для своей: человек, который вписал свои
+ * калории, меняет только их, а не правило, по которому делится тарелка.
+ * Раньше своя норма брала белок из анкетного расчёта без тощей массы,
+ * а углеводы - из чужой калорийности, и сумма БЖУ с ней не сходилась.
+ */
+export function macrosFor(kcal: number, weightKg: number, leanKg: number | null): Macros {
   // Белок и жир привязаны к весу, углеводы забирают остаток: так при дефиците
   // режется именно то, что можно резать, а не мышцы.
   //
@@ -87,7 +99,7 @@ export function computeGoals(input: GoalInput): Macros | null {
   // против 1.8 на килограмм общего веса: у человека обычного телосложения
   // числа сходятся, а у полного расходятся заметно - и расходятся в сторону
   // правды, потому что жировой ткани белок не нужен.
-  const protein = input.leanKg != null ? 2.2 * input.leanKg : 1.8 * weightKg
+  const protein = leanKg != null ? 2.2 * leanKg : 1.8 * weightKg
   const fat = 0.9 * weightKg
   const carbs = Math.max(0, (kcal - protein * 4 - fat * 9) / 4)
 

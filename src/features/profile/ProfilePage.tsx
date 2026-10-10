@@ -22,6 +22,7 @@ import {
   ACTIVITY_LEVELS,
   GOAL_DIRECTIONS,
   computeGoals,
+  macrosFor,
   type ActivityLevel,
   type GoalDirection,
   type Sex,
@@ -57,6 +58,7 @@ import { Sheet } from '@/ui/Sheet'
 import { ErrorState, Loading } from '@/ui/States'
 import {
   goalsFor,
+  leanFrom,
   useProfiles,
   useSaveProfile,
   useWeightLog,
@@ -135,9 +137,17 @@ function ProfileForm({ profile }: { profile: Profile }) {
     weightKg,
     activityLevel: activity,
     goalDirection: goal,
+    // Те же входы, что у goalsFor: без них форма показывала и сохраняла
+    // анкетную норму, а дневник - другую
+    leanKg: leanFrom(profile),
+    bmrKcal: profile.bmrKcal,
   })
 
-  const effective = manual && manualKcal !== '' ? { ...preview, kcal: manualKcal } : preview
+  // Своя норма меняет только калории; Б/Ж/У делятся под них по тем же
+  // правилам, иначе сумма граммов не сходится с вписанным числом
+  const ownKcal = manual && manualKcal !== '' ? manualKcal : null
+  const effective =
+    ownKcal === null ? preview : weightKg !== null ? macrosFor(ownKcal, weightKg, leanFrom(profile)) : null
 
   const submit = async () => {
     setError(null)
@@ -156,20 +166,18 @@ function ProfileForm({ profile }: { profile: Profile }) {
           // При автоматическом режиме ручные цели обнуляем: иначе они останутся
           // лежать в базе и однажды всплывут при переключении обратно
           goalKcal: manual && manualKcal !== '' ? manualKcal : null,
-          ...(manual && preview
-            ? { goalProtein: preview.protein, goalFat: preview.fat, goalCarbs: preview.carbs }
+          ...(ownKcal !== null && effective
+            ? { goalProtein: effective.protein, goalFat: effective.fat, goalCarbs: effective.carbs }
             : { goalProtein: null, goalFat: null, goalCarbs: null }),
         },
       })
       // Пересчитанная норма должна попасть в снимок сегодняшнего дня, иначе
       // завтра он замёрзнет со старым значением
-      if (preview) {
-        // Ручная норма перебивает только калории - Б/Ж/У остаются расчётными
-        const kcal = manual && manualKcal !== '' ? manualKcal : preview.kcal
+      if (effective) {
         await freezeGoal.mutateAsync({
           userId: profile.userId,
           date: todayLocal(),
-          goal: { kcal, protein: preview.protein, fat: preview.fat, carbs: preview.carbs },
+          goal: effective,
           goalDirection: goal,
         })
       }
@@ -347,9 +355,9 @@ function ProfileForm({ profile }: { profile: Profile }) {
                 <span className="text-lg font-bold text-muted">{t('unit.kcal')}</span>
               </p>
               <p className="mt-1 text-sm tabular-nums">
-                <span className="font-semibold text-protein">{t('macro.p')}</span> {preview?.protein} ·{' '}
-                <span className="font-semibold text-fat">{t('macro.f')}</span> {preview?.fat} ·{' '}
-                <span className="font-semibold text-carbs">{t('macro.c')}</span> {preview?.carbs}{' '}
+                <span className="font-semibold text-protein">{t('macro.p')}</span> {effective.protein} ·{' '}
+                <span className="font-semibold text-fat">{t('macro.f')}</span> {effective.fat} ·{' '}
+                <span className="font-semibold text-carbs">{t('macro.c')}</span> {effective.carbs}{' '}
                 <span className="text-muted">{t('unit.gram')}</span>
               </p>
             </>
