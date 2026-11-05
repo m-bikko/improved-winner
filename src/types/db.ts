@@ -1707,6 +1707,56 @@ export type Database = {
         }
         Relationships: []
       }
+      places: {
+        Row: {
+          address: string | null
+          created_at: string
+          created_by: string
+          id: string
+          kind: string
+          lat: number
+          lng: number
+          memory_id: string | null
+          name: string
+          note: string | null
+          visited_on: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          kind?: string
+          lat: number
+          lng: number
+          memory_id?: string | null
+          name: string
+          note?: string | null
+          visited_on?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          kind?: string
+          lat?: number
+          lng?: number
+          memory_id?: string | null
+          name?: string
+          note?: string | null
+          visited_on?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "places_memory_id_fkey"
+            columns: ["memory_id"]
+            isOneToOne: false
+            referencedRelation: "memories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pregnancy: {
         Row: {
           created_at: string

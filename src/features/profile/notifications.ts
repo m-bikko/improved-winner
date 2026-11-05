@@ -43,4 +43,5 @@ export const NOTIFICATION_KINDS: NotificationKind[] = [
   { id: 'pause' },
   { id: 'week' },
   { id: 'meds' },
+  { id: 'places' },
 ]

@@ -30,6 +30,9 @@ async function main(): Promise<void> {
   await client.connect()
   try {
     await client.query('begin')
+    // Здесь вопрос «кому», а не «когда»: тихие часы проверяет check-notification-settings,
+    // и без сброса проверка падала по вечерам у того, кто их настроил
+    await client.query('update public.profiles set quiet_from = null, quiet_to = null')
 
     // Уникальность и пропуски считаются ВНУТРИ языка: между языками один
     // и тот же день - это перевод, а не повтор

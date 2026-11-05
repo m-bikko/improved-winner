@@ -99,6 +99,9 @@ async function main(): Promise<void> {
      * отвечать за код, а не за чужие галочки.
      */
     await client.query('delete from public.notification_settings')
+    // То же про тихие часы: с ними «по умолчанию включено» проваливалось
+    // вечером у того, кто их настроил, и проходило утром
+    await client.query('update public.profiles set quiet_from = null, quiet_to = null')
 
     const allowed = async (kind: string, channel: string, who = a.user_id): Promise<boolean> =>
       (await one('select public.notify_allowed($1, $2, $3)::text as v', [who, kind, channel])) ===

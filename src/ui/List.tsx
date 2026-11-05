@@ -48,7 +48,7 @@ type RowProps = {
  * превратили бы её в кнопку с промахами.
  */
 export function ListRow(
-  props: RowProps & ({ to: string } | { onClick: () => void } | { static: true }),
+  props: RowProps & ({ to: string } | { href: string } | { onClick: () => void } | { static: true }),
 ) {
   const { title, subtitle, icon, tone = 'slate', trailing, danger } = props
   const interactive = !('static' in props)
@@ -75,6 +75,13 @@ export function ListRow(
       <Link to={props.to} className={`${cls} ${press}`}>
         {body}
       </Link>
+    )
+  }
+  if ('href' in props) {
+    return (
+      <a href={props.href} target="_blank" rel="noreferrer" className={`${cls} ${press}`}>
+        {body}
+      </a>
     )
   }
   if ('onClick' in props) {

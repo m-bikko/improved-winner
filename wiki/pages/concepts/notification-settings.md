@@ -3,7 +3,7 @@ title: Настройки уведомлений
 type: concept
 tags: [notifications, settings, privacy]
 created: 2026-09-08
-updated: 2026-10-03
+updated: 2026-11-05
 sources: [supabase/migrations/20260908190000_notification_settings.sql, src/features/profile/notifications.ts]
 ---
 
@@ -79,6 +79,10 @@ sources: [supabase/migrations/20260908190000_notification_settings.sql, src/feat
 [[agreements|Договорённости]] своего вида не получили - это темы, и
 рассылка у них тематическая. Подсказка подарка едет в уведомлении
 [[occasions|дат]], тоже без нового вида.
+
+## Места (2026-11-05)
+
+`places` - новое место в [[places|общем списке]].
 
 ## Пятая серия (2026-10-03)
 

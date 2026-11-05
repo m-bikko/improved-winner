@@ -1,4 +1,5 @@
 import { useT } from '@/lib/i18n'
+import type { Ref } from 'react'
 import { Search, X } from 'lucide-react'
 
 type Props = {
@@ -6,15 +7,18 @@ type Props = {
   onChange: (value: string) => void
   placeholder?: string
   autoFocus?: boolean
+  inputRef?: Ref<HTMLInputElement>
 }
 
-export function SearchInput({ value, onChange, placeholder, autoFocus }: Props) {
+export function SearchInput({ value, onChange, placeholder, autoFocus, inputRef }: Props) {
   const t = useT()
   return (
     <div className="relative flex items-center">
       <Search size={18} className="absolute left-3.5 text-muted" aria-hidden />
       <input
+        ref={inputRef}
         type="search"
+        enterKeyHint="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}

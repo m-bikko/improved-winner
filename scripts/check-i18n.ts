@@ -71,6 +71,7 @@ import { TOT_PAIRS } from '../src/features/quiz/pairs.ts'
 import { PULSE_AREAS } from '../src/features/pulse/areas.ts'
 import { CHECKPOINTS, WEEKS } from '../src/features/pregnancy/weeks.ts'
 import { IDEA_CATEGORIES } from '../src/features/ideas/logic.ts'
+import { PLACE_KINDS } from '../src/features/places/logic.ts'
 
 let failed = 0
 function check(ok: boolean, name: string, detail: string): void {
@@ -264,6 +265,7 @@ const FAMILIES: { prefix: string; ids: readonly string[]; suffixes?: string[] }[
   { prefix: 'tot', ids: TOT_PAIRS.map((x) => x.id), suffixes: ['.a', '.b'] },
   { prefix: 'nm.origin', ids: ['kazakh', 'slavic', 'intl', 'custom'] },
   { prefix: 'id.cat', ids: IDEA_CATEGORIES },
+  { prefix: 'places.kind', ids: PLACE_KINDS },
   { prefix: 'pl.area', ids: PULSE_AREAS.map((x) => x.id) },
   { prefix: 'pl.hint', ids: PULSE_AREAS.map((x) => x.id) },
   { prefix: 'preg.size', ids: WEEKS.map((w) => String(w.week)) },

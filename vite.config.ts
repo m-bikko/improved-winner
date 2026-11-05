@@ -124,6 +124,11 @@ export default defineConfig(({ mode }) => {
           // воркер сам и вклиниться в него иначе нельзя
           importScripts: ['/push-sw.js'],
           globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+          // Сборка одним куском (см. registerType выше), и с картой Leaflet она
+          // переросла стандартные 2 МиБ. Файл больше лимита выпал бы из прекэша,
+          // а без него приложение не откроется офлайн - поэтому лимит поднят,
+          // а не куски разделены
+          maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
           // Service Worker занимается ТОЛЬКО оболочкой приложения.
           // Данные Supabase кэширует персистер TanStack Query в IndexedDB -
           // NetworkFirst на домен Supabase отдавал бы протухшие ответы и маскировал 401.

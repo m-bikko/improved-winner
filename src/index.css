@@ -3,6 +3,9 @@
    должна рисоваться офлайн, а woff2 попадает в прекэш service worker.
    Variable-сборка с cyrillic-ext - в ней все казахские буквы (ә ғ қ ң ө ұ ү һ і). */
 @import '@fontsource-variable/nunito';
+/* В слой base: неслоёный CSS побеждает любой @layer, и правила карты из слоя
+   components иначе не смогли бы перекрасить ни одного элемента Leaflet. */
+@import 'leaflet/dist/leaflet.css' layer(base);
 
 /* Токены темы. Значения живут в :root и переключаются по prefers-color-scheme,
    а @theme только связывает их с утилитами Tailwind (bg-surface, text-muted и т.д.). */
@@ -569,5 +572,45 @@
   }
   .jar-level {
     transition: transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}
+
+/* Карта мест. Тайлы OSM - чужие картинки, и токенами их не перекрасить, поэтому
+   тон задаёт фильтр: днём чуть приглушить и согреть, чтобы булавки читались
+   первыми, в тёмной теме - вывернуть, иначе карта светила бы белым пятном
+   посреди тёмного экрана. hue-rotate возвращает воде и паркам их цвета. */
+@layer components {
+  .places-map {
+    background: var(--c-raised);
+    font-family: inherit;
+  }
+
+  .places-map .leaflet-tile-pane {
+    filter: saturate(0.82) sepia(0.06);
+  }
+
+  .places-map .leaflet-control-attribution {
+    border-top-left-radius: 0.5rem;
+    background: color-mix(in srgb, var(--c-surface) 82%, transparent);
+    color: var(--c-muted);
+    font-size: 10px;
+    /* Угол карты скруглён, и без запаса он срезал последнюю букву подписи */
+    padding-right: 0.75rem;
+  }
+
+  .places-map .leaflet-control-attribution a {
+    color: inherit;
+    text-decoration: underline;
+  }
+
+  .place-pin {
+    background: none;
+    border: 0;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .places-map .leaflet-tile-pane {
+      filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.7);
+    }
   }
 }

@@ -18,6 +18,7 @@ import {
   Images,
   Lightbulb,
   ListChecks,
+  MapPinned,
   MessageCircleHeart,
   MessagesSquare,
   Mic,
@@ -82,6 +83,7 @@ export const MORE_GROUPS: readonly { key: Key; items: readonly Section[] }[] = [
     key: 'nav.group.fun',
     items: [
       { to: '/ideas', key: 'nav.ideas', icon: Lightbulb, tone: 'violet' },
+      { to: '/places', key: 'nav.places', icon: MapPinned, tone: 'green' },
       { to: '/quiz', key: 'nav.quiz', icon: Dices, tone: 'amber' },
       { to: '/watch', key: 'nav.watch', icon: Clapperboard, tone: 'sky' },
       { to: '/challenges', key: 'nav.challenges', icon: Trophy, tone: 'green' },

@@ -3,7 +3,7 @@ title: Навигация
 type: concept
 tags: [ui, navigation, mobile]
 created: 2026-09-29
-updated: 2026-10-03
+updated: 2026-11-05
 sources: [src/shell/TabBar.tsx, src/shell/AppShell.tsx, src/shell/sections.ts]
 ---
 
@@ -54,6 +54,9 @@ sources: [src/shell/TabBar.tsx, src/shell/AppShell.tsx, src/shell/sections.ts]
 **Быт** (задачи, продукты, цикл, даты, вишлист, [[health|здоровье]]),
 **Итоги и настройки** ([[week|неделя]], год, уведомления). Темы переехали
 из «Быта» в «Разговоры».
+
+[[places|Места]] (2026-11-05) встали в «Вместе» сразу за идеями: идея отвечает
+на вопрос «чем заняться», место - «куда пойти».
 
 У плитки может быть условие (`gate`): «Малыш» видна, только когда малыш
 уже есть, - до рождения она вела бы в пустоту.

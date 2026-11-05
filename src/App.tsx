@@ -40,6 +40,7 @@ import { AgreementsPage } from '@/features/agreements/AgreementsPage'
 import { PulsePage } from '@/features/pulse/PulsePage'
 import { ShotsPage } from '@/features/shots/ShotsPage'
 import { IdeasPage } from '@/features/ideas/IdeasPage'
+import { PlacesPage } from '@/features/places/PlacesPage'
 import { PausePage } from '@/features/pause/PausePage'
 import { StoryPage } from '@/features/story/StoryPage'
 import { WeekPage } from '@/features/week/WeekPage'
@@ -123,6 +124,7 @@ function Gate() {
         <Route path="/pulse" element={<PulsePage />} />
         <Route path="/shots" element={<ShotsPage />} />
         <Route path="/ideas" element={<IdeasPage />} />
+        <Route path="/places" element={<PlacesPage />} />
         <Route path="/pause" element={<PausePage />} />
         <Route path="/story" element={<StoryPage />} />
         <Route path="/week" element={<WeekPage />} />

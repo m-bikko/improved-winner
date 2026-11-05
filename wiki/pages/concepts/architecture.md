@@ -3,7 +3,7 @@ title: Архитектура
 type: concept
 tags: [architecture, stack]
 created: 2026-09-03
-updated: 2026-09-29
+updated: 2026-11-05
 sources: [src/, supabase/migrations/]
 ---
 
@@ -27,7 +27,7 @@ Postgres.
 с телефона. Библиотеку компонентов всё равно не взяли, но уже по другим
 причинам (см. [[design-system]]); добавились `motion` для движения
 и локальный шрифт заголовков. Навигация переехала из бургера в нижнюю
-панель - [[navigation]].
+панель - [[navigation]]. Для карты [[places|мест]] добавился Leaflet.
 
 ## Слои
 
