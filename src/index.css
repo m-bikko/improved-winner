@@ -326,6 +326,8 @@
     color: var(--c-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    /* Длинная ссылка в заметке переносится, а не обрезается и не раздвигает экран */
+    overflow-wrap: break-word;
     /* Убирает залипание подсветки при тапе на мобильном Safari */
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: none;

@@ -98,6 +98,7 @@ export function PlacesPage() {
   const cityTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   // Город только что выбрали сами: границы уже в пути, угадывать по центру незачем
   const cityChosen = useRef(false)
+  const firstMove = useRef(true)
 
   const [initialView] = useState(readView)
   const [tab, setTab] = useState<Tab>('want')
@@ -201,14 +202,18 @@ export function PlacesPage() {
       detecting.current?.abort()
       const control = new AbortController()
       detecting.current = control
-      cityAt(view, lang, control.signal)
+      cityAt(view, lang, control.signal, (name) => {
+        if (!control.signal.aborted) setCity({ name, bounds: null })
+      })
         .then((found) => {
           if (!control.signal.aborted) setCity(found)
         })
         .catch(() => {
           // Сети нет или сервер занят: поиск просто пойдёт по тому, что на экране
         })
-    }, CITY_DELAY_MS)
+      // Первый раз ждать нечего: карта только открылась и никто её не двигает
+    }, firstMove.current ? 0 : CITY_DELAY_MS)
+    firstMove.current = false
   }
 
   const chooseCity = (choice: Point & { name: string; bounds: Bounds | null }) => {

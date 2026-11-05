@@ -8,6 +8,7 @@ import { Avatar } from '@/ui/Avatar'
 import { Button } from '@/ui/Button'
 import { useBurst } from '@/ui/Burst'
 import { Card } from '@/ui/Card'
+import { DeleteIconButton } from '@/ui/DeleteIconButton'
 import { EmptyState, ErrorState, Loading } from '@/ui/States'
 import { TONE_CLASS } from '@/ui/tones'
 import { loadVoice, useDeleteVoice, useMarkListened, useSendVoice, useVoiceNotes, type VoiceNote } from './api'
@@ -284,9 +285,7 @@ function Bubble({ note, pair }: { note: VoiceNote; pair: Pair }) {
           {mine && (
             <>
               <CheckCheck size={14} aria-label={note.listenedAt ? t('vc.listened') : t('vc.sent')} className={note.listenedAt ? 'text-tone-green' : ''} />
-              <button type="button" onClick={() => remove.mutate(note)} aria-label={t('common.delete')} className="ml-1 text-muted/70">
-                <Trash2 size={13} aria-hidden />
-              </button>
+              <DeleteIconButton onDelete={() => remove.mutate(note)} label={t('common.delete')} size={15} className="-my-3 -mr-2" />
             </>
           )}
         </div>

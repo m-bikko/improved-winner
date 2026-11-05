@@ -96,8 +96,12 @@ export async function boundsOfCity(name: string, lang: Lang, signal: AbortSignal
   return bounds
 }
 
-/** Какой город на экране. Если границы города не накрывают точку, поиск идёт только по названию. */
-export async function cityAt(point: Point, lang: Lang, signal: AbortSignal): Promise<MapCity | null> {
+/**
+ * Какой город на экране. Название отдаётся сразу, как только известно: границы - это
+ * второй запрос с паузой, а ждать секунду ради подписи незачем. Если границы города
+ * не накрывают точку, поиск пойдёт по видимой части карты.
+ */
+export async function cityAt(point: Point, lang: Lang, signal: AbortSignal, onName: (name: string) => void): Promise<MapCity | null> {
   const params = new URLSearchParams({
     format: 'jsonv2',
     lat: String(point.lat),
@@ -107,6 +111,7 @@ export async function cityAt(point: Point, lang: Lang, signal: AbortSignal): Pro
   })
   const name = readCityName(await request('reverse', params, signal))
   if (!name) return null
+  onName(name)
   const bounds = await boundsOfCity(name, lang, signal)
   return { name, bounds: bounds && contains(bounds, point) ? bounds : null }
 }

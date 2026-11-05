@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { Camera, Clock, Lock, Send, Trash2 } from 'lucide-react'
+import { Camera, Clock, Lock, Send } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { formatDayLabel, formatTime } from '@/lib/date'
 import { useNow } from '@/lib/useNow'
@@ -8,6 +8,7 @@ import { Aurora } from '@/ui/Aurora'
 import { Avatar } from '@/ui/Avatar'
 import { Button } from '@/ui/Button'
 import { useBurst } from '@/ui/Burst'
+import { DeleteIconButton } from '@/ui/DeleteIconButton'
 import { Card, SectionTitle } from '@/ui/Card'
 import { Field } from '@/ui/Field'
 import { PhotoViewer } from '@/ui/PhotoViewer'
@@ -213,14 +214,12 @@ function ShotCard({
               {late === 0 ? t('sh.onTime') : t('sh.late', { n: late < 120 ? `${late} ${t('unit.min')}` : `${Math.round(late / 60)} ${t.plural('unit.hour', Math.round(late / 60))}` })}
             </span>
             {own && (
-              <button
-                type="button"
-                onClick={() => remove.mutate(shot)}
-                aria-label={t('common.delete')}
-                className="absolute top-2 right-2 flex size-9 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur active:scale-90"
-              >
-                <Trash2 size={16} aria-hidden />
-              </button>
+              <DeleteIconButton
+                onDelete={() => remove.mutate(shot)}
+                label={t('common.delete')}
+                onPhoto
+                className="absolute top-1.5 right-1.5"
+              />
             )}
           </>
         )}

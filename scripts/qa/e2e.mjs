@@ -372,6 +372,33 @@ await section('Места', async () => {
   ok(sql(`select count(*) from public.places`).includes("'0'"), 'Удаление со второго нажатия')
 })
 
+await section('Необратимое удаление значком', async () => {
+  const ALEX = sql(`select user_id::text from public.profiles where nickname='Алекс'`).match(/'([0-9a-f-]{36})'/)[1]
+  sql(`delete from public.voice_notes`)
+  sql(`insert into public.voice_notes (id, author_id, path, duration_ms, peaks) values (gen_random_uuid(), '${ALEX}', '${ALEX}/qa.webm', 3000, '{1,2,3,4,5}')`)
+  await go('/voice')
+  // Главная уже закэшировала пустой список на минуту: обновляем так же, как человек
+  await swipe(200, 200, 200, 620, 10, 25); await page.waitForTimeout(1300)
+  const icon = page.locator('main').getByRole('button', { name: 'Удалить', exact: true }).first()
+  const box = await icon.boundingBox()
+  ok(box.height >= 44 && box.width >= 44, 'Цель значка не меньше пальца', `${Math.round(box.width)}x${Math.round(box.height)}`)
+  await icon.click(); await page.waitForTimeout(250)
+  ok(sql(`select count(*) from public.voice_notes`).includes("'1'"), 'Первое нажатие записку не удаляет')
+  await page.screenshot({ path: `${out}/voice-armed.png` })
+  await page.locator('main').getByRole('button', { name: 'Нажми ещё раз' }).first().click(); await page.waitForTimeout(800)
+  ok(sql(`select count(*) from public.voice_notes`).includes("'0'"), 'Второе удаляет')
+})
+
+await section('Город появляется быстро', async () => {
+  sql(`delete from public.places`)
+  await page.evaluate(() => localStorage.setItem('love-promises-map-view', JSON.stringify({ lat: 51.1283, lng: 71.4305, zoom: 13 })))
+  await go('/places')
+  const cityBtn = page.getByRole('button', { name: /^Город:/ })
+  const t0 = Date.now()
+  while (!(await cityBtn.textContent()).includes('Астана') && Date.now() - t0 < 8000) await page.waitForTimeout(100)
+  ok((await cityBtn.textContent()).includes('Астана'), 'Город определился сам по тому, что на экране', `${Date.now() - t0 + 900} мс с открытия`)
+})
+
 await section('Все разделы: первичное действие', async () => {
   const routes = ['question','shots','voice','meetings','memories','story','ideas','quiz','watch','challenges','savings','topics','pause','agreements','prep','pregnancy','names','tasks','foods','cycle','cycle/library','dates','wishlist','health','week','year','notifications','month','checkin']
   for (const r of routes) {

@@ -287,7 +287,7 @@ function Row({
       >
         <span className="block truncate text-base font-semibold">{wish.title}</span>
         {wish.details && (
-          <span className="mt-0.5 line-clamp-2 text-sm text-muted">{wish.details}</span>
+          <span className="mt-0.5 line-clamp-2 text-sm [overflow-wrap:anywhere] text-muted">{wish.details}</span>
         )}
         <span className="mt-1 flex min-w-0 items-center gap-1 text-[13px] text-muted">
           <Icon size={13} aria-hidden className="shrink-0" />

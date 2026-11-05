@@ -208,7 +208,7 @@ function DayAnswers({ day, pair }: { day: Day; pair: Pair }) {
             <button
               type="button"
               onClick={() => setEditing(true)}
-              className="flex min-h-9 items-center gap-1.5 rounded-full bg-raised px-3 text-[13px] font-semibold text-muted transition-transform active:scale-95"
+              className="flex min-h-10 items-center gap-1.5 rounded-full bg-raised px-3.5 text-[13px] font-semibold text-muted transition-transform active:scale-95"
             >
               <Pencil size={14} aria-hidden />
               {t('common.edit')}

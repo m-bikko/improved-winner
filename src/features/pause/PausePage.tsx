@@ -388,7 +388,7 @@ function PeaceLink({ pause }: { pause: Pause }) {
     <button
       type="button"
       onClick={() => close.mutate({ id: pause.id, outcome: 'peace' })}
-      className="py-2 text-center text-sm font-semibold text-muted"
+      className="min-h-11 py-2 text-center text-[15px] font-semibold text-muted active:opacity-50"
     >
       {t('ps.peaceNoWords')}
     </button>
