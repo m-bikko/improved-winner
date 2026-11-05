@@ -71,7 +71,7 @@ export function PregnancyPage() {
   const state = gestation(g.lmp, today)
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <Hero pregnancy={g} pair={pair} today={today} onSettings={() => setSettings(true)} />
       <WeekCard current={state.week} pair={pair} motherId={g.motherId} />
       <Checkpoints week={state.week} />
@@ -161,7 +161,7 @@ function Start({ pair, today }: { pair: Pair; today: string }) {
   useEffect(() => setMother(defaultMother), [defaultMother])
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <section className="relative isolate overflow-hidden rounded-[28px] bg-surface p-5 shadow-card">
         <Aurora colors={[toneVar(pair.myTone), toneVar(pair.partnerTone), 'var(--t-plum)']} />
         <Baby aria-hidden size={128} strokeWidth={1.3} className="pointer-events-none absolute -right-5 -bottom-6 -rotate-12 text-ink opacity-[0.06]" />

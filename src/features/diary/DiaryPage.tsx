@@ -3,7 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   DndContext,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   closestCorners,
   useSensor,
   useSensors,
@@ -24,7 +25,9 @@ import {
 } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { shiftDays, todayLocal } from '@/lib/date'
+import { haptic } from '@/lib/haptics'
 import { useLocalFlag } from '@/lib/localFlag'
+import { undoableDelete } from '@/lib/undo'
 import { queueSize } from '@/lib/outbox'
 import type { GoalDirection, Macros } from '@/lib/nutrition'
 import { useAuth } from '@/auth/AuthProvider'
@@ -174,9 +177,12 @@ export function DiaryPage() {
   const reorder = useReorderEntries()
   const beforeDrag = useRef<DiaryEntry[] | null>(null)
 
-  // Ручка отдельная, поэтому порога в несколько пикселей достаточно: жест
-  // не конкурирует с тапом по строке и не требует удержания
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
+  // Палец - удержание: так перенос не спорит ни с нажатием на строку, ни со
+  // смахиванием, ни с прокруткой. Сдвинулся раньше срока - это уже другой жест
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 320, tolerance: 8 } }),
+  )
 
   const dayKey = ['diary', userId, date]
 
@@ -214,10 +220,22 @@ export function DiaryPage() {
     })
   }
 
+  // Удаление с отменой: смахнул лишнее - одно нажатие возвращает всё как было.
+  // Запись пропадает сразу, в базу удаление уходит через пять секунд
+  const removeEntry = (entry: DiaryEntry) => {
+    undoableDelete<DiaryEntry[]>({
+      qc,
+      queryKey: dayKey,
+      remove: (list) => list.filter((e) => e.id !== entry.id),
+      commit: () => deleteEntry.mutateAsync(entry.id),
+      text: t('diary.entryDeleted', { name: entry.name }),
+    })
+  }
+
   if (day.isError) return <ErrorState error={day.error} onRetry={() => void day.refetch()} />
 
   return (
-    <div className="stagger mx-auto max-w-2xl px-4 pt-1">
+    <div className="mx-auto max-w-2xl px-4 pt-1">
       <WeekStrip
         userId={userId}
         date={date}
@@ -272,6 +290,7 @@ export function DiaryPage() {
           sensors={sensors}
           collisionDetection={closestCorners}
           onDragStart={() => {
+            haptic('commit')
             beforeDrag.current = entries
           }}
           onDragOver={onDragOver}
@@ -281,7 +300,7 @@ export function DiaryPage() {
             beforeDrag.current = null
           }}
         >
-          <div className="stagger mt-4 flex flex-col gap-3">
+          <div className="mt-4 flex flex-col gap-3">
             {MEALS.map((meal) => {
               const mealEntries = byMeal(entries, meal)
               const yesterdayMeal = byMeal(yesterday.data ?? [], meal)
@@ -292,6 +311,7 @@ export function DiaryPage() {
                   entries={mealEntries}
                   onAdd={() => setPicking(meal)}
                   onOpen={openEntry}
+                  onDelete={removeEntry}
                   repeatable={mealEntries.length === 0 ? yesterdayMeal : []}
                   onRepeat={() =>
                     void copyEntries
@@ -356,11 +376,11 @@ export function DiaryPage() {
           {...(portion.entry ? { initialServingLabel: portion.entry.servingLabel } : {})}
           busy={addEntry.isPending || updateEntry.isPending}
           onClose={() => setPortion(null)}
+          confirmDelete={false}
           onDelete={
             portion.entry
               ? () => {
-                  const id = portion.entry?.id
-                  if (id) void deleteEntry.mutateAsync(id)
+                  if (portion.entry) removeEntry(portion.entry)
                   setPortion(null)
                 }
               : undefined
@@ -377,6 +397,7 @@ export function DiaryPage() {
                 grams,
                 servingLabel,
               })
+              haptic('success')
               freezeTodayGoal()
             }
             setPortion(null)
@@ -626,6 +647,7 @@ function MealSection({
   entries,
   onAdd,
   onOpen,
+  onDelete,
   repeatable,
   onRepeat,
   repeating,
@@ -634,6 +656,7 @@ function MealSection({
   entries: DiaryEntry[]
   onAdd: () => void
   onOpen: (entry: DiaryEntry) => void
+  onDelete: (entry: DiaryEntry) => void
   repeatable: DiaryEntry[]
   onRepeat: () => void
   repeating: boolean
@@ -648,11 +671,12 @@ function MealSection({
           приём нельзя было бы перетащить еду: ронять было бы не на что,
           и перетаскивание отваливалось бы ровно там, где секцию убрали с глаз. */}
       <MealDropZone meal={meal} isEmpty={entries.length === 0 && !collapsed}>
+        <div className="flex items-center">
         <button
           type="button"
           onClick={() => setCollapsed(!collapsed)}
           aria-expanded={!collapsed}
-          className="flex w-full items-center gap-3 px-4 pt-3.5 pb-3 text-left transition-colors active:bg-raised"
+          className="flex min-h-[3.75rem] min-w-0 flex-1 items-center gap-3 py-2 pl-4 text-left transition-colors duration-150 active:bg-raised active:duration-0"
         >
           <IconBadge icon={MEAL_ICON[meal].icon} tone={MEAL_ICON[meal].tone} size="sm" />
           <span className="min-w-0 flex-1">
@@ -676,56 +700,56 @@ function MealSection({
           </span>
 
           {entries.length > 0 && (
-            <span className="shrink-0 text-sm font-semibold tabular-nums">
-              {Math.round(totals.kcal)} <span className="font-normal text-muted">{t('unit.kcal')}</span>
+            <span className="shrink-0 text-[15px] font-semibold tabular-nums">
+              {Math.round(totals.kcal)} <span className="text-[13px] font-normal text-muted">{t('unit.kcal')}</span>
             </span>
           )}
-          {collapsed ? (
-            <ChevronDown size={16} className="shrink-0 text-muted" aria-hidden />
-          ) : (
-            <ChevronUp size={16} className="shrink-0 text-muted" aria-hidden />
-          )}
+          <ChevronDown
+            size={16}
+            className={`shrink-0 text-muted/70 transition-transform duration-200 ${collapsed ? '' : 'rotate-180'}`}
+            aria-hidden
+          />
         </button>
+        {/* «Добавить» - самое частое действие во всём приложении. В шапке приёма, потому
+            что оно нужно и в свёрнутом, и когда записей много: идти за ним вниз по
+            карточке незачем, а четыре кнопки на всю ширину съедали экран */}
+        <button
+          type="button"
+          onClick={onAdd}
+          aria-label={`${t('common.add')}: ${t(dynamicKey('meal', meal))}`}
+          className="flex size-[3.75rem] shrink-0 items-center justify-center"
+        >
+          <span className="flex size-9 items-center justify-center rounded-full bg-accent-soft text-accent-soft-ink transition-transform duration-200 active:scale-90 active:duration-75">
+            <Plus size={20} strokeWidth={2.6} aria-hidden />
+          </span>
+        </button>
+        </div>
 
         {!collapsed && (
           <SortableContext items={entries.map((e) => e.id)} strategy={verticalListSortingStrategy}>
             {entries.map((entry) => (
-              <DraggableEntry key={entry.id} entry={entry} onOpen={() => onOpen(entry)} />
+              <DraggableEntry key={entry.id} entry={entry} onOpen={() => onOpen(entry)} onDelete={() => onDelete(entry)} />
             ))}
           </SortableContext>
         )}
       </MealDropZone>
 
-      {/* Действия приёма - кнопками внутри карточки, а не строками с рамкой:
-          «Добавить» - самое частое действие во всём приложении, и строка
-          мелким розовым текстом у края его прятала */}
-      {!collapsed && (
-        <div className="flex gap-2 px-3 pt-1 pb-3">
+      {!collapsed && repeatable.length > 0 && (
+        <div className="px-3 pt-0.5 pb-3">
           <button
             type="button"
-            onClick={onAdd}
-            className="flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-accent-soft
-                       px-4 text-[15px] font-semibold text-accent-soft-ink transition-transform active:scale-[0.97]"
+            onClick={onRepeat}
+            disabled={repeating}
+            aria-label={t('diary.repeatYesterday', {
+              meal: t(dynamicKey('meal', meal)).toLowerCase(),
+            })}
+            className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-2xl bg-raised
+                       px-3.5 text-[15px] font-medium text-ink transition-transform duration-200 active:scale-[0.97] active:duration-75
+                       disabled:opacity-50"
           >
-            <Plus size={18} strokeWidth={2.4} aria-hidden />
-            {t('common.add')}
+            <CopyPlus size={17} aria-hidden className="shrink-0" />
+            <span className="truncate">{t('diary.yesterday')}</span>
           </button>
-          {repeatable.length > 0 && (
-            <button
-              type="button"
-              onClick={onRepeat}
-              disabled={repeating}
-              aria-label={t('diary.repeatYesterday', {
-                meal: t(dynamicKey('meal', meal)).toLowerCase(),
-              })}
-              className="flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-2xl bg-raised
-                         px-3.5 text-sm font-medium text-ink transition-transform active:scale-[0.97]
-                         disabled:opacity-50"
-            >
-              <CopyPlus size={17} aria-hidden className="shrink-0" />
-              <span className="truncate">{t('diary.yesterday')}</span>
-            </button>
-          )}
         </div>
       )}
     </Card>

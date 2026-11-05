@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { haptic } from '@/lib/haptics'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Smartphone } from 'lucide-react'
 import { dynamicKey, useT } from '@/lib/i18n'
@@ -285,7 +286,7 @@ export function CycleBubble({ state, today }: { state: CycleDay; today: string }
     s.vel[0] -= dir[0] * 0.9
     s.vel[1] -= dir[1] * 0.9
     s.energy = Math.min(s.energy + 0.5, 1.5)
-    navigator.vibrate?.(8)
+    haptic('tick')
     press.current = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false }
     e.currentTarget.setPointerCapture(e.pointerId)
   }

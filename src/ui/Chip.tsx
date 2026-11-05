@@ -23,7 +23,12 @@ export function Chip({
   disabled?: boolean | undefined
   size?: 'sm' | 'md'
 }) {
-  const pad = size === 'sm' ? 'px-3 py-1.5 text-sm' : 'px-3.5 py-2 text-[15px]'
+  // Палец не меньше от того, что чип маленький: sm добирает высоту до 44 невидимой
+  // областью нажатия, md сразу 44
+  const pad =
+    size === 'sm'
+      ? "relative min-h-10 px-3 py-1.5 text-sm after:absolute after:inset-x-0 after:-inset-y-0.5 after:content-['']"
+      : 'min-h-11 px-3.5 py-2 text-[15px]'
   return (
     <button
       type="button"
@@ -31,7 +36,7 @@ export function Chip({
       disabled={disabled}
       aria-pressed={selected}
       className={`inline-flex items-center gap-1.5 rounded-full font-medium ring-1 ring-inset
-                  transition-[background-color,color,transform] duration-150 active:scale-95
+                  transition-[background-color,color,transform] duration-150 active:scale-95 active:duration-75
                   disabled:opacity-40 disabled:active:scale-100 ${pad} ${
                     selected
                       ? 'bg-accent-soft text-accent-soft-ink ring-accent/35'

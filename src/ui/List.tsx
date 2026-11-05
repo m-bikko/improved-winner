@@ -18,12 +18,7 @@ export function ListGroup({
   className?: string
 }) {
   return (
-    <Card
-      as="div"
-      // :not(.fixed) - строка может принести с собой шторку (Face ID в профиле),
-      // и разделитель нарисовался бы ей линией по верхнему краю экрана
-      className={`overflow-hidden [&>*+*:not(.fixed)]:border-t [&>*+*:not(.fixed)]:border-line ${className}`}
-    >
+    <Card as="div" className={`list-group overflow-hidden ${className}`}>
       {children}
     </Card>
   )
@@ -58,7 +53,7 @@ export function ListRow(
     <>
       {icon && <IconBadge icon={icon} tone={danger ? 'rose' : tone} size="sm" />}
       <span className="min-w-0 flex-1">
-        <span className={`block truncate text-[15px] font-medium ${danger ? 'text-danger' : ''}`}>
+        <span className={`block truncate text-base ${danger ? 'text-danger' : ''}`}>
           {title}
         </span>
         {subtitle && <span className="mt-0.5 block truncate text-[13px] text-muted">{subtitle}</span>}
@@ -67,8 +62,9 @@ export function ListRow(
       {chevron && <ChevronRight size={18} aria-hidden className="shrink-0 text-muted/70" />}
     </>
   )
-  const cls = 'flex w-full min-h-14 items-center gap-3 px-4 py-2.5 text-left'
-  const press = 'transition-colors active:bg-raised'
+  // --sep: разделитель начинается от текста, а если есть значок - сразу за ним
+  const cls = `flex w-full min-h-[3.25rem] items-center gap-3 px-4 py-2.5 text-left ${icon ? '[--sep:3.75rem]' : ''}`
+  const press = 'transition-colors duration-150 active:bg-raised active:duration-0'
 
   if ('to' in props) {
     return (

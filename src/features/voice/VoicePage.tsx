@@ -29,7 +29,7 @@ export function VoicePage() {
   if (notes.isPending || pair.isPending) return <Loading />
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <Recorder pair={pair} />
       {notes.data.length === 0 ? (
         <EmptyState icon={Mic} tone="violet" title={t('vc.emptyTitle')} hint={t('vc.emptyHint')} />

@@ -138,15 +138,50 @@ export function sectionTone(to: string): Tone {
   return [...TABS, ...MORE].find((s) => s.to === to)?.tone ?? 'slate'
 }
 
+/** Корень «Ещё»: четвёртый уровень вкладок, у него есть свой адрес и своя история. */
+export const MORE_ROOT = '/more'
+
 /**
  * Вложенные экраны и куда с них «назад», если истории нет - например,
  * экран открыт по ссылке из уведомления и приложение запустилось прямо на нём.
  * Порядок важен: частные пути раньше общих.
  */
-export const NESTED: readonly { prefix: string; parent: string; tab: string; title?: Key }[] = [
-  { prefix: '/cycle/report', parent: '/cycle', tab: 'more', title: 'title.cycleReport' },
-  { prefix: '/cycle/library', parent: '/cycle', tab: 'more', title: 'title.cycleLibrary' },
-  { prefix: '/topics/', parent: '/topics', tab: 'more' },
-  { prefix: '/foods/', parent: '/foods', tab: 'more' },
-  { prefix: '/month', parent: '/diary', tab: '/diary', title: 'title.month' },
+export const NESTED: readonly { prefix: string; parent: string; parentKey: Key; tab: string; title?: Key }[] = [
+  { prefix: '/cycle/report', parent: '/cycle', parentKey: 'nav.cycle', tab: MORE_ROOT, title: 'title.cycleReport' },
+  { prefix: '/cycle/library', parent: '/cycle', parentKey: 'nav.cycle', tab: MORE_ROOT, title: 'title.cycleLibrary' },
+  { prefix: '/topics/', parent: '/topics', parentKey: 'nav.topics', tab: MORE_ROOT },
+  { prefix: '/foods/', parent: '/foods', parentKey: 'nav.foods', tab: MORE_ROOT },
+  { prefix: '/month', parent: '/diary', parentKey: 'nav.diary', tab: '/diary', title: 'title.month' },
 ]
+
+/** Где находится экран: заголовок, куда назад, какая вкладка и какая глубина. */
+export type RouteInfo = {
+  /** Заголовок; null - экран вне разделов. */
+  title: Key | null
+  /** Куда вести «назад». null - корень вкладки, назад некуда. */
+  parent: string | null
+  parentKey: Key | null
+  tab: string
+  /** 0 - корень вкладки, 1 - раздел, 2 - экран внутри раздела. По ней видно, вглубь или обратно. */
+  depth: number
+}
+
+export function routeInfo(pathname: string): RouteInfo {
+  const inMore = MORE.find((s) => pathname.startsWith(s.to))
+  const nested = NESTED.find((n) => pathname.startsWith(n.prefix))
+  if (nested) {
+    const owner = inMore ?? TABS.find((s) => pathname.startsWith(s.to))
+    return {
+      title: nested.title ?? owner?.key ?? null,
+      parent: nested.parent,
+      parentKey: nested.parentKey,
+      tab: nested.tab,
+      depth: 2,
+    }
+  }
+  const tab = TABS.find((s) => pathname.startsWith(s.to))
+  if (tab) return { title: tab.key, parent: null, parentKey: null, tab: tab.to, depth: 0 }
+  if (pathname.startsWith(MORE_ROOT)) return { title: 'nav.more', parent: null, parentKey: null, tab: MORE_ROOT, depth: 0 }
+  if (inMore) return { title: inMore.key, parent: MORE_ROOT, parentKey: 'nav.more', tab: MORE_ROOT, depth: 1 }
+  return { title: null, parent: null, parentKey: null, tab: '', depth: 0 }
+}

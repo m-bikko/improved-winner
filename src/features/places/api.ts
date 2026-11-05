@@ -72,25 +72,17 @@ export function useAddPlace() {
 export function useEditPlace() {
   const done = useDone()
   return useMutation({
-    mutationFn: async (input: { id: string; name: string; kind: PlaceKind; note: string }) => {
+    mutationFn: async (input: Point & { id: string; name: string; kind: PlaceKind; note: string; address: string | null }) => {
       const { error } = await supabase
         .from('places')
-        .update({ name: input.name.trim(), kind: input.kind, note: input.note.trim() || null })
-        .eq('id', input.id)
-      if (error) throw explain(error)
-    },
-    onSuccess: done,
-  })
-}
-
-/** Точка переехала - вместе с ней адрес: прежний относился к старому месту. */
-export function useMovePlace() {
-  const done = useDone()
-  return useMutation({
-    mutationFn: async (input: Point & { id: string; address: string | null }) => {
-      const { error } = await supabase
-        .from('places')
-        .update({ lat: input.lat, lng: input.lng, address: input.address })
+        .update({
+          name: input.name.trim(),
+          kind: input.kind,
+          note: input.note.trim() || null,
+          address: input.address,
+          lat: input.lat,
+          lng: input.lng,
+        })
         .eq('id', input.id)
       if (error) throw explain(error)
     },

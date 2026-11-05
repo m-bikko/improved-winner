@@ -11,11 +11,16 @@
  */
 import { check, finish, inTransaction } from './harness.ts'
 import {
+  CITIES,
   PLACE_KINDS,
+  contains,
   guessName,
   kindFromOsm,
   osmRouteUrl,
   osmViewUrl,
+  readBounds,
+  readCityHit,
+  readCityName,
   readHit,
   readHits,
   samePoint,
@@ -96,6 +101,42 @@ check(
   osmViewUrl({ lat: 43.5, lng: 76.5 }).includes('mlat=43.5&mlon=76.5') && osmRouteUrl({ lat: 43.5, lng: 76.5 }).endsWith('to=43.5%2C76.5'),
   'Ссылки на карту несут координаты',
   'osmViewUrl, osmRouteUrl',
+)
+
+// --- Город на экране --------------------------------------------------------
+// Настоящий ответ обратного геокодирования: name внутри города называет район
+const reverseInCity = {
+  name: 'Алмалинский район',
+  addresstype: 'city_district',
+  boundingbox: ['43.2331502', '43.2704086', '76.8637098', '76.9483211'],
+  address: { city: 'Алматы', country: 'Казахстан' },
+}
+check(readCityName(reverseInCity) === 'Алматы', 'Город - из адреса, а не из названия района', `${readCityName(reverseInCity)}`)
+check(
+  readCityName({ address: { state: 'Алматинская область', country: 'Казахстан' } }) === 'Алматинская область',
+  'Вне города - ближайшее, что есть',
+  'область',
+)
+check(readCityName({ error: 'Unable to geocode' }) === null, 'Ничего не нашлось - города нет', 'null')
+const box = readBounds(reverseInCity)
+check(
+  box !== null && box.south === 43.2331502 && box.north === 43.2704086 && box.west === 76.8637098 && box.east === 76.9483211,
+  'Границы: порядок юг, север, запад, восток',
+  JSON.stringify(box),
+)
+const junkBoxes: unknown[] = [null, {}, { boundingbox: 'x' }, { boundingbox: ['1', '2', '3'] }, { boundingbox: ['a', 'b', 'c', 'd'] }, { boundingbox: ['5', '1', '2', '3'] }]
+check(junkBoxes.every((j) => readBounds(j) === null), 'Негодные границы - не границы', `${junkBoxes.length} вариантов`)
+check(
+  box !== null && contains(box, { lat: 43.25, lng: 76.9 }) && !contains(box, { lat: 43.1, lng: 76.9 }) && !contains(box, { lat: 43.25, lng: 77.2 }),
+  'Точка внутри и снаружи границ',
+  'contains',
+)
+const cityHit = readCityHit({ lat: '41.7', lon: '44.8', name: 'Тбилиси', display_name: 'Тбилиси, Грузия', boundingbox: ['41.6', '41.8', '44.7', '45.0'] })
+check(cityHit?.name === 'Тбилиси' && cityHit.label === 'Грузия' && cityHit.bounds?.east === 45, 'Город из поиска: название, подпись и границы', JSON.stringify(cityHit))
+check(
+  new Set(CITIES.map((c) => c.id)).size === CITIES.length && CITIES.every((c) => c.lat > 40 && c.lat < 56 && c.lng > 46 && c.lng < 88),
+  'Города списка - без дублей и в пределах Казахстана',
+  `${CITIES.length} городов`,
 )
 
 // --- База -------------------------------------------------------------------

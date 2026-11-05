@@ -54,7 +54,7 @@ export function WeekPage() {
   const range = `${formatDayMonth(fromLocalISO(s.from))} - ${formatDayMonth(fromLocalISO(s.to))}`
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <div className="flex items-center gap-2">
         <NavButton label={t('wk.prev')} onClick={() => setFrom(shiftDays(from, -7))}>
           <ChevronLeft size={20} aria-hidden />

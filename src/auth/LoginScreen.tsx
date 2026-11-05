@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { haptic } from '@/lib/haptics'
 import { ChevronLeft, ChevronRight, Heart, ScanFace } from 'lucide-react'
 import { ACCOUNTS, PIN_LENGTH, type Account } from '@/lib/accounts'
 import { useT, type Translate } from '@/lib/i18n'
@@ -79,7 +80,7 @@ export function LoginScreen() {
         setError(messageFor(failure, t))
         setShakeKey((k) => k + 1)
         setPin('')
-        navigator.vibrate?.([40, 60, 40])
+        haptic('error')
       })
       .finally(() => {
         submitting.current = false

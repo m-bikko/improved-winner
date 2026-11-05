@@ -63,8 +63,8 @@ export function GratitudeTile({ partnerName }: { partnerName: string }) {
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="shrink-0 rounded-full bg-accent-soft px-3.5 py-1.5 text-sm font-semibold
-                       text-accent-soft-ink transition-transform active:scale-95"
+            className="flex min-h-10 shrink-0 items-center rounded-full bg-accent-soft px-4 text-[15px] font-semibold
+                       text-accent-soft-ink transition-transform active:scale-95 active:duration-75"
           >
             {t('thanks.add')}
           </button>
@@ -139,7 +139,7 @@ export function GratitudeTile({ partnerName }: { partnerName: string }) {
                     aria-label={t('common.delete')}
                     disabled={remove.isPending}
                     onClick={() => void remove.mutateAsync(g.id)}
-                    className="-mr-1.5 shrink-0 p-1.5 text-muted"
+                    className="-my-2 -mr-2.5 flex size-11 shrink-0 items-center justify-center text-muted active:opacity-50"
                   >
                     <Trash2 size={14} aria-hidden />
                   </button>

@@ -57,7 +57,7 @@ export function PrepPage() {
   const people = [pair.userId, ...(pair.partnerId !== '' ? [pair.partnerId] : [])]
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <Hero data={data} pair={pair} today={today} onSettings={() => setSettings(true)} />
 
       <BabyLinks />
@@ -348,7 +348,7 @@ function Checklist({ data, pair, owner, today }: { data: Prep; pair: Pair; owner
 
   return (
     <section className="mt-2 flex flex-col gap-2">
-      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="text-left">
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="min-h-11 text-left">
         <SectionTitle
           action={
             <span className="flex items-center gap-1.5 text-[13px] font-semibold text-muted tabular-nums">

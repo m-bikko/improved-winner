@@ -1,4 +1,5 @@
 import { useT } from '@/lib/i18n'
+import { haptic } from '@/lib/haptics'
 import { Delete } from 'lucide-react'
 import { PIN_LENGTH } from '@/lib/accounts'
 
@@ -37,13 +38,13 @@ export function PinPad({
   const t = useT()
   const press = (digit: string) => {
     if (disabled || value.length >= PIN_LENGTH) return
-    navigator.vibrate?.(8)
+    haptic('tick')
     onChange(value + digit)
   }
 
   const backspace = () => {
     if (disabled || value.length === 0) return
-    navigator.vibrate?.(8)
+    haptic('tick')
     onChange(value.slice(0, -1))
   }
 

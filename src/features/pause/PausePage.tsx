@@ -52,7 +52,7 @@ export function PausePage() {
   const history = pauses.data.filter((p) => p.closedAt !== null)
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       {!open ? (
         <Ask />
       ) : new Date(open.endsAt).getTime() > now ? (

@@ -74,7 +74,7 @@ export function StoryPage() {
   }
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <section className="relative isolate overflow-hidden rounded-[28px] bg-surface p-6 shadow-card">
         <Aurora colors={['var(--t-rose)', 'var(--c-accent)', 'var(--t-amber)']} />
         <p className="text-[13px] font-semibold text-muted">{t('st.since', { date: formatDayMonthYear(fromLocalISO(start)) })}</p>

@@ -39,7 +39,7 @@ export function QuizPage() {
   const open = current && scoreOf(current, pair.userId, pair.partnerId) === null ? current : null
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <Hero pair={pair} last={finished[0] ?? null} played={finished.length} />
 
       {open ? (

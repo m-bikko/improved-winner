@@ -19,7 +19,7 @@ export function TopicsPage() {
   const visible = (topics.data ?? []).filter((t) => t.status === tab)
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       {/* Два таба, а не горизонтальные колонки с перетаскиванием: канбан
           на телефоне - это боль, а статусов всего два */}
       <Segmented

@@ -1,12 +1,12 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { useEffect, useState, type ButtonHTMLAttributes, type MouseEvent, type ReactNode } from 'react'
 import { LoaderCircle } from 'lucide-react'
+import { haptic } from '@/lib/haptics'
+import { tr } from '@/lib/i18n'
 
 type Variant = 'primary' | 'secondary' | 'soft' | 'ghost' | 'danger'
 
 const VARIANTS: Record<Variant, string> = {
-  // Светлая кромка сверху - кнопка читается выпуклой, а не плоской плашкой
-  primary:
-    'bg-accent text-accent-ink shadow-[inset_0_1px_0_rgb(255_255_255/0.22),0_6px_16px_-6px_var(--c-accent)]',
+  primary: 'bg-accent text-accent-ink',
   secondary: 'bg-raised text-ink',
   // Второе по важности действие: заметно, но не спорит с главным
   soft: 'bg-accent-soft text-accent-soft-ink',
@@ -17,31 +17,65 @@ const VARIANTS: Record<Variant, string> = {
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant
   loading?: boolean
+  /**
+   * Опасное действие срабатывает со второго нажатия: первое только взводит кнопку
+   * на три секунды. Случайный тап по «Удалить» в шторке стоил записи, а окно
+   * с вопросом ломало бы поток. Отказаться - `confirm={false}`, если есть отмена.
+   */
+  confirm?: boolean
   children: ReactNode
 }
+
+const ARM_MS = 3000
 
 export function Button({
   variant = 'primary',
   loading = false,
+  confirm = variant === 'danger',
   disabled,
   children,
   className = '',
+  onClick,
+  'aria-label': ariaLabel,
   ...rest
 }: Props) {
+  const [armed, setArmed] = useState(false)
+
+  useEffect(() => {
+    if (!armed) return
+    const id = setTimeout(() => setArmed(false), ARM_MS)
+    return () => clearTimeout(id)
+  }, [armed])
+
+  const press = (e: MouseEvent<HTMLButtonElement>) => {
+    if (confirm && !armed) {
+      haptic('warning')
+      setArmed(true)
+      return
+    }
+    setArmed(false)
+    onClick?.(e)
+  }
+
   return (
     <button
       // Явный type: без него кнопка внутри формы сабмитит её при каждом клике
       type="button"
       disabled={disabled || loading}
-      // min-h-12 - нижняя граница комфортной цели нажатия на телефоне
-      className={`flex min-h-12 items-center justify-center gap-2 rounded-2xl px-5 text-base
-                  font-semibold transition-[transform,opacity] duration-150 active:scale-[0.97]
-                  disabled:opacity-40 disabled:shadow-none disabled:active:scale-100
-                  ${VARIANTS[variant]} ${className}`}
+      // min-h-12 - нижняя граница комфортной цели нажатия на телефоне.
+      // Нажатие отзывается мгновенно (duration-75), возврат - мягко
+      className={`flex min-h-12 items-center justify-center gap-2 rounded-2xl px-5 text-[17px]
+                  font-semibold transition-[transform,opacity,background-color,color] duration-200
+                  active:scale-[0.97] active:opacity-85 active:duration-75
+                  disabled:opacity-40 disabled:active:scale-100
+                  ${armed ? 'whitespace-nowrap bg-danger text-white' : VARIANTS[variant]} ${className}`}
+      onClick={press}
+      // Пока кнопка взведена, скринридер обязан слышать то же, что написано на ней
+      aria-label={armed ? undefined : ariaLabel}
       {...rest}
     >
       {loading && <LoaderCircle size={18} className="animate-spin" aria-hidden />}
-      {children}
+      {armed ? tr('common.tapToConfirm') : children}
     </button>
   )
 }

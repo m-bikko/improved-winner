@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { Plus, type LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
@@ -5,7 +6,7 @@ import { SPRING } from './motion'
 
 const CLASS =
   'fixed right-4 bottom-above-tabbar z-30 flex h-14 items-center justify-center gap-2 ' +
-  'rounded-2xl bg-accent text-accent-ink shadow-float'
+  'rounded-full bg-accent text-accent-ink shadow-float'
 
 const MotionLink = motion.create(Link)
 
@@ -24,6 +25,9 @@ type Common = {
  * были прибиты к `bottom-6`, и с панелью внизу они оказались бы под ней.
  * Высоту панели знает только CSS-переменная, поэтому позицию задаёт
  * утилита `bottom-above-tabbar`, а не число здесь.
+ *
+ * Порталом в body: при смене экрана его обёртка едет с `transform`, и `fixed` внутри
+ * неё считался бы от обёртки, то есть кнопка уезжала бы на время перехода.
  */
 export function Fab(props: Common & ({ onClick: () => void } | { to: string })) {
   const { label, icon: Icon = Plus, extended = false } = props
@@ -36,7 +40,7 @@ export function Fab(props: Common & ({ onClick: () => void } | { to: string })) 
   const shape = extended ? 'px-5' : 'w-14'
 
   if ('to' in props) {
-    return (
+    return createPortal(
       <MotionLink
         to={props.to}
         aria-label={extended ? undefined : label}
@@ -45,10 +49,11 @@ export function Fab(props: Common & ({ onClick: () => void } | { to: string })) 
         className={`${CLASS} ${shape}`}
       >
         {body}
-      </MotionLink>
+      </MotionLink>,
+      document.body,
     )
   }
-  return (
+  return createPortal(
     <motion.button
       type="button"
       onClick={props.onClick}
@@ -58,6 +63,7 @@ export function Fab(props: Common & ({ onClick: () => void } | { to: string })) 
       className={`${CLASS} ${shape}`}
     >
       {body}
-    </motion.button>
+    </motion.button>,
+    document.body,
   )
 }

@@ -68,7 +68,7 @@ export function TasksPage() {
     void toggle.mutateAsync({ task, done, userId })
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <Segmented
         value={asCalendar ? 'calendar' : 'list'}
         onChange={(v) => setAsCalendar(v === 'calendar')}

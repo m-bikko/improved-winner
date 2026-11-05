@@ -18,6 +18,8 @@ type Props = {
   initialServingLabel?: string | null
   /** Задано при правке существующей записи. */
   onDelete?: (() => void) | undefined
+  /** Спрашивать ли второе нажатие. Не нужно, если удаление можно отменить. */
+  confirmDelete?: boolean
   onClose: () => void
   onSubmit: (result: { grams: number; meal: Meal; servingLabel: string | null }) => void
   busy?: boolean
@@ -51,6 +53,7 @@ export function PortionSheet({
   initialGrams,
   initialServingLabel,
   onDelete,
+  confirmDelete = true,
   onClose,
   onSubmit,
   busy = false,
@@ -133,7 +136,7 @@ export function PortionSheet({
                 aria-pressed={active}
                 className={`flex min-h-11 items-center justify-center rounded-2xl text-[15px] font-semibold
                             tabular-nums transition-[background-color,color,transform] duration-150
-                            active:scale-95 ${
+                            active:scale-95 active:duration-75 ${
                               active ? 'bg-accent text-accent-ink' : 'bg-surface text-ink shadow-card'
                             }`}
               >
@@ -157,9 +160,10 @@ export function PortionSheet({
           {onDelete && (
             <Button
               variant="danger"
+              confirm={confirmDelete}
               onClick={onDelete}
               aria-label={t('common.delete')}
-              className="min-h-14 w-14 shrink-0 px-0"
+              className={`min-h-14 shrink-0 ${confirmDelete ? 'min-w-14 px-3 text-[15px]' : 'w-14 px-0'}`}
             >
               <Trash2 size={20} aria-hidden />
             </Button>

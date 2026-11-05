@@ -161,7 +161,7 @@ export function CycleLibraryPage() {
   const allOpen = opened.length === byCategory.length && byCategory.length > 0
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <SearchInput value={query} onChange={setQuery} placeholder={t('lib.search')} />
 
       {/* Чипы тем. Прокручиваются вбок, а не переносятся: восемь тем в две
@@ -189,7 +189,7 @@ export function CycleLibraryPage() {
           <button
             type="button"
             onClick={() => setOpened(allOpen ? [] : byCategory.map((g) => g.category))}
-            className="flex min-h-9 items-center gap-1 rounded-full bg-accent-soft px-3 text-[13px]
+            className="flex min-h-10 items-center gap-1 rounded-full bg-accent-soft px-3 text-[13px]
                        font-semibold text-accent-soft-ink transition-transform active:scale-95"
           >
             {allOpen ? (

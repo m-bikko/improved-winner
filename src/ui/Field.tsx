@@ -48,6 +48,7 @@ type NumberProps = BaseProps & {
   max?: number | undefined
   placeholder?: string | undefined
   invalid?: boolean | undefined
+  autoFocus?: boolean | undefined
 }
 
 /**
@@ -69,6 +70,7 @@ export function NumberField({
   max,
   placeholder,
   invalid,
+  autoFocus,
 }: NumberProps) {
   const id = useId()
 
@@ -94,6 +96,9 @@ export function NumberField({
         <input
           id={id}
           inputMode="decimal"
+          enterKeyHint="done"
+          autoFocus={autoFocus}
+          onFocus={(e) => e.currentTarget.select()}
           value={text}
           placeholder={placeholder}
           onChange={(e) => {

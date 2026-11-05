@@ -54,7 +54,7 @@ export function MeetingsPage() {
   const fresh = (m: Meeting) => list.find((x) => x.id === m.id) ?? m
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       {next ? (
         <>
           <Countdown meeting={next} pair={pair} today={today} onEdit={() => setEditing(next)} />
@@ -191,7 +191,7 @@ function Plan({ meeting }: { meeting: Meeting }) {
 
       <ul className="mt-2 flex flex-col">
         {meeting.items.map((item) => (
-          <li key={item.id} className="flex items-center gap-3 px-4 py-2.5">
+          <li key={item.id} className="flex items-center gap-3 px-4 py-1">
             <button
               type="button"
               role="checkbox"
@@ -201,7 +201,7 @@ function Plan({ meeting }: { meeting: Meeting }) {
                 toggle.mutate({ id: item.id, done: !item.done })
                 if (!item.done) burst({ x: r.left + r.width / 2, y: r.top + r.height / 2 }, 'sparks')
               }}
-              className="flex min-w-0 flex-1 items-center gap-3 text-left active:opacity-70"
+              className="min-h-11 flex min-w-0 flex-1 items-center gap-3 text-left active:opacity-70"
             >
               <span
                 aria-hidden
@@ -227,7 +227,7 @@ function Plan({ meeting }: { meeting: Meeting }) {
               type="button"
               onClick={() => remove.mutate(item.id)}
               aria-label={t('common.delete')}
-              className="-mr-2 flex size-9 shrink-0 items-center justify-center rounded-full text-muted/70 transition-colors active:bg-raised"
+              className="-my-1 -mr-3 flex size-11 shrink-0 items-center justify-center rounded-full text-muted/70 transition-colors active:bg-raised"
             >
               <Trash2 size={15} aria-hidden />
             </button>

@@ -51,7 +51,7 @@ export function QuestionPage() {
   const archive = archiveDates(progress.data, today)
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <QuestionHero day={day} pair={pair} label={formatWeekdayDate(fromLocalISO(today))} />
 
       <DayAnswers day={day} pair={pair} />
@@ -433,7 +433,7 @@ function PastDay({ day, pair, onAnswer }: { day: Day; pair: Pair; onAnswer: () =
           <button
             type="button"
             onClick={onAnswer}
-            className="flex min-h-9 shrink-0 items-center gap-1.5 rounded-full bg-accent-soft px-3.5 text-[13px] font-semibold text-accent-soft-ink transition-transform active:scale-95"
+            className="flex min-h-10 shrink-0 items-center gap-1.5 rounded-full bg-accent-soft px-4 text-[13px] font-semibold text-accent-soft-ink transition-transform active:scale-95"
           >
             {t('qd.answer')}
           </button>

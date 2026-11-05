@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChefHat, LoaderCircle, Lock, LogOut } from 'lucide-react'
 import { useAuth } from '@/auth/AuthProvider'
@@ -109,13 +109,22 @@ function Shell({ ownerName, children }: { ownerName: string; children: ReactNode
   const navigate = useNavigate()
   const nested = location.pathname.startsWith('/foods/')
 
+  // Панели вкладок у повара нет. На корне, а не на обёртке: плавающая кнопка и тост
+  // рисуются порталом в body и обёртку не видят
+  useEffect(() => {
+    document.documentElement.style.setProperty('--tabbar-h', '0px')
+    return () => {
+      document.documentElement.style.removeProperty('--tabbar-h')
+    }
+  }, [])
+
   const tab = (to: string, label: string) => (
     <NavLink
       to={to}
       end
       className={({ isActive }) =>
-        `flex-1 rounded-xl px-3 py-2 text-center text-sm font-semibold transition-colors ${
-          isActive ? 'bg-surface text-ink shadow-card' : 'text-muted'
+        `flex min-h-10 flex-1 items-center justify-center rounded-xl px-3 text-center text-sm font-semibold transition-colors ${
+          isActive ? 'bg-lifted text-ink shadow-card' : 'text-muted'
         }`
       }
     >
@@ -124,15 +133,15 @@ function Shell({ ownerName, children }: { ownerName: string; children: ReactNode
   )
 
   return (
-    <div className="min-h-dvh bg-bg pb-safe" style={{ '--tabbar-h': '0px' } as CSSProperties}>
-      <header className="sticky top-0 z-30 border-b border-line/70 bg-bg/85 pt-safe backdrop-blur">
+    <div className="min-h-dvh bg-bg pb-safe">
+      <header className="sticky top-0 z-30 bg-bg/85 pt-safe backdrop-blur-xl backdrop-saturate-150">
         <div className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-2.5">
           {nested ? (
             <button
               type="button"
               onClick={() => navigate('/foods')}
               aria-label={t('common.back')}
-              className="-ml-2 flex size-10 items-center justify-center rounded-full text-ink active:bg-raised"
+              className="-ml-2 flex size-11 items-center justify-center rounded-full text-accent active:opacity-50"
             >
               <ChevronLeft size={22} aria-hidden />
             </button>
@@ -152,7 +161,7 @@ function Shell({ ownerName, children }: { ownerName: string; children: ReactNode
                 type="button"
                 onClick={() => setLang(l)}
                 aria-pressed={lang === l}
-                className={`rounded-lg px-2 py-1 text-[12px] font-bold uppercase ${lang === l ? 'bg-surface text-ink shadow-card' : 'text-muted'}`}
+                className={`min-h-9 min-w-8 rounded-lg px-1.5 text-[12px] font-bold uppercase ${lang === l ? 'bg-surface text-ink shadow-card' : 'text-muted'}`}
               >
                 {l === 'kk' ? 'kz' : l}
               </button>
@@ -169,7 +178,7 @@ function Shell({ ownerName, children }: { ownerName: string; children: ReactNode
               })
             }}
             aria-label={t('cook.exit')}
-            className="-mr-2 flex size-9 shrink-0 items-center justify-center rounded-full text-muted active:bg-raised"
+            className="-mr-2 flex size-11 shrink-0 items-center justify-center rounded-full text-muted active:bg-raised"
           >
             <LogOut size={17} aria-hidden />
           </button>

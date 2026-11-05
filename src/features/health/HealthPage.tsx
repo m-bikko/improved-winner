@@ -54,10 +54,10 @@ export function HealthPage() {
   const people = [pair.userId, pair.partnerId].filter((id) => id !== '')
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <SectionTitle
         action={
-          <button type="button" onClick={() => setMed('new')} className="flex items-center gap-1 text-sm font-semibold text-accent">
+          <button type="button" onClick={() => setMed('new')} className="-my-2 flex min-h-10 items-center gap-1 pl-2 text-[15px] font-semibold text-accent active:opacity-50">
             <Plus size={16} aria-hidden />
             {t('hl.addMed')}
           </button>
@@ -86,7 +86,7 @@ export function HealthPage() {
       <SectionTitle
         className="mt-3"
         action={
-          <button type="button" onClick={() => setDoctor('new')} className="flex items-center gap-1 text-sm font-semibold text-accent">
+          <button type="button" onClick={() => setDoctor('new')} className="-my-2 flex min-h-10 items-center gap-1 pl-2 text-[15px] font-semibold text-accent active:opacity-50">
             <Plus size={16} aria-hidden />
             {t('common.add')}
           </button>
@@ -175,7 +175,7 @@ function Meds({
             <li key={m.id} className="flex items-start gap-3">
               <IconBadge icon={Pill} tone="teal" size="sm" className="mt-0.5" />
               <div className="min-w-0 flex-1">
-                <button type="button" onClick={() => own && onOpen(m)} disabled={!own} className="text-left">
+                <button type="button" onClick={() => own && onOpen(m)} disabled={!own} className="-my-2 min-h-10 py-2 pr-2 text-left">
                   <span className="block font-semibold">{m.name}</span>
                   {m.dose && <span className="block text-[13px] text-muted">{m.dose}</span>}
                 </button>

@@ -3,19 +3,7 @@ import { HealthSummary } from './HealthSummary'
 import { EnergyBalance } from './EnergyBalance'
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import {
-  BellRing,
-  Languages,
-  Check,
-  CircleCheck,
-  Circle,
-  KeyRound,
-  Scale,
-  ScanFace,
-  Send,
-  Sparkles,
-  Target,
-} from 'lucide-react'
+import { BellRing, Check, KeyRound, Languages, Scale, ScanFace, Send, Sparkles, Target } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { todayLocal } from '@/lib/date'
 import {
@@ -47,12 +35,12 @@ import {
   type PushState,
 } from '@/lib/push'
 import { Button } from '@/ui/Button'
-import { Field, INPUT_CLASS, NumberField } from '@/ui/Field'
+import { Field } from '@/ui/Field'
 import { Card, SectionTitle } from '@/ui/Card'
 import { IconBadge } from '@/ui/IconBadge'
 import { ListGroup, ListRow } from '@/ui/List'
-import { Segmented } from '@/ui/Segmented'
 import { Switch } from '@/ui/Switch'
+import { toast } from '@/ui/Toast'
 
 import { Sheet } from '@/ui/Sheet'
 import { ErrorState, Loading } from '@/ui/States'
@@ -67,6 +55,7 @@ import {
 import { BodyChart } from './BodyChart'
 import { WeighInSheet } from './WeighInSheet'
 import { BodyComposition } from './BodyComposition'
+import { ChoiceSheet, NumberSheet } from './SettingSheets'
 
 /** Бот, от имени которого приходят уведомления. */
 const BOT_LINK = '@improved_winner_nine_bot'
@@ -88,28 +77,31 @@ export function ProfilePage() {
   return <ProfileForm profile={me} />
 }
 
+type Field = 'birthYear' | 'heightCm' | 'sex' | 'activity' | 'goal' | 'kcal' | 'lang' | 'telegram'
+
+/**
+ * Профиль как системные настройки: строка показывает значение, нажатие открывает
+ * выбор, и изменение применяется сразу.
+ *
+ * Раньше это была одна длинная форма с панелью «Есть несохранённые изменения» внизу:
+ * поправил рост - ищи кнопку, ушёл с экрана - потерял. Значение, которое сохраняется
+ * само, не требует помнить ни о кнопке, ни о том, применилось ли оно.
+ */
 function ProfileForm({ profile }: { profile: Profile }) {
   const t = useT()
+  const { lang } = useLang()
+  const saveLang = useSaveLang()
   const save = useSaveProfile()
   const weights = useWeightLog(profile.userId)
   const freezeGoal = useFreezeDayGoal()
 
-  const [birthYear, setBirthYear] = useState<number | ''>(profile.birthYear ?? '')
-  const [heightCm, setHeightCm] = useState<number | ''>(profile.heightCm ?? '')
   // Вес - НЕ поле формы. Его меняет только взвешивание, а форма читает
   // текущий из профиля. Раньше здесь была своя копия: взвешивание обновляло
   // профиль, копия оставалась старой, форма считала себя изменённой
   // и предлагала «Сохранить» - а сохранение писало в журнал старый вес
   // без состава тела и стирало только что внесённые данные с умных весов
   const weightKg = profile.weightKg
-  const [sex, setSex] = useState<Sex | null>(profile.sex)
-  const [activity, setActivity] = useState<ActivityLevel>(profile.activityLevel)
-  const [goal, setGoal] = useState<GoalDirection>(profile.goalDirection)
-  const [manualKcal, setManualKcal] = useState<number | ''>(profile.goalKcal ?? '')
-  const [manual, setManual] = useState(profile.goalsMode === 'manual')
-  const [chatId, setChatId] = useState(profile.telegramChatId ?? '')
-  const [saved, setSaved] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [editing, setEditing] = useState<Field | null>(null)
   const [pinOpen, setPinOpen] = useState(false)
   const [weighIn, setWeighIn] = useState(false)
 
@@ -123,111 +115,67 @@ function ProfileForm({ profile }: { profile: Profile }) {
     setParams({}, { replace: true })
   }, [weighParam, setParams])
 
-  // Отметка «Сохранено» живёт пару секунд и уходит вместе с панелью
-  useEffect(() => {
-    if (!saved) return
-    const id = setTimeout(() => setSaved(false), 2000)
-    return () => clearTimeout(id)
-  }, [saved])
-
-  const preview = computeGoals({
-    birthYear: birthYear === '' ? null : birthYear,
-    sex,
-    heightCm: heightCm === '' ? null : heightCm,
-    weightKg,
-    activityLevel: activity,
-    goalDirection: goal,
-    // Те же входы, что у goalsFor: без них форма показывала и сохраняла
-    // анкетную норму, а дневник - другую
-    leanKg: leanFrom(profile),
-    bmrKcal: profile.bmrKcal,
-  })
-
-  // Своя норма меняет только калории; Б/Ж/У делятся под них по тем же
-  // правилам, иначе сумма граммов не сходится с вписанным числом
-  const ownKcal = manual && manualKcal !== '' ? manualKcal : null
-  const effective =
-    ownKcal === null ? preview : weightKg !== null ? macrosFor(ownKcal, weightKg, leanFrom(profile)) : null
-
-  const submit = async () => {
-    setError(null)
-    setSaved(false)
-    try {
-      await save.mutateAsync({
+  /**
+   * Применить изменение и пересчитать норму от него же.
+   *
+   * Те же входы, что у goalsFor: иначе экран показывал бы одну норму, а дневник
+   * другую. Своя норма меняет только калории; Б/Ж/У делятся под них по тем же
+   * правилам. Пересчитанная норма сразу уходит в снимок сегодняшнего дня, иначе
+   * завтра он замёрзнет со старым значением.
+   */
+  const commit = (change: Partial<Pick<Profile, 'birthYear' | 'heightCm' | 'sex' | 'activityLevel' | 'goalDirection' | 'goalsMode' | 'goalKcal'>>) => {
+    const next = { ...profile, ...change }
+    const lean = leanFrom(profile)
+    const calculated = computeGoals({
+      birthYear: next.birthYear,
+      sex: next.sex,
+      heightCm: next.heightCm,
+      weightKg,
+      activityLevel: next.activityLevel,
+      goalDirection: next.goalDirection,
+      leanKg: lean,
+      bmrKcal: profile.bmrKcal,
+    })
+    const own = next.goalsMode === 'manual' ? next.goalKcal : null
+    const effective = own ? (weightKg !== null ? macrosFor(own, weightKg, lean) : null) : calculated
+    save.mutate(
+      {
         userId: profile.userId,
         patch: {
-          birthYear: birthYear === '' ? null : birthYear,
-          heightCm: heightCm === '' ? null : heightCm,
-          sex,
-          activityLevel: activity,
-          goalDirection: goal,
-          goalsMode: manual ? 'manual' : 'auto',
-          telegramChatId: chatId.trim() || null,
+          ...change,
           // При автоматическом режиме ручные цели обнуляем: иначе они останутся
           // лежать в базе и однажды всплывут при переключении обратно
-          goalKcal: manual && manualKcal !== '' ? manualKcal : null,
-          ...(ownKcal !== null && effective
+          ...(own && effective
             ? { goalProtein: effective.protein, goalFat: effective.fat, goalCarbs: effective.carbs }
             : { goalProtein: null, goalFat: null, goalCarbs: null }),
         },
-      })
-      // Пересчитанная норма должна попасть в снимок сегодняшнего дня, иначе
-      // завтра он замёрзнет со старым значением
-      if (effective) {
-        await freezeGoal.mutateAsync({
-          userId: profile.userId,
-          date: todayLocal(),
-          goal: effective,
-          goalDirection: goal,
-        })
-      }
-      setSaved(true)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
-    }
+      },
+      {
+        onSuccess: () => {
+          if (effective) {
+            freezeGoal.mutate({ userId: profile.userId, date: todayLocal(), goal: effective, goalDirection: next.goalDirection })
+          }
+        },
+        onError: (e) => toast({ text: e.message }),
+      },
+    )
   }
 
-  // Нижние границы проверяются здесь, а не при вводе: блокировать символы
-  // по минимуму - значит запретить ввод вовсе, потому что первая набранная
-  // цифра года заведомо меньше 1900. Границы совпадают с CHECK в схеме.
-  const outOfRange = (v: number | '', lo: number, hi: number, unit: string) =>
-    v !== '' && (v < lo || v > hi) ? t('profile.expected', { lo, hi, unit }) : null
-
-  const range = {
-    birthYear: outOfRange(birthYear, 1900, 2100, t('profile.unit.years')),
-    heightCm: outOfRange(heightCm, 100, 250, t('profile.unit.cm')),
-  }
-  const hasRangeError = Object.values(range).some((r) => r !== null)
-
-  // Тот же формат, что и в CHECK на колонке: пустое или цифры, возможно
-  // со знаком минус - у групповых чатов id отрицательный
-  const chatIdInvalid = chatId.trim() !== '' && !/^-?\d{1,20}$/.test(chatId.trim())
+  const norm = goalsFor(profile)
+  const manual = profile.goalsMode === 'manual'
+  const notSet = t('common.notSet')
 
   // Чего именно не хватает для расчёта нормы. Показываем списком, а не общим
-  // «заполните профиль»: человек должен видеть, какие два поля осталось ввести,
-  // а не искать пустое среди семи.
+  // «заполните профиль»: человек должен видеть, какие поля осталось ввести
   const missing = [
-    birthYear === '' && t('profile.birthYearLow'),
-    sex === null && t('profile.sexLow'),
-    heightCm === '' && t('profile.heightLow'),
+    profile.birthYear === null && t('profile.birthYearLow'),
+    profile.sex === null && t('profile.sexLow'),
+    profile.heightCm === null && t('profile.heightLow'),
     weightKg === null && t('profile.weightLow'),
   ].filter((x): x is string => typeof x === 'string')
 
-  // Есть ли что сохранять. Панель «Сохранить» появляется только тогда:
-  // раньше кнопка стояла в самом низу длинной страницы, и после правки
-  // роста человек не знал, применилось ли - а кнопку надо было искать
-  const dirty =
-    birthYear !== (profile.birthYear ?? '') ||
-    heightCm !== (profile.heightCm ?? '') ||
-    sex !== profile.sex ||
-    activity !== profile.activityLevel ||
-    goal !== profile.goalDirection ||
-    manual !== (profile.goalsMode === 'manual') ||
-    manualKcal !== (profile.goalKcal ?? '') ||
-    chatId.trim() !== (profile.telegramChatId ?? '')
-
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       {missing.length > 0 && (
         <p className="flex items-start gap-2.5 rounded-2xl bg-accent-soft px-4 py-3 text-sm text-accent-soft-ink">
           <Target size={17} className="mt-0.5 shrink-0" aria-hidden />
@@ -235,32 +183,18 @@ function ProfileForm({ profile }: { profile: Profile }) {
         </p>
       )}
 
-      <SectionTitle>{t('profile.section.body')}</SectionTitle>
+      {/* Взвешивание - действие, за которым сюда приходят каждый день */}
+      <Button className="w-full" onClick={() => setWeighIn(true)}>
+        <Scale size={18} aria-hidden />
+        {t('body.weighInAction')}
+      </Button>
 
       <Card className="p-4">
-        <div className="flex items-center gap-2.5">
-          <IconBadge icon={Scale} tone="slate" size="sm" />
-          <p className="font-display text-[17px] font-bold">{t('chart.title')}</p>
-        </div>
-        {/* Кнопка стоит НАД графиком: взвешивание - действие, за которым
-            сюда приходят каждый день, а график - то, ради чего его делают.
-            Внизу карточки её пришлось бы искать за фильтрами и таблицей. */}
-        <Button className="mt-3 w-full" onClick={() => setWeighIn(true)}>
-          <Scale size={18} aria-hidden />
-          {t('body.weighInAction')}
-        </Button>
-
-        <div className="mt-4">
-          {weights.isSuccess ? <BodyChart points={weights.data} /> : <Loading />}
-        </div>
+        <p className="type-headline">{t('chart.title')}</p>
+        <div className="mt-3">{weights.isSuccess ? <BodyChart points={weights.data} /> : <Loading />}</div>
       </Card>
 
-      <BodyComposition
-        userId={profile.userId}
-        sex={sex}
-        heightCm={heightCm === '' ? null : heightCm}
-        weightKg={weightKg}
-      />
+      <BodyComposition userId={profile.userId} sex={profile.sex} heightCm={profile.heightCm} weightKg={weightKg} />
 
       {weighIn && (
         <WeighInSheet
@@ -272,118 +206,85 @@ function ProfileForm({ profile }: { profile: Profile }) {
 
       <SectionTitle className="mt-4">{t('profile.section.norm')}</SectionTitle>
 
-      <Card className="flex flex-col gap-5 p-4">
-        <div className="grid grid-cols-2 gap-3">
-          <NumberField
-            label={t('profile.birthYear')}
-            value={birthYear}
-            onValueChange={setBirthYear}
-            max={2100}
-            placeholder="2004"
-            invalid={range.birthYear !== null}
-            hint={range.birthYear ?? undefined}
-          />
-          <NumberField
-            label={t('profile.height')}
-            suffix={t('profile.unit.cm')}
-            value={heightCm}
-            onValueChange={setHeightCm}
-            max={250}
-            invalid={range.heightCm !== null}
-            hint={range.heightCm ?? undefined}
-          />
-          {/* Вес здесь только показывается: менять его - это взвешивание,
-              со всеми полями умных весов. Плитка открывает ту же шторку */}
-          <div className="flex flex-col gap-1.5">
-            <span className="text-sm text-muted">{t('profile.weight')}</span>
-            <button
-              type="button"
-              onClick={() => setWeighIn(true)}
-              className={`${INPUT_CLASS} flex items-center justify-between gap-2 text-left transition-transform active:scale-[0.98]`}
-            >
-              <span className={`truncate tabular-nums ${weightKg === null ? 'text-muted' : ''}`}>
-                {weightKg === null ? t('body.weighInAction') : `${weightKg} ${t('unit.kg')}`}
-              </span>
-              <Scale size={17} aria-hidden className="shrink-0 text-muted" />
-            </button>
-            <span className="text-[13px] text-muted">{t('profile.weightFromLog')}</span>
-          </div>
-        </div>
-
-        <div>
-          <Label>{t('profile.sex')}</Label>
-          <Segmented
-            ariaLabel={t('profile.sex')}
-            value={sex ?? ''}
-            onChange={(v) => setSex(v === '' ? null : v)}
-            options={[
-              { value: 'male', label: t('profile.male') },
-              { value: 'female', label: t('profile.female') },
-            ]}
-          />
-        </div>
-
-        <div>
-          <Label>{t('profile.activity')}</Label>
-          <div className="flex flex-col gap-1.5">
-            {ACTIVITY_LEVELS.map((level) => (
-              <Row key={level} active={activity === level} onClick={() => setActivity(level)}>
-                {t(dynamicKey('activity', level))}
-              </Row>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <Label>{t('profile.goal')}</Label>
-          <div className="grid grid-cols-3 gap-2">
-            {GOAL_DIRECTIONS.map((g) => (
-              <Choice key={g} active={goal === g} onClick={() => setGoal(g)}>
-                {t(dynamicKey('goal', g))}
-              </Choice>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-2xl bg-raised/70 p-4">
-          <p className="text-sm font-semibold text-muted">{t('profile.daily')}</p>
-
-          {effective ? (
-            <>
-              <p className="mt-1 font-display text-[32px] leading-tight font-extrabold tabular-nums">
-                {Math.round(effective.kcal)}{' '}
-                <span className="text-lg font-bold text-muted">{t('unit.kcal')}</span>
-              </p>
-              <p className="mt-1 text-sm tabular-nums">
-                <span className="font-semibold text-protein">{t('macro.p')}</span> {effective.protein} ·{' '}
-                <span className="font-semibold text-fat">{t('macro.f')}</span> {effective.fat} ·{' '}
-                <span className="font-semibold text-carbs">{t('macro.c')}</span> {effective.carbs}{' '}
-                <span className="text-muted">{t('unit.gram')}</span>
-              </p>
-            </>
-          ) : (
-            <p className="mt-1 text-sm text-muted">{t('profile.autoHint')}</p>
-          )}
-
-          <div className="mt-4 flex items-center justify-between gap-3">
-            <span className="text-[15px] font-medium">{t('profile.manual')}</span>
-            <Switch checked={manual} onChange={setManual} label={t('profile.manual')} />
-          </div>
-
-          {manual && (
-            <div className="mt-3">
-              <NumberField
-                label={t('profile.ownGoal')}
-                suffix={t('unit.kcal')}
-                value={manualKcal}
-                onValueChange={setManualKcal}
-                max={10000}
-                hint={t('profile.manualHint')}
-              />
-            </div>
-          )}
-        </div>
+      <Card className="p-4">
+        <p className="text-[13px] font-semibold text-muted">{t('profile.daily')}</p>
+        {norm ? (
+          <>
+            <p className="mt-0.5 font-display text-[32px] leading-tight font-extrabold tabular-nums">
+              {Math.round(norm.kcal)} <span className="text-lg font-bold text-muted">{t('unit.kcal')}</span>
+            </p>
+            <p className="mt-0.5 text-[15px] tabular-nums">
+              <span className="font-semibold text-protein">{t('macro.p')}</span> {norm.protein} ·{' '}
+              <span className="font-semibold text-fat">{t('macro.f')}</span> {norm.fat} ·{' '}
+              <span className="font-semibold text-carbs">{t('macro.c')}</span> {norm.carbs}{' '}
+              <span className="text-muted">{t('unit.gram')}</span>
+            </p>
+          </>
+        ) : (
+          <p className="mt-1 text-sm text-muted">{t('profile.autoHint')}</p>
+        )}
       </Card>
+
+      <ListGroup>
+        <ListRow
+          onClick={() => setEditing('birthYear')}
+          title={t('profile.birthYear')}
+          trailing={profile.birthYear ?? notSet}
+        />
+        <ListRow
+          onClick={() => setEditing('heightCm')}
+          title={t('profile.height')}
+          trailing={profile.heightCm === null ? notSet : `${profile.heightCm} ${t('profile.unit.cm')}`}
+        />
+        {/* Вес здесь только показывается: менять его - это взвешивание,
+            со всеми полями умных весов. Строка открывает ту же шторку */}
+        <ListRow
+          onClick={() => setWeighIn(true)}
+          title={t('profile.weight')}
+          subtitle={t('profile.weightFromLog')}
+          trailing={weightKg === null ? notSet : `${weightKg} ${t('unit.kg')}`}
+        />
+        <ListRow
+          onClick={() => setEditing('sex')}
+          title={t('profile.sex')}
+          trailing={profile.sex === null ? notSet : t(profile.sex === 'male' ? 'profile.male' : 'profile.female')}
+        />
+        <ListRow
+          onClick={() => setEditing('activity')}
+          title={t('profile.activity')}
+          subtitle={t(dynamicKey('activity', profile.activityLevel))}
+        />
+        <ListRow
+          onClick={() => setEditing('goal')}
+          title={t('profile.goal')}
+          trailing={t(dynamicKey('goal', profile.goalDirection))}
+        />
+      </ListGroup>
+
+      <ListGroup>
+        <ListRow
+          static
+          title={t('profile.manual')}
+          trailing={
+            <Switch
+              checked={manual}
+              label={t('profile.manual')}
+              onChange={(on) => {
+                if (on) setEditing('kcal')
+                else commit({ goalsMode: 'auto', goalKcal: null })
+              }}
+            />
+          }
+        />
+        {manual && (
+          <ListRow
+            onClick={() => setEditing('kcal')}
+            title={t('profile.ownGoal')}
+            trailing={`${profile.goalKcal ?? ''} ${t('unit.kcal')}`}
+          />
+        )}
+      </ListGroup>
+      {manual && <p className="-mt-1 px-4 text-[13px] text-muted">{t('profile.manualHint')}</p>}
 
       <HealthSummary />
 
@@ -394,27 +295,130 @@ function ProfileForm({ profile }: { profile: Profile }) {
       <SectionTitle className="mt-4">{t('profile.section.settings')}</SectionTitle>
 
       <ListGroup>
-        <ListRow to="/notifications" icon={BellRing} tone="slate" title={t('profile.notifications')} />
-        <ListRow to="/year" icon={Sparkles} tone="accent" title={t('profile.year')} />
-        <ListRow
-          onClick={() => setPinOpen(true)}
-          icon={KeyRound}
-          tone="sky"
-          title={t('profile.changePinButton')}
-        />
+        <ListRow to="/notifications" icon={BellRing} tone="rose" title={t('profile.notifications')} />
+        <ListRow onClick={() => setEditing('lang')} icon={Languages} tone="teal" title={t('lang.title')} trailing={LANG_NAMES[lang]} />
+        <ListRow onClick={() => setPinOpen(true)} icon={KeyRound} tone="sky" title={t('profile.changePinButton')} />
         <FaceIdRow />
+        <ListRow
+          onClick={() => setEditing('telegram')}
+          icon={Send}
+          tone="sky"
+          title={t('profile.telegram')}
+          trailing={profile.telegramChatId ? t('profile.connected') : notSet}
+        />
+        <ListRow to="/year" icon={Sparkles} tone="accent" title={t('profile.year')} />
       </ListGroup>
-
-      <LanguageRow />
 
       <PushToggle userId={profile.userId} />
 
-      <Card className="p-4">
-        <p className="flex items-center gap-2.5 text-[15px] font-semibold">
-          <IconBadge icon={Send} tone="sky" size="sm" />
-          {t('profile.telegram')}
-        </p>
-        <p className="mt-2 mb-3 text-[13px] text-muted">{t('profile.telegramAbout')}</p>
+      <CookAccess />
+
+      <ChangePinSheet open={pinOpen} onClose={() => setPinOpen(false)} />
+
+      {editing === 'birthYear' && (
+        <NumberSheet
+          title={t('profile.birthYear')}
+          value={profile.birthYear}
+          min={1900}
+          max={2100}
+          unit={t('profile.unit.years')}
+          placeholder="2004"
+          onSave={(birthYear) => commit({ birthYear })}
+          onClose={() => setEditing(null)}
+        />
+      )}
+      {editing === 'heightCm' && (
+        <NumberSheet
+          title={t('profile.height')}
+          value={profile.heightCm}
+          suffix={t('profile.unit.cm')}
+          min={100}
+          max={250}
+          unit={t('profile.unit.cm')}
+          onSave={(heightCm) => commit({ heightCm })}
+          onClose={() => setEditing(null)}
+        />
+      )}
+      {editing === 'kcal' && (
+        <NumberSheet
+          title={t('profile.ownGoal')}
+          value={profile.goalKcal ?? norm?.kcal ?? null}
+          suffix={t('unit.kcal')}
+          min={500}
+          max={10000}
+          unit={t('unit.kcal')}
+          hint={t('profile.manualHint')}
+          onSave={(goalKcal) => commit({ goalsMode: 'manual', goalKcal })}
+          onClose={() => setEditing(null)}
+        />
+      )}
+      {editing === 'sex' && (
+        <ChoiceSheet<Sex>
+          title={t('profile.sex')}
+          value={profile.sex}
+          options={[
+            { value: 'male', label: t('profile.male') },
+            { value: 'female', label: t('profile.female') },
+          ]}
+          onPick={(sex) => commit({ sex })}
+          onClose={() => setEditing(null)}
+        />
+      )}
+      {editing === 'activity' && (
+        <ChoiceSheet<ActivityLevel>
+          title={t('profile.activity')}
+          value={profile.activityLevel}
+          options={ACTIVITY_LEVELS.map((level) => ({ value: level, label: t(dynamicKey('activity', level)) }))}
+          onPick={(activityLevel) => commit({ activityLevel })}
+          onClose={() => setEditing(null)}
+        />
+      )}
+      {editing === 'goal' && (
+        <ChoiceSheet<GoalDirection>
+          title={t('profile.goal')}
+          value={profile.goalDirection}
+          options={GOAL_DIRECTIONS.map((g) => ({ value: g, label: t(dynamicKey('goal', g)) }))}
+          onPick={(goalDirection) => commit({ goalDirection })}
+          onClose={() => setEditing(null)}
+        />
+      )}
+      {editing === 'lang' && (
+        <ChoiceSheet
+          title={t('lang.title')}
+          value={lang}
+          options={LANGS.map((code) => ({ value: code, label: LANG_NAMES[code] }))}
+          footer={t('lang.hint')}
+          // Язык меняется по нажатию, а не по ответу сервера
+          onPick={(code) => saveLang.mutate(code)}
+          onClose={() => setEditing(null)}
+        />
+      )}
+      {editing === 'telegram' && (
+        <TelegramSheet
+          value={profile.telegramChatId ?? ''}
+          onSave={(chatId) => {
+            save.mutate(
+              { userId: profile.userId, patch: { telegramChatId: chatId || null } },
+              { onError: (e) => toast({ text: e.message }) },
+            )
+          }}
+          onClose={() => setEditing(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+function TelegramSheet({ value, onSave, onClose }: { value: string; onSave: (chatId: string) => void; onClose: () => void }) {
+  const t = useT()
+  const [chatId, setChatId] = useState(value)
+  // Тот же формат, что и в CHECK на колонке: пустое или цифры, возможно
+  // со знаком минус - у групповых чатов id отрицательный
+  const invalid = chatId.trim() !== '' && !/^-?\d{1,20}$/.test(chatId.trim())
+  return (
+    <Sheet open onClose={onClose} title={t('profile.telegram')}>
+      <div className="flex flex-col gap-4">
+        <p className="text-[15px] text-muted">{t('profile.telegramAbout')}</p>
         <Field
           label="Chat ID"
           value={chatId}
@@ -423,62 +427,18 @@ function ProfileForm({ profile }: { profile: Profile }) {
           inputMode="numeric"
           hint={t('profile.chatIdHint', { link: BOT_LINK })}
         />
-        {chatIdInvalid && <p className="mt-1 text-xs text-danger">{t('profile.chatIdDigits')}</p>}
-      </Card>
-
-      <CookAccess />
-
-      <ChangePinSheet open={pinOpen} onClose={() => setPinOpen(false)} />
-
-      {(dirty || saved || error) && (
-        <div className="sticky bottom-above-tabbar z-20 mt-1">
-          <div className="flex items-center gap-3 rounded-3xl bg-surface/90 p-2 pl-4 shadow-float backdrop-blur-xl">
-            <span className={`min-w-0 flex-1 text-sm ${error ? 'text-danger' : 'text-muted'}`}>
-              {error ?? (saved && !dirty ? t('profile.saved') : t('profile.unsaved'))}
-            </span>
-            <Button
-              className="min-h-11 shrink-0 px-6"
-              onClick={() => void submit()}
-              loading={save.isPending}
-              disabled={hasRangeError || chatIdInvalid || (!dirty && saved)}
-            >
-              <Check size={18} aria-hidden />
-              {saved && !dirty ? t('profile.saved') : t('common.save')}
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-/**
- * Язык интерфейса.
- *
- * Свой у каждого: они могут читать на разных языках, и общий переключатель
- * заставил бы одного уступить. Переключается сразу, не дожидаясь сети -
- * язык интерфейса должен меняться по нажатию, а не по ответу сервера.
- */
-function LanguageRow() {
-  const t = useT()
-  const { lang } = useLang()
-  const save = useSaveLang()
-
-  return (
-    <Card className="p-4">
-      <p className="flex items-center gap-2.5 text-[15px] font-semibold">
-        <IconBadge icon={Languages} tone="teal" size="sm" />
-        {t('lang.title')}
-      </p>
-      <Segmented
-        className="mt-3"
-        ariaLabel={t('lang.title')}
-        value={lang}
-        onChange={(code) => save.mutate(code)}
-        options={LANGS.map((code) => ({ value: code, label: LANG_NAMES[code] }))}
-      />
-      <p className="mt-2 text-[13px] text-muted">{t('lang.hint')}</p>
-    </Card>
+        {invalid && <p className="-mt-2 text-[13px] text-danger">{t('profile.chatIdDigits')}</p>}
+        <Button
+          disabled={invalid}
+          onClick={() => {
+            onSave(chatId.trim())
+            onClose()
+          }}
+        >
+          {t('common.save')}
+        </Button>
+      </div>
+    </Sheet>
   )
 }
 
@@ -722,76 +682,28 @@ function PushToggle({ userId }: { userId: string }) {
   }
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center gap-3">
-        <IconBadge icon={BellRing} tone="rose" size="sm" />
-        <p className="min-w-0 flex-1 text-[15px] font-semibold">{t('push.device')}</p>
-        {(state === 'off' || state === 'on') && (
-          <Switch
-            checked={state === 'on'}
-            disabled={busy}
-            label={t(state === 'on' ? 'push.disable' : 'push.enable')}
-            onChange={() => void toggle()}
-          />
-        )}
-      </div>
-      <p className="mt-2 text-[13px] text-muted">{state ? hint[state] : t('push.checking')}</p>
-
-      {error && <p className="mt-2 text-xs text-danger">{error}</p>}
-    </Card>
-  )
-}
-
-function Label({ children }: { children: React.ReactNode }) {
-  return <p className="mb-2 text-[13px] font-semibold tracking-wide text-muted uppercase">{children}</p>
-}
-
-function Choice({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`min-h-12 rounded-2xl px-2 py-1.5 text-center text-sm leading-tight font-semibold
-                  transition-[background-color,color,transform] active:scale-95 ${
-                    active ? 'bg-accent text-accent-ink' : 'bg-raised text-ink'
-                  }`}
-    >
-      {children}
-    </button>
-  )
-}
-
-/** Вариант из списка: отметка слева - выбор виден и без цвета. */
-function Row({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  const Mark = active ? CircleCheck : Circle
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`flex min-h-12 items-center gap-3 rounded-2xl px-4 py-2.5 text-left text-[15px]
-                  transition-colors ${active ? 'bg-accent-soft font-semibold text-accent-soft-ink' : 'bg-raised text-ink'}`}
-    >
-      <Mark size={20} aria-hidden className={`shrink-0 ${active ? '' : 'text-muted/60'}`} />
-      {children}
-    </button>
+    <div className="flex flex-col gap-1.5">
+      <ListGroup>
+        <ListRow
+          static
+          icon={BellRing}
+          tone="rose"
+          title={t('push.device')}
+          trailing={
+            state === 'off' || state === 'on' ? (
+              <Switch
+                checked={state === 'on'}
+                disabled={busy}
+                label={t(state === 'on' ? 'push.disable' : 'push.enable')}
+                onChange={() => void toggle()}
+              />
+            ) : undefined
+          }
+        />
+      </ListGroup>
+      <p className="px-4 text-[13px] text-muted">{state ? hint[state] : t('push.checking')}</p>
+      {error && <p className="px-4 text-[13px] text-danger">{error}</p>}
+    </div>
   )
 }
 

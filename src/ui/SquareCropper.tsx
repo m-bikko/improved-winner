@@ -118,6 +118,7 @@ export function SquareCropper({
         }}
         // touch-action: none - иначе браузер заберёт себе и перетаскивание,
         // и щипок, а до обработчиков доедут одиночные дёрганья
+        data-sheet-lock
         className="aspect-square w-full touch-none rounded-xl bg-raised"
         aria-label={t('crop.hint')}
       />

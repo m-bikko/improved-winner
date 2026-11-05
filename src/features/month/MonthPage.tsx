@@ -55,7 +55,7 @@ export function MonthPage() {
   const ids = summary.data?.people.map((p) => p.userId) ?? []
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       {/* Капсула, как переключатель дня в дневнике: экран открывают оттуда,
           и листать месяцы должно быть тем же жестом, что и дни */}
       <div className="flex items-center gap-1 rounded-2xl bg-surface p-1 shadow-card">

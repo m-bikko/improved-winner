@@ -2,6 +2,7 @@ import { useT } from '@/lib/i18n'
 import { useEffect, useState } from 'react'
 import { Heart } from 'lucide-react'
 import { motion } from 'motion/react'
+import { haptic } from '@/lib/haptics'
 import { SPRING } from '@/ui/motion'
 import { useBurst } from '@/ui/Burst'
 import { NUDGE_COOLDOWN_MS, useLastNudge, useSendNudge } from './nudge'
@@ -42,7 +43,7 @@ export function NudgeButton() {
     <motion.button
       type="button"
       onClick={(e) => {
-        navigator.vibrate?.(12)
+        haptic('commit')
         const button = e.currentTarget
         // Сердца - только когда «Думаю о тебе» правда ушло: разлёт при ошибке
         // сети обещал бы то, чего не случилось
@@ -51,15 +52,11 @@ export function NudgeButton() {
       disabled={cooling || send.isPending}
       whileTap={cooling ? {} : { scale: 0.97 }}
       transition={SPRING}
-      className={`relative flex min-h-16 items-center justify-center gap-2.5 overflow-hidden rounded-3xl px-4 font-display
+      className={`relative flex min-h-14 items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-4 font-display
                   text-[17px] font-bold transition-colors ${
-                    cooling
-                      ? 'bg-surface text-muted shadow-card'
-                      : 'bg-accent text-accent-ink shadow-[0_12px_28px_-12px_var(--c-accent)]'
+                    cooling ? 'bg-surface text-muted shadow-card' : 'bg-accent text-accent-ink'
                   }`}
     >
-      {/* Редкий блик зовёт нажать; пока кнопка остывает, звать некуда */}
-      {!cooling && <span aria-hidden className="shimmer" />}
       {/* Сердце «бьётся» один раз в момент отправки - ответ на нажатие,
           который видно, даже если кнопка тут же ушла в остывание */}
       <motion.span

@@ -74,7 +74,7 @@ export function SavingsPage() {
   const fresh = (g: Goal) => goals.data.find((x) => x.id === g.id) ?? g
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       {live.length === 0 && (
         <EmptyState
           icon={PiggyBank}
@@ -187,7 +187,7 @@ function GoalCard({
         )}
 
         <div className="min-w-0 flex-1">
-          <button type="button" onClick={onEdit} className="flex max-w-full items-center gap-1.5 text-left active:opacity-60">
+          <button type="button" onClick={onEdit} className="-my-2 flex min-h-10 max-w-full items-center gap-1.5 text-left active:opacity-60">
             <Icon size={16} aria-hidden className="shrink-0 text-tone-amber" />
             <span className="truncate font-display text-[17px] font-extrabold">{g.title}</span>
           </button>

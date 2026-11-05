@@ -299,7 +299,7 @@ export function BodyChart({ points }: { points: WeightPoint[] }) {
               onClick={() => setSlots((prev) => toggleSlot(prev, metric))}
               disabled={!on && full}
               aria-pressed={on}
-              className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs
+              className={`flex min-h-10 items-center gap-1.5 rounded-full px-3 py-1 text-[13px]
                           ring-1 disabled:opacity-40 ${
                             on ? 'bg-raised ring-line' : 'bg-surface text-muted ring-line'
                           }`}
@@ -353,7 +353,7 @@ export function BodyChart({ points }: { points: WeightPoint[] }) {
         <button
           type="button"
           onClick={() => setTable((v) => !v)}
-          className="flex shrink-0 items-center gap-1.5 px-0.5 text-xs text-accent"
+          className="-my-1 flex min-h-10 shrink-0 items-center gap-1.5 px-0.5 text-[13px] text-accent active:opacity-50"
         >
           {table ? <TrendingUp size={14} aria-hidden /> : <Table2 size={14} aria-hidden />}
           {table ? t('chart.asChart') : t('chart.asTable')}
@@ -878,9 +878,9 @@ function Segmented({
           type="button"
           onClick={() => onPick(item.id)}
           aria-pressed={item.active}
-          className={`rounded-md px-2 py-1.5 text-xs whitespace-nowrap ${
+          className={`min-h-10 min-w-0 rounded-[10px] px-1 text-[13px] whitespace-nowrap transition-colors duration-150 ${
             full ? 'flex-1' : ''
-          } ${item.active ? 'bg-accent font-medium text-accent-ink' : 'text-muted'}`}
+          } ${item.active ? 'bg-lifted font-semibold text-ink shadow-card' : 'text-muted'}`}
         >
           {item.label}
         </button>

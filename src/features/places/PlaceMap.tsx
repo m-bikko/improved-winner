@@ -4,9 +4,8 @@ import L from 'leaflet'
 import { LoaderCircle, LocateFixed, Maximize, Minus, Plus, type LucideIcon } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { toneVar } from '@/ui/tones'
-import type { Bounds } from './geocoder'
 import { KIND_LOOK } from './look'
-import type { Place, PlaceKind, Point } from './logic'
+import type { Bounds, Place, PlaceKind, Point } from './logic'
 
 const TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
 // Подпись обязательна по условиям OSM и должна оставаться видимой
@@ -18,13 +17,18 @@ const START_ZOOM = 4
 /** Мельче этого масштаба «рядом с тем, что на карте» для поиска уже ничего не значит. */
 const NEAR_MIN_ZOOM = 6
 
-const PIN: { size: L.PointTuple; anchor: L.PointTuple } = { size: [36, 44], anchor: [18, 44] }
+// Рисунок 36×44, а цель нажатия шире: пальцем по булавке попадают не в самый центр
+const PIN: { size: L.PointTuple; anchor: L.PointTuple } = { size: [44, 48], anchor: [22, 48] }
 const ME: { size: L.PointTuple; anchor: L.PointTuple } = { size: [20, 20], anchor: [10, 10] }
 
 const calm = (): boolean => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+/** Что сейчас на экране: центр и масштаб. */
+export type MapView = Point & { zoom: number }
+
 export type MapHandle = {
   flyTo: (point: Point, zoom?: number) => void
+  flyToBounds: (bounds: Bounds) => void
   /** Показать все эти точки разом. */
   fit: (points: readonly Point[]) => void
   /** Что сейчас на карте - для поиска; null, если масштаб слишком мелкий. */
@@ -61,23 +65,32 @@ function fitPoints(map: L.Map, points: readonly Point[]): void {
  * и без своего слоя они вылезали бы поверх шапки и нижней панели.
  */
 export function PlaceMap({
-  places,
-  ready,
-  selectedId,
+  places = [],
+  ready = false,
+  selectedId = null,
   draft,
+  initial,
+  compact = false,
   onTap,
   onPin,
+  onMoved,
   onLocateFailed,
   ref,
   children,
 }: {
-  places: readonly Place[]
-  /** Места загружены: один раз показать их все. */
-  ready: boolean
-  selectedId: string | null
+  places?: readonly Place[]
+  /** Места загружены: один раз показать их все, если показывать больше нечего. */
+  ready?: boolean
+  selectedId?: string | null
   draft: Point | null
+  /** С чего начать вместо показа всех мест. */
+  initial?: MapView | null
+  /** Маленькая карта внутри формы: без кнопки «показать все». */
+  compact?: boolean
   onTap: (point: Point) => void
-  onPin: (place: Place) => void
+  onPin?: (place: Place) => void
+  /** Карту передвинули. Здесь узнают, какой город на экране. */
+  onMoved?: (view: MapView) => void
   onLocateFailed: () => void
   ref: Ref<MapHandle>
   children?: ReactNode
@@ -90,16 +103,18 @@ export function PlaceMap({
   const [noTiles, setNoTiles] = useState(false)
 
   const tap = useRef(onTap)
+  const moved = useRef(onMoved)
   useEffect(() => {
     tap.current = onTap
+    moved.current = onMoved
   })
 
   useEffect(() => {
     if (!box.current) return
     const still = calm()
     const created = L.map(box.current, {
-      center: START,
-      zoom: START_ZOOM,
+      center: initial ? [initial.lat, initial.lng] : START,
+      zoom: initial ? initial.zoom : START_ZOOM,
       minZoom: 2,
       zoomControl: false,
       worldCopyJump: true,
@@ -119,6 +134,13 @@ export function PlaceMap({
       const { lat, lng } = e.latlng.wrap()
       tap.current({ lat, lng })
     })
+    const report = () => {
+      const { lat, lng } = created.getCenter().wrap()
+      moved.current?.({ lat, lng, zoom: created.getZoom() })
+    }
+    created.on('moveend', report)
+    // Первое «где я» - сразу: карта могла открыться уже на нужном городе
+    report()
     // Сама карта слышит только окно, а её контейнер меняется и без него
     const resize = new ResizeObserver(() => created.invalidateSize())
     resize.observe(box.current)
@@ -128,6 +150,8 @@ export function PlaceMap({
       created.remove()
       setMap(null)
     }
+    // Начальный вид читается один раз: дальше карту двигает сам человек
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useImperativeHandle(
@@ -136,6 +160,9 @@ export function PlaceMap({
       flyTo: (point, zoom) => {
         if (!map) return
         map.flyTo([point.lat, point.lng], zoom ?? Math.max(map.getZoom(), 15), { animate: !calm(), duration: 0.8 })
+      },
+      flyToBounds: ({ west, south, east, north }) => {
+        map?.flyToBounds([[south, west], [north, east]], { maxZoom: 14, animate: !calm(), duration: 0.8 })
       },
       fit: (points) => {
         if (map) fitPoints(map, points)
@@ -150,8 +177,9 @@ export function PlaceMap({
     [map],
   )
 
-  // Первый показ - все места сразу. Дальше карту двигает сам человек
-  const shown = useRef(false)
+  // Первый показ - все места сразу, если не на чем больше остановиться: вернувшись,
+  // человек ждёт увидеть карту там, где её оставил. Дальше её двигает он сам
+  const shown = useRef(Boolean(initial))
   useEffect(() => {
     if (!map || !ready || shown.current) return
     shown.current = true
@@ -180,12 +208,12 @@ export function PlaceMap({
   }
 
   return (
-    <div className="relative isolate h-[46dvh] min-h-80 overflow-hidden rounded-3xl bg-raised shadow-card">
+    <div className={`relative isolate overflow-hidden rounded-3xl bg-raised shadow-card ${compact ? 'h-52' : 'h-[46dvh] min-h-80'}`}>
       <div ref={box} role="region" aria-label={t('nav.places')} className="places-map absolute inset-0 isolate" />
 
       {map &&
         places.map((p) => (
-          <Marker key={p.id} map={map} point={p} look={PIN} title={p.name} front={p.id === selectedId} onTap={() => onPin(p)}>
+          <Marker key={p.id} map={map} point={p} look={PIN} title={p.name} front={p.id === selectedId} onTap={() => onPin?.(p)}>
             <Pin kind={p.kind} selected={p.id === selectedId} />
           </Marker>
         ))}
@@ -212,7 +240,7 @@ export function PlaceMap({
           onClick={locate}
           className="rounded-2xl bg-surface shadow-card"
         />
-        {places.length > 0 && (
+        {!compact && places.length > 0 && (
           <MapButton
             icon={Maximize}
             label={t('places.fit')}
@@ -225,7 +253,7 @@ export function PlaceMap({
       </div>
 
       {noTiles && (
-        <p className="absolute inset-x-2 top-2 z-[9] mr-14 rounded-2xl bg-surface px-3 py-2 text-[13px] text-muted shadow-card">
+        <p className="absolute inset-x-2 bottom-7 z-[9] mr-14 rounded-2xl bg-surface px-3 py-2 text-[13px] text-muted shadow-card">
           {t('places.noTiles')}
         </p>
       )}
@@ -298,7 +326,7 @@ function PinShape({ fill }: { fill: string }) {
 function Pin({ kind, selected }: { kind: PlaceKind; selected: boolean }) {
   const { icon: Icon, tone } = KIND_LOOK[kind]
   return (
-    <span className={`relative block size-full origin-bottom transition-transform duration-200 ${selected ? 'scale-125' : ''}`}>
+    <span className={`absolute bottom-0 left-1 block h-11 w-9 origin-bottom transition-transform duration-200 ${selected ? 'scale-125' : ''}`}>
       <PinShape fill={toneVar(tone)} />
       <Icon size={16} strokeWidth={2.4} aria-hidden className="absolute top-[10px] left-[10px] text-surface" />
     </span>
@@ -308,7 +336,7 @@ function Pin({ kind, selected }: { kind: PlaceKind; selected: boolean }) {
 /** Точка, которой ещё нет в списке: акцентная, с пульсом у острия. */
 function DraftPin() {
   return (
-    <span className="relative block size-full origin-bottom scale-110">
+    <span className="absolute bottom-0 left-1 block h-11 w-9 origin-bottom scale-110">
       <span className="absolute bottom-0 left-1/2 size-5 -translate-x-1/2 translate-y-1/2 rounded-full bg-accent/40 motion-safe:animate-ping" />
       <PinShape fill="var(--c-accent)" />
       <Plus size={18} strokeWidth={2.8} aria-hidden className="absolute top-[9px] left-[9px] text-accent-ink" />

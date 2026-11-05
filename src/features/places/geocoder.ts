@@ -1,5 +1,17 @@
 import type { Lang } from '@/lib/i18n/lang'
-import { guessName, readHit, readHits, type GeoHit, type Point } from './logic'
+import {
+  contains,
+  guessName,
+  readBounds,
+  readCityHit,
+  readCityName,
+  readHit,
+  readHits,
+  type Bounds,
+  type GeoHit,
+  type MapCity,
+  type Point,
+} from './logic'
 
 const BASE = 'https://nominatim.openstreetmap.org'
 
@@ -42,24 +54,71 @@ function languages(lang: Lang): string {
   return [...new Set([lang, 'ru', 'en'])].join(',')
 }
 
-export type Bounds = { west: number; south: number; east: number; north: number }
+/** Где искать: строго в этих границах или только предпочитая их. */
+export type SearchArea = { bounds: Bounds; strict: boolean }
 
 const searches = new Map<string, GeoHit[]>()
 
 /**
- * Поиск по словам. `near` - что сейчас на карте: результаты оттуда идут
- * выше, но поиск им не ограничен, иначе из Алматы не найти Бали.
+ * Поиск по словам. Адрес ищут там, куда смотрят: «Абая 10» есть в каждом городе,
+ * и без области поиска он вёл бы куда угодно. Поэтому область - город на экране,
+ * а строгая: «ничего не нашлось» в этом городе честнее адреса в другом. Выйти за неё -
+ * отдельная кнопка «Искать везде».
  */
-export async function searchPlaces(query: string, lang: Lang, near: Bounds | null, signal: AbortSignal): Promise<GeoHit[]> {
-  const key = `${lang}|${near ? [near.west, near.south, near.east, near.north].map((n) => n.toFixed(1)).join() : ''}|${query}`
+export async function searchPlaces(query: string, lang: Lang, area: SearchArea | null, signal: AbortSignal): Promise<GeoHit[]> {
+  const place = area ? [area.bounds.west, area.bounds.south, area.bounds.east, area.bounds.north].map((n) => n.toFixed(2)).join() : ''
+  const key = `${lang}|${place}|${area?.strict ?? ''}|${query}`
   const known = searches.get(key)
   if (known) return known
 
   const params = new URLSearchParams({ format: 'jsonv2', limit: '6', q: query, 'accept-language': languages(lang) })
-  if (near) params.set('viewbox', `${near.west},${near.north},${near.east},${near.south}`)
+  if (area) {
+    const { west, north, east, south } = area.bounds
+    params.set('viewbox', `${west},${north},${east},${south}`)
+    if (area.strict) params.set('bounded', '1')
+  }
   const hits = readHits(await request('search', params, signal)).map((h) => ({ ...h, name: guessName(h) }))
   searches.set(key, hits)
   return hits
+}
+
+const cityBounds = new Map<string, Bounds | null>()
+
+/** Границы города по названию. Запоминаются: они не меняются, а запрос небесплатен. */
+export async function boundsOfCity(name: string, lang: Lang, signal: AbortSignal): Promise<Bounds | null> {
+  const key = `${lang}|${name}`
+  const known = cityBounds.get(key)
+  if (known !== undefined) return known
+  const params = new URLSearchParams({ format: 'jsonv2', limit: '1', q: name, featureType: 'city', 'accept-language': languages(lang) })
+  const raw = await request('search', params, signal)
+  const bounds = Array.isArray(raw) ? readBounds(raw[0]) : null
+  cityBounds.set(key, bounds)
+  return bounds
+}
+
+/** Какой город на экране. Если границы города не накрывают точку, поиск идёт только по названию. */
+export async function cityAt(point: Point, lang: Lang, signal: AbortSignal): Promise<MapCity | null> {
+  const params = new URLSearchParams({
+    format: 'jsonv2',
+    lat: String(point.lat),
+    lon: String(point.lng),
+    zoom: '10',
+    'accept-language': languages(lang),
+  })
+  const name = readCityName(await request('reverse', params, signal))
+  if (!name) return null
+  const bounds = await boundsOfCity(name, lang, signal)
+  return { name, bounds: bounds && contains(bounds, point) ? bounds : null }
+}
+
+/** Города по названию: для шторки выбора города. */
+export async function findCities(query: string, lang: Lang, signal: AbortSignal) {
+  const params = new URLSearchParams({ format: 'jsonv2', limit: '6', q: query, featureType: 'city', 'accept-language': languages(lang) })
+  const raw = await request('search', params, signal)
+  return (Array.isArray(raw) ? raw : []).flatMap((item) => {
+    const hit = readCityHit(item)
+    return hit ? [hit] : []
+  })
 }
 
 /**

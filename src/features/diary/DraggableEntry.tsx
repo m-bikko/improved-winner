@@ -1,25 +1,28 @@
 import { useT } from '@/lib/i18n'
-import { useDroppable } from '@dnd-kit/core'
+import { useDndContext, useDroppable } from '@dnd-kit/core'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { ChefHat, GripVertical } from 'lucide-react'
+import { ChefHat } from 'lucide-react'
 import { trim } from '@/features/foods/FoodsPage'
+import { SwipeRow } from '@/ui/SwipeRow'
 import type { DiaryEntry, Meal } from './types'
 
 /**
- * Строка дневника, которую можно перетащить.
+ * Строка дневника. Нажатие - поправить, смахнуть влево - удалить,
+ * удержать - перенести.
  *
- * Ручка отдельной кнопкой, а не перетаскивание за всю строку. На телефоне тап
- * по строке уже открывает редактирование, и без выделенной ручки пришлось бы
- * различать «нажал, чтобы поправить» и «нажал, чтобы потащить» по длительности
- * удержания - то есть каждый раз ждать, прежде чем экран отреагирует.
+ * Постоянная ручка в каждой строке занимала место и шумела ради действия,
+ * которое нужно редко. Нажатие от удержания ждать не заставляет: оно срабатывает
+ * при отпускании как обычно, а удержание включается само, если палец не двигался.
  */
 export function DraggableEntry({
   entry,
   onOpen,
+  onDelete,
 }: {
   entry: DiaryEntry
   onOpen: () => void
+  onDelete: () => void
 }) {
   const t = useT()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -30,20 +33,24 @@ export function DraggableEntry({
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
-      // Разделитель от текста, а не от края - как в сгруппированных списках
-      className={`relative flex items-center bg-surface before:absolute before:inset-x-4 before:top-0
-                  before:h-px before:bg-line ${
-                    isDragging ? 'z-10 rounded-2xl opacity-95 shadow-float before:hidden' : ''
+      // Разделитель от текста, а не от края - как в сгруппированных списках.
+      // z-[1]: иначе красная подложка смахивания перекрыла бы линию
+      className={`relative bg-surface after:absolute after:inset-x-4 after:top-0 after:z-[1]
+                  after:h-px after:origin-top after:scale-y-50 after:bg-line ${
+                    isDragging ? 'z-10 scale-[1.02] overflow-hidden rounded-2xl shadow-float after:hidden' : ''
                   }`}
+      {...listeners}
+      aria-roledescription={attributes['aria-roledescription']}
     >
+      <SwipeRow onDelete={onDelete} label={t('common.delete')} disabled={isDragging}>
       <button
         type="button"
         onClick={onOpen}
-        className="flex min-h-14 min-w-0 flex-1 items-center gap-3 py-2.5 pl-4 text-left
-                   transition-colors active:bg-raised"
+        className="flex min-h-14 w-full min-w-0 items-center gap-3 px-4 py-2.5 text-left
+                   transition-colors duration-150 active:bg-raised active:duration-0"
       >
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[15px] font-medium">{entry.name}</span>
+          <span className="block truncate text-base">{entry.name}</span>
           <span className="flex items-center gap-1 text-[13px] text-muted">
             {/* Внёс повар - видно сразу, чтобы не гадать, откуда тарелка */}
             {entry.createdBy !== null && entry.createdBy !== entry.userId && (
@@ -55,22 +62,11 @@ export function DraggableEntry({
             </span>
           </span>
         </span>
-        <span className="shrink-0 text-sm font-semibold tabular-nums">
-          {Math.round(entry.kcal)} <span className="font-normal text-muted">{t('unit.kcal')}</span>
+        <span className="shrink-0 text-[15px] font-semibold tabular-nums">
+          {Math.round(entry.kcal)} <span className="text-[13px] font-normal text-muted">{t('unit.kcal')}</span>
         </span>
       </button>
-
-      <button
-        type="button"
-        aria-label={t('diary.drag', { name: entry.name })}
-        // touch-none обязателен: без него браузер считает жест прокруткой
-        // и забирает его себе, так и не отдав библиотеке
-        className="shrink-0 cursor-grab touch-none px-3 py-4 text-muted/60 active:cursor-grabbing"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical size={18} aria-hidden />
-      </button>
+      </SwipeRow>
     </div>
   )
 }
@@ -92,11 +88,14 @@ export function MealDropZone({
 }) {
   const t = useT()
   const { setNodeRef, isOver } = useDroppable({ id: meal })
+  // Подсказка - только пока что-то несут: четыре пустые рамки днём съедали экран,
+  // а о том, что сюда можно уронить, надо знать лишь в момент переноса
+  const { active } = useDndContext()
 
   return (
     <div ref={setNodeRef} className={isOver ? 'bg-raised/60' : undefined}>
       {children}
-      {isEmpty && (
+      {isEmpty && active && (
         <p
           className={`mx-4 mb-1 rounded-2xl border border-dashed px-4 py-3 text-center text-[13px] transition-colors ${
             isOver ? 'border-accent text-accent' : 'border-line text-muted'

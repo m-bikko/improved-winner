@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties, type ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import {
   CalendarHeart,
   ChevronRight,
@@ -23,13 +23,12 @@ import { useUserId } from '@/auth/AuthProvider'
 import { formatDayMonth, formatTime, formatWeekdayDate, fromLocalISO, todayLocal } from '@/lib/date'
 import { Loading } from '@/ui/States'
 import { CardLink } from '@/ui/Card'
+import { Sparkles } from '@/ui/Sparkles'
 import { IconBadge } from '@/ui/IconBadge'
 import { Tag } from '@/ui/Chip'
 import { Avatar, personTone } from '@/ui/Avatar'
 import { AnimatedNumber } from '@/ui/AnimatedNumber'
 import { motion } from 'motion/react'
-import { Sparkles } from '@/ui/Sparkles'
-import { ShineBorder } from '@/ui/ShineBorder'
 import type { Tone } from '@/ui/tones'
 import { useCheckins, useStreaks } from '@/features/checkin/api'
 import { STATE_BY_ID } from '@/features/checkin/states'
@@ -109,7 +108,8 @@ export function TodayPage() {
   const together = partnerId !== '' && marked.has(userId) && marked.has(partnerId)
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    // -mt-10: заголовок на одной строке с шапкой, а не под пустой полосой
+    <div className="mx-auto -mt-10 flex max-w-2xl flex-col gap-3 px-4">
       <Hero
         today={today}
         name={myName}
@@ -119,21 +119,31 @@ export function TodayPage() {
         together={together}
       />
 
+      {/* Срочное и живое сейчас - выше всего, и его чаще всего нет */}
       <PauseTile />
 
       <Meeting today={today} />
 
       <ShotTile today={today} />
 
-      <NudgeButton />
-
       <Voice userId={userId} partnerName={partnerName} />
 
       <QuickActions />
 
+      <NudgeButton />
+
       <MedsTile today={today} />
 
       <BabyTile today={today} />
+
+      {/* Еда - выше настроения: записей в дневнике за месяц на порядок больше */}
+      <Food
+        totals={sumEntries(myDay.data ?? [])}
+        goals={goalsFor(me)}
+        partnerName={partnerName}
+        partnerTone={personTone(partnerId, ids)}
+        partnerEaten={theirDay.data ? sumEntries(theirDay.data).kcal : null}
+      />
 
       <Mood
         today={today}
@@ -147,14 +157,6 @@ export function TodayPage() {
       />
 
       <Question userId={userId} partnerId={partnerId} partnerName={partnerName} today={today} />
-
-      <Food
-        totals={sumEntries(myDay.data ?? [])}
-        goals={goalsFor(me)}
-        partnerName={partnerName}
-        partnerTone={personTone(partnerId, ids)}
-        partnerEaten={theirDay.data ? sumEntries(theirDay.data).kcal : null}
-      />
 
       <Tasks tasks={tasks.data ?? []} today={today} />
 
@@ -201,11 +203,11 @@ function toneVar(tone: Tone): string {
 }
 
 /**
- * Приветствие на цветном «сиянии» двух тонов пары.
+ * Крупный заголовок экрана: дата и приветствие.
  *
- * Пятна медленно дрейфуют - экран, с которого начинается день, не должен
- * выглядеть бланком. Двигается только transform градиентов без blur-фильтра:
- * это делает композитор, и батарею такой фон не ест.
+ * Здесь была декоративная карточка с сиянием, и она съедала полтора сантиметра
+ * над всем, что человек открыл посмотреть. Заголовок несёт то же самое и уступает
+ * место, уходя под шапку при прокрутке.
  */
 function Hero({
   today,
@@ -224,42 +226,20 @@ function Hero({
 }) {
   const t = useT()
   return (
-    <section
-      className="relative isolate flex items-center gap-3 overflow-hidden rounded-[28px] bg-surface py-5 pr-4 pl-5 shadow-card"
-      style={{ '--pair-a': toneVar(myTone), '--pair-b': toneVar(partnerTone) } as CSSProperties}
-    >
-      {/* Оба отметились - по рамке пошло сияние в цветах пары */}
-      {together && <ShineBorder colors={[toneVar(myTone), 'var(--c-accent)', toneVar(partnerTone)]} />}
-      <div aria-hidden className="aurora">
-        <span style={{ background: `radial-gradient(closest-side, ${toneVar(myTone)}, transparent)` }} />
-        <span style={{ background: `radial-gradient(closest-side, ${toneVar(partnerTone)}, transparent)` }} />
-        <span style={{ background: 'radial-gradient(closest-side, var(--c-accent), transparent)' }} />
-      </div>
+    <header className="flex items-center gap-3 pb-1">
       <div className="min-w-0 flex-1">
-        <p className="font-display text-[22px] leading-tight font-extrabold tracking-tight">
-          {t(greetingKey(new Date().getHours()))}, <span className="pair-text">{name}</span>
-        </p>
         {/* Не formatDayLabel: он вернёт «Сегодня», а так уже называется сам
             раздел - вышло бы слово «Сегодня» дважды подряд. Здесь нужна дата */}
-        <p className="mt-1 text-sm font-medium text-muted first-letter:uppercase">
+        <p className="text-[13px] font-semibold text-muted first-letter:uppercase">
           {formatWeekdayDate(fromLocalISO(today))}
         </p>
+        <h1 className="font-display text-[28px] leading-[1.14] font-extrabold tracking-[-0.02em]">
+          {t(greetingKey(new Date().getHours()))},<br />
+          {name}
+        </h1>
       </div>
-      {/* Звёзд вокруг колец всегда пара, а когда отметились оба - вдвое больше */}
-      <Sparkles
-        count={together ? 6 : 3}
-        colors={[toneVar(myTone), 'var(--t-amber)', toneVar(partnerTone)]}
-        className="shrink-0"
-      >
-        <PairMark
-          name={name}
-          partnerName={partnerName}
-          myTone={myTone}
-          partnerTone={partnerTone}
-          together={together}
-        />
-      </Sparkles>
-    </section>
+      <PairMark name={name} partnerName={partnerName} myTone={myTone} partnerTone={partnerTone} together={together} />
+    </header>
   )
 }
 
@@ -362,9 +342,9 @@ function QuickActions() {
     { to: '/profile?weigh=1', key: 'today.quick.weigh', icon: Scale, tone: 'slate' },
   ]
   return (
-    <nav aria-label={t('today.quick')} className="grid grid-cols-3 gap-2.5">
+    <nav aria-label={t('today.quick')} className="grid grid-cols-3 gap-3">
       {items.map((a) => (
-        <CardLink key={a.key} to={a.to} className="flex flex-col items-center gap-1.5 px-2 py-3">
+        <CardLink key={a.key} to={a.to} className="flex min-h-[5.25rem] flex-col items-center justify-center gap-1.5 px-2 py-2.5">
           <IconBadge icon={a.icon} tone={a.tone} size="md" />
           <span className="truncate text-[13px] font-semibold">{t(a.key)}</span>
         </CardLink>
@@ -435,8 +415,7 @@ function Mood({
           <span className="truncate font-semibold">{name}</span>
           {(streaks[who] ?? 0) > 0 && (
             <span className="flex shrink-0 items-center gap-0.5 text-xs font-semibold text-accent">
-              {/* Огонёк чуть «горит» - серия живая, пока её держат */}
-              <Flame size={12} aria-hidden className="flicker" />
+              <Flame size={12} aria-hidden />
               {streaks[who]}
             </span>
           )}

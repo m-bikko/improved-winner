@@ -38,7 +38,7 @@ export function AgreementsPage() {
   const rest = list.filter((a) => a.pinnedAt === null)
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       {agreements.data.length > 0 && <SearchInput value={query} onChange={setQuery} placeholder={t('ag.search')} />}
 
       {agreements.data.length === 0 ? (
@@ -106,7 +106,7 @@ function AgreementCard({ a }: { a: Agreement }) {
       <div className="mt-3 flex items-center gap-2 text-[13px] text-muted">
         <Avatar name={pair.nameOf(a.closedBy)} tone={tone} size="sm" />
         <span className="min-w-0 flex-1 truncate">{formatDayMonthYear(new Date(a.closedAt))}</span>
-        <Link to={`/topics/${a.id}`} className="flex items-center gap-1 font-semibold text-accent">
+        <Link to={`/topics/${a.id}`} className="-my-2 flex min-h-10 items-center gap-1 pl-2 font-semibold text-accent active:opacity-50">
           <MessagesSquare size={14} aria-hidden />
           {t('ag.discussion')}
         </Link>

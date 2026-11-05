@@ -52,8 +52,10 @@ export function RefreshButton() {
       onClick={() => void refresh()}
       aria-label={t('common.refresh')}
       aria-busy={spinning}
-      className="flex size-10 items-center justify-center rounded-full text-muted
-                 transition-[color,background-color] active:bg-raised active:text-ink"
+      // Только там, где нет пальца: на телефоне обновляют, потянув экран вниз
+      className="hidden size-11 items-center justify-center rounded-full text-muted
+                 transition-[color,background-color] active:bg-raised active:text-ink
+                 [@media(hover:hover)_and_(pointer:fine)]:flex"
     >
       <RotateCw size={19} aria-hidden className={spinning ? 'animate-spin' : ''} />
     </button>

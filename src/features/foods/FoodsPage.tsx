@@ -75,7 +75,7 @@ export function FoodsPage() {
   const photos = useFoodPhotoUrls(photoPaths)
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <Segmented
         value={tab}
         onChange={setTab}

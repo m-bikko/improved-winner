@@ -1,10 +1,11 @@
 import { useT } from '@/lib/i18n'
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
-import { AnimatePresence, motion, useDragControls } from 'motion/react'
+import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform } from 'motion/react'
+import { haptic } from '@/lib/haptics'
 import { useKeyboardInset } from '@/lib/keyboardInset'
-import { SPRING_SOFT } from './motion'
+import { SPRING_SOFT, project, rubberband, velocityTracker } from './motion'
 
 type Props = {
   open: boolean
@@ -20,10 +21,6 @@ type Props = {
    */
   bleed?: boolean
 }
-
-/** Столько надо протянуть вниз, чтобы шторка закрылась, - или бросить быстро. */
-const CLOSE_OFFSET = 110
-const CLOSE_VELOCITY = 600
 
 /**
  * Шторка снизу.
@@ -50,111 +47,224 @@ const CLOSE_VELOCITY = 600
  * лежала в карточке с `isolation: isolate` и оказывалась ПОД нижней
  * панелью (z-40) - кнопка «Отправить» уезжала под меню, а прокручивать
  * было нечего. Портал делает шторку независимой от того, кто её открыл.
- *
- * Закрывается свайпом вниз - жестом, которого на телефоне ждут от любой
- * шторки. Тянуть можно только за ручку и заголовок: если бы тянулась вся
- * шторка, прокрутка списка внутри спорила бы со свайпом, и длинный список
- * закрывался бы вместо того, чтобы листаться.
  */
-export function Sheet({ open, onClose, title, children, bleed = false }: Props) {
+export function Sheet(props: Props) {
+  return createPortal(<AnimatePresence>{props.open && <SheetBody key="sheet" {...props} />}</AnimatePresence>, document.body)
+}
+
+/**
+ * Что нельзя перехватывать свайпом шторки: у этих элементов свой жест по вертикали.
+ * Новому такому элементу достаточно поставить `data-sheet-lock`.
+ */
+const LOCKED = '[data-sheet-lock], input[type="range"], textarea, .leaflet-container'
+
+/** Прокручен ли какой-нибудь список между пальцем и шторкой. */
+function scrolledAbove(target: Element, root: Element): boolean {
+  for (let el: Element | null = target; el && el !== root; el = el.parentElement) {
+    if (el.scrollTop > 0) {
+      const overflow = getComputedStyle(el).overflowY
+      if (overflow === 'auto' || overflow === 'scroll') return true
+    }
+  }
+  return false
+}
+
+function SheetBody({ open, onClose, title, children, bleed = false }: Props) {
   const t = useT()
   const { keyboard, visible } = useKeyboardInset(open)
-  const drag = useDragControls()
+  const reduced = useReducedMotion()
+  const panel = useRef<HTMLDivElement>(null)
+  const grip = useRef<HTMLDivElement>(null)
+  const closeRef = useRef(onClose)
+  useEffect(() => {
+    closeRef.current = onClose
+  })
+
+  // Смещение шторки вниз, в пикселях. Затемнение привязано к нему же: тянешь -
+  // фон светлеет вместе с пальцем, а не вспыхивает в конце
+  const hidden = window.innerHeight
+  const y = useMotionValue(reduced ? 0 : hidden)
+  const scrim = useTransform(y, [0, hidden * 0.85], [1, 0])
 
   useEffect(() => {
-    if (!open) return
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') closeRef.current()
     }
     window.addEventListener('keydown', onKey)
+    // Фокус внутрь и обратно: иначе с клавиатуры и скринридером шторки как бы нет
+    const before = document.activeElement
+    if (panel.current && !panel.current.contains(before)) panel.current.focus({ preventScroll: true })
     return () => {
       document.body.style.overflow = previous
       window.removeEventListener('keydown', onKey)
+      if (before instanceof HTMLElement) before.focus({ preventScroll: true })
     }
-  }, [open, onClose])
+  }, [])
 
-  return createPortal(
-    <AnimatePresence>
-      {open && (
-        <div
-          key="sheet"
-          className="fixed inset-0 z-50 flex flex-col justify-end"
-          // Низ поднимается ровно на высоту клавиатуры
-          style={{ bottom: keyboard }}
-        >
-          <motion.div
-            className="absolute inset-0 bg-black/45"
-            onClick={onClose}
-            aria-hidden
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-          />
+  // Тянуть можно за ручку и заголовок, а когда список внутри прокручен до верха - и за
+  // него: палец продолжает движение списка и переходит на шторку без отдельного жеста.
+  useEffect(() => {
+    const el = panel.current
+    if (!el) return
+    let gesture: { startX: number; startY: number; base: number; active: boolean; grip: boolean } | null = null
+    let speed = velocityTracker()
 
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-label={title}
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={SPRING_SOFT}
-            drag="y"
-            dragControls={drag}
-            dragListener={false}
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0, bottom: 0.8 }}
-            onDragEnd={(_, info) => {
-              if (info.offset.y > CLOSE_OFFSET || info.velocity.y > CLOSE_VELOCITY) onClose()
-            }}
-            className="relative flex max-h-[88dvh] flex-col rounded-t-[28px] bg-bg pb-safe shadow-float"
-            style={{
-              // Потолок считаем от ВИДИМОЙ высоты, а не от dvh: с открытой
-              // клавиатурой dvh на iOS остаётся полным, и 88% от него не влезут
-              ...(visible > 0 && { maxHeight: Math.round(visible * 0.88) }),
-              // Отступ под домашнюю полоску не нужен, когда снизу клавиатура:
-              // он бы отодвинул шторку от неё пустой лентой
-              ...(keyboard > 0 && { paddingBottom: 0 }),
-            }}
-          >
-            {/* Ручка и заголовок - зона захвата для свайпа. touch-none, иначе
-                браузер забирает вертикальный жест себе под прокрутку */}
-            <div className="shrink-0 cursor-grab touch-none" onPointerDown={(e) => drag.start(e)}>
-              <div className="flex justify-center pt-2.5 pb-1">
-                <span className="h-1.5 w-10 rounded-full bg-line" aria-hidden />
-              </div>
-              <div className="flex items-center justify-between gap-3 px-5 pt-1 pb-3">
-                <span className="min-w-0 truncate font-display text-lg font-bold tracking-tight">
-                  {title}
-                </span>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  // Иначе нажатие на крестик начинало бы свайп
-                  onPointerDown={(e) => e.stopPropagation()}
-                  aria-label={t('common.close')}
-                  className="-mr-1 flex size-9 shrink-0 items-center justify-center rounded-full
-                             bg-raised text-muted transition-transform active:scale-90"
-                >
-                  <X size={18} aria-hidden />
-                </button>
-              </div>
-            </div>
+    const begin = (target: EventTarget | null, x: number, py: number) => {
+      if (!(target instanceof Element) || target.closest(LOCKED)) return
+      const onGrip = grip.current?.contains(target) ?? false
+      if (!onGrip && scrolledAbove(target, el)) return
+      // Шторку можно перехватить на лету: движение продолжается с того места,
+      // где она сейчас на экране, а не с места назначения
+      y.stop()
+      speed = velocityTracker()
+      gesture = { startX: x, startY: py, base: y.get(), active: false, grip: onGrip }
+    }
 
-            {/* overflow-x-hidden - страховка: один широкий нативный элемент внутри
-                раздувал контейнер, и за экран уезжало всё содержимое шторки.
-                Причину лечим в самих элементах, но пусть шторка не зависит
-                от того, вспомню ли я об этом в следующий раз. */}
-            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
-              {bleed ? children : <div className="min-w-0 px-5 pt-1 pb-5">{children}</div>}
-            </div>
-          </motion.div>
+    const track = (x: number, py: number, cancel: () => void) => {
+      if (!gesture) return
+      const dy = py - gesture.startY
+      if (!gesture.active) {
+        // Порог, чтобы отличить жест от нажатия и от горизонтальной прокрутки чипов
+        if (Math.abs(x - gesture.startX) > Math.abs(dy) && Math.abs(x - gesture.startX) > 8) {
+          gesture = null
+          return
+        }
+        if (Math.abs(dy) < 6) return
+        if (dy < 0 && !gesture.grip) {
+          gesture = null
+          return
+        }
+        gesture.active = true
+        gesture.startY = py
+      }
+      cancel()
+      const next = gesture.base + (py - gesture.startY)
+      speed.add(py)
+      // Вверх идти некуда: сопротивление вместо упора
+      y.set(next >= 0 ? next : -rubberband(-next, el.offsetHeight))
+    }
+
+    const finish = () => {
+      if (!gesture?.active) {
+        gesture = null
+        return
+      }
+      gesture = null
+      const velocity = speed.read()
+      // Решает то, куда шторка летит: короткий бросок закрывает её так же,
+      // как долгое перетаскивание через половину
+      if (y.get() + project(velocity) > el.offsetHeight * 0.5) {
+        haptic('tick')
+        closeRef.current()
+      } else {
+        // Пружина стартует со скоростью пальца: шва между жестом и анимацией нет
+        void animate(y, 0, { ...SPRING_SOFT, velocity })
+      }
+    }
+
+    const onTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0]
+      if (touch && e.touches.length === 1) begin(e.target, touch.clientX, touch.clientY)
+      else gesture = null
+    }
+    const onTouchMove = (e: TouchEvent) => {
+      const touch = e.touches[0]
+      if (touch) track(touch.clientX, touch.clientY, () => e.preventDefault())
+    }
+    // Мышью - только за ручку: на телефоне этого не бывает, а на ноутбуке тянуть
+    // за содержимое значило бы мешать выделению текста
+    const onMouseMove = (e: PointerEvent) => track(e.clientX, e.clientY, () => {})
+    const onMouseUp = () => {
+      window.removeEventListener('pointermove', onMouseMove)
+      window.removeEventListener('pointerup', onMouseUp)
+      finish()
+    }
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse' || !grip.current?.contains(e.target as Node)) return
+      begin(e.target, e.clientX, e.clientY)
+      window.addEventListener('pointermove', onMouseMove)
+      window.addEventListener('pointerup', onMouseUp)
+    }
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true })
+    el.addEventListener('touchmove', onTouchMove, { passive: false })
+    el.addEventListener('touchend', finish)
+    el.addEventListener('touchcancel', finish)
+    el.addEventListener('pointerdown', onPointerDown)
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchmove', onTouchMove)
+      el.removeEventListener('touchend', finish)
+      el.removeEventListener('touchcancel', finish)
+      el.removeEventListener('pointerdown', onPointerDown)
+      window.removeEventListener('pointermove', onMouseMove)
+      window.removeEventListener('pointerup', onMouseUp)
+    }
+  }, [y])
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex flex-col justify-end"
+      // Низ поднимается ровно на высоту клавиатуры
+      style={{ bottom: keyboard }}
+    >
+      <motion.div
+        className="absolute inset-0 bg-[var(--c-scrim)]"
+        onClick={onClose}
+        aria-hidden
+        style={reduced ? {} : { opacity: scrim }}
+        {...(reduced ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } } : { exit: { opacity: 0 } })}
+      />
+
+      <motion.div
+        ref={panel}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        tabIndex={-1}
+        {...(reduced
+          ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: 0.18 } }
+          : { animate: { y: 0 }, exit: { y: hidden }, transition: SPRING_SOFT })}
+        className="relative flex max-h-[90dvh] flex-col rounded-t-[28px] bg-bg pb-safe shadow-float outline-none"
+        style={{
+          ...(reduced ? {} : { y }),
+          // Потолок считаем от ВИДИМОЙ высоты, а не от dvh: с открытой
+          // клавиатурой dvh на iOS остаётся полным, и 88% от него не влезут
+          ...(visible > 0 && { maxHeight: Math.round(visible * 0.9) }),
+          // Отступ под домашнюю полоску не нужен, когда снизу клавиатура:
+          // он бы отодвинул шторку от неё пустой лентой
+          ...(keyboard > 0 && { paddingBottom: 0 }),
+        }}
+      >
+        {/* Ручка и заголовок. touch-none: вертикальный жест здесь всегда про шторку */}
+        <div ref={grip} className="shrink-0 cursor-grab touch-none">
+          <div className="flex justify-center pt-2 pb-1">
+            <span className="h-[5px] w-9 rounded-full bg-fill" aria-hidden />
+          </div>
+          <div className="flex items-center justify-between gap-3 pt-0.5 pr-3 pb-2.5 pl-5">
+            <h2 className="min-w-0 truncate type-headline text-[19px]">{title}</h2>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={t('common.close')}
+              className="relative flex size-8 shrink-0 items-center justify-center rounded-full bg-raised text-muted
+                         transition-transform after:absolute after:-inset-1.5 after:content-[''] active:scale-90 active:duration-75"
+            >
+              <X size={17} strokeWidth={2.4} aria-hidden />
+            </button>
+          </div>
         </div>
-      )}
-    </AnimatePresence>,
-    document.body,
+
+        {/* overflow-x-hidden - страховка: один широкий нативный элемент внутри
+            раздувал контейнер, и за экран уезжало всё содержимое шторки.
+            Причину лечим в самих элементах, но пусть шторка не зависит
+            от того, вспомню ли я об этом в следующий раз. */}
+        <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
+          {bleed ? children : <div className="min-w-0 px-5 pt-1 pb-5">{children}</div>}
+        </div>
+      </motion.div>
+    </div>
   )
 }

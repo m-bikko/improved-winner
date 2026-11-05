@@ -119,6 +119,73 @@ export function guessName(hit: GeoHit): string {
   return label.slice(0, NAME_MAX)
 }
 
+export type Bounds = { west: number; south: number; east: number; north: number }
+
+/** Город на экране: как называется и где кончается. Границы могут ещё не прийти. */
+export type MapCity = { name: string; bounds: Bounds | null }
+
+export function contains(bounds: Bounds, { lat, lng }: Point): boolean {
+  return lat >= bounds.south && lat <= bounds.north && lng >= bounds.west && lng <= bounds.east
+}
+
+/** boundingbox Nominatim: строки в порядке юг, север, запад, восток. */
+export function readBounds(raw: unknown): Bounds | null {
+  if (!isRecord(raw) || !Array.isArray(raw.boundingbox) || raw.boundingbox.length !== 4) return null
+  const [south, north, west, east] = raw.boundingbox.map(Number) as [number, number, number, number]
+  if (![south, north, west, east].every(Number.isFinite) || south >= north || west >= east) return null
+  return { west, south, east, north }
+}
+
+/**
+ * Название города из обратного геокодирования. Не поле name: внутри города оно
+ * называет район, а нужен именно город. В открытой степи города нет - тогда
+ * ближайшее, что есть: район, область.
+ */
+export function readCityName(raw: unknown): string | null {
+  if (!isRecord(raw) || !isRecord(raw.address)) return null
+  for (const key of ['city', 'town', 'village', 'municipality', 'county', 'state', 'country']) {
+    const value = text(raw.address, key)
+    if (value) return value
+  }
+  return null
+}
+
+/** Город из поиска: название, точка и границы. */
+export function readCityHit(raw: unknown): (Point & { name: string; label: string; bounds: Bounds | null }) | null {
+  const hit = readHit(raw)
+  if (!hit) return null
+  const name = hit.name || guessName(hit)
+  return { lat: hit.lat, lng: hit.lng, name, label: hit.address ?? '', bounds: readBounds(raw) }
+}
+
+/**
+ * Города для быстрого выбора. Координаты сверены по Nominatim. Названия в словаре,
+ * а не здесь: у них есть формы на трёх языках (Өскемен, Oskemen, Усть-Каменогорск).
+ * Остальной мир - поиском в той же шторке.
+ */
+export const CITIES = [
+  { id: 'almaty', lat: 43.2364, lng: 76.9457 },
+  { id: 'astana', lat: 51.1283, lng: 71.4305 },
+  { id: 'shymkent', lat: 42.3147, lng: 69.5883 },
+  { id: 'aktobe', lat: 50.2837, lng: 57.2298 },
+  { id: 'karaganda', lat: 49.8422, lng: 73.1063 },
+  { id: 'taraz', lat: 42.9016, lng: 71.3769 },
+  { id: 'pavlodar', lat: 52.2858, lng: 76.9455 },
+  { id: 'oskemen', lat: 49.9484, lng: 82.6275 },
+  { id: 'semey', lat: 50.4044, lng: 80.2497 },
+  { id: 'atyrau', lat: 47.1067, lng: 51.9139 },
+  { id: 'kostanay', lat: 53.2147, lng: 63.6326 },
+  { id: 'kyzylorda', lat: 44.8427, lng: 65.5036 },
+  { id: 'oral', lat: 51.2041, lng: 51.3708 },
+  { id: 'petropavl', lat: 54.8668, lng: 69.1335 },
+  { id: 'aktau', lat: 43.6353, lng: 51.1682 },
+  { id: 'turkistan', lat: 43.3019, lng: 68.2704 },
+  { id: 'kokshetau', lat: 53.2852, lng: 69.3815 },
+  { id: 'taldykorgan', lat: 45.0177, lng: 78.382 },
+] as const
+
+export const CITY_IDS = CITIES.map((c) => c.id)
+
 export function osmViewUrl({ lat, lng }: Point): string {
   return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`
 }

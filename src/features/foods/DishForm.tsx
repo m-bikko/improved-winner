@@ -120,7 +120,7 @@ export function DishForm({
   }
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       {/* «Назад» теперь в шапке оболочки - здесь только имя того, что правим */}
       <h2 className="truncate px-1 font-display text-2xl font-extrabold tracking-tight">
         {existing?.name ?? t('food.newDish')}

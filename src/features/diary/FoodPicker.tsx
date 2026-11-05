@@ -72,7 +72,9 @@ export function FoodPicker({ open, meal, userId, onClose, onPick }: Props) {
   return (
     <Sheet open={open} onClose={onClose} title={t(dynamicKey('meal', meal))} bleed>
       <div className="sticky top-0 z-10 bg-bg px-4 pt-1 pb-3">
-        <SearchInput value={query} onChange={setQuery} placeholder={t('pick.placeholder')} autoFocus />
+        {/* Без автофокуса: «Часто» под полем закрывает почти всё, что едят изо дня в день,
+            а клавиатура сразу закрыла бы этот список половиной экрана */}
+        <SearchInput value={query} onChange={setQuery} placeholder={t('pick.placeholder')} />
       </div>
 
       {foods.isPending && <Loading />}

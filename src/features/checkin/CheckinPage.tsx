@@ -69,7 +69,7 @@ export function CheckinPage() {
   }
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <p className="px-1 text-sm text-muted">{formatDayLabel(today)}</p>
 
       {editing || !mine ? (
@@ -141,8 +141,8 @@ function Card({
           <button
             type="button"
             onClick={onEdit}
-            className="flex shrink-0 items-center gap-1.5 rounded-full bg-accent-soft px-3.5 py-1.5
-                       text-sm font-semibold text-accent-soft-ink transition-transform active:scale-95"
+            className="flex min-h-10 shrink-0 items-center gap-1.5 rounded-full bg-accent-soft px-4
+                       text-[15px] font-semibold text-accent-soft-ink transition-transform active:scale-95 active:duration-75"
           >
             <Pencil size={14} aria-hidden />
             {t('common.edit')}
@@ -240,8 +240,8 @@ function Missed({ days, today }: { days: Restorable[]; today: string }) {
                       onError: (e) => setError(e instanceof Error ? e.message : String(e)),
                     })
                   }}
-                  className="flex items-center gap-1.5 rounded-full bg-accent-soft px-3.5 py-1.5 text-sm
-                             font-semibold text-accent-soft-ink transition-transform active:scale-95
+                  className="flex min-h-10 items-center gap-1.5 rounded-full bg-accent-soft px-4 text-[15px]
+                             font-semibold text-accent-soft-ink transition-transform active:scale-95 active:duration-75
                              disabled:opacity-50"
                 >
                   <Flame size={14} aria-hidden />
@@ -379,7 +379,7 @@ function Editor({
           нужно было пролистать весь опрос - а выбирают обычно в первых двух
           группах */}
       <div className="sticky bottom-above-tabbar z-20">
-        <div className="flex items-center gap-3 rounded-3xl bg-surface/90 p-2 pl-4 shadow-float backdrop-blur-xl">
+        <div className="material flex items-center gap-3 rounded-3xl p-2 pl-4">
           <span className="min-w-0 flex-1 truncate text-sm text-muted">
             {t('checkin.selected', { n: states.length })}
           </span>

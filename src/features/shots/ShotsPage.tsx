@@ -46,7 +46,7 @@ export function ShotsPage() {
   const past = days.filter((d) => d !== current && (d.shots.length > 0 || d.posted.length > 0))
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       {current ? (
         <Today day={current} pair={pair} now={now} urls={urls.data ?? {}} onView={setViewing} />
       ) : (

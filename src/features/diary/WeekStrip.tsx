@@ -88,7 +88,7 @@ export function WeekStrip({
             setDirection(today < date ? -1 : 1)
             onPick(today)
           }}
-          className="min-w-0 flex-1 truncate font-display text-[17px] font-bold first-letter:uppercase"
+          className="min-h-11 min-w-0 flex-1 truncate font-display text-[17px] font-bold first-letter:uppercase"
         >
           {formatDayLabel(date)}
         </button>

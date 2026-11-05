@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { motion, useMotionValue, useTransform, type PanInfo } from 'motion/react'
+import { haptic } from '@/lib/haptics'
+import { SPRING, SPRING_FLICK, project } from './motion'
 
 /**
  * Верхняя карточка колоды: тянется пальцем и поворачивается, по ходу
@@ -26,10 +28,15 @@ export function SwipeCard({
   const [gone, setGone] = useState<1 | -1 | 0>(0)
 
   const onDragEnd = (_: unknown, info: PanInfo) => {
-    if (info.offset.x > 110 || info.velocity.x > 600) {
+    // Решает то, куда карточка летит, а не где её отпустили: короткий бросок
+    // срабатывает так же, как длинное перетаскивание
+    const landing = info.offset.x + project(info.velocity.x)
+    if (landing > 140) {
+      haptic('commit')
       setGone(1)
       onDecide(true)
-    } else if (info.offset.x < -110 || info.velocity.x < -600) {
+    } else if (landing < -140) {
+      haptic('commit')
       setGone(-1)
       onDecide(false)
     }
@@ -41,12 +48,13 @@ export function SwipeCard({
       style={{ x, rotate }}
       drag="x"
       dragSnapToOrigin
+      dragTransition={{ bounceStiffness: 420, bounceDamping: 32 }}
       dragElastic={0.9}
       onDragEnd={onDragEnd}
       initial={{ scale: 0.95, opacity: 0.6 }}
       animate={{ scale: 1, opacity: 1 }}
-      exit={{ x: gone === 0 ? 0 : gone * 420, opacity: 0, rotate: gone * 18, transition: { duration: 0.3 } }}
-      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+      exit={{ x: gone === 0 ? 0 : gone * 460, opacity: 0, rotate: gone * 18, transition: SPRING_FLICK }}
+      transition={SPRING}
     >
       {children}
       <motion.span
@@ -88,7 +96,7 @@ export function RoundButton({
       aria-label={label}
       onClick={onClick}
       disabled={disabled}
-      className={`flex items-center justify-center rounded-full shadow-card transition-transform active:scale-90 disabled:opacity-40 ${look}`}
+      className={`flex items-center justify-center rounded-full shadow-card transition-transform active:scale-90 active:duration-75 disabled:opacity-40 ${look}`}
     >
       {children}
     </button>

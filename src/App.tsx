@@ -6,6 +6,7 @@ import { LangProvider, useT } from '@/lib/i18n'
 import { LoginScreen } from '@/auth/LoginScreen'
 import { CACHE_BUSTER, persister, queryClient } from '@/lib/queryClient'
 import { AppShell } from '@/shell/AppShell'
+import { MorePage } from '@/shell/MorePage'
 import { ErrorBoundary } from '@/shell/ErrorBoundary'
 import { UpdatePrompt } from '@/shell/UpdatePrompt'
 import { FoodsPage } from '@/features/foods/FoodsPage'
@@ -100,6 +101,7 @@ function Gate() {
     <AppShell>
       <Routes>
         <Route path="/today" element={<TodayPage />} />
+        <Route path="/more" element={<MorePage />} />
         <Route path="/topics" element={<TopicsPage />} />
         <Route path="/topics/:id" element={<TopicPage />} />
         <Route path="/tasks" element={<TasksPage />} />

@@ -61,7 +61,7 @@ export function MemoriesPage() {
   const fresh = (m: Memory) => list.find((x) => x.id === m.id) ?? m
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       {/* Кадры дня и история - тоже альбом пары, только собранный сам */}
       <div className="grid grid-cols-2 gap-2.5">
         <CardLink to="/shots" className="flex items-center gap-2.5 p-3">
@@ -205,7 +205,7 @@ function MemoryCard({
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className={`block w-full text-left text-[16px] leading-relaxed whitespace-pre-wrap ${expanded ? '' : 'line-clamp-5'}`}
+            className={`block min-h-10 w-full text-left text-[16px] leading-relaxed whitespace-pre-wrap ${expanded ? '' : 'line-clamp-5'}`}
           >
             {memory.caption}
           </button>
@@ -246,7 +246,7 @@ function MemoryCard({
               heart.mutate({ memoryId: memory.id, userId: pair.userId, on: !iHeart })
               if (!iHeart) burst({ x: r.left + r.width / 2, y: r.top + r.height / 2 }, 'hearts')
             }}
-            className="flex h-10 shrink-0 items-center gap-1 rounded-full px-2 transition-transform active:scale-90"
+            className="flex h-10 min-w-10 shrink-0 items-center justify-center gap-1 rounded-full px-2 transition-transform active:scale-90"
           >
             {/* Сердце второго - его аватар рядом: людей двое, счётчик не нужен */}
             {otherHearts.map((id) => (

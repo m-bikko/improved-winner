@@ -266,6 +266,18 @@ export function useSaveProfile() {
         .eq('user_id', input.userId)
       if (error) throw error
     },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['profiles'] }),
+    // Значение в строке меняется по нажатию, а не по ответу сети
+    onMutate: async (input) => {
+      await qc.cancelQueries({ queryKey: ['profiles'] })
+      const before = qc.getQueryData<Profile[]>(['profiles'])
+      qc.setQueryData<Profile[]>(['profiles'], (list) =>
+        list?.map((p) => (p.userId === input.userId ? { ...p, ...input.patch } : p)),
+      )
+      return { before }
+    },
+    onError: (_e, _input, context) => {
+      if (context?.before) qc.setQueryData(['profiles'], context.before)
+    },
+    onSettled: () => void qc.invalidateQueries({ queryKey: ['profiles'] }),
   })
 }

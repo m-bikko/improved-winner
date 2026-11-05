@@ -7,6 +7,7 @@ import { fromLocalISO, monthName, todayLocal } from '@/lib/date'
 import { usePair, type Pair } from '@/features/profile/pair'
 import { useCreateTopic } from '@/features/topics/api'
 import { Aurora } from '@/ui/Aurora'
+import { ScaleInput } from '@/ui/ScaleInput'
 import { Avatar } from '@/ui/Avatar'
 import { Button } from '@/ui/Button'
 import { useBurst } from '@/ui/Burst'
@@ -45,7 +46,7 @@ export function PulsePage() {
   const label = `${monthName(fromLocalISO(month).getMonth())}`
 
   return (
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <Hero pair={pair} label={label} mine={mine !== null} partnerDone={partnerDone} revealed={mine !== null && theirs !== null} />
 
       {mine === null || editing ? (
@@ -172,28 +173,12 @@ function Form({
                 <span className="text-[15px] font-semibold">{t(dynamicKey('pl.area', area.id))}</span>
               </div>
               <p className="mt-0.5 text-[13px] text-muted">{t(dynamicKey('pl.hint', area.id))}</p>
-              <div className="mt-2 grid grid-cols-10 gap-1" role="radiogroup" aria-label={t(dynamicKey('pl.area', area.id))}>
-                {Array.from({ length: 10 }, (_, k) => k + 1).map((n) => {
-                  const on = scores[i] === n
-                  return (
-                    <button
-                      key={n}
-                      type="button"
-                      role="radio"
-                      aria-checked={on}
-                      onClick={() => setScores((s) => s.map((x, j) => (j === i ? n : x)))}
-                      className={`flex aspect-square items-center justify-center rounded-xl text-[14px] font-bold tabular-nums transition-[transform,background-color] active:scale-90 ${
-                        on
-                          ? 'bg-accent text-accent-ink'
-                          : scores[i] !== null && n < (scores[i] ?? 0)
-                            ? 'bg-accent-soft text-accent-soft-ink'
-                            : 'bg-raised text-muted'
-                      }`}
-                    >
-                      {n}
-                    </button>
-                  )
-                })}
+              <div className="mt-1.5">
+                <ScaleInput
+                  label={t(dynamicKey('pl.area', area.id))}
+                  value={scores[i] ?? null}
+                  onChange={(n) => setScores((list) => list.map((x, j) => (j === i ? n : x)))}
+                />
               </div>
             </div>
           )

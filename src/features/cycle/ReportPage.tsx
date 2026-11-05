@@ -71,7 +71,7 @@ export function CycleReportPage() {
   return (
     // Ссылки «В раздел цикла» наверху больше нет: назад ведёт кнопка в шапке,
     // и две стрелки назад на одном экране спорили бы, какая из них настоящая
-    <div className="stagger mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
+    <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <p className="px-1 text-[15px] leading-relaxed text-muted">
         {t('rep.intro')}
       </p>

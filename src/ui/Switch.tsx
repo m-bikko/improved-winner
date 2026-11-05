@@ -1,9 +1,9 @@
+import { haptic } from '@/lib/haptics'
+
 /**
- * Переключатель вкл/выкл в духе iOS.
- *
- * Вместо чекбокса: на телефоне квадратик в 16 пикселей - цель, в которую
- * не попасть, и его состояние плохо читается издалека. Здесь трек в полпальца
- * и бегунок, который видно боковым зрением.
+ * Переключатель вкл/выкл в духе iOS: трек и бегунок, который видно боковым
+ * зрением. При нажатии бегунок вытягивается в сторону движения - отклик
+ * появляется ещё до того, как палец отпущен.
  */
 export function Switch({
   checked,
@@ -24,17 +24,23 @@ export function Switch({
       aria-checked={checked}
       aria-label={label}
       disabled={disabled}
-      onClick={() => onChange(!checked)}
-      // after: - невидимая область нажатия до 44px: трек 30px в высоту
+      onClick={() => {
+        haptic('tick')
+        onChange(!checked)
+      }}
+      // after: - невидимая область нажатия до 44px: трек 31px в высоту
       // меньше комфортной цели для пальца, а растягивать сам трек некрасиво
-      className={`relative h-[30px] w-[50px] shrink-0 rounded-full transition-colors duration-200
+      className={`group relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200
                   after:absolute after:-inset-[7px] after:content-['']
-                  disabled:opacity-40 ${checked ? 'bg-accent' : 'bg-line'}`}
+                  disabled:opacity-40 ${checked ? 'bg-accent' : 'bg-fill'}`}
     >
       <span
         aria-hidden
-        className={`absolute top-[3px] left-[3px] size-6 rounded-full bg-white shadow-[0_2px_6px_rgb(0_0_0/0.22)]
-                    transition-transform duration-200 ${checked ? 'translate-x-5' : ''}`}
+        className={`absolute top-[2px] h-[27px] w-[27px] rounded-full bg-white shadow-[0_2px_6px_rgb(0_0_0/0.25)]
+                    transition-[left,width] duration-200 ease-[cubic-bezier(0.3,0.8,0.3,1)]
+                    group-active:w-[33px] ${
+                      checked ? 'left-[22px] group-active:left-[16px]' : 'left-[2px]'
+                    }`}
       />
     </button>
   )
