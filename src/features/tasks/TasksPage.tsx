@@ -128,7 +128,6 @@ export function TasksPage() {
           {tasks.isSuccess && all.length === 0 && (
             <EmptyState
               icon={ListChecks}
-              tone="sky"
               title={t('task.emptyTitle')}
               hint={t('task.emptyHint')}
             />

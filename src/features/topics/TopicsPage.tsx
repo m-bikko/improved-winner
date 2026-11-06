@@ -8,7 +8,6 @@ import { useTopics, type TopicStatus } from './api'
 import { Segmented } from '@/ui/Segmented'
 import { Fab } from '@/ui/Fab'
 import { Card } from '@/ui/Card'
-import { IconBadge } from '@/ui/IconBadge'
 
 export function TopicsPage() {
   const t = useT()
@@ -39,7 +38,6 @@ export function TopicsPage() {
       {topics.isSuccess && visible.length === 0 && (
         <EmptyState
           icon={MessagesSquare}
-          tone="indigo"
           title={
             query
               ? t('pick.nothingFound')
@@ -69,22 +67,17 @@ export function TopicsPage() {
                 <li key={topic.id}>
                   <Link
                     to={`/topics/${topic.id}`}
-                    className="flex min-h-14 items-start gap-3 px-4 py-3.5 transition-colors active:bg-raised"
+                    className="flex min-h-11 items-start gap-3 px-4 py-2.5 transition-colors duration-200 active:bg-raised active:duration-0"
                   >
-                    <IconBadge
-                      icon={topic.status === 'open' ? MessagesSquare : CircleCheck}
-                      tone="indigo"
-                      size="sm"
-                    />
                     <span className="min-w-0 flex-1 self-center">
-                      <span className="block text-[15px] font-semibold">{topic.title}</span>
+                      <span className="block text-[17px]">{topic.title}</span>
                       {preview && (
                         <span className="mt-0.5 line-clamp-2 text-[13px] text-muted">
                           {preview}
                         </span>
                       )}
                     </span>
-                    <ChevronRight size={18} aria-hidden className="mt-1.5 shrink-0 text-muted/70" />
+                    <ChevronRight size={16} strokeWidth={2.6} aria-hidden className="mt-1 -mr-1 shrink-0 text-muted/45" />
                   </Link>
                 </li>
               )

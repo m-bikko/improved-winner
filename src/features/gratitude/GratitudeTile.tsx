@@ -5,7 +5,6 @@ import { useUserId } from '@/auth/AuthProvider'
 import { formatDayLabel, toLocalISO } from '@/lib/date'
 import { useT } from '@/lib/i18n'
 import { Card } from '@/ui/Card'
-import { IconBadge } from '@/ui/IconBadge'
 import { INPUT_CLASS } from '@/ui/Field'
 import { useBurst } from '@/ui/Burst'
 import { useAddGratitude, useDeleteGratitude, useGratitudes } from './api'
@@ -55,16 +54,16 @@ export function GratitudeTile({ partnerName }: { partnerName: string }) {
   return (
     <Card as="section" className="p-4">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="flex min-w-0 items-center gap-2.5 text-[15px] font-semibold">
-          <IconBadge icon={Heart} tone="rose" size="sm" />
-          {t('thanks.title')}
+        <h2 className="flex min-w-0 items-center gap-1.5 text-[15px] leading-5 font-semibold text-tone-rose">
+          <Heart size={17} strokeWidth={2.3} aria-hidden className="shrink-0" />
+          <span className="truncate">{t('thanks.title')}</span>
         </h2>
         {!open && (
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="flex min-h-10 shrink-0 items-center rounded-full bg-accent-soft px-4 text-[15px] font-semibold
-                       text-accent-soft-ink transition-transform active:scale-95 active:duration-75"
+            className="-my-3 -mr-2 flex min-h-11 shrink-0 items-center px-2 text-[15px] font-semibold text-accent
+                       transition-opacity active:opacity-40 active:duration-0"
           >
             {t('thanks.add')}
           </button>
@@ -87,8 +86,8 @@ export function GratitudeTile({ partnerName }: { partnerName: string }) {
               type="button"
               disabled={!ready || add.isPending}
               onClick={(e) => void submit(e.currentTarget)}
-              className="rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-accent-ink
-                         transition-transform active:scale-95 disabled:opacity-50"
+              className="min-h-11 rounded-xl bg-accent px-4 text-[15px] font-semibold text-accent-ink
+                         transition-opacity active:opacity-60 active:duration-0 disabled:opacity-40"
             >
               {t('thanks.send')}
             </button>
@@ -98,7 +97,7 @@ export function GratitudeTile({ partnerName }: { partnerName: string }) {
                 setText('')
                 setOpen(false)
               }}
-              className="px-3 py-2.5 text-sm font-medium text-muted"
+              className="min-h-11 px-3 text-[15px] text-accent"
             >
               {t('common.cancel')}
             </button>
@@ -107,7 +106,7 @@ export function GratitudeTile({ partnerName }: { partnerName: string }) {
       )}
 
       {items.length === 0 ? (
-        !open && <p className="mt-2 text-sm text-muted">{t('thanks.empty')}</p>
+        !open && <p className="mt-2 text-[15px] leading-5 text-muted">{t('thanks.empty')}</p>
       ) : (
         <ul className="mt-3 flex flex-col gap-2">
           {/* initial={false}: при открытии экрана список просто стоит,
@@ -123,11 +122,11 @@ export function GratitudeTile({ partnerName }: { partnerName: string }) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.97 }}
                 transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                className="flex items-start gap-2 rounded-2xl bg-raised/60 px-3.5 py-2.5"
+                className="flex items-start gap-2 rounded-xl bg-raised px-3 py-2"
               >
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm">{g.body}</span>
-                  <span className="mt-0.5 block text-xs text-muted">
+                  <span className="block text-[15px] leading-5">{g.body}</span>
+                  <span className="mt-0.5 block text-[13px] text-muted">
                     {mine ? t('thanks.fromMe') : partnerName}
                     {' · '}
                     {formatDayLabel(toLocalISO(new Date(g.createdAt))).toLowerCase()}

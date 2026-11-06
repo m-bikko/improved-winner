@@ -8,9 +8,8 @@ type CardTag = 'div' | 'section' | 'article' | 'li'
 /**
  * Карточка - основная поверхность приложения.
  *
- * Без рамки: раньше каждая карточка обводилась `ring-1 ring-line`, и экран
- * из одинаковых обведённых прямоугольников читался как таблица. Глубину
- * теперь даёт тень, а в тёмной теме - ступень светлоты.
+ * Плоская: белая группа на сером фоне, как в системных приложениях. Ни рамки, ни тени:
+ * группу отделяет от фона сама разница светлоты, а тридцать теней на экране шумели бы.
  *
  * Отступы внутри НЕ ставятся: у списков строка во всю ширину и есть область
  * нажатия, у текстовых блоков - p-4. Решает тот, кто знает содержимое.
@@ -22,7 +21,7 @@ export function Card({
   ...rest
 }: { as?: CardTag; children: ReactNode } & HTMLAttributes<HTMLElement>) {
   return (
-    <Tag className={`rounded-3xl bg-surface shadow-card ${className}`} {...rest}>
+    <Tag className={`rounded-3xl bg-surface ${className}`} {...rest}>
       {children}
     </Tag>
   )
@@ -53,7 +52,7 @@ export function CardLink({
       aria-label={ariaLabel}
       whileTap={PRESS}
       transition={SPRING}
-      className={`block rounded-3xl bg-surface shadow-card ${className}`}
+      className={`block rounded-3xl bg-surface ${className}`}
     >
       {children}
     </MotionLink>
@@ -61,10 +60,10 @@ export function CardLink({
 }
 
 /**
- * Подпись над группой карточек.
+ * Заголовок группы.
  *
- * Мелкая и приглушённая намеренно: она называет группу, а не спорит
- * за внимание с содержимым.
+ * Чёрным и полужирным, как заголовки разделов в «Здоровье»: на длинном экране за него
+ * цепляется взгляд. Серая мелкая подпись называла группу, но не помогала её найти.
  */
 export function SectionTitle({
   children,
@@ -77,7 +76,7 @@ export function SectionTitle({
 }) {
   return (
     <div className={`flex items-baseline justify-between gap-3 px-1 ${className}`}>
-      <h2 className="font-display text-[15px] font-bold tracking-tight text-muted">{children}</h2>
+      <h2 className="text-[20px] leading-[25px] font-bold">{children}</h2>
       {action}
     </div>
   )

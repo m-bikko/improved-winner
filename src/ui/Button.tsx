@@ -5,12 +5,12 @@ import { tr } from '@/lib/i18n'
 
 type Variant = 'primary' | 'secondary' | 'soft' | 'ghost' | 'danger'
 
+// Четыре уровня, как у системных кнопок. Заливка цветом - только у одного действия на экране
 const VARIANTS: Record<Variant, string> = {
   primary: 'bg-accent text-accent-ink',
   secondary: 'bg-raised text-ink',
-  // Второе по важности действие: заметно, но не спорит с главным
   soft: 'bg-accent-soft text-accent-soft-ink',
-  ghost: 'text-muted',
+  ghost: 'text-accent',
   danger: 'bg-danger-soft text-danger',
 }
 
@@ -62,12 +62,11 @@ export function Button({
       // Явный type: без него кнопка внутри формы сабмитит её при каждом клике
       type="button"
       disabled={disabled || loading}
-      // min-h-12 - нижняя граница комфортной цели нажатия на телефоне.
-      // Нажатие отзывается мгновенно (duration-75), возврат - мягко
-      className={`flex min-h-12 items-center justify-center gap-2 rounded-2xl px-5 text-[17px]
-                  font-semibold transition-[transform,opacity,background-color,color] duration-200
-                  active:scale-[0.97] active:opacity-85 active:duration-75
-                  disabled:opacity-40 disabled:active:scale-100
+      // 50 пунктов - высота крупной системной кнопки. Нажатие отзывается
+      // мгновенно (duration-0), возврат мягкий
+      className={`flex min-h-[50px] items-center justify-center gap-2 rounded-[14px] px-5 text-[17px]
+                  font-semibold transition-[opacity,background-color,color] duration-200
+                  active:opacity-60 active:duration-0 disabled:opacity-35
                   ${armed ? 'whitespace-nowrap bg-danger text-white' : VARIANTS[variant]} ${className}`}
       onClick={press}
       // Пока кнопка взведена, скринридер обязан слышать то же, что написано на ней

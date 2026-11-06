@@ -13,10 +13,9 @@ import { Field, NumberField } from '@/ui/Field'
 import { IconBadge } from '@/ui/IconBadge'
 import { Segmented } from '@/ui/Segmented'
 import { Sheet } from '@/ui/Sheet'
-import { ShineBorder } from '@/ui/ShineBorder'
 import { Sparkles } from '@/ui/Sparkles'
 import { EmptyState, ErrorState, Loading } from '@/ui/States'
-import { TONE_CLASS, toneVar } from '@/ui/tones'
+import { TONE_CLASS } from '@/ui/tones'
 import { useChallenges, useCreateChallenge, useDeleteChallenge, useToggleMark, useUpdateChallenge } from './api'
 import {
   canMark,
@@ -61,7 +60,6 @@ export function ChallengesPage() {
       {list.length === 0 && (
         <EmptyState
           icon={Trophy}
-          tone="green"
           title={t('ch.emptyTitle')}
           hint={t('ch.emptyHint')}
           action={<Button onClick={() => setCreating({})}>{t('ch.start')}</Button>}
@@ -114,8 +112,6 @@ function ActiveCard({ c, pair, today, onEdit }: { c: Challenge; pair: Pair; toda
   const theirsToday = pair.partnerId !== '' && marked(c, pair.partnerId, today)
   const streak = jointStreak(c, pair.userId, pair.partnerId, today)
   const together = togetherCount(c, pair.userId, pair.partnerId)
-  const a = toneVar(pair.myTone)
-  const b = toneVar(pair.partnerTone)
 
   const set = (date: string, on: boolean, from?: HTMLElement) => {
     setError(null)
@@ -138,7 +134,6 @@ function ActiveCard({ c, pair, today, onEdit }: { c: Challenge; pair: Pair; toda
 
   return (
     <Card className="relative overflow-hidden p-4">
-      {mineToday && theirsToday && <ShineBorder colors={[a, 'var(--c-accent)', b]} />}
 
       <div className="flex items-start gap-3">
         <IconBadge icon={iconOf(c.icon)} tone="green" size="lg" />
@@ -180,7 +175,7 @@ function ActiveCard({ c, pair, today, onEdit }: { c: Challenge; pair: Pair; toda
       {error && <p className="mt-3 text-sm text-danger">{error}</p>}
 
       <Button
-        variant={mineToday ? 'soft' : 'primary'}
+        variant={mineToday ? 'secondary' : 'soft'}
         onClick={(e) => set(today, !mineToday, e.currentTarget)}
         className="mt-4 w-full"
       >

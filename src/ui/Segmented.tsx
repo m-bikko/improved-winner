@@ -33,7 +33,7 @@ export function Segmented<T extends string>({
     <div
       role="group"
       aria-label={ariaLabel}
-      className={`flex gap-1 rounded-2xl bg-raised p-1 ${className}`}
+      className={`flex rounded-[10px] bg-raised p-0.5 ${className}`}
     >
       {options.map((o) => {
         const active = o.value === value
@@ -44,16 +44,16 @@ export function Segmented<T extends string>({
             type="button"
             onClick={() => onChange(o.value)}
             aria-pressed={active}
-            className={`relative flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl
-                        px-2 text-sm font-semibold transition-colors ${
-                          active ? 'text-ink' : 'text-muted'
-                        }`}
+            // Сам сегмент 32 пункта, как системный; область нажатия добрана до 44
+            className={`relative flex min-h-8 flex-1 items-center justify-center gap-1.5 rounded-lg
+                        px-2 text-[13px] font-semibold transition-colors after:absolute after:inset-x-0 after:-inset-y-1.5
+                        after:content-[''] ${active ? 'text-ink' : 'text-ink/80'}`}
           >
             {active && (
               <motion.span
                 layoutId={`seg-${id}`}
                 transition={SPRING}
-                className="absolute inset-0 rounded-xl bg-lifted shadow-card"
+                className="absolute inset-0 rounded-lg bg-lifted shadow-[0_1px_3px_rgb(0_0_0/0.14),0_0_0_0.5px_rgb(0_0_0/0.04)]"
                 aria-hidden
               />
             )}

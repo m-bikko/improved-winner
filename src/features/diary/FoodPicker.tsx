@@ -91,7 +91,6 @@ export function FoodPicker({ open, meal, userId, onClose, onPick }: Props) {
       {foods.isSuccess && results.length === 0 && (
         <EmptyState
           icon={SearchX}
-          tone="amber"
           title={t('pick.nothingFound')}
           hint={t('pick.nothingHint')}
           action={

@@ -71,15 +71,15 @@ export function WeekStrip({
   }
 
   return (
-    <div className="rounded-3xl bg-surface p-1.5 shadow-card">
+    <div className="rounded-3xl bg-surface p-1.5">
       <div className="flex items-center gap-1">
         <button
           type="button"
           onClick={() => shiftWeek(-1)}
           aria-label={t('diary.prevWeek')}
-          className="flex size-10 items-center justify-center rounded-xl text-muted transition-colors active:bg-raised"
+          className="flex size-11 items-center justify-center text-accent transition-opacity active:opacity-40 active:duration-0"
         >
-          <ChevronLeft size={21} aria-hidden />
+          <ChevronLeft size={22} strokeWidth={2.4} aria-hidden />
         </button>
         {/* Тап по дате возвращает к сегодняшнему дню - как и раньше */}
         <button
@@ -88,7 +88,7 @@ export function WeekStrip({
             setDirection(today < date ? -1 : 1)
             onPick(today)
           }}
-          className="min-h-11 min-w-0 flex-1 truncate font-display text-[17px] font-bold first-letter:uppercase"
+          className="min-h-11 min-w-0 flex-1 truncate text-[17px] font-semibold first-letter:uppercase"
         >
           {formatDayLabel(date)}
         </button>
@@ -96,9 +96,9 @@ export function WeekStrip({
           type="button"
           onClick={() => shiftWeek(1)}
           aria-label={t('diary.nextWeek')}
-          className="flex size-10 items-center justify-center rounded-xl text-muted transition-colors active:bg-raised"
+          className="flex size-11 items-center justify-center text-accent transition-opacity active:opacity-40 active:duration-0"
         >
-          <ChevronRight size={21} aria-hidden />
+          <ChevronRight size={22} strokeWidth={2.4} aria-hidden />
         </button>
       </div>
 
@@ -140,30 +140,26 @@ export function WeekStrip({
                     }}
                     aria-pressed={selected}
                     aria-label={`${formatDayLabel(iso)}: ${Math.round(kcal)} ${t('unit.kcal')}`}
-                    className={`relative flex w-full flex-col items-center gap-1 rounded-2xl pt-1.5 pb-2
-                                transition-opacity active:scale-95 ${future ? 'opacity-45' : ''}`}
+                    className={`relative flex w-full flex-col items-center gap-1 rounded-xl pt-1.5 pb-2
+                                transition-opacity active:opacity-60 active:duration-0 ${future ? 'opacity-40' : ''}`}
                   >
                     {selected && (
                       <motion.span
                         layoutId="week-pill"
                         transition={SPRING}
                         aria-hidden
-                        className="absolute inset-0 rounded-2xl bg-accent-soft"
+                        className="absolute inset-0 rounded-xl bg-raised"
                       />
                     )}
                     <span
-                      className={`relative text-[11px] font-semibold uppercase ${
-                        selected ? 'text-accent-soft-ink' : 'text-muted'
-                      }`}
+                      className={`relative text-[11px] font-medium uppercase ${selected ? 'text-ink' : 'text-muted'}`}
                     >
                       {names[i]}
                     </span>
                     <span className="relative flex items-center justify-center" aria-hidden>
                       <RingArc size={RING} ratio={ratio} />
                       <span
-                        className={`absolute font-display text-[13px] font-extrabold tabular-nums ${
-                          iso === today && !selected ? 'text-accent' : ''
-                        }`}
+                        className={`absolute text-[13px] font-semibold tabular-nums ${iso === today ? 'text-accent' : ''}`}
                       >
                         {fromLocalISO(iso).getDate()}
                       </span>

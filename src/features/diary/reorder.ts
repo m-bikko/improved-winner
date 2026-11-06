@@ -36,7 +36,11 @@ export function moveEntry(
   const target = rest[to]
   if (!target) return [...entries]
 
-  rest.splice(to, 0, { ...active, meal: target.meal })
+  // Внутри приёма запись занимает МЕСТО цели. Сверху вниз это значит встать после неё:
+  // вставка «перед» оставляла порядок как был, и сдвинуть запись вниз на одну строку
+  // или поставить последней было нельзя. Из другого приёма - всегда перед целью.
+  const downward = active.meal === target.meal && from <= to
+  rest.splice(downward ? to + 1 : to, 0, { ...active, meal: target.meal })
   return rest
 }
 

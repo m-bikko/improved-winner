@@ -205,7 +205,6 @@ export function CycleLibraryPage() {
       {found.length === 0 ? (
         <EmptyState
           icon={SearchX}
-          tone="plum"
           title={t('lib.nothing')}
           hint={t('lib.nothingHint')}
         />

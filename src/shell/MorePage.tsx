@@ -1,23 +1,21 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { LogOut } from 'lucide-react'
 import { useAuth } from '@/auth/AuthProvider'
 import { useHasBaby } from '@/features/baby/api'
 import { useT } from '@/lib/i18n'
 import { Button } from '@/ui/Button'
+import { ListGroup, ListRow } from '@/ui/List'
 import { SearchInput } from '@/ui/SearchInput'
-import { TONE_CLASS } from '@/ui/tones'
 import { useRecentSections } from './recent'
 import { MORE, MORE_GROUPS, type Section } from './sections'
 
 /**
- * «Ещё» - разделы как значки на домашнем экране.
+ * «Ещё» - разделы списком, как в Настройках iPhone.
  *
- * Раньше это была шторка с плитками: у раздела не было своего адреса, и из него
- * нельзя было вернуться назад - только снова открыть шторку. Теперь это экран:
- * у него есть прокрутка, которая сохраняется, поиск по названию и недавние разделы
- * наверху. Четыре колонки вместо трёх: все разделы умещаются почти на одном экране,
- * а значок в своём цвете находится глазами раньше, чем прочитано слово.
+ * Здесь была сетка из тридцати ярких плиток: подписи не влезали и рвались переносами
+ * («Воспомина-ния»), а тридцать цветных квадратов разного размера смысла спорили
+ * друг с другом. Строка читается целиком, глаз идёт по одной вертикали, а поиск
+ * и недавние разделы сверху закрывают то, ради чего нужна была плотная сетка.
  */
 export function MorePage() {
   const t = useT()
@@ -42,28 +40,17 @@ export function MorePage() {
 
       {found ? (
         found.length > 0 ? (
-          <Grid items={found} />
+          <Rows items={found} />
         ) : (
           <p className="py-8 text-center text-[15px] text-muted">{t('more.noResults')}</p>
         )
       ) : (
         <>
-          {recent.length > 0 && (
-            <section>
-              <h2 className="mb-2.5 px-1 type-headline">{t('more.recent')}</h2>
-              <Grid items={recent} />
-            </section>
-          )}
-          {MORE_GROUPS.map((group) => {
-            const items = group.items.filter(visible)
-            return (
-              <section key={group.key}>
-                <h2 className="mb-2.5 px-1 type-headline">{t(group.key)}</h2>
-                <Grid items={items} />
-              </section>
-            )
-          })}
-          <Button variant="danger" className="mt-2" onClick={() => void signOut()}>
+          {recent.length > 0 && <Group title={t('more.recent')} items={recent} />}
+          {MORE_GROUPS.map((group) => (
+            <Group key={group.key} title={t(group.key)} items={group.items.filter(visible)} />
+          ))}
+          <Button variant="danger" onClick={() => void signOut()}>
             <LogOut size={18} aria-hidden />
             {t('nav.signOut')}
           </Button>
@@ -73,27 +60,22 @@ export function MorePage() {
   )
 }
 
-function Grid({ items }: { items: readonly Section[] }) {
+function Group({ title, items }: { title: string; items: readonly Section[] }) {
+  return (
+    <section>
+      <h2 className="mb-1.5 px-4 text-[13px] font-medium text-muted">{title}</h2>
+      <Rows items={items} />
+    </section>
+  )
+}
+
+function Rows({ items }: { items: readonly Section[] }) {
   const t = useT()
   return (
-    <ul className="grid grid-cols-4 gap-x-1.5 gap-y-4">
-      {items.map((s) => {
-        const Icon = s.icon
-        return (
-          <li key={s.to}>
-            <Link to={s.to} className="group flex flex-col items-center gap-1.5 rounded-2xl">
-              <span
-                className={`flex size-[60px] items-center justify-center rounded-[17px] text-surface shadow-card
-                            transition-transform duration-200 group-active:scale-90 group-active:duration-75
-                            ${TONE_CLASS[s.tone].solid}`}
-              >
-                <Icon size={28} strokeWidth={2} aria-hidden />
-              </span>
-              <span className="line-clamp-2 text-center text-[12px] leading-[1.2] font-medium hyphens-auto">{t(s.key)}</span>
-            </Link>
-          </li>
-        )
-      })}
-    </ul>
+    <ListGroup>
+      {items.map((s) => (
+        <ListRow key={s.to} to={s.to} icon={s.icon} tone={s.tone} title={t(s.key)} />
+      ))}
+    </ListGroup>
   )
 }

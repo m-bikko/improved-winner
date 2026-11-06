@@ -148,7 +148,7 @@ export function CalorieRing({ totals, goals, goalDirection }: Props) {
         </div>
 
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`text-5xl font-semibold ${over ? 'text-danger' : 'text-ink'}`}>
+          <span className={`text-5xl font-bold ${over ? 'text-danger' : 'text-ink'}`}>
             <AnimatedNumber value={percent} className="tabular-nums" />
             <span className="text-2xl font-normal text-muted">%</span>
           </span>
@@ -195,14 +195,14 @@ export function CalorieRingMini({ totals, goals, goalDirection }: Props) {
 
       <div className="min-w-0 flex-1">
         <p className="flex items-baseline gap-2">
-          <span className={`text-2xl font-semibold ${over ? 'text-danger' : 'text-ink'}`}>
+          <span className={`text-[22px] leading-7 font-bold ${over ? 'text-danger' : 'text-ink'}`}>
             <AnimatedNumber value={percent} format={(n) => `${Math.round(n)}%`} className="tabular-nums" />
           </span>
-          <span className="truncate text-sm text-muted">
+          <span className="truncate text-[15px] text-muted tabular-nums">
             {Math.round(totals.kcal)} / {goals.kcal} {t('unit.kcal')}
           </span>
         </p>
-        <p className={`truncate text-xs ${over ? 'text-danger' : 'text-muted'}`}>
+        <p className={`truncate text-[13px] ${over ? 'text-danger' : 'text-muted'}`}>
           {hint(left, ratio, goalDirection)}
         </p>
       </div>

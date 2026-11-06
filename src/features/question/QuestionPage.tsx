@@ -1,20 +1,18 @@
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { motion } from 'motion/react'
 import { Check, Flame, Lock, MessageCircleHeart, Pencil, SendHorizontal } from 'lucide-react'
 import { dynamicKey, useT } from '@/lib/i18n'
 import { formatDayLabel, formatWeekdayDate, fromLocalISO, todayLocal } from '@/lib/date'
 import { usePair, type Pair } from '@/features/profile/pair'
-import { Aurora } from '@/ui/Aurora'
 import { Avatar } from '@/ui/Avatar'
 import { Button } from '@/ui/Button'
 import { Card, SectionTitle } from '@/ui/Card'
 import { INPUT_CLASS } from '@/ui/Field'
 import { IconBadge } from '@/ui/IconBadge'
 import { Sheet } from '@/ui/Sheet'
-import { ShineBorder } from '@/ui/ShineBorder'
 import { ErrorState, Loading } from '@/ui/States'
 import { useBurst } from '@/ui/Burst'
-import { TONE_CLASS, toneVar } from '@/ui/tones'
+import { TONE_CLASS } from '@/ui/tones'
 import { CATEGORY_ICON, CATEGORY_TONE } from './bank'
 import { useAnswers, useProgress, useSaveAnswer, type Answer } from './api'
 import { archiveDates, dayOf, jointStreak, type Day } from './logic'
@@ -112,28 +110,13 @@ function QuestionHero({ day, pair, label }: { day: Day; pair: Pair; label: strin
   const text = useQuestionText()
   const cat = day.question?.cat
   const Icon = cat ? CATEGORY_ICON[cat] : MessageCircleHeart
-  const revealed = day.mine !== null && day.partnerAnswered
-  const a = toneVar(pair.myTone)
-  const b = toneVar(pair.partnerTone)
 
   return (
     <section
-      className="relative isolate overflow-hidden rounded-[28px] bg-surface px-5 pt-5 pb-4 shadow-card"
-      style={{ '--pair-a': a, '--pair-b': b } as CSSProperties}
+      className="relative isolate overflow-hidden rounded-3xl bg-surface px-5 pt-5 pb-4 shadow-card"
     >
-      {revealed && <ShineBorder colors={[a, 'var(--c-accent)', b]} />}
-      <Aurora colors={[a, b, 'var(--c-accent)']} />
-      {/* Крупный значок вопроса фоном - карточка читается как «вопрос»
-          раньше, чем прочитан текст */}
-      <MessageCircleHeart
-        aria-hidden
-        size={132}
-        strokeWidth={1.4}
-        className="pointer-events-none absolute -top-5 -right-6 rotate-12 text-ink opacity-[0.06]"
-      />
-
       <div className="flex items-center justify-between gap-3">
-        <span className="flex min-w-0 items-center gap-1.5 rounded-full bg-surface/75 px-3 py-1 text-[13px] font-semibold backdrop-blur">
+        <span className="flex min-w-0 items-center gap-1.5 rounded-full bg-raised px-3 py-1 text-[13px] font-semibold">
           <Icon size={14} aria-hidden className={cat ? TONE_CLASS[CATEGORY_TONE[cat]].fg : 'text-muted'} />
           <span className="truncate">{cat ? t(dynamicKey('qcat', cat)) : t('nav.question')}</span>
         </span>

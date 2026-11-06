@@ -14,7 +14,7 @@ export function SearchInput({ value, onChange, placeholder, autoFocus, inputRef 
   const t = useT()
   return (
     <div className="relative flex items-center">
-      <Search size={18} className="absolute left-3.5 text-muted" aria-hidden />
+      <Search size={17} strokeWidth={2.2} className="absolute left-2.5 text-muted" aria-hidden />
       <input
         ref={inputRef}
         type="search"
@@ -30,16 +30,16 @@ export function SearchInput({ value, onChange, placeholder, autoFocus, inputRef 
         autoCapitalize="off"
         spellCheck={false}
         aria-label={placeholder}
-        className="w-full rounded-2xl bg-surface py-3 pr-10 pl-11 shadow-card outline-none
-                   transition-shadow focus:ring-2 focus:ring-accent placeholder:text-muted/80
-                   [&::-webkit-search-cancel-button]:hidden"
+        // Системное поле поиска: серая заливка без рамки, 40 пунктов
+        className="min-h-10 w-full rounded-xl bg-raised py-1.5 pr-10 pl-9 text-[17px] outline-none
+                   placeholder:text-muted [&::-webkit-search-cancel-button]:hidden"
       />
       {value && (
         <button
           type="button"
           onClick={() => onChange('')}
           aria-label={t('common.clear')}
-          className="absolute right-2 p-2 text-muted"
+          className="absolute right-0 flex size-10 items-center justify-center text-muted"
         >
           <X size={18} aria-hidden />
         </button>

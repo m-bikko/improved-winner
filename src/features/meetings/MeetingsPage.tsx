@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check, Clapperboard, Gift, HeartHandshake, Images, Lightbulb, MapPin, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useT } from '@/lib/i18n'
@@ -7,14 +7,12 @@ import { usePair, type Pair } from '@/features/profile/pair'
 import { useWishes } from '@/features/wishlist/api'
 import { useWatch } from '@/features/watch/api'
 import { AnimatedNumber } from '@/ui/AnimatedNumber'
-import { Aurora } from '@/ui/Aurora'
 import { Button } from '@/ui/Button'
 import { useBurst } from '@/ui/Burst'
 import { Card, SectionTitle } from '@/ui/Card'
 import { Fab } from '@/ui/Fab'
 import { Field, INPUT_CLASS } from '@/ui/Field'
 import { Sheet } from '@/ui/Sheet'
-import { ShineBorder } from '@/ui/ShineBorder'
 import { Sparkles } from '@/ui/Sparkles'
 import { EmptyState, ErrorState, Loading } from '@/ui/States'
 import { toneVar } from '@/ui/tones'
@@ -63,7 +61,6 @@ export function MeetingsPage() {
       ) : (
         <EmptyState
           icon={HeartHandshake}
-          tone="rose"
           title={t('mt.emptyTitle')}
           hint={t('mt.emptyHint')}
           action={<Button onClick={() => setEditing('new')}>{t('mt.new')}</Button>}
@@ -120,11 +117,8 @@ function Countdown({ meeting, pair, today, onEdit }: { meeting: Meeting; pair: P
 
   return (
     <section
-      className="relative isolate overflow-hidden rounded-[28px] bg-surface p-5 shadow-card"
-      style={{ '--pair-a': a, '--pair-b': b } as CSSProperties}
+      className="relative isolate overflow-hidden rounded-3xl bg-surface p-5 shadow-card"
     >
-      {state.kind === 'now' && <ShineBorder colors={[a, 'var(--c-accent)', b]} />}
-      <Aurora colors={[a, b, 'var(--c-accent)']} />
       <div className="flex items-start justify-between gap-3">
         <p className="text-[13px] font-semibold text-muted">
           {state.kind === 'now' ? t('mt.together') : t('mt.until')}

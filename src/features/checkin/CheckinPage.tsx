@@ -141,8 +141,8 @@ function Card({
           <button
             type="button"
             onClick={onEdit}
-            className="flex min-h-10 shrink-0 items-center gap-1.5 rounded-full bg-accent-soft px-4
-                       text-[15px] font-semibold text-accent-soft-ink transition-transform active:scale-95 active:duration-75"
+            className="-mr-1.5 flex min-h-11 shrink-0 items-center gap-1 px-1.5 text-[15px] font-medium text-accent
+                       transition-opacity active:opacity-40 active:duration-0"
           >
             <Pencil size={14} aria-hidden />
             {t('common.edit')}
@@ -240,9 +240,8 @@ function Missed({ days, today }: { days: Restorable[]; today: string }) {
                       onError: (e) => setError(e instanceof Error ? e.message : String(e)),
                     })
                   }}
-                  className="flex min-h-10 items-center gap-1.5 rounded-full bg-accent-soft px-4 text-[15px]
-                             font-semibold text-accent-soft-ink transition-transform active:scale-95 active:duration-75
-                             disabled:opacity-50"
+                  className="-mr-2 flex min-h-11 items-center gap-1.5 px-2 text-[15px] font-medium text-accent
+                             transition-opacity active:opacity-40 active:duration-0 disabled:opacity-40"
                 >
                   <Flame size={14} aria-hidden />
                   {t('checkin.restore')}

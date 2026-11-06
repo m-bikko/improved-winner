@@ -1,17 +1,17 @@
 import { TONE_CLASS, type Tone } from './tones'
 
 const SIZE = {
-  sm: 'size-7 text-xs',
-  md: 'size-10 text-base',
-  lg: 'size-14 text-xl',
+  sm: 'size-7 text-[13px]',
+  md: 'size-9 text-[17px]',
+  lg: 'size-14 text-[22px]',
 } as const
 
 /**
  * Круг с первой буквой имени.
  *
- * Фотографий у профилей нет, а буква в своём цвете узнаётся быстрее,
+ * Фотографий у профилей нет, а белая буква на цвете человека узнаётся быстрее,
  * чем имя строкой: на главной и в сравнении дня человек видит «кто»
- * раньше, чем прочтёт.
+ * раньше, чем прочтёт. Как монограмма в «Контактах».
  */
 export function Avatar({
   name,
@@ -29,8 +29,8 @@ export function Avatar({
   return (
     <span
       aria-hidden
-      className={`flex shrink-0 items-center justify-center rounded-full font-display font-extrabold
-                  ${SIZE[size]} ${t.soft} ${t.fg} ${ring ? 'ring-[3px] ring-bg' : ''}`}
+      className={`flex shrink-0 items-center justify-center rounded-full font-semibold text-white
+                  ${SIZE[size]} ${t.solid} ${ring ? 'ring-[3px] ring-bg' : ''}`}
     >
       {name.trim().charAt(0).toUpperCase() || '?'}
     </span>

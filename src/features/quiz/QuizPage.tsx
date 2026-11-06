@@ -1,18 +1,15 @@
-import { useState, type CSSProperties } from 'react'
+import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Check, Dices, Hourglass, Sparkle, X } from 'lucide-react'
 import { dynamicKey, useT } from '@/lib/i18n'
 import { formatDayMonth } from '@/lib/date'
 import { usePair, type Pair } from '@/features/profile/pair'
-import { Aurora } from '@/ui/Aurora'
 import { Avatar } from '@/ui/Avatar'
 import { Button } from '@/ui/Button'
 import { useBurst } from '@/ui/Burst'
 import { Card, SectionTitle } from '@/ui/Card'
-import { ShineBorder } from '@/ui/ShineBorder'
 import { Sparkles } from '@/ui/Sparkles'
 import { ErrorState, Loading } from '@/ui/States'
-import { toneVar } from '@/ui/tones'
 import { useAnswer, useCreateRound, useRounds } from './api'
 import { doneBy, nextPair, pickPairs, scoreOf, type Round } from './logic'
 
@@ -79,16 +76,11 @@ export function QuizPage() {
 
 function Hero({ pair, last, played }: { pair: Pair; last: Round | null; played: number }) {
   const t = useT()
-  const a = toneVar(pair.myTone)
-  const b = toneVar(pair.partnerTone)
   const score = last ? scoreOf(last, pair.userId, pair.partnerId) : null
   return (
     <section
-      className="relative isolate overflow-hidden rounded-[28px] bg-surface p-5 shadow-card"
-      style={{ '--pair-a': a, '--pair-b': b } as CSSProperties}
+      className="relative isolate overflow-hidden rounded-3xl bg-surface p-5 shadow-card"
     >
-      <Aurora colors={[a, b, 'var(--t-amber)']} />
-      <Dices aria-hidden size={120} strokeWidth={1.3} className="pointer-events-none absolute -top-4 -right-5 rotate-12 text-ink opacity-[0.06]" />
       <p className="font-display text-[22px] leading-tight font-extrabold tracking-tight">{t('tot.title')}</p>
       <p className="mt-1.5 text-sm text-muted">{t('tot.subtitle')}</p>
       {score && (
@@ -250,12 +242,9 @@ function Results({ round, pair }: { round: Round; pair: Pair }) {
   if (!score) return null
   const of = (who: string, id: string) => round.answers.find((a) => a.userId === who && a.pairId === id)
   const perfect = score.myGuesses === score.total && score.theirGuesses === score.total
-  const a = toneVar(pair.myTone)
-  const b = toneVar(pair.partnerTone)
 
   return (
     <Card className="relative overflow-hidden p-4">
-      {perfect && <ShineBorder colors={[a, 'var(--c-accent)', b]} />}
       <div className="flex items-center justify-between gap-3">
         <SectionTitle>{t('tot.lastRound')}</SectionTitle>
         <span className="text-[13px] text-muted">{t('tot.same', { n: score.same, total: score.total })}</span>

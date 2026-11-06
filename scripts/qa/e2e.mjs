@@ -90,6 +90,44 @@ await section('Свайп от края', async () => {
   ok(page.url().endsWith('/today'), 'На корне вкладки свайп ничего не делает')
 })
 
+await section('Кнопка обновить', async () => {
+  // Видна на всех экранах и на телефоне: жест её не заменяет
+  for (const r of ['/today', '/diary', '/checkin', '/profile', '/more', '/tasks', '/places', '/month', '/foods/new', '/cycle/report']) {
+    await go(r)
+    const btn = page.getByRole('button', { name: 'Обновить', exact: true })
+    const box = (await btn.count()) === 1 ? await btn.boundingBox() : null
+    ok(Boolean(box) && box.width >= 44 && box.height >= 44 && box.y < 120, `${r}: кнопка в шапке, 44 пункта`, JSON.stringify(box))
+  }
+  await go('/tasks')
+  let requests = 0
+  const onReq = (r) => { if (r.url().includes('/rest/v1/')) requests++ }
+  page.on('request', onReq)
+  await page.getByRole('button', { name: 'Обновить', exact: true }).click(); await page.waitForTimeout(150)
+  ok((await page.getByRole('button', { name: 'Обновить', exact: true }).getAttribute('aria-busy')) === 'true', 'Нажатие видно сразу: идёт вращение')
+  await page.waitForTimeout(900)
+  page.off('request', onReq)
+  ok(requests > 0, 'Нажатие обновляет данные', `запросов ${requests}`)
+  ok((await page.getByRole('button', { name: 'Обновить', exact: true }).getAttribute('aria-busy')) === 'false', 'Вращение останавливается')
+})
+
+await section('Главная: действия на своих местах', async () => {
+  await go('/today')
+  const add = page.getByRole('link', { name: 'Добавить: Еда' })
+  ok((await add.count()) === 1, 'В карточке еды есть плюс')
+  await add.click(); await page.waitForTimeout(700)
+  ok(new URL(page.url()).pathname === '/diary' && (await dialog().count()) === 1, 'Плюс сразу открывает выбор продукта')
+  await page.getByRole('button', { name: 'Закрыть' }).last().click(); await page.waitForTimeout(500)
+  await go('/today')
+  await page.getByRole('link', { name: 'Еда', exact: true }).click(); await page.waitForTimeout(500)
+  ok(new URL(page.url()).pathname === '/diary' && (await dialog().count()) === 0, 'Сама карточка открывает дневник без шторки')
+  await go('/today')
+  ok((await page.getByRole('button', { name: /Думаю о тебе|Отправлено/ }).count()) === 1, '«Думаю о тебе» на главной')
+  await page.getByRole('link', { name: 'Вес' }).first().click(); await page.waitForTimeout(800)
+  ok((await dialog().count()) === 1 && new URL(page.url()).pathname === '/profile', 'Строка веса открывает взвешивание')
+  await go('/today')
+  ok((await page.locator('main').getByRole('link', { name: /Алекс/ }).first().count()) === 1, 'Своя строка ведёт к отметке')
+})
+
 await section('Обновление жестом', async () => {
   await go('/tasks')
   let requests = 0
@@ -204,11 +242,16 @@ await section('Дневник', async () => {
   await go('/diary')
   const order = () => sql(`select string_agg(e.name_snapshot, ',' order by e.sort_order) from public.diary_entries e join public.profiles p on p.user_id=e.user_id where p.nickname='Алекс' and e.meal='breakfast' and e.date = (select max(date) from public.diary_entries)`)
   const before = order()
-  const first = page.locator('main').getByRole('button', { name: /Овсяные/ }).first(); const fb = await first.boundingBox()
-  const third = page.locator('main').getByRole('button', { name: /Банан/ }).first(); const tb = await third.boundingBox()
-  await swipe(fb.x + 150, fb.y + fb.height / 2, fb.x + 150, tb.y + tb.height + 6, 14, 30, 420); await page.waitForTimeout(800)
+  // Порядок мог остаться от прошлого запуска: тянем ту из двух, что сейчас выше
+  const food = (n) => page.locator('main').getByRole('button', { name: n }).first()
+  const [oats, banana] = [await food(/Овсяные/).boundingBox(), await food(/Банан/).boundingBox()]
+  const [fb, tb, upper, lower] = oats.y < banana.y ? [oats, banana, /Овсяные/, /Банан/] : [banana, oats, /Банан/, /Овсяные/]
+  await swipe(fb.x + 150, fb.y + fb.height / 2, fb.x + 150, tb.y + tb.height / 2, 14, 30, 420); await page.waitForTimeout(800)
   const afterOrder = order()
   ok(before !== afterOrder, 'Удержание и перенос меняют порядок', afterOrder.split('\n').slice(-3,-2).join('').slice(0,70))
+  ok((await food(lower).boundingBox()).y < (await food(upper).boundingBox()).y, 'Запись сдвинулась вниз на одну строку внутри своего приёма')
+  await page.waitForTimeout(600); await go('/diary')
+  ok((await food(lower).boundingBox()).y < (await food(upper).boundingBox()).y, 'После перезагрузки порядок тот же')
   await page.reload(); await page.waitForTimeout(900)
   // Сворачивание приёма
   const head = page.getByRole('button', { name: /^Завтрак/ }).first()

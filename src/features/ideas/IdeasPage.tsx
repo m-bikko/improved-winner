@@ -47,11 +47,11 @@ import {
   type IdeaCategory,
 } from './api'
 
-const CATEGORY: Record<IdeaCategory, { icon: LucideIcon; tone: Tone; gradient: string }> = {
-  distance: { icon: Video, tone: 'violet', gradient: 'from-tone-violet-soft' },
-  home: { icon: Sofa, tone: 'amber', gradient: 'from-tone-amber-soft' },
-  city: { icon: Building2, tone: 'sky', gradient: 'from-tone-sky-soft' },
-  trip: { icon: Mountain, tone: 'green', gradient: 'from-tone-green-soft' },
+const CATEGORY: Record<IdeaCategory, { icon: LucideIcon; tone: Tone }> = {
+  distance: { icon: Video, tone: 'violet' },
+  home: { icon: Sofa, tone: 'amber' },
+  city: { icon: Building2, tone: 'sky' },
+  trip: { icon: Mountain, tone: 'green' },
 }
 
 function useIdeaText(): { title: (i: Idea) => string; hint: (i: Idea) => string | null } {
@@ -170,7 +170,7 @@ function Deck({ onShowTogether }: { onShowTogether: () => void }) {
               key="empty"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex h-full flex-col items-center justify-center rounded-[28px] bg-surface p-6 text-center shadow-card"
+              className="flex h-full flex-col items-center justify-center rounded-3xl bg-surface p-6 text-center shadow-card"
             >
               <p className="font-display text-lg font-extrabold">{t('id.deckDone')}</p>
               <p className="mt-1 text-sm text-muted">{t('id.deckDoneHint')}</p>
@@ -235,11 +235,9 @@ function IdeaCard({ idea, under = false }: { idea: Idea; under?: boolean }) {
   const hint = text.hint(idea)
   return (
     <div
-      className={`absolute inset-0 flex flex-col rounded-[28px] bg-gradient-to-b ${c.gradient} to-surface p-6 shadow-card ${
-        under ? 'scale-[0.95] opacity-60' : ''
-      }`}
+      className={`absolute inset-0 flex flex-col rounded-3xl bg-surface p-6 ${under ? 'scale-[0.95] opacity-60' : ''}`}
     >
-      <span className="flex items-center gap-1.5 self-start rounded-full bg-surface/70 px-3 py-1 text-[12px] font-semibold text-muted">
+      <span className="flex items-center gap-1.5 self-start rounded-full bg-raised px-3 py-1 text-[13px] font-medium text-muted">
         <Icon size={14} aria-hidden />
         {t(dynamicKey('id.cat', idea.category))}
       </span>

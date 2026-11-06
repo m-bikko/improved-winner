@@ -112,7 +112,6 @@ function DatesTab({
           title={t('common.nothingYet')}
           hint={t('dates.emptyHint')}
           icon={CalendarHeart}
-          tone="teal"
         />
       ) : (
         <>
@@ -239,10 +238,8 @@ function Hero({ occasion, onOpen }: { occasion: Occasion; onOpen: () => void }) 
       onClick={onOpen}
       whileTap={PRESS}
       transition={SPRING}
-      // Мягкая заливка тоном акцента из угла - то, что отличает «ближайшую»
-      // от просто первой карточки списка, без второй рамки и без бейджа
-      className="flex w-full flex-col gap-4 rounded-3xl bg-surface bg-linear-to-br from-accent-soft
-                 to-transparent to-65% p-5 text-left shadow-card"
+      // «Ближайшую» от остальных отличает размер, а не заливка
+      className="flex w-full flex-col gap-4 rounded-3xl bg-surface p-5 text-left"
     >
       <span className="flex items-center gap-2.5">
         <IconBadge icon={kind.icon} tone={kind.tone} size="md" />

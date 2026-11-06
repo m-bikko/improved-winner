@@ -1,4 +1,5 @@
 import { useMemo, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import {
   CalendarHeart,
   ChevronRight,
@@ -13,8 +14,8 @@ import {
   MessageCircleHeart,
   MessagesSquare,
   NotebookPen,
+  Plus,
   Scale,
-  Smile,
   TriangleAlert,
   Trophy,
   type LucideIcon,
@@ -22,14 +23,11 @@ import {
 import { useUserId } from '@/auth/AuthProvider'
 import { formatDayMonth, formatTime, formatWeekdayDate, fromLocalISO, todayLocal } from '@/lib/date'
 import { Loading } from '@/ui/States'
-import { CardLink } from '@/ui/Card'
-import { Sparkles } from '@/ui/Sparkles'
-import { IconBadge } from '@/ui/IconBadge'
-import { Tag } from '@/ui/Chip'
+import { Card, CardLink } from '@/ui/Card'
 import { Avatar, personTone } from '@/ui/Avatar'
 import { AnimatedNumber } from '@/ui/AnimatedNumber'
-import { motion } from 'motion/react'
-import type { Tone } from '@/ui/tones'
+import { ListGroup, ListRow } from '@/ui/List'
+import { TONE_CLASS, type Tone } from '@/ui/tones'
 import { useCheckins, useStreaks } from '@/features/checkin/api'
 import { STATE_BY_ID } from '@/features/checkin/states'
 import { dynamicKey, useT, type Key } from '@/lib/i18n'
@@ -54,30 +52,29 @@ import { iconOf } from '@/features/challenges/presets'
 import { useMemories, useMemoryUrls } from '@/features/memories/api'
 import { onThisDay } from '@/features/memories/logic'
 import { ProgressiveImage } from '@/ui/ProgressiveImage'
-import { TONE_CLASS } from '@/ui/tones'
 import { useMeetings } from '@/features/meetings/api'
 import { nextMeeting, stateOf } from '@/features/meetings/logic'
 import { useVoiceNotes } from '@/features/voice/api'
 import { useActivePregnancy } from '@/features/pregnancy/api'
-import { BabyTile, MedsTile, PauseTile, ShotTile } from './Extras'
+import { BabyRow, MedsRows, PauseRow, ShotRow } from './Extras'
 import { gestation } from '@/features/pregnancy/logic'
 
 /**
  * «Сегодня» - первый экран приложения.
  *
- * Разделов девять, и чтобы понять, как идёт день, раньше нужно было обойти
- * их все. Здесь собрано только то, что меняется за день, и каждая плашка -
- * ссылка в свой раздел: экран отвечает на вопрос «что происходит», а не
- * заменяет собой разделы.
+ * Разделов сорок, и чтобы понять, как идёт день, раньше нужно было обойти
+ * их все. Здесь собрано только то, что меняется за день, а порядок следует вопросу
+ * «что мне сейчас делать»: сначала то, что ждёт ответа, потом еда, потом мы двое,
+ * потом сводка строками.
+ *
+ * Самые частые действия стоят там, к чему относятся, а не отдельным рядом плиток:
+ * «+» в карточке еды (десять раз в день), отметка в строке со своим именем,
+ * «Думаю о тебе» под именем второго, взвешивание в строке веса.
  *
  * Ни одного нового запроса к базе, кроме последнего ответа в теме: всё
  * остальное уже спрашивают сами разделы, и TanStack отдаёт тот же кэш.
  * Считать это заново в отдельной выборке значило бы завести второй источник
  * правды - и однажды показать на главной не то, что внутри.
- *
- * Быстрые действия - тоже ссылки, а не формы: они открывают раздел сразу
- * на нужном действии. Главная, на которой правят данные, быстро превращается
- * в десятый раздел.
  */
 export function TodayPage() {
   const t = useT()
@@ -102,39 +99,21 @@ export function TodayPage() {
 
   const myName = me?.nickname ?? t('diary.me')
   const partnerName = partner?.nickname ?? t('partner')
-  const marked = new Set(
-    (checkins.data ?? []).filter((c) => c.date === today).map((c) => c.userId),
-  )
-  const together = partnerId !== '' && marked.has(userId) && marked.has(partnerId)
 
   return (
-    // -mt-10: заголовок на одной строке с шапкой, а не под пустой полосой
-    <div className="mx-auto -mt-10 flex max-w-2xl flex-col gap-3 px-4">
-      <Hero
-        today={today}
-        name={myName}
-        partnerName={partnerName}
-        myTone={personTone(userId, ids)}
-        partnerTone={personTone(partnerId, ids)}
-        together={together}
-      />
+    // Заголовок на одной строке с шапкой, а не под пустой полосой
+    <div className="mx-auto -mt-[43px] flex max-w-2xl flex-col gap-4 px-4">
+      <Hero today={today} name={myName} />
 
-      {/* Срочное и живое сейчас - выше всего, и его чаще всего нет */}
-      <PauseTile />
-
-      <Meeting today={today} />
-
-      <ShotTile today={today} />
-
-      <Voice userId={userId} partnerName={partnerName} />
-
-      <QuickActions />
-
-      <NudgeButton />
-
-      <MedsTile today={today} />
-
-      <BabyTile today={today} />
+      {/* Срочное и живое сейчас - выше всего, и его чаще всего нет.
+          Нет ни одной строки - нет и группы */}
+      <ListGroup className="empty:hidden">
+        <PauseRow />
+        <ShotRow today={today} />
+        <VoiceRow userId={userId} partnerName={partnerName} />
+        <MedsRows today={today} />
+        <BabyRow today={today} />
+      </ListGroup>
 
       {/* Еда - выше настроения: записей в дневнике за месяц на порядок больше */}
       <Food
@@ -145,7 +124,7 @@ export function TodayPage() {
         partnerEaten={theirDay.data ? sumEntries(theirDay.data).kcal : null}
       />
 
-      <Mood
+      <Us
         today={today}
         userId={userId}
         partnerId={partnerId}
@@ -155,6 +134,21 @@ export function TodayPage() {
         checkins={checkins.data ?? []}
         streaks={streaks.data ?? {}}
       />
+
+      {/* Сводка одной группой: у каждой строки одно значение справа, и глаз идёт
+          по одной вертикали, а не по шести карточкам разной формы */}
+      <ListGroup>
+        <MeetingRow today={today} />
+        <ListRow
+          to="/profile?weigh=1"
+          icon={Scale}
+          tone="slate"
+          title={t('today.quick.weigh')}
+          trailing={me?.weightKg != null ? <Value>{`${me.weightKg} ${t('unit.kg')}`}</Value> : undefined}
+        />
+        <CycleRow userId={userId} partnerId={partnerId} partnerName={partnerName} />
+        <NextDateRow list={dates.data ?? []} />
+      </ListGroup>
 
       <Question userId={userId} partnerId={partnerId} partnerName={partnerName} today={today} />
 
@@ -168,17 +162,11 @@ export function TodayPage() {
         today={today}
       />
 
-      {/* Две короткие плашки рядом: у каждой одно крупное число, и в полную
-          ширину они были бы строкой текста в огромной рамке. Если видна
-          только одна, она занимает всю ширину */}
-      <div className="grid grid-cols-2 gap-3 empty:hidden [&>*:only-child]:col-span-2">
-        <Cycle userId={userId} partnerId={partnerId} partnerName={partnerName} />
-        <NextDate list={dates.data ?? []} />
-      </div>
-
-      <Reply reply={reply.data ?? null} userId={userId} partnerName={partnerName} />
-
       <ThisDay today={today} />
+
+      <ListGroup className="empty:hidden">
+        <ReplyRow reply={reply.data ?? null} userId={userId} partnerName={partnerName} />
+      </ListGroup>
 
       {/* Внизу, а не вверху: экран отвечает на «что сейчас», а благодарность -
           это то, что делают, дочитав. Наверху она требовала бы действия
@@ -197,132 +185,20 @@ function greetingKey(hour: number): Key {
   return 'greet.night'
 }
 
-/** CSS-переменная тона - для SVG и градиентов, куда классы Tailwind не дотянутся. */
-function toneVar(tone: Tone): string {
-  return tone === 'accent' ? 'var(--c-accent)' : `var(--t-${tone})`
-}
-
-/**
- * Крупный заголовок экрана: дата и приветствие.
- *
- * Здесь была декоративная карточка с сиянием, и она съедала полтора сантиметра
- * над всем, что человек открыл посмотреть. Заголовок несёт то же самое и уступает
- * место, уходя под шапку при прокрутке.
- */
-function Hero({
-  today,
-  name,
-  partnerName,
-  myTone,
-  partnerTone,
-  together,
-}: {
-  today: string
-  name: string
-  partnerName: string
-  myTone: Tone
-  partnerTone: Tone
-  together: boolean
-}) {
+/** Крупный заголовок экрана: дата и приветствие. Уступает место, уходя под шапку. */
+function Hero({ today, name }: { today: string; name: string }) {
   const t = useT()
   return (
-    <header className="flex items-center gap-3 pb-1">
-      <div className="min-w-0 flex-1">
-        {/* Не formatDayLabel: он вернёт «Сегодня», а так уже называется сам
-            раздел - вышло бы слово «Сегодня» дважды подряд. Здесь нужна дата */}
-        <p className="text-[13px] font-semibold text-muted first-letter:uppercase">
-          {formatWeekdayDate(fromLocalISO(today))}
-        </p>
-        <h1 className="font-display text-[28px] leading-[1.14] font-extrabold tracking-[-0.02em]">
-          {t(greetingKey(new Date().getHours()))},<br />
-          {name}
-        </h1>
-      </div>
-      <PairMark name={name} partnerName={partnerName} myTone={myTone} partnerTone={partnerTone} together={together} />
+    <header className="pr-11">
+      {/* Не formatDayLabel: он вернёт «Сегодня», а так уже называется сам
+          раздел - вышло бы слово «Сегодня» дважды подряд. Здесь нужна дата */}
+      <p className="text-[13px] leading-[18px] font-medium text-muted first-letter:uppercase">
+        {formatWeekdayDate(fromLocalISO(today))}
+      </p>
+      <h1 className="text-[28px] leading-[34px] font-bold tracking-[-0.01em]">
+        {t(greetingKey(new Date().getHours()))}, {name}
+      </h1>
     </header>
-  )
-}
-
-/**
- * Двое - два сцепленных кольца, как в знаке приложения.
- *
- * Середина, где кольца пересекаются, загорается, когда сегодня отметились
- * оба: общее у двоих живёт в пересечении. Пока отметился один или никто,
- * она пустая - без упрёка, просто не зажжена.
- */
-function PairMark({
-  name,
-  partnerName,
-  myTone,
-  partnerTone,
-  together,
-}: {
-  name: string
-  partnerName: string
-  myTone: Tone
-  partnerTone: Tone
-  together: boolean
-}) {
-  const t = useT()
-  const R = 21
-  const A = 28
-  const B = 60
-  const letter = (s: string): string => s.trim().charAt(0).toUpperCase() || '?'
-  const rings = [
-    { cx: A, tone: myTone, text: letter(name), dx: -4 },
-    { cx: B, tone: partnerTone, text: letter(partnerName), dx: 4 },
-  ]
-  return (
-    <svg
-      viewBox="0 0 88 52"
-      className="h-[52px] w-[88px] shrink-0 overflow-visible"
-      role="img"
-      aria-label={`${name}, ${partnerName}${together ? ` · ${t('today.bothMarked')}` : ''}`}
-    >
-      <defs>
-        <clipPath id="pair-lens">
-          <circle cx={A} cy={26} r={R} />
-        </clipPath>
-      </defs>
-      {rings.map((r) => (
-        <circle key={r.cx} cx={r.cx} cy={26} r={R} style={{ fill: `var(--t-${r.tone}-soft)` }} />
-      ))}
-      <motion.circle
-        cx={B}
-        cy={26}
-        r={R}
-        clipPath="url(#pair-lens)"
-        style={{ fill: 'var(--c-accent)' }}
-        // С нуля при каждом открытии: зажечься на глазах - в этом и смысл
-        initial={{ opacity: 0 }}
-        animate={{ opacity: together ? 1 : 0 }}
-        transition={{ duration: 0.5, delay: together ? 0.35 : 0 }}
-      />
-      {rings.map((r) => (
-        <circle
-          key={r.cx}
-          cx={r.cx}
-          cy={26}
-          r={R}
-          fill="none"
-          strokeWidth={2.5}
-          style={{ stroke: toneVar(r.tone) }}
-        />
-      ))}
-      {rings.map((r) => (
-        <text
-          key={r.cx}
-          x={r.cx + r.dx}
-          y={26}
-          dy="0.36em"
-          textAnchor="middle"
-          className="font-display text-[17px] font-extrabold"
-          style={{ fill: toneVar(r.tone) }}
-        >
-          {r.text}
-        </text>
-      ))}
-    </svg>
   )
 }
 
@@ -334,56 +210,56 @@ function mealNow(hour: number): Meal {
   return 'snack'
 }
 
-function QuickActions() {
-  const t = useT()
-  const items: { to: string; key: Key; icon: LucideIcon; tone: Tone }[] = [
-    { to: `/diary?add=${mealNow(new Date().getHours())}`, key: 'today.quick.food', icon: NotebookPen, tone: 'amber' },
-    { to: '/checkin', key: 'today.quick.checkin', icon: Smile, tone: 'violet' },
-    { to: '/profile?weigh=1', key: 'today.quick.weigh', icon: Scale, tone: 'slate' },
-  ]
-  return (
-    <nav aria-label={t('today.quick')} className="grid grid-cols-3 gap-3">
-      {items.map((a) => (
-        <CardLink key={a.key} to={a.to} className="flex min-h-[5.25rem] flex-col items-center justify-center gap-1.5 px-2 py-2.5">
-          <IconBadge icon={a.icon} tone={a.tone} size="md" />
-          <span className="truncate text-[13px] font-semibold">{t(a.key)}</span>
-        </CardLink>
-      ))}
-    </nav>
-  )
+/** Шеврон строки-ссылки: один на весь экран, чтобы все строки заканчивались одинаково. */
+function Chevron() {
+  return <ChevronRight size={16} strokeWidth={2.6} aria-hidden className="-mr-1 shrink-0 text-muted/45" />
 }
 
 /**
- * Плашка-ссылка главной: значок раздела, заголовок, шеврон и содержимое.
+ * Заголовок карточки: значок и название цветом раздела, как в «Здоровье».
+ * Цвет называет раздел, а квадратная подложка рядом с крупным числом была бы лишней.
  */
+function TileHead({ icon: Icon, tone, title, chevron = true }: { icon: LucideIcon; tone: Tone; title: string; chevron?: boolean }) {
+  const fg = TONE_CLASS[tone].fg
+  return (
+    <div className="flex min-h-5 items-center gap-1.5">
+      <Icon size={17} strokeWidth={2.3} aria-hidden className={`shrink-0 ${fg}`} />
+      <span className={`min-w-0 flex-1 truncate text-[15px] leading-5 font-semibold ${fg}`}>{title}</span>
+      {chevron && <Chevron />}
+    </div>
+  )
+}
+
+/** Карточка-ссылка главной: заголовок раздела и содержимое. */
 function Tile({
   to,
   icon,
   tone,
   title,
   children,
-  className = '',
 }: {
   to: string
   icon: LucideIcon
   tone: Tone
   title: string
   children: ReactNode
-  className?: string
 }) {
   return (
-    <CardLink to={to} className={`p-4 ${className}`}>
-      <div className="flex items-center gap-2.5">
-        <IconBadge icon={icon} tone={tone} size="sm" />
-        <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{title}</span>
-        <ChevronRight size={18} aria-hidden className="shrink-0 text-muted/70" />
-      </div>
-      <div className="mt-3">{children}</div>
+    <CardLink to={to} className="p-4">
+      <TileHead icon={icon} tone={tone} title={title} />
+      <div className="mt-2">{children}</div>
     </CardLink>
   )
 }
 
-function Mood({
+/**
+ * Мы двое: как каждый сегодня и «Думаю о тебе».
+ *
+ * Своя строка без отметки зовёт цветом: это единственное здесь, что ждёт действия.
+ * Состояния - строкой через запятую: чипы занимали по три ряда и не давали ничего,
+ * кроме шума, потому что здесь их не выбирают, а читают.
+ */
+function Us({
   today,
   userId,
   partnerId,
@@ -403,53 +279,63 @@ function Mood({
   streaks: Record<string, number>
 }) {
   const t = useT()
-  const mine = checkins.find((c) => c.userId === userId && c.date === today)
-  const theirs = checkins.find((c) => c.userId === partnerId && c.date === today)
 
-  const side = (name: string, who: string, entry: typeof mine, own: boolean) => {
-    const states = (entry?.states ?? []).filter((id) => STATE_BY_ID[id])
+  const person = (name: string, who: string, own: boolean) => {
+    const entry = checkins.find((c) => c.userId === who && c.date === today)
+    const states = (entry?.states ?? []).filter((id) => STATE_BY_ID[id]).map((id) => t(dynamicKey('state', id)))
+    const detail = entry
+      ? states.length > 0
+        ? states.join(', ')
+        : entry.note || '-'
+      : t(own ? 'today.notMarkedYou' : 'today.notMarkedPartner')
     return (
-      <div className="flex min-w-0 flex-col gap-2">
-        <p className="flex items-center gap-2 text-sm">
-          <Avatar name={name} tone={personTone(who, ids)} size="sm" />
-          <span className="truncate font-semibold">{name}</span>
-          {(streaks[who] ?? 0) > 0 && (
-            <span className="flex shrink-0 items-center gap-0.5 text-xs font-semibold text-accent">
-              <Flame size={12} aria-hidden />
-              {streaks[who]}
-            </span>
-          )}
-        </p>
-        {entry ? (
-          states.length > 0 ? (
-            <div className="flex flex-wrap gap-1">
-              {states.slice(0, 3).map((id) => (
-                <Tag key={id} icon={STATE_BY_ID[id]?.icon}>
-                  {t(dynamicKey('state', id))}
-                </Tag>
-              ))}
-              {states.length > 3 && <Tag>+{states.length - 3}</Tag>}
-            </div>
-          ) : (
-            <p className="line-clamp-2 text-sm text-muted">{entry.note || '-'}</p>
-          )
-        ) : (
-          <p className="text-sm text-muted">{t(own ? 'today.notMarkedYou' : 'today.notMarkedPartner')}</p>
-        )}
-      </div>
+      <Link
+        key={who}
+        to="/checkin"
+        className="flex min-h-[3.75rem] items-center gap-3 px-4 py-2 transition-colors duration-200 active:bg-raised active:duration-0 [--sep:4rem]"
+      >
+        <Avatar name={name} tone={personTone(who, ids)} />
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-1.5">
+            <span className="truncate text-[17px] font-medium">{name}</span>
+            {(streaks[who] ?? 0) > 0 && (
+              <span className="flex shrink-0 items-center gap-0.5 text-[13px] font-semibold text-tone-orange tabular-nums">
+                <Flame size={13} aria-hidden />
+                {streaks[who]}
+              </span>
+            )}
+          </span>
+          <span
+            className={`block truncate text-[13px] first-letter:uppercase ${
+              own && !entry ? 'font-medium text-accent' : 'text-muted'
+            }`}
+          >
+            {detail}
+          </span>
+        </span>
+        <Chevron />
+      </Link>
     )
   }
 
   return (
-    <Tile to="/checkin" icon={Smile} tone="violet" title={t('today.howAreWe')}>
-      <div className="grid grid-cols-2 gap-4">
-        {side(myName, userId, mine, true)}
-        {side(partnerName, partnerId, theirs, false)}
-      </div>
-    </Tile>
+    <section aria-label={t('today.howAreWe')}>
+      <ListGroup>
+        {person(myName, userId, true)}
+        {partnerId !== '' && person(partnerName, partnerId, false)}
+        <NudgeButton />
+      </ListGroup>
+    </section>
   )
 }
 
+/**
+ * Еда: сколько съедено, сколько осталось и «+».
+ *
+ * «+» лежит поверх карточки-ссылки, а не внутри неё: ссылка в ссылке - недопустимая
+ * разметка, поэтому сама карточка растянута ссылкой на весь размер, содержимое её
+ * не перехватывает, а кнопка стоит слоем выше.
+ */
 function Food({
   totals,
   goals,
@@ -470,51 +356,70 @@ function Food({
   const over = goals ? isOver(ratio) : false
 
   return (
-    <Tile to="/diary" icon={NotebookPen} tone="amber" title={t('today.food')}>
-      <div className="flex items-center gap-4">
+    <Card as="section" className="relative p-4">
+      <Link
+        to="/diary"
+        aria-label={t('today.food')}
+        className="absolute inset-0 rounded-3xl transition-colors duration-200 active:bg-raised active:duration-0"
+      />
+      <div className="pointer-events-none relative">
+        <div className="pr-9">
+          <TileHead icon={NotebookPen} tone="amber" title={t('today.food')} chevron={false} />
+        </div>
+
+        <div className="mt-3 flex items-center gap-3.5">
+          {goals && (
+            <div className="relative shrink-0" aria-hidden>
+              <RingArc size={68} ratio={ratio} />
+              <span className="absolute inset-0 flex items-center justify-center text-[15px] font-semibold tabular-nums">
+                <AnimatedNumber value={Math.round(ratio * 100)} format={(n) => `${Math.round(n)}%`} />
+              </span>
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-[28px] leading-[34px] font-bold tabular-nums">
+              <AnimatedNumber value={eaten} />
+              {goals !== null && <span className="text-[17px] font-medium text-muted"> / {Math.round(goals.kcal)}</span>}
+            </p>
+            <p className={`truncate text-[15px] leading-5 ${over ? 'text-danger' : 'text-muted'}`}>
+              {left === null
+                ? t('unit.kcal')
+                : left >= 0
+                  ? t('today.kcalLeft', { n: left })
+                  : t('today.kcalOver', { n: -left })}
+            </p>
+          </div>
+        </div>
+
         {goals && (
-          <div className="relative shrink-0" aria-hidden>
-            <RingArc size={64} ratio={ratio} />
-            <span className="absolute inset-0 flex items-center justify-center font-display text-[13px] font-extrabold tabular-nums">
-              <AnimatedNumber value={Math.round(ratio * 100)} format={(n) => `${Math.round(n)}%`} />
-            </span>
+          <div className="mt-3.5 grid grid-cols-3 gap-3">
+            <MacroLine label={t('macro.p')} value={totals.protein} goal={goals.protein} bar="bg-protein" text="text-protein" />
+            <MacroLine label={t('macro.f')} value={totals.fat} goal={goals.fat} bar="bg-fat" text="text-fat" />
+            <MacroLine label={t('macro.c')} value={totals.carbs} goal={goals.carbs} bar="bg-carbs" text="text-carbs" />
           </div>
         )}
-        <div className="min-w-0 flex-1">
-          <p className="font-display text-[28px] leading-none font-extrabold tabular-nums">
-            <AnimatedNumber value={eaten} />
-            {goals !== null && (
-              <span className="text-base font-bold text-muted"> / {Math.round(goals.kcal)}</span>
-            )}
+
+        {partnerEaten !== null && (
+          <p className="mt-3.5 flex items-center gap-2 border-t-[0.5px] border-line pt-3 text-[15px] text-muted">
+            <Avatar name={partnerName} tone={partnerTone} size="sm" />
+            <span className="truncate">{partnerName}</span>
+            <span className="ml-auto shrink-0 text-ink tabular-nums">
+              {Math.round(partnerEaten)} {t('unit.kcal')}
+            </span>
           </p>
-          <p className={`mt-1 truncate text-sm ${over ? 'text-danger' : 'text-muted'}`}>
-            {left === null
-              ? t('unit.kcal')
-              : left >= 0
-                ? t('today.kcalLeft', { n: left })
-                : t('today.kcalOver', { n: -left })}
-          </p>
-        </div>
+        )}
       </div>
 
-      {goals && (
-        <div className="mt-3.5 grid grid-cols-3 gap-3">
-          <MacroLine label={t('macro.p')} value={totals.protein} goal={goals.protein} bar="bg-protein" text="text-protein" />
-          <MacroLine label={t('macro.f')} value={totals.fat} goal={goals.fat} bar="bg-fat" text="text-fat" />
-          <MacroLine label={t('macro.c')} value={totals.carbs} goal={goals.carbs} bar="bg-carbs" text="text-carbs" />
-        </div>
-      )}
-
-      {partnerEaten !== null && (
-        <p className="mt-3.5 flex items-center gap-2 border-t border-line pt-3 text-sm text-muted">
-          <Avatar name={partnerName} tone={partnerTone} size="sm" />
-          <span className="truncate">{partnerName}</span>
-          <span className="ml-auto shrink-0 font-semibold text-ink tabular-nums">
-            {Math.round(partnerEaten)} {t('unit.kcal')}
-          </span>
-        </p>
-      )}
-    </Tile>
+      <Link
+        to={`/diary?add=${mealNow(new Date().getHours())}`}
+        aria-label={`${t('common.add')}: ${t('today.food')}`}
+        className="absolute top-1 right-1 flex size-11 items-center justify-center"
+      >
+        <span className="flex size-[30px] items-center justify-center rounded-full bg-accent text-accent-ink transition-opacity active:opacity-60 active:duration-0">
+          <Plus size={20} strokeWidth={2.6} aria-hidden />
+        </span>
+      </Link>
+    </Card>
   )
 }
 
@@ -536,13 +441,13 @@ function MacroLine({
   const over = goal > 0 && value > goal
   return (
     <div className="min-w-0">
-      <p className="mb-1 truncate text-xs tabular-nums">
+      <p className="mb-1 truncate text-[13px] leading-4 tabular-nums">
         <span className={`font-semibold ${text}`}>{label}</span>{' '}
         <span className="text-muted">
           {Math.round(value)}/{Math.round(goal)}
         </span>
       </p>
-      <div className="h-1.5 overflow-hidden rounded-full bg-raised">
+      <div className="h-1 overflow-hidden rounded-full bg-raised">
         <div className={`h-full rounded-full ${over ? 'bg-danger' : bar}`} style={{ width: `${filled}%` }} />
       </div>
     </div>
@@ -560,27 +465,27 @@ function Tasks({ tasks, today }: { tasks: Parameters<typeof occurrencesOn>[0]; t
       ).length,
     [tasks],
   )
+  // Пустая карточка «ничего не назначено» только удлиняла экран
+  if (open.length === 0 && overdue === 0) return null
 
   return (
     <Tile to="/tasks" icon={ListChecks} tone="sky" title={t('today.tasks')}>
-      {open.length === 0 ? (
-        <p className="text-sm text-muted">{t('today.noTasks')}</p>
-      ) : (
+      {open.length > 0 && (
         <ul className="flex flex-col gap-1.5">
           {open.slice(0, 3).map((o) => (
-            <li key={`${o.task.id}-${o.at.toISOString()}`} className="flex items-center gap-2.5 text-sm">
-              <span aria-hidden className="size-4 shrink-0 rounded-full ring-2 ring-line ring-inset" />
+            <li key={`${o.task.id}-${o.at.toISOString()}`} className="flex items-center gap-2.5 text-[15px]">
+              <span aria-hidden className="size-[18px] shrink-0 rounded-full ring-[1.5px] ring-muted/50 ring-inset" />
               <span className="min-w-0 flex-1 truncate">{o.task.title}</span>
-              <span className="shrink-0 text-xs text-muted tabular-nums">{formatTime(o.at)}</span>
+              <span className="shrink-0 text-[13px] text-muted tabular-nums">{formatTime(o.at)}</span>
             </li>
           ))}
           {open.length > 3 && (
-            <li className="pl-6.5 text-sm text-muted">{t('today.andMore', { n: open.length - 3 })}</li>
+            <li className="pl-7 text-[13px] text-muted">{t('today.andMore', { n: open.length - 3 })}</li>
           )}
         </ul>
       )}
       {overdue > 0 && (
-        <p className="mt-3 flex items-center gap-1.5 rounded-xl bg-danger-soft px-3 py-2 text-sm font-medium text-danger">
+        <p className={`flex items-center gap-1.5 text-[15px] font-medium text-danger ${open.length > 0 ? 'mt-2.5' : ''}`}>
           <TriangleAlert size={15} aria-hidden />
           {t.plural('today.overdue', overdue).replace('{n}', String(overdue))}
         </p>
@@ -596,7 +501,7 @@ function Tasks({ tasks, today }: { tasks: Parameters<typeof occurrencesOn>[0]; t
  * она сама открыла доступ. Главный экран не имеет права быть обходным путём
  * к тому, что закрыто в разделе.
  */
-function Cycle({
+function CycleRow({
   userId,
   partnerId,
   partnerName,
@@ -624,14 +529,13 @@ function Cycle({
   if (pregnancy) {
     const g = gestation(pregnancy.lmp, todayLocal())
     return (
-      <MiniTile
+      <ListRow
         to="/pregnancy"
         icon={HeartPulse}
         tone="plum"
         title={t('nav.pregnancy')}
-        value={t('pg.weekN', { n: g.week })}
-        caption={g.week >= 4 ? t(dynamicKey('preg.size', String(Math.min(g.week, 40)))) : t('pg.dayN', { n: g.day + 1 })}
-        sparkle={g.day === 0}
+        subtitle={g.week >= 4 ? t(dynamicKey('preg.size', String(Math.min(g.week, 40)))) : t('pg.dayN', { n: g.day + 1 })}
+        trailing={<Value>{t('pg.weekN', { n: g.week })}</Value>}
       />
     )
   }
@@ -643,15 +547,20 @@ function Cycle({
   if (!state) return null
 
   return (
-    <MiniTile
+    <ListRow
       to="/cycle"
       icon={Droplet}
       tone="plum"
       title={own ? t('today.cycle') : t('today.cycleOf', { name: partnerName })}
-      value={t('cyc.dayN', { n: state.day })}
-      caption={t(dynamicKey('phase', state.phase))}
+      subtitle={t(dynamicKey('phase', state.phase))}
+      trailing={<Value>{t('cyc.dayN', { n: state.day })}</Value>}
     />
   )
+}
+
+/** Значение в конце строки сводки: главное в строке, поэтому чёрным и полужирным. */
+function Value({ children }: { children: ReactNode }) {
+  return <span className="font-semibold text-ink tabular-nums">{children}</span>
 }
 
 /**
@@ -686,16 +595,16 @@ function Question({
 
   return (
     <Tile to="/question" icon={MessageCircleHeart} tone="violet" title={t('nav.question')}>
-      <p className="line-clamp-2 text-[15px] leading-snug font-semibold">
+      <p className="line-clamp-2 text-[17px] leading-[22px] font-semibold">
         {day.question ? t(dynamicKey('q', day.question.id)) : t('qd.unknown')}
       </p>
       <p
-        className={`mt-1.5 flex items-center gap-1.5 text-sm ${
+        className={`mt-1 flex items-center gap-1.5 text-[13px] ${
           // Второй уже ответил, а ты нет - это зов, а не справка: акцентом
           !day.mine && day.partnerAnswered ? 'font-semibold text-accent' : 'text-muted'
         }`}
       >
-        {!both && partnerId !== '' && <Lock size={14} aria-hidden className="shrink-0" />}
+        {!both && partnerId !== '' && <Lock size={13} aria-hidden className="shrink-0" />}
         <span className="truncate">{status}</span>
       </p>
     </Tile>
@@ -732,8 +641,8 @@ function Challenges({
           const mine = marked(c, userId, today)
           return (
             <li key={c.id} className="flex items-center gap-2.5">
-              <Icon size={17} aria-hidden className="shrink-0 text-tone-green" />
-              <span className={`min-w-0 flex-1 truncate text-[15px] ${mine ? 'text-muted' : 'font-medium'}`}>{c.title}</span>
+              <Icon size={17} aria-hidden className="shrink-0 text-muted" />
+              <span className={`min-w-0 flex-1 truncate text-[15px] ${mine ? 'text-muted' : ''}`}>{c.title}</span>
               <span className="flex shrink-0 gap-1">
                 <Dot on={mine} tone={myTone} />
                 {partnerId !== '' && <Dot on={marked(c, partnerId, today)} tone={partnerTone} />}
@@ -751,8 +660,8 @@ function Dot({ on, tone }: { on: boolean; tone: Tone }) {
   return (
     <span
       aria-hidden
-      className={`size-3 rounded-full ring-2 ring-inset ${on ? TONE_CLASS[tone].solid : 'bg-transparent'} ${
-        tone === 'sky' ? 'ring-tone-sky' : 'ring-tone-rose'
+      className={`size-3 rounded-full ring-[1.5px] ring-inset ${on ? TONE_CLASS[tone].solid : 'bg-transparent'} ${
+        tone === 'sky' ? 'ring-tone-sky-solid' : 'ring-tone-rose-solid'
       }`}
     />
   )
@@ -778,14 +687,14 @@ function ThisDay({ today }: { today: string }) {
             src={urls.data?.[photo.thumbPath]}
             placeholder={photo.placeholder}
             alt=""
-            className="size-16 shrink-0 rounded-2xl"
+            className="size-14 shrink-0 rounded-xl"
           />
         )}
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-semibold text-muted">
+          <p className="text-[13px] text-muted">
             {t('mem.ago', { n: past.yearsAgo, unit: t.plural('unit.year', past.yearsAgo) })}
           </p>
-          <p className="mt-0.5 line-clamp-2 text-[15px] font-medium">
+          <p className="line-clamp-2 text-[17px] leading-[22px]">
             {past.memory.caption ?? past.memory.place ?? formatDayMonth(fromLocalISO(past.memory.happenedOn))}
           </p>
         </div>
@@ -794,11 +703,8 @@ function ThisDay({ today }: { today: string }) {
   )
 }
 
-/**
- * До встречи: крупное число дней (меньше трёх - искрится) или «вы вместе».
- * Нет встречи на горизонте - нет плашки.
- */
-function Meeting({ today }: { today: string }) {
+/** До встречи: сколько дней или «вы вместе». Нет встречи на горизонте - нет строки. */
+function MeetingRow({ today }: { today: string }) {
   const t = useT()
   const meetings = useMeetings()
   const next = nextMeeting(meetings.data ?? [], today)
@@ -810,49 +716,41 @@ function Meeting({ today }: { today: string }) {
       : state.kind === 'now'
         ? t('mt.dayOf', { n: state.day, of: state.of })
         : ''
+  const date = formatDayMonth(fromLocalISO(next.startsOn))
   return (
-    <CardLink to="/meetings" className="relative flex items-center gap-3 overflow-hidden p-4">
-      <IconBadge icon={HeartHandshake} tone="rose" size="md" />
-      <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-semibold text-muted">{state.kind === 'now' ? t('mt.together') : t('mt.until')}</p>
-        {state.kind === 'upcoming' && state.days <= 3 ? (
-          <Sparkles count={4} className="mt-0.5">
-            <span className="font-display text-[24px] leading-tight font-extrabold">{value}</span>
-          </Sparkles>
-        ) : (
-          <p className="mt-0.5 font-display text-[24px] leading-tight font-extrabold">{value}</p>
-        )}
-      </div>
-      <span className="shrink-0 text-right text-[13px] text-muted">
-        {formatDayMonth(fromLocalISO(next.startsOn))}
-        {next.place ? <span className="block max-w-28 truncate">{next.place}</span> : null}
-      </span>
-    </CardLink>
+    <ListRow
+      to="/meetings"
+      icon={HeartHandshake}
+      tone="rose"
+      title={state.kind === 'now' ? t('mt.together') : t('mt.until')}
+      subtitle={next.place ? `${date} · ${next.place}` : date}
+      trailing={value ? <Value>{value}</Value> : undefined}
+    />
   )
 }
 
 /** Новое голосовое от второго - пока не прослушано. */
-function Voice({ userId, partnerName }: { userId: string; partnerName: string }) {
+function VoiceRow({ userId, partnerName }: { userId: string; partnerName: string }) {
   const t = useT()
   const notes = useVoiceNotes()
   const fresh = (notes.data ?? []).filter((n) => n.authorId !== userId && n.listenedAt === null)
   if (fresh.length === 0) return null
   return (
-    <CardLink to="/voice" className="flex items-center gap-3 p-4">
-      <span className="relative">
-        <IconBadge icon={Mic} tone="violet" size="md" />
-        <span aria-hidden className="absolute -top-0.5 -right-0.5 size-3 rounded-full bg-accent ring-2 ring-surface" />
-      </span>
-      <p className="min-w-0 flex-1 text-[15px] font-semibold">
-        {t('vc.fromPartner', { name: partnerName })}
-        {fresh.length > 1 && <span className="ml-1 text-muted">· {fresh.length}</span>}
-      </p>
-      <ChevronRight size={18} aria-hidden className="shrink-0 text-muted/70" />
-    </CardLink>
+    <ListRow
+      to="/voice"
+      icon={Mic}
+      tone="violet"
+      title={t('vc.fromPartner', { name: partnerName })}
+      trailing={
+        <span className="flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[13px] leading-5 font-semibold text-accent-ink tabular-nums">
+          {fresh.length}
+        </span>
+      }
+    />
   )
 }
 
-function NextDate({ list }: { list: { title: string; days: number }[] }) {
+function NextDateRow({ list }: { list: { title: string; days: number }[] }) {
   const t = useT()
   const next = list.find((o) => o.days <= 45)
   if (!next) return null
@@ -865,58 +763,18 @@ function NextDate({ list }: { list: { title: string; days: number }[] }) {
         : `${next.days} ${t.plural('unit.day', next.days)}`
 
   return (
-    <MiniTile
+    <ListRow
       to="/dates"
       icon={CalendarHeart}
       tone="teal"
-      title={t('today.nextDate')}
-      value={value}
-      caption={next.title}
-      // Меньше недели до праздника - число начинает искриться
-      sparkle={next.days <= 7}
+      title={next.title}
+      subtitle={t('today.nextDate')}
+      trailing={<Value>{value}</Value>}
     />
   )
 }
 
-/** Короткая плашка: одно крупное значение и подпись под ним. */
-function MiniTile({
-  to,
-  icon,
-  tone,
-  title,
-  value,
-  caption,
-  sparkle = false,
-}: {
-  to: string
-  icon: LucideIcon
-  tone: Tone
-  title: string
-  value: string
-  caption: string
-  sparkle?: boolean
-}) {
-  return (
-    <CardLink to={to} className="flex min-w-0 flex-col p-4">
-      <span className="flex items-center gap-2">
-        <IconBadge icon={icon} tone={tone} size="sm" />
-        <span className="min-w-0 truncate text-[13px] font-semibold text-muted">{title}</span>
-      </span>
-      {sparkle ? (
-        // Звёзды выходят за край числа - обёртка не должна их обрезать,
-        // поэтому truncate у самого текста, а не у обёртки
-        <Sparkles count={4} colors={['var(--t-teal)', 'var(--t-amber)', 'var(--c-accent)']} className="mt-3 max-w-full self-start">
-          <span className="truncate font-display text-[22px] leading-tight font-extrabold">{value}</span>
-        </Sparkles>
-      ) : (
-        <span className="mt-3 truncate font-display text-[22px] leading-tight font-extrabold">{value}</span>
-      )}
-      <span className="mt-0.5 line-clamp-2 text-sm text-muted">{caption}</span>
-    </CardLink>
-  )
-}
-
-function Reply({
+function ReplyRow({
   reply,
   userId,
   partnerName,
@@ -932,12 +790,12 @@ function Reply({
   const when = `${formatDayMonth(at)}, ${formatTime(at)}`
 
   return (
-    <Tile to={`/topics/${reply.topicId}`} icon={MessagesSquare} tone="indigo" title={t('today.lastReply')}>
-      <p className="truncate text-[15px] font-medium">{reply.topicTitle}</p>
-      <p className="mt-0.5 text-sm text-muted">
-        {mine ? t('today.you') : partnerName} · {when}
-      </p>
-    </Tile>
+    <ListRow
+      to={`/topics/${reply.topicId}`}
+      icon={MessagesSquare}
+      tone="indigo"
+      title={reply.topicTitle}
+      subtitle={`${t('today.lastReply')} · ${mine ? t('today.you') : partnerName} · ${when}`}
+    />
   )
 }
-

@@ -1,4 +1,4 @@
-import { Camera, Check, ChevronRight, Milk, Pill, Wind } from 'lucide-react'
+import { Camera, Check, Milk, Pill, Wind } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { formatTime, fromLocalISO, shiftDays } from '@/lib/date'
 import { useNow } from '@/lib/useNow'
@@ -9,18 +9,17 @@ import { usePauses } from '@/features/pause/api'
 import { activeOn, doseKey, useHealth, useToggleDose } from '@/features/health/api'
 import { useBaby, useHasBaby } from '@/features/baby/api'
 import { sinceLabel } from '@/features/baby/logic'
-import { CardLink } from '@/ui/Card'
 import { IconBadge } from '@/ui/IconBadge'
-import { Sparkles } from '@/ui/Sparkles'
+import { ListRow } from '@/ui/List'
 
 /**
- * Плитки главной для разделов этой серии. Правило то же, что у остальных:
- * те же хуки и кэш, что у разделов, и пустых плиток нет - плитка есть,
+ * Строки блока «сейчас» на главной. Правило то же, что у остальных:
+ * те же хуки и кэш, что у разделов, и пустых строк нет - строка есть,
  * только когда есть что сделать или увидеть сейчас.
  */
 
 /** Пауза идёт или закончилась и ждёт строк - это важнее всего остального. */
-export function PauseTile() {
+export function PauseRow() {
   const t = useT()
   const pair = usePair()
   const pauses = usePauses()
@@ -30,21 +29,24 @@ export function PauseTile() {
   const active = new Date(open.endsAt).getTime() > now
   const mine = open.notes.some((n) => n.userId === pair.userId)
   return (
-    <CardLink to="/pause" className="flex items-center gap-3 p-4">
-      <IconBadge icon={Wind} tone="sky" size="md" />
-      <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-semibold text-muted">{t('nav.pause')}</p>
-        <p className="font-display text-[19px] leading-tight font-extrabold">
-          {active ? `${t('ps.until', { time: formatTime(new Date(open.endsAt)) })} · ${mmss((new Date(open.endsAt).getTime() - now) / 1000)}` : mine ? t('ps.tileWaiting') : t('ps.tileWrite')}
-        </p>
-      </div>
-      <ChevronRight size={18} aria-hidden className="shrink-0 text-muted/70" />
-    </CardLink>
+    <ListRow
+      to="/pause"
+      icon={Wind}
+      tone="sky"
+      title={t('nav.pause')}
+      subtitle={
+        active
+          ? `${t('ps.until', { time: formatTime(new Date(open.endsAt)) })} · ${mmss((new Date(open.endsAt).getTime() - now) / 1000)}`
+          : mine
+            ? t('ps.tileWaiting')
+            : t('ps.tileWrite')
+      }
+    />
   )
 }
 
 /** Кадр дня: отсчёт, «твой ход» или «оба открыты» - пока сегодняшний день живой. */
-export function ShotTile({ today }: { today: string }) {
+export function ShotRow({ today }: { today: string }) {
   const t = useT()
   const pair = usePair()
   const shots = useShots()
@@ -63,21 +65,11 @@ export function ShotTile({ today }: { today: string }) {
         ? t('sh.tilePartner', { name: pair.partnerName })
         : t('sh.tileLate')
     : t('sh.tileBoth')
-  const content = <span className="font-display text-[19px] leading-tight font-extrabold">{text}</span>
-  return (
-    <CardLink to="/shots" className="flex items-center gap-3 p-4">
-      <IconBadge icon={Camera} tone="sky" size="md" />
-      <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-semibold text-muted">{t('nav.shots')}</p>
-        {state.kind === 'open' && !mine ? <Sparkles count={3}>{content}</Sparkles> : <p>{content}</p>}
-      </div>
-      <ChevronRight size={18} aria-hidden className="shrink-0 text-muted/70" />
-    </CardLink>
-  )
+  return <ListRow to="/shots" icon={Camera} tone="sky" title={t('nav.shots')} subtitle={text} />
 }
 
 /** Своё лекарство, время которого прошло, а приём не отмечен - отметить прямо отсюда. */
-export function MedsTile({ today }: { today: string }) {
+export function MedsRows({ today }: { today: string }) {
   const t = useT()
   const pair = usePair()
   const since = shiftDays(today, -14)
@@ -91,29 +83,31 @@ export function MedsTile({ today }: { today: string }) {
     .filter(({ m, slot }) => !(health.data?.doses ?? []).includes(doseKey(m.id, today, slot)))
   if (due.length === 0) return null
   return (
-    <div className="flex flex-col gap-2 rounded-3xl bg-surface p-4 shadow-card">
-      <div className="flex items-center gap-2.5">
-        <IconBadge icon={Pill} tone="teal" size="sm" />
-        <p className="min-w-0 flex-1 text-[15px] font-semibold">{t('hl.dueNow')}</p>
-      </div>
+    <>
       {due.slice(0, 3).map(({ m, slot }) => (
         <button
           key={`${m.id}-${slot}`}
           type="button"
           onClick={() => toggle.mutate({ medId: m.id, day: today, slot, taken: true })}
-          className="flex items-center gap-3 rounded-2xl bg-raised px-3 py-2.5 text-left active:scale-[0.98]"
+          className="flex min-h-11 w-full items-center gap-3 px-4 py-2 text-left transition-colors duration-200
+                     active:bg-raised active:duration-0 [--sep:3.5625rem]"
         >
-          <span className="w-12 shrink-0 text-sm font-semibold tabular-nums text-muted">{slot}</span>
-          <span className="min-w-0 flex-1 truncate">
-            {m.name}
-            {m.dose ? <span className="text-muted"> · {m.dose}</span> : null}
+          <IconBadge icon={Pill} tone="teal" size="sm" />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[17px]">
+              {m.name}
+              {m.dose ? <span className="text-muted"> · {m.dose}</span> : null}
+            </span>
+            <span className="block truncate text-[13px] text-muted tabular-nums">
+              {t('hl.dueNow')} · {slot}
+            </span>
           </span>
-          <span className="flex size-8 items-center justify-center rounded-full bg-tone-green-soft text-tone-green">
-            <Check size={16} strokeWidth={3} aria-label={t('hl.take')} />
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink">
+            <Check size={18} strokeWidth={3} aria-label={t('hl.take')} />
           </span>
         </button>
       ))}
-    </div>
+    </>
   )
 }
 
@@ -123,7 +117,7 @@ function formatClock(d: Date): string {
 }
 
 /** Малыш: когда было последнее кормление и идёт ли сон. */
-export function BabyTile({ today }: { today: string }) {
+export function BabyRow({ today }: { today: string }) {
   const t = useT()
   const has = useHasBaby()
   const d = fromLocalISO(today)
@@ -136,21 +130,20 @@ export function BabyTile({ today }: { today: string }) {
   const sleeping = events.find((e) => e.kind === 'sleep' && e.endedAt === null)
   const name = data.data?.babies[0]?.name ?? t('bb.noName')
   return (
-    <CardLink to="/baby" className="flex items-center gap-3 p-4">
-      <IconBadge icon={Milk} tone="teal" size="md" />
-      <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-semibold text-muted">{name}</p>
-        <p className="font-display text-[19px] leading-tight font-extrabold">
-          {sleeping
-            ? t('bb.tileSleeping', { time: sinceLabel((now - new Date(sleeping.startedAt).getTime()) / 60_000) })
-            : lastFeed
-              ? (now - new Date(lastFeed.startedAt).getTime()) / 60_000 < 1
-                ? t('bb.lastFeedNow')
-                : t('bb.lastFeed', { ago: sinceLabel((now - new Date(lastFeed.startedAt).getTime()) / 60_000) })
-              : t('bb.tileStart')}
-        </p>
-      </div>
-      <ChevronRight size={18} aria-hidden className="shrink-0 text-muted/70" />
-    </CardLink>
+    <ListRow
+      to="/baby"
+      icon={Milk}
+      tone="teal"
+      title={name}
+      subtitle={
+        sleeping
+          ? t('bb.tileSleeping', { time: sinceLabel((now - new Date(sleeping.startedAt).getTime()) / 60_000) })
+          : lastFeed
+            ? (now - new Date(lastFeed.startedAt).getTime()) / 60_000 < 1
+              ? t('bb.lastFeedNow')
+              : t('bb.lastFeed', { ago: sinceLabel((now - new Date(lastFeed.startedAt).getTime()) / 60_000) })
+            : t('bb.tileStart')
+      }
+    />
   )
 }

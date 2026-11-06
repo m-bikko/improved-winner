@@ -85,7 +85,6 @@ export function MemoriesPage() {
       {list.length === 0 ? (
         <EmptyState
           icon={Images}
-          tone="rose"
           title={t('mem.emptyTitle')}
           hint={t('mem.emptyHint')}
           action={<Button onClick={() => setEditing('new')}>{t('mem.add')}</Button>}
@@ -153,7 +152,7 @@ function OnThisDay({
     <button
       type="button"
       onClick={onOpen}
-      className="relative isolate block aspect-[16/10] w-full overflow-hidden rounded-[28px] bg-tone-rose-soft text-left shadow-card transition-transform active:scale-[0.98]"
+      className="relative isolate block aspect-[16/10] w-full overflow-hidden rounded-3xl bg-tone-rose-soft text-left shadow-card transition-transform active:scale-[0.98]"
     >
       {/* Обёртка задаёт место, а не сама картинка: у неё своё relative,
           и absolute рядом с ним проигрывал - снимок схлопывался в ноль */}

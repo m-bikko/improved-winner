@@ -8,7 +8,6 @@ import {
   closestCorners,
   useSensor,
   useSensors,
-  type DragEndEvent,
   type DragOverEvent,
 } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -87,10 +86,9 @@ export function DiaryPage() {
           type="button"
           onClick={() => setCalendarOpen(true)}
           aria-label={t('diary.calendar')}
-          className="flex size-10 items-center justify-center rounded-full text-ink
-                     transition-colors active:bg-raised"
+          className="flex size-11 items-center justify-center text-accent transition-opacity active:opacity-40 active:duration-0"
         >
-          <CalendarDays size={21} aria-hidden />
+          <CalendarDays size={22} strokeWidth={2.1} aria-hidden />
         </button>
       ),
       [],
@@ -196,14 +194,15 @@ export function DiaryPage() {
     applyOrder(moveEntry(entries, String(active.id), String(over.id)))
   }
 
-  const onDragEnd = (event: DragEndEvent) => {
+  const onDragEnd = () => {
     const original = beforeDrag.current
     beforeDrag.current = null
     if (!original) return
 
-    const { active, over } = event
-    const final = over ? moveEntry(entries, String(active.id), String(over.id)) : entries
-    applyOrder(final)
+    // Порядок уже применён в onDragOver, а сюда приходит только итог. Двигать ещё раз
+    // по `over` нельзя: цель к этому моменту могла остаться прежней, и запись
+    // вернулась бы туда, откуда только что ушла
+    const final = qc.getQueryData<DiaryEntry[]>(dayKey) ?? entries
 
     const updates = diffOrder(original, final)
     if (updates.length > 0) void reorder.mutateAsync(updates)
@@ -245,7 +244,7 @@ export function DiaryPage() {
       />
 
       {pending > 0 && (
-        <p className="mt-3 flex items-center justify-center gap-1.5 rounded-xl bg-raised py-2 text-xs text-muted">
+        <p className="mt-3 flex items-center justify-center gap-1.5 rounded-xl bg-raised py-2 text-[13px] text-muted">
           <CloudOff size={13} aria-hidden />
           {t.plural('diary.pending', pending).replace('{n}', String(pending))}
         </p>
@@ -435,7 +434,7 @@ function Progress({
         </p>
         <Link
           to="/profile"
-          className="rounded-2xl bg-accent px-5 py-3 text-sm font-semibold text-accent-ink"
+          className="flex min-h-11 items-center rounded-[14px] bg-accent px-5 text-[15px] font-semibold text-accent-ink"
         >
           {t('diary.fillProfile')}
         </Link>
@@ -676,13 +675,13 @@ function MealSection({
           type="button"
           onClick={() => setCollapsed(!collapsed)}
           aria-expanded={!collapsed}
-          className="flex min-h-[3.75rem] min-w-0 flex-1 items-center gap-3 py-2 pl-4 text-left transition-colors duration-150 active:bg-raised active:duration-0"
+          className="flex min-h-[3.25rem] min-w-0 flex-1 items-center gap-3 py-2 pl-4 text-left transition-colors duration-200 active:bg-raised active:duration-0"
         >
           <IconBadge icon={MEAL_ICON[meal].icon} tone={MEAL_ICON[meal].tone} size="sm" />
           <span className="min-w-0 flex-1">
-            <span className="block font-display text-[17px] font-bold">{t(dynamicKey('meal', meal))}</span>
+            <span className="block text-[17px] font-semibold">{t(dynamicKey('meal', meal))}</span>
             {collapsed && entries.length > 0 && (
-              <span className="mt-0.5 block truncate text-xs">
+              <span className="block truncate text-[13px]">
                 <span className="text-protein">
                   {t('macro.p')} {Math.round(totals.protein)}
                 </span>{' '}
@@ -695,7 +694,7 @@ function MealSection({
               </span>
             )}
             {collapsed && entries.length === 0 && (
-              <span className="mt-0.5 block text-xs text-muted">{t('diary.empty')}</span>
+              <span className="block text-[13px] text-muted">{t('diary.empty')}</span>
             )}
           </span>
 
@@ -705,8 +704,9 @@ function MealSection({
             </span>
           )}
           <ChevronDown
-            size={16}
-            className={`shrink-0 text-muted/70 transition-transform duration-200 ${collapsed ? '' : 'rotate-180'}`}
+            size={15}
+            strokeWidth={2.6}
+            className={`shrink-0 text-muted/45 transition-transform duration-200 ${collapsed ? '' : 'rotate-180'}`}
             aria-hidden
           />
         </button>
@@ -717,9 +717,9 @@ function MealSection({
           type="button"
           onClick={onAdd}
           aria-label={`${t('common.add')}: ${t(dynamicKey('meal', meal))}`}
-          className="flex size-[3.75rem] shrink-0 items-center justify-center"
+          className="flex size-[3.25rem] shrink-0 items-center justify-center"
         >
-          <span className="flex size-9 items-center justify-center rounded-full bg-accent-soft text-accent-soft-ink transition-transform duration-200 active:scale-90 active:duration-75">
+          <span className="flex size-[30px] items-center justify-center rounded-full bg-accent text-accent-ink transition-opacity duration-200 active:opacity-60 active:duration-0">
             <Plus size={20} strokeWidth={2.6} aria-hidden />
           </span>
         </button>
@@ -743,8 +743,8 @@ function MealSection({
             aria-label={t('diary.repeatYesterday', {
               meal: t(dynamicKey('meal', meal)).toLowerCase(),
             })}
-            className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-2xl bg-raised
-                       px-3.5 text-[15px] font-medium text-ink transition-transform duration-200 active:scale-[0.97] active:duration-75
+            className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl bg-raised
+                       px-3.5 text-[15px] font-medium text-accent transition-opacity duration-200 active:opacity-60 active:duration-0
                        disabled:opacity-50"
           >
             <CopyPlus size={17} aria-hidden className="shrink-0" />
@@ -792,8 +792,8 @@ function Comparison({
         {[mine, theirs].map((side) => (
           <Card key={side.nickname} className="px-4 py-4">
             <p className="text-sm font-medium text-muted">{side.nickname}</p>
-            <p className="mt-1 font-display text-[28px] leading-none font-extrabold tabular-nums">{Math.round(side.totals.kcal)}</p>
-            <p className="text-xs text-muted">{t('unit.kcal')}</p>
+            <p className="mt-1 text-[28px] leading-[34px] font-bold tabular-nums">{Math.round(side.totals.kcal)}</p>
+            <p className="text-[13px] text-muted">{t('unit.kcal')}</p>
             <p className="mt-3 text-sm">
               <span className="text-protein">
                 {t('macro.p')} {trim(side.totals.protein)}
@@ -822,14 +822,14 @@ function Comparison({
         </p>
 
         {theirMeals.length === 0 ? (
-          <p className="rounded-3xl bg-surface px-4 py-5 text-center text-sm text-muted shadow-card">
+          <p className="rounded-3xl bg-surface px-4 py-5 text-center text-[15px] text-muted">
             {t('diary.noEntriesDay')}
           </p>
         ) : (
           theirMeals.map(({ meal, entries }) => (
             <Card key={meal} className="overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3">
-                <span className="font-display text-[17px] font-bold">{t(dynamicKey('meal', meal))}</span>
+                <span className="text-[17px] font-semibold">{t(dynamicKey('meal', meal))}</span>
                 <span className="text-sm text-muted">
                   {Math.round(sumEntries(entries).kcal)} {t('unit.kcal')}
                 </span>

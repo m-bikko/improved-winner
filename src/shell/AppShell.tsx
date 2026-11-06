@@ -139,16 +139,16 @@ function Chrome({ children }: { children: ReactNode }) {
   return (
     <div className="relative min-h-dvh">
       <header className="sticky top-0 z-30 pt-safe" style={{ transform: 'translateY(var(--vv-top, 0px))' }}>
-        {/* Материал появляется только когда под шапкой есть что размывать */}
-        <div aria-hidden className="scroll-edge" style={{ opacity: scrolled ? undefined : 0 }} />
-        <div className="relative mx-auto grid h-11 max-w-2xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-1.5">
+        {/* Панель появляется только когда под шапкой есть содержимое */}
+        <div aria-hidden className="scroll-edge" style={{ opacity: scrolled ? 1 : 0 }} />
+        <div className="relative mx-auto grid h-11 max-w-2xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-1">
           <div className="flex min-w-0 justify-start">
             {parent !== null && info.parentKey && (
               <button
                 type="button"
                 onClick={back}
                 aria-label={`${t('common.back')}: ${t(info.parentKey)}`}
-                className="flex h-11 min-w-11 items-center pr-2 text-accent transition-opacity duration-150 active:opacity-40 active:duration-0"
+                className="flex h-11 min-w-11 items-center pr-2 text-accent transition-opacity duration-200 active:opacity-40 active:duration-0"
               >
                 <ChevronLeft size={28} strokeWidth={2.2} className="shrink-0" aria-hidden />
                 <span className="-ml-1 truncate text-[17px]">{t(info.parentKey)}</span>
@@ -158,18 +158,19 @@ function Chrome({ children }: { children: ReactNode }) {
           {large ? (
             <p
               aria-hidden
-              className={`max-w-[58vw] truncate text-center text-[17px] font-semibold transition-opacity duration-150 ${
+              className={`max-w-[52vw] truncate text-center text-[17px] font-semibold transition-opacity duration-150 ${
                 scrolled ? 'opacity-100' : 'opacity-0'
               }`}
             >
               {title}
             </p>
           ) : (
-            <h1 className="max-w-[58vw] truncate text-center text-[17px] font-semibold">{title}</h1>
+            // На экране внутри раздела название раздела уже написано на кнопке «назад»
+            <h1 className={`max-w-[52vw] truncate text-center text-[17px] font-semibold ${info.title === info.parentKey ? 'sr-only' : ''}`}>{title}</h1>
           )}
-          <div className="flex min-w-0 items-center justify-end gap-0.5">
-            <RefreshButton />
+          <div className="flex min-w-0 items-center justify-end">
             {action}
+            <RefreshButton />
           </div>
         </div>
       </header>
@@ -181,7 +182,7 @@ function Chrome({ children }: { children: ReactNode }) {
         style={{ top: 0, y: pull, opacity: spinning ? 1 : pullOpacity }}
       >
         <motion.span
-          className="material -mt-2 flex size-9 items-center justify-center rounded-full text-muted"
+          className="material -mt-2 flex size-9 items-center justify-center rounded-full text-muted shadow-float"
           style={spinning ? {} : { rotate: pullRotate }}
         >
           <LoaderCircle size={20} strokeWidth={2.4} className={spinning ? 'animate-spin' : ''} />
@@ -190,7 +191,7 @@ function Chrome({ children }: { children: ReactNode }) {
 
       {/* Сдвиг от свайпа назад - на этом слое, переход между экранами - на следующем */}
       <motion.div style={{ x: edgeX, boxShadow: edgeShadow }} className="relative min-h-dvh bg-bg">
-        {large && !isCustomTitle(pathname) && <h1 className="mx-auto -mt-10 max-w-2xl px-4 pr-24 pb-1.5 type-large">{title}</h1>}
+        {large && !isCustomTitle(pathname) && <h1 className="mx-auto -mt-[43px] max-w-2xl px-4 pr-24 pb-2 type-large">{title}</h1>}
         <main className="relative pb-tabbar">
           <motion.div
             key={pathname}

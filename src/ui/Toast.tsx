@@ -60,7 +60,7 @@ export function ToastHost() {
             const fast = Math.abs(info.velocity.x) > 400 || info.velocity.y > 300
             if (far || fast) emit(null)
           }}
-          className="material fixed inset-x-4 bottom-above-tabbar z-[45] mx-auto flex max-w-md min-h-13 touch-none items-center gap-2 rounded-[20px] py-1.5 pr-1.5 pl-4 shadow-float"
+          className="material fixed inset-x-4 bottom-above-tabbar z-[45] mx-auto flex max-w-md min-h-13 touch-none items-center gap-2 rounded-2xl py-1.5 pr-1.5 pl-4 shadow-float"
         >
           <p className="min-w-0 flex-1 py-1.5 text-[15px] font-medium">{item.text}</p>
           {item.action && (

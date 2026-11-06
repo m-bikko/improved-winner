@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState, type FormEvent, type Ref } from 'react'
-import { Check, ChevronDown, Images, LoaderCircle, MapPin, MapPinned, Navigation, Pencil, Search, Trash2, Undo2, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type Ref } from 'react'
+import { Check, ChevronDown, Images, LoaderCircle, MapPin, MapPinned, Navigation, Pencil, Plus, Search, Trash2, Undo2, X } from 'lucide-react'
 import { dynamicKey, useLang, useT } from '@/lib/i18n'
 import { formatDayLabel, toLocalISO, todayLocal } from '@/lib/date'
 import { usePair } from '@/features/profile/pair'
+import { useHeaderAction } from '@/shell/HeaderAction'
 import { useBurst } from '@/ui/Burst'
 import { Button } from '@/ui/Button'
 import { Chip, Tag } from '@/ui/Chip'
-import { Fab } from '@/ui/Fab'
 import { Field, INPUT_CLASS } from '@/ui/Field'
 import { ListGroup, ListRow } from '@/ui/List'
 import { SearchInput } from '@/ui/SearchInput'
@@ -93,6 +93,27 @@ export function PlacesPage() {
   const places = usePlaces()
   const map = useRef<MapHandle>(null)
   const searchInput = useRef<HTMLInputElement>(null)
+
+  // В шапке, а не плавающей кнопкой: карта и пустой экран и так занимают всю высоту,
+  // а кнопка над ними перекрывала текст. Нажатие ведёт в поиск: с него и начинается место
+  useHeaderAction(
+    useMemo(
+      () => (
+        <button
+          type="button"
+          onClick={() => {
+            window.scrollTo({ top: 0 })
+            searchInput.current?.focus()
+          }}
+          aria-label={t('places.add')}
+          className="flex size-11 items-center justify-center text-accent transition-opacity active:opacity-40 active:duration-0"
+        >
+          <Plus size={25} strokeWidth={2.2} aria-hidden />
+        </button>
+      ),
+      [t],
+    ),
+  )
   const reverse = useRef<AbortController | null>(null)
   const detecting = useRef<AbortController | null>(null)
   const cityTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -269,8 +290,8 @@ export function PlacesPage() {
           onClick={() => setChoosingCity(true)}
           aria-haspopup="dialog"
           aria-label={`${t('places.city')}: ${city?.name ?? t('places.pickCity')}`}
-          className="material absolute top-2 left-2 z-10 flex h-11 max-w-[calc(100%-4.5rem)] items-center gap-1.5 rounded-2xl pr-2.5 pl-3
-                     text-[15px] font-semibold transition-transform duration-200 active:scale-95 active:duration-75"
+          className="material absolute top-2 left-2 z-10 flex h-11 max-w-[calc(100%-4.5rem)] items-center gap-1.5 rounded-xl pr-2.5 pl-3
+                     text-[15px] font-semibold shadow-float transition-opacity duration-200 active:opacity-60 active:duration-0"
         >
           <MapPin size={16} className="shrink-0 text-accent" aria-hidden />
           <span className="truncate">{city?.name ?? t('places.pickCity')}</span>
@@ -308,9 +329,9 @@ export function PlacesPage() {
       {places.isSuccess &&
         (shown.length === 0 ? (
           tab === 'want' ? (
-            <EmptyState icon={MapPinned} tone="green" title={t('places.empty')} hint={t('places.emptyHint')} />
+            <EmptyState icon={MapPinned} title={t('places.empty')} hint={t('places.emptyHint')} />
           ) : (
-            <EmptyState icon={Check} tone="green" title={t('places.emptyBeen')} hint={t('places.emptyBeenHint')} />
+            <EmptyState icon={Check} title={t('places.emptyBeen')} hint={t('places.emptyBeenHint')} />
           )
         ) : (
           <ListGroup>
@@ -326,14 +347,6 @@ export function PlacesPage() {
             ))}
           </ListGroup>
         ))}
-
-      <Fab
-        label={t('places.add')}
-        onClick={() => {
-          toTop()
-          searchInput.current?.focus()
-        }}
-      />
 
       {opened && (
         <PlaceSheet
@@ -453,9 +466,11 @@ function PlaceSearch({
             placeholder={t('places.searchPlaceholder')}
           />
         </div>
-        <Button type="submit" variant="soft" loading={busy} disabled={query.trim().length < 2} className="shrink-0 px-4">
-          {t('places.searchGo')}
-        </Button>
+        {(query !== '' || busy) && (
+          <Button type="submit" variant="ghost" loading={busy} disabled={query.trim().length < 2} className="min-h-10! shrink-0 px-1.5">
+            {t('places.searchGo')}
+          </Button>
+        )}
       </form>
 
       {failed && <p className="px-1 text-sm text-danger">{t('places.searchFailed')}</p>}
@@ -468,7 +483,7 @@ function PlaceSearch({
             <button
               type="button"
               onClick={() => void run(null)}
-              className="flex min-h-10 shrink-0 items-center rounded-full bg-accent-soft px-4 text-[15px] font-semibold text-accent-soft-ink active:opacity-70"
+              className="flex min-h-11 shrink-0 items-center px-1 text-[15px] font-semibold text-accent active:opacity-70"
             >
               {t('places.searchEverywhere')}
             </button>

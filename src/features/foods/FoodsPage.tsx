@@ -124,7 +124,6 @@ export function FoodsPage() {
       {foods.isSuccess && visible.length === 0 && (
         <EmptyState
           icon={query ? SearchX : tab === 'dish' ? CookingPot : Apple}
-          tone="green"
           title={t(
             query ? 'pick.nothingFound' : tab === 'dish' ? 'food.noDishes' : 'food.noProducts',
           )}

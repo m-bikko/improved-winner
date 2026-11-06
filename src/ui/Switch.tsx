@@ -32,7 +32,7 @@ export function Switch({
       // меньше комфортной цели для пальца, а растягивать сам трек некрасиво
       className={`group relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200
                   after:absolute after:-inset-[7px] after:content-['']
-                  disabled:opacity-40 ${checked ? 'bg-accent' : 'bg-fill'}`}
+                  disabled:opacity-40 ${checked ? 'bg-success' : 'bg-fill'}`}
     >
       <span
         aria-hidden

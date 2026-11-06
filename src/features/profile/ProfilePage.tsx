@@ -509,11 +509,11 @@ function FaceIdRow() {
     <>
       {/* Строка сгруппированного списка настроек, а не отдельная карточка:
           переключатель справа, объяснение мелко под названием */}
-      <div className="flex min-h-14 items-center gap-3 px-4 py-2.5">
+      <div className="flex min-h-11 items-center gap-3 px-4 py-2 [--sep:3.5625rem]">
         <IconBadge icon={ScanFace} tone="violet" size="sm" />
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-medium">{t('profile.faceId')}</p>
-          <p className="mt-0.5 text-[13px] text-muted">{t('profile.faceIdHint')}</p>
+          <p className="text-[17px]">{t('profile.faceId')}</p>
+          <p className="text-[13px] text-muted">{t('profile.faceIdHint')}</p>
         </div>
         <Switch
           checked={on}

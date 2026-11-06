@@ -53,18 +53,19 @@ export function ListRow(
     <>
       {icon && <IconBadge icon={icon} tone={danger ? 'rose' : tone} size="sm" />}
       <span className="min-w-0 flex-1">
-        <span className={`block truncate text-base ${danger ? 'text-danger' : ''}`}>
+        <span className={`block truncate text-[17px] ${danger ? 'text-danger' : ''}`}>
           {title}
         </span>
-        {subtitle && <span className="mt-0.5 block truncate text-[13px] text-muted">{subtitle}</span>}
+        {subtitle && <span className="block truncate text-[13px] text-muted">{subtitle}</span>}
       </span>
-      {trailing && <span className="shrink-0 text-sm text-muted">{trailing}</span>}
-      {chevron && <ChevronRight size={18} aria-hidden className="shrink-0 text-muted/70" />}
+      {trailing && <span className="shrink-0 text-[17px] text-muted">{trailing}</span>}
+      {chevron && <ChevronRight size={16} strokeWidth={2.6} aria-hidden className="-mr-1 shrink-0 text-muted/45" />}
     </>
   )
-  // --sep: разделитель начинается от текста, а если есть значок - сразу за ним
-  const cls = `flex w-full min-h-[3.25rem] items-center gap-3 px-4 py-2.5 text-left ${icon ? '[--sep:3.75rem]' : ''}`
-  const press = 'transition-colors duration-150 active:bg-raised active:duration-0'
+  // --sep: разделитель начинается от текста, а если есть значок - сразу за ним.
+  // 44 пункта - системная высота строки: на экран входит больше, а цель остаётся удобной
+  const cls = `flex w-full min-h-11 items-center gap-3 px-4 py-2 text-left ${icon ? '[--sep:3.5625rem]' : ''}`
+  const press = 'transition-colors duration-200 active:bg-raised active:duration-0'
 
   if ('to' in props) {
     return (

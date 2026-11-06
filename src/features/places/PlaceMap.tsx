@@ -208,7 +208,7 @@ export function PlaceMap({
   }
 
   return (
-    <div className={`relative isolate overflow-hidden rounded-3xl bg-raised shadow-card ${compact ? 'h-52' : 'h-[46dvh] min-h-80'}`}>
+    <div className={`relative isolate overflow-hidden rounded-3xl bg-raised ${compact ? 'h-52' : 'h-[46dvh] min-h-80'}`}>
       <div ref={box} role="region" aria-label={t('nav.places')} className="places-map absolute inset-0 isolate" />
 
       {map &&
@@ -219,7 +219,7 @@ export function PlaceMap({
         ))}
       {map && me && (
         <Marker map={map} point={me} look={ME} title={t('places.locate')}>
-          <span className="block size-full rounded-full bg-tone-sky shadow-card ring-[3px] ring-surface" />
+          <span className="block size-full rounded-full bg-tone-sky shadow-float ring-[3px] ring-surface" />
         </Marker>
       )}
       {map && draft && (
@@ -229,7 +229,7 @@ export function PlaceMap({
       )}
 
       <div className="absolute top-2 right-2 z-10 flex flex-col gap-1.5">
-        <div className="flex flex-col overflow-hidden rounded-2xl bg-surface shadow-card">
+        <div className="flex flex-col overflow-hidden rounded-2xl bg-surface shadow-float">
           <MapButton icon={Plus} label={t('places.zoomIn')} onClick={() => map?.zoomIn()} />
           <MapButton icon={Minus} label={t('places.zoomOut')} onClick={() => map?.zoomOut()} />
         </div>
@@ -238,7 +238,7 @@ export function PlaceMap({
           spin={locating}
           label={t('places.locate')}
           onClick={locate}
-          className="rounded-2xl bg-surface shadow-card"
+          className="rounded-2xl bg-surface shadow-float"
         />
         {!compact && places.length > 0 && (
           <MapButton
@@ -247,13 +247,13 @@ export function PlaceMap({
             onClick={() => {
               if (map) fitPoints(map, places)
             }}
-            className="rounded-2xl bg-surface shadow-card"
+            className="rounded-2xl bg-surface shadow-float"
           />
         )}
       </div>
 
       {noTiles && (
-        <p className="absolute inset-x-2 bottom-7 z-[9] mr-14 rounded-2xl bg-surface px-3 py-2 text-[13px] text-muted shadow-card">
+        <p className="absolute inset-x-2 bottom-7 z-[9] mr-14 rounded-2xl bg-surface px-3 py-2 text-[13px] text-muted shadow-float">
           {t('places.noTiles')}
         </p>
       )}
@@ -328,7 +328,7 @@ function Pin({ kind, selected }: { kind: PlaceKind; selected: boolean }) {
   return (
     <span className={`absolute bottom-0 left-1 block h-11 w-9 origin-bottom transition-transform duration-200 ${selected ? 'scale-125' : ''}`}>
       <PinShape fill={toneVar(tone)} />
-      <Icon size={16} strokeWidth={2.4} aria-hidden className="absolute top-[10px] left-[10px] text-surface" />
+      <Icon size={16} strokeWidth={2.4} aria-hidden className="absolute top-[10px] left-[10px] text-white" />
     </span>
   )
 }

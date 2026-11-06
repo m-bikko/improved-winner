@@ -12,7 +12,6 @@ import {
   Droplet,
   Gift,
   Handshake,
-  Heart,
   HeartHandshake,
   HeartPulse,
   Images,
@@ -29,6 +28,7 @@ import {
   Smile,
   Sparkles,
   Stethoscope,
+  Sun,
   Trophy,
   UserRound,
   Wind,
@@ -54,7 +54,7 @@ export type Section = {
  * день (оно в профиле). Темы и задачи - по пять за месяц, им место в «Ещё».
  */
 export const TABS: readonly Section[] = [
-  { to: '/today', key: 'nav.today', icon: Heart, tone: 'rose' },
+  { to: '/today', key: 'nav.today', icon: Sun, tone: 'rose' },
   { to: '/diary', key: 'nav.diary', icon: NotebookPen, tone: 'amber' },
   { to: '/checkin', key: 'nav.checkin', icon: Smile, tone: 'violet' },
   { to: '/profile', key: 'nav.profile', icon: UserRound, tone: 'slate' },

@@ -7,11 +7,15 @@ import { useT } from '@/lib/i18n'
 const MIN_SPIN = 450
 
 /**
- * Кнопка «обновить» в шапке - одна на всё приложение.
+ * Кнопка «обновить» в шапке - одна на всё приложение и видна на каждом экране.
  *
- * Не по кнопке на каждом экране: экранов тринадцать, и на четырнадцатом её
+ * Не по кнопке на каждом экране: экранов почти сорок, и на сороковом её
  * однажды забудут - ровно так же, как забылись боковые отступы у шторки
  * и вид рассылки у уведомлений. То, что нужно везде, живёт в оболочке.
+ *
+ * Прятать её за жестом «потяни вниз» нельзя: на телефоне её убирали в редизайне,
+ * и пропажу заметили сразу. Жест остаётся как второй способ, но видимая кнопка
+ * понятна без подсказки и работает, когда жест не сработал.
  *
  * Обновляет ДАННЫЕ и заодно спрашивает, нет ли новой версии приложения:
  * человек, нажимающий «обновить», имеет в виду и то и другое. Само
@@ -52,12 +56,10 @@ export function RefreshButton() {
       onClick={() => void refresh()}
       aria-label={t('common.refresh')}
       aria-busy={spinning}
-      // Только там, где нет пальца: на телефоне обновляют, потянув экран вниз
-      className="hidden size-11 items-center justify-center rounded-full text-muted
-                 transition-[color,background-color] active:bg-raised active:text-ink
-                 [@media(hover:hover)_and_(pointer:fine)]:flex"
+      className="flex size-11 shrink-0 items-center justify-center text-accent transition-opacity duration-200
+                 active:opacity-40 active:duration-0"
     >
-      <RotateCw size={19} aria-hidden className={spinning ? 'animate-spin' : ''} />
+      <RotateCw size={21} strokeWidth={2.1} aria-hidden className={spinning ? 'animate-spin' : ''} />
     </button>
   )
 }

@@ -11,8 +11,8 @@ type BaseProps = {
 // Поле заливкой, а не рамкой: на карточке без рамок обведённое поле
 // выглядело бы чужим. Граница появляется при фокусе - там она и нужна
 export const INPUT_CLASS =
-  'w-full rounded-2xl bg-raised px-4 py-3 ring-1 ring-transparent outline-none ' +
-  'transition-shadow focus:bg-surface focus:ring-2 focus:ring-accent placeholder:text-muted/80'
+  'min-h-11 w-full rounded-xl bg-raised px-3.5 py-2.5 text-[17px] ring-1 ring-transparent outline-none ' +
+  'transition-shadow focus:ring-2 focus:ring-accent placeholder:text-muted'
 
 export function Field({
   label,
@@ -24,12 +24,12 @@ export function Field({
   const id = useId()
   return (
     <label htmlFor={id} className="flex flex-col gap-1.5">
-      <span className={hideLabel ? 'sr-only' : 'text-sm text-muted'}>{label}</span>
+      <span className={hideLabel ? 'sr-only' : 'px-1 text-[13px] text-muted'}>{label}</span>
       <span className="relative flex items-center">
         <input id={id} className={`${INPUT_CLASS} ${suffix ? 'pr-12' : ''}`} {...rest} />
-        {suffix && <span className="absolute right-4 text-sm text-muted">{suffix}</span>}
+        {suffix && <span className="absolute right-3.5 text-[15px] text-muted">{suffix}</span>}
       </span>
-      {hint && <span className="text-xs text-muted">{hint}</span>}
+      {hint && <span className="px-1 text-[13px] text-muted">{hint}</span>}
     </label>
   )
 }
@@ -91,7 +91,7 @@ export function NumberField({
 
   return (
     <label htmlFor={id} className="flex flex-col gap-1.5">
-      <span className={hideLabel ? 'sr-only' : 'text-sm text-muted'}>{label}</span>
+      <span className={hideLabel ? 'sr-only' : 'px-1 text-[13px] text-muted'}>{label}</span>
       <span className="relative flex items-center">
         <input
           id={id}
@@ -113,9 +113,9 @@ export function NumberField({
             invalid ? 'ring-2 ring-danger' : ''
           }`}
         />
-        {suffix && <span className="absolute right-4 text-sm text-muted">{suffix}</span>}
+        {suffix && <span className="absolute right-3.5 text-[15px] text-muted">{suffix}</span>}
       </span>
-      {hint && <span className={`text-xs ${invalid ? 'text-danger' : 'text-muted'}`}>{hint}</span>}
+      {hint && <span className={`px-1 text-[13px] ${invalid ? 'text-danger' : 'text-muted'}`}>{hint}</span>}
     </label>
   )
 }

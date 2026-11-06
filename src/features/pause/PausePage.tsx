@@ -8,7 +8,6 @@ import { useNow } from '@/lib/useNow'
 import { usePair, type Pair } from '@/features/profile/pair'
 import { useCreateTopic } from '@/features/topics/api'
 import { useCreateAgreement } from '@/features/agreements/api'
-import { Aurora } from '@/ui/Aurora'
 import { Avatar } from '@/ui/Avatar'
 import { Button } from '@/ui/Button'
 import { useBurst } from '@/ui/Burst'
@@ -80,8 +79,7 @@ function Ask() {
   }
 
   return (
-    <section className="relative isolate overflow-hidden rounded-[28px] bg-surface p-6 shadow-card">
-      <Aurora colors={['var(--t-sky)', 'var(--t-teal)', 'var(--t-indigo)']} />
+    <section className="relative isolate overflow-hidden rounded-3xl bg-surface p-6 shadow-card">
       <span className="flex size-14 items-center justify-center rounded-2xl bg-tone-sky-soft text-tone-sky">
         <Wind size={28} aria-hidden />
       </span>
@@ -125,8 +123,7 @@ function Active({ pause, pair, now }: { pause: Pause; pair: Pair; now: number })
   const until = formatTime(new Date(pause.endsAt))
 
   return (
-    <section className="relative isolate flex flex-col items-center overflow-hidden rounded-[28px] bg-surface px-6 pt-8 pb-6 text-center shadow-card">
-      <Aurora colors={['var(--t-sky)', 'var(--t-teal)', 'var(--t-indigo)']} />
+    <section className="relative isolate flex flex-col items-center overflow-hidden rounded-3xl bg-surface px-6 pt-8 pb-6 text-center shadow-card">
       <div className="relative flex size-48 items-center justify-center">
         <motion.span
           aria-hidden

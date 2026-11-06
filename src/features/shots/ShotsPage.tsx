@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Camera, Clock, Lock, Send } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { formatDayLabel, formatTime } from '@/lib/date'
 import { useNow } from '@/lib/useNow'
 import { usePair, type Pair } from '@/features/profile/pair'
-import { Aurora } from '@/ui/Aurora'
 import { Avatar } from '@/ui/Avatar'
 import { Button } from '@/ui/Button'
 import { useBurst } from '@/ui/Burst'
@@ -14,9 +13,7 @@ import { Field } from '@/ui/Field'
 import { PhotoViewer } from '@/ui/PhotoViewer'
 import { ProgressiveImage } from '@/ui/ProgressiveImage'
 import { Sheet } from '@/ui/Sheet'
-import { ShineBorder } from '@/ui/ShineBorder'
 import { ErrorState, Loading } from '@/ui/States'
-import { toneVar } from '@/ui/tones'
 import { useDeleteShot, useSendShot, useShotUrls, useShots, type Shot, type ShotDay } from './api'
 import { lateMinutes, mmss, shotState } from './logic'
 
@@ -74,8 +71,7 @@ export function ShotsPage() {
 function Waiting() {
   const t = useT()
   return (
-    <section className="relative isolate flex flex-col items-center overflow-hidden rounded-[28px] bg-surface px-6 pt-8 pb-7 text-center shadow-card">
-      <Aurora colors={['var(--t-sky)', 'var(--t-violet)', 'var(--c-accent)']} />
+    <section className="relative isolate flex flex-col items-center overflow-hidden rounded-3xl bg-surface px-6 pt-8 pb-7 text-center shadow-card">
       <span className="relative flex size-20 items-center justify-center">
         <span aria-hidden className="absolute inset-0 animate-ping rounded-full bg-tone-sky-soft [animation-duration:2.4s] motion-reduce:animate-none" />
         <span className="relative flex size-20 items-center justify-center rounded-full bg-tone-sky-soft text-tone-sky">
@@ -107,17 +103,12 @@ function Today({
   const mine = day.shots.find((s) => s.userId === pair.userId)
   const theirs = day.shots.find((s) => s.userId === pair.partnerId)
   const partnerPosted = day.posted.includes(pair.partnerId)
-  const a = toneVar(pair.myTone)
-  const b = toneVar(pair.partnerTone)
 
   if (!mine) {
     return (
       <section
-        className="relative isolate overflow-hidden rounded-[28px] bg-surface p-5 shadow-card"
-        style={{ '--pair-a': a, '--pair-b': b } as CSSProperties}
+        className="relative isolate overflow-hidden rounded-3xl bg-surface p-5 shadow-card"
       >
-        {state.kind === 'open' && <ShineBorder colors={[a, 'var(--c-accent)', b]} />}
-        <Aurora colors={[a, b, 'var(--c-accent)']} />
         <p className="text-[13px] font-semibold text-muted">
           {t('sh.signalAt', { time: formatTime(new Date(day.sentAt)) })}
         </p>

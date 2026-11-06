@@ -24,7 +24,6 @@ import { Field, INPUT_CLASS, NumberField } from '@/ui/Field'
 import { IconBadge } from '@/ui/IconBadge'
 import { Segmented } from '@/ui/Segmented'
 import { Sheet } from '@/ui/Sheet'
-import { ShineBorder } from '@/ui/ShineBorder'
 import { Sparkles } from '@/ui/Sparkles'
 import { EmptyState, ErrorState, Loading } from '@/ui/States'
 import { TONE_CLASS, toneVar } from '@/ui/tones'
@@ -78,7 +77,6 @@ export function SavingsPage() {
       {live.length === 0 && (
         <EmptyState
           icon={PiggyBank}
-          tone="amber"
           title={t('sv.emptyTitle')}
           hint={t('sv.emptyHint')}
           action={<Button onClick={() => setEditing('new')}>{t('sv.newGoal')}</Button>}
@@ -169,13 +167,11 @@ function GoalCard({
   const theirs = pair.partnerId === '' ? 0 : shareOf(g, pair.partnerId)
   const positive = Math.max(mine, 0) + Math.max(theirs, 0)
   const a = toneVar(pair.myTone)
-  const b = toneVar(pair.partnerTone)
 
   const jar = <Jar level={level} />
 
   return (
     <Card className="relative overflow-hidden p-4">
-      {done && <ShineBorder colors={['var(--t-amber)', a, b]} />}
 
       <div className="flex gap-4">
         {done ? (
@@ -241,7 +237,7 @@ function GoalCard({
       )}
 
       <div className="mt-4 flex gap-2">
-        <Button onClick={() => onDeposit(false)} className="flex-1">
+        <Button variant="soft" onClick={() => onDeposit(false)} className="flex-1">
           <Plus size={18} aria-hidden />
           {t('sv.deposit')}
         </Button>

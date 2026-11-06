@@ -6,7 +6,6 @@ import { formatDayLabel, formatDayMonthYear, formatTime, fromLocalISO, todayLoca
 import { useNow } from '@/lib/useNow'
 import { usePair, type Pair } from '@/features/profile/pair'
 import { useBabyNames, useMatches } from '@/features/names/api'
-import { Aurora } from '@/ui/Aurora'
 import { Avatar } from '@/ui/Avatar'
 import { Button } from '@/ui/Button'
 import { useBurst } from '@/ui/Burst'
@@ -65,7 +64,6 @@ export function BabyPage() {
       <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
         <EmptyState
           icon={BabyIcon}
-          tone="teal"
           title={t('bb.emptyTitle')}
           hint={t('bb.emptyHint')}
           action={<Button onClick={() => setBorn(true)}>{t('bb.born')}</Button>}
@@ -110,8 +108,7 @@ function Hero({ baby, today }: { baby: Baby; today: string }) {
         ? `${age.months} ${t.plural('unit.month', age.months)}`
         : `${age.months} ${t.plural('unit.month', age.months)} ${age.days} ${t.plural('unit.day', age.days)}`
   return (
-    <section className="relative isolate overflow-hidden rounded-[28px] bg-surface p-5 shadow-card">
-      <Aurora colors={['var(--t-teal)', 'var(--t-sky)', 'var(--c-accent)']} />
+    <section className="relative isolate overflow-hidden rounded-3xl bg-surface p-5 shadow-card">
       <p className="text-[13px] font-semibold text-muted">{t('bb.bornOn', { date: formatDayMonthYear(fromLocalISO(baby.bornOn)) })}</p>
       <p className="mt-1 font-display text-[32px] leading-tight font-extrabold">{baby.name ?? t('bb.noName')}</p>
       <p className="mt-1 font-display text-lg font-extrabold text-tone-teal">{value}</p>

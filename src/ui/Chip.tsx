@@ -4,9 +4,12 @@ import type { LucideIcon } from 'lucide-react'
 /**
  * Выбираемый чип.
  *
- * Выбранный заливается мягким тоном акцента с тонкой обводкой того же тона:
- * одной сменой заливки на сером фоне выбор терялся среди сорока соседей.
- * Состояние продублировано `aria-pressed` - цветом одним о нём не говорят.
+ * Выбранный залит цветом акцента целиком: состояние видно издалека и среди сорока
+ * соседей, а мягкая подложка терялась. Состояние продублировано `aria-pressed` -
+ * цветом одним о нём не говорят.
+ *
+ * Сам чип 32-36 пунктов, а область нажатия добрана до 44 невидимым слоем: ряды чипов
+ * остаются плотными, а палец не промахивается.
  */
 export function Chip({
   selected,
@@ -23,24 +26,20 @@ export function Chip({
   disabled?: boolean | undefined
   size?: 'sm' | 'md'
 }) {
-  // Палец не меньше от того, что чип маленький: sm добирает высоту до 44 невидимой
-  // областью нажатия, md сразу 44
   const pad =
     size === 'sm'
-      ? "relative min-h-10 px-3 py-1.5 text-sm after:absolute after:inset-x-0 after:-inset-y-0.5 after:content-['']"
-      : 'min-h-11 px-3.5 py-2 text-[15px]'
+      ? "min-h-8 px-3 py-1 text-[15px] after:-inset-y-1.5"
+      : "min-h-9 px-3.5 py-1.5 text-[15px] after:-inset-y-1"
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
       aria-pressed={selected}
-      className={`inline-flex items-center gap-1.5 rounded-full font-medium ring-1 ring-inset
-                  transition-[background-color,color,transform] duration-150 active:scale-95 active:duration-75
-                  disabled:opacity-40 disabled:active:scale-100 ${pad} ${
-                    selected
-                      ? 'bg-accent-soft text-accent-soft-ink ring-accent/35'
-                      : 'bg-raised text-ink ring-transparent'
+      className={`relative inline-flex items-center gap-1.5 rounded-full font-medium
+                  transition-[background-color,color,opacity] duration-150 after:absolute after:inset-x-0 after:content-['']
+                  active:opacity-60 active:duration-0 disabled:opacity-40 ${pad} ${
+                    selected ? 'bg-accent text-accent-ink' : 'bg-raised text-ink'
                   }`}
     >
       {Icon && <Icon size={16} aria-hidden strokeWidth={selected ? 2.4 : 2} />}

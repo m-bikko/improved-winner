@@ -38,7 +38,6 @@ export function CycleReportPage() {
       <div className="mx-auto max-w-2xl px-4 pt-1">
         <EmptyState
           icon={FileText}
-          tone="plum"
           title={t('rep.nothing')}
           action={
             <Link

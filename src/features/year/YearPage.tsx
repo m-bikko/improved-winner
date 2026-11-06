@@ -63,13 +63,9 @@ export function YearPage() {
         <Loading />
       ) : (
         <>
-          {/* Общая карточка праздничнее личных: заливка тоном акцента
-              и акцентные числа. Это то, что сделали вдвоём, - ради неё
-              экран и открывают */}
-          <Card
-            as="section"
-            className="bg-linear-to-br from-accent-soft to-transparent to-70% p-5"
-          >
+          {/* Общая карточка первой и с числами крупнее личных: это то, что сделали
+              вдвоём, - ради неё экран и открывают */}
+          <Card as="section" className="p-5">
             <div className="flex items-center gap-2.5">
               <IconBadge icon={HeartHandshake} tone="accent" size="sm" />
               <h2 className="font-display text-[17px] font-bold">{t('year.together')}</h2>
@@ -123,7 +119,7 @@ function Stat({ n, label, big = false }: { n: number; label: string; big?: boole
     <div>
       <dt
         className={`font-display leading-none font-extrabold tracking-tight tabular-nums ${
-          big ? 'text-[40px] text-accent' : 'text-[32px]'
+          big ? 'text-[40px]' : 'text-[32px]'
         }`}
       >
         {n}

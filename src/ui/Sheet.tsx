@@ -227,7 +227,7 @@ function SheetBody({ open, onClose, title, children, bleed = false }: Props) {
         {...(reduced
           ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: 0.18 } }
           : { animate: { y: 0 }, exit: { y: hidden }, transition: SPRING_SOFT })}
-        className="relative flex max-h-[90dvh] flex-col rounded-t-[28px] bg-bg pb-safe shadow-float outline-none"
+        className="elevated relative flex max-h-[90dvh] flex-col rounded-t-[20px] bg-bg pb-safe shadow-float outline-none"
         style={{
           ...(reduced ? {} : { y }),
           // Потолок считаем от ВИДИМОЙ высоты, а не от dvh: с открытой
@@ -243,16 +243,19 @@ function SheetBody({ open, onClose, title, children, bleed = false }: Props) {
           <div className="flex justify-center pt-2 pb-1">
             <span className="h-[5px] w-9 rounded-full bg-fill" aria-hidden />
           </div>
-          <div className="flex items-center justify-between gap-3 pt-0.5 pr-3 pb-2.5 pl-5">
-            <h2 className="min-w-0 truncate type-headline text-[19px]">{title}</h2>
+          {/* Заголовок по центру, крестик справа - как в системных шторках */}
+          <div className="grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center px-2 pb-1">
+            <span aria-hidden />
+            <h2 className="truncate text-center type-headline">{title}</h2>
             <button
               type="button"
               onClick={onClose}
               aria-label={t('common.close')}
-              className="relative flex size-8 shrink-0 items-center justify-center rounded-full bg-raised text-muted
-                         transition-transform after:absolute after:-inset-1.5 after:content-[''] active:scale-90 active:duration-75"
+              className="flex size-11 items-center justify-center"
             >
-              <X size={17} strokeWidth={2.4} aria-hidden />
+              <span className="flex size-[30px] items-center justify-center rounded-full bg-raised text-muted transition-opacity active:opacity-50 active:duration-0">
+                <X size={16} strokeWidth={2.8} aria-hidden />
+              </span>
             </button>
           </div>
         </div>
@@ -262,7 +265,7 @@ function SheetBody({ open, onClose, title, children, bleed = false }: Props) {
             Причину лечим в самих элементах, но пусть шторка не зависит
             от того, вспомню ли я об этом в следующий раз. */}
         <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
-          {bleed ? children : <div className="min-w-0 px-5 pt-1 pb-5">{children}</div>}
+          {bleed ? children : <div className="min-w-0 px-4 pt-1 pb-5">{children}</div>}
         </div>
       </motion.div>
     </div>

@@ -17,7 +17,6 @@ import {
 import { activeLocale, useLang, useT } from '@/lib/i18n'
 import { diffDays, formatDayMonthYear, fromLocalISO, todayLocal } from '@/lib/date'
 import { useMemoryUrls } from '@/features/memories/api'
-import { Aurora } from '@/ui/Aurora'
 import { AnimatedNumber } from '@/ui/AnimatedNumber'
 import { Card } from '@/ui/Card'
 import { IconBadge } from '@/ui/IconBadge'
@@ -60,7 +59,7 @@ export function StoryPage() {
 
   if (story.isError) return <ErrorState error={story.error} onRetry={() => void story.refetch()} />
   if (story.isPending) return <Loading />
-  if (items.length === 0) return <EmptyState icon={Heart} tone="rose" title={t('st.emptyTitle')} hint={t('st.emptyHint')} />
+  if (items.length === 0) return <EmptyState icon={Heart} title={t('st.emptyTitle')} hint={t('st.emptyHint')} />
 
   // Начало - самая ранняя годовщина пары, а если её нет - самое раннее событие
   const anniversaries = items.filter((i) => i.kind === 'date' && i.detail === 'anniversary')
@@ -75,8 +74,7 @@ export function StoryPage() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
-      <section className="relative isolate overflow-hidden rounded-[28px] bg-surface p-6 shadow-card">
-        <Aurora colors={['var(--t-rose)', 'var(--c-accent)', 'var(--t-amber)']} />
+      <section className="relative isolate overflow-hidden rounded-3xl bg-surface p-6 shadow-card">
         <p className="text-[13px] font-semibold text-muted">{t('st.since', { date: formatDayMonthYear(fromLocalISO(start)) })}</p>
         <p className="mt-1 flex items-baseline gap-2">
           <AnimatedNumber value={days} className="font-display text-[56px] leading-none font-extrabold tracking-tight tabular-nums" />

@@ -44,7 +44,6 @@ export function AgreementsPage() {
       {agreements.data.length === 0 ? (
         <EmptyState
           icon={Handshake}
-          tone="indigo"
           title={t('ag.emptyTitle')}
           hint={t('ag.emptyHint')}
           action={<Button onClick={() => setCreating(true)}>{t('ag.new')}</Button>}

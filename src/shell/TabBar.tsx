@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { motion } from 'motion/react'
-import { LayoutGrid, type LucideIcon } from 'lucide-react'
+import { Ellipsis, type LucideIcon } from 'lucide-react'
 import { useT } from '@/lib/i18n'
-import { SPRING } from '@/ui/motion'
 import { MORE_ROOT, TABS, routeInfo } from './sections'
 
 /**
@@ -33,10 +31,12 @@ function useTyping(): boolean {
 }
 
 /**
- * Панель вкладок: плавающая капсула из материала над контентом.
+ * Панель вкладок на нижнем краю, как в любом приложении на iPhone.
  *
- * Контент проходит под ней и виден сквозь неё, поэтому она читается как слой
- * управления, а не как отрезанная полоса экрана.
+ * Плавающая полупрозрачная капсула с цветной таблеткой была красивее на макете и хуже
+ * в руке: сквозь неё проступали цвета содержимого, подписи читались плохо, а края
+ * отнимали цель у пальца. Здесь вся ширина экрана - область нажатия, а выбранная
+ * вкладка отличается цветом и заливкой значка.
  *
  * Нажатие на активную вкладку ведёт к её корню, а на самом корне прокручивает наверх:
  * этого ждут по привычке от любого телефонного приложения.
@@ -48,21 +48,20 @@ export function TabBar() {
   const active = routeInfo(pathname).tab
   const tabs: { to: string; label: string; icon: LucideIcon }[] = [
     ...TABS.map((tab) => ({ to: tab.to, label: t(tab.key), icon: tab.icon })),
-    { to: MORE_ROOT, label: t('nav.more'), icon: LayoutGrid },
+    { to: MORE_ROOT, label: t('nav.more'), icon: Ellipsis },
   ]
 
   return (
     <nav
       aria-label={t('nav.sections')}
-      className="fixed inset-x-3 z-40 mx-auto max-w-md transition-transform duration-200"
+      className="material fixed inset-x-0 bottom-0 z-40 pb-safe shadow-[0_-0.5px_0_var(--c-material-edge)] transition-transform duration-200"
       style={{
-        bottom: 'var(--tabbar-bottom)',
         // --vv-gap опускает панель к низу ВИДИМОЙ области: на iOS после клавиатуры
         // раскладка и видимая область расходятся, и панель повисала посреди экрана
-        transform: typing ? 'translateY(calc(100% + 40px))' : 'translateY(var(--vv-gap, 0px))',
+        transform: typing ? 'translateY(100%)' : 'translateY(var(--vv-gap, 0px))',
       }}
     >
-      <ul className="material grid h-[var(--tabbar-h)] grid-cols-5 rounded-[31px] p-1">
+      <ul className="mx-auto grid h-[var(--tabbar-h)] max-w-2xl grid-cols-5">
         {tabs.map((tab) => {
           const on = active === tab.to
           return (
@@ -75,35 +74,19 @@ export function TabBar() {
                   if (pathname === tab.to) window.scrollTo({ top: 0, behavior: 'smooth' })
                 }}
                 aria-current={on ? 'page' : undefined}
-                className="group relative flex h-full flex-col items-center justify-center gap-0.5 rounded-[27px]"
+                className={`flex h-full flex-col items-center justify-center gap-px transition-opacity duration-200
+                            active:opacity-50 active:duration-0 ${on ? 'text-accent' : 'text-muted'}`}
               >
-                {on && (
-                  <motion.span
-                    layoutId="tab-pill"
-                    transition={SPRING}
-                    className="absolute inset-0 rounded-[27px] bg-accent-soft"
-                    aria-hidden
-                  />
-                )}
-                <span className="relative flex transition-transform duration-200 group-active:scale-90 group-active:duration-75">
-                  {/* Заливка вместо смены цвета одной линии: активная вкладка узнаётся
-                      формой, а не только цветом */}
-                  <tab.icon
-                    size={23}
-                    strokeWidth={on ? 2.3 : 1.9}
-                    fill={on ? 'currentColor' : 'none'}
-                    fillOpacity={on ? 0.18 : 0}
-                    aria-hidden
-                    className={on ? 'text-accent-soft-ink' : 'text-muted'}
-                  />
-                </span>
-                <span
-                  className={`relative max-w-full truncate px-0.5 text-[10.5px] leading-tight font-semibold ${
-                    on ? 'text-accent-soft-ink' : 'text-muted'
-                  }`}
-                >
-                  {tab.label}
-                </span>
+                {/* Выбранная вкладка узнаётся и формой, а не только цветом. Заливка лёгкая:
+                    у линейных значков сплошная съела бы детали */}
+                <tab.icon
+                  size={25}
+                  strokeWidth={on ? 2.2 : 1.8}
+                  fill={on ? 'currentColor' : 'none'}
+                  fillOpacity={on ? 0.2 : 0}
+                  aria-hidden
+                />
+                <span className="max-w-full truncate px-0.5 text-[10px] leading-3 font-medium">{tab.label}</span>
               </Link>
             </li>
           )

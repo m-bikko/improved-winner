@@ -119,7 +119,7 @@ export function NamesPage() {
               key="empty"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex h-full flex-col items-center justify-center rounded-[28px] bg-surface p-6 text-center shadow-card"
+              className="flex h-full flex-col items-center justify-center rounded-3xl bg-surface p-6 text-center shadow-card"
             >
               <p className="font-display text-lg font-extrabold">{t('nm.deckDone')}</p>
               <p className="mt-1 text-sm text-muted">{t('nm.deckDoneHint')}</p>
@@ -175,14 +175,13 @@ function useMeaning(): (n: BabyName) => string | null {
 function NameCard({ name, under = false }: { name: BabyName; under?: boolean }) {
   const t = useT()
   const meaning = useMeaning()
-  const tone = name.gender === 'f' ? 'from-tone-rose-soft' : name.gender === 'm' ? 'from-tone-sky-soft' : 'from-tone-violet-soft'
   return (
     <div
-      className={`absolute inset-0 flex flex-col items-center justify-center rounded-[28px] bg-gradient-to-b ${tone} to-surface p-6 text-center shadow-card ${
+      className={`absolute inset-0 flex flex-col items-center justify-center rounded-3xl bg-surface p-6 text-center ${
         under ? 'scale-[0.95] opacity-60' : ''
       }`}
     >
-      <span className="rounded-full bg-surface/70 px-3 py-1 text-[12px] font-semibold text-muted">
+      <span className="rounded-full bg-raised px-3 py-1 text-[13px] font-medium text-muted">
         {t(dynamicKey('nm.origin', name.origin))}
       </span>
       <p className="mt-4 font-display text-[44px] leading-none font-extrabold tracking-tight">{name.name}</p>

@@ -37,7 +37,7 @@ export function DraggableEntry({
       // z-[1]: иначе красная подложка смахивания перекрыла бы линию
       className={`relative bg-surface after:absolute after:inset-x-4 after:top-0 after:z-[1]
                   after:h-px after:origin-top after:scale-y-50 after:bg-line ${
-                    isDragging ? 'z-10 scale-[1.02] overflow-hidden rounded-2xl shadow-float after:hidden' : ''
+                    isDragging ? 'z-10 scale-[1.02] overflow-hidden rounded-xl shadow-float after:hidden' : ''
                   }`}
       {...listeners}
       aria-roledescription={attributes['aria-roledescription']}
@@ -46,11 +46,11 @@ export function DraggableEntry({
       <button
         type="button"
         onClick={onOpen}
-        className="flex min-h-14 w-full min-w-0 items-center gap-3 px-4 py-2.5 text-left
-                   transition-colors duration-150 active:bg-raised active:duration-0"
+        className="flex min-h-[3.25rem] w-full min-w-0 items-center gap-3 px-4 py-2 text-left
+                   transition-colors duration-200 active:bg-raised active:duration-0"
       >
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-base">{entry.name}</span>
+          <span className="block truncate text-[17px]">{entry.name}</span>
           <span className="flex items-center gap-1 text-[13px] text-muted">
             {/* Внёс повар - видно сразу, чтобы не гадать, откуда тарелка */}
             {entry.createdBy !== null && entry.createdBy !== entry.userId && (
@@ -62,8 +62,8 @@ export function DraggableEntry({
             </span>
           </span>
         </span>
-        <span className="shrink-0 text-[15px] font-semibold tabular-nums">
-          {Math.round(entry.kcal)} <span className="text-[13px] font-normal text-muted">{t('unit.kcal')}</span>
+        <span className="shrink-0 text-[17px] tabular-nums">
+          {Math.round(entry.kcal)} <span className="text-[13px] text-muted">{t('unit.kcal')}</span>
         </span>
       </button>
       </SwipeRow>

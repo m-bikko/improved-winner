@@ -53,7 +53,7 @@ export function ProductPicker({
         <SearchInput value={query} onChange={setQuery} placeholder={t('food.productNamePlaceholder')} autoFocus />
       </div>
 
-      {results.length === 0 && <EmptyState icon={SearchX} tone="green" title={t('pick.nothingFound')} />}
+      {results.length === 0 && <EmptyState icon={SearchX} title={t('pick.nothingFound')} />}
 
       {results.length > 0 && (
         <Card className="mx-4 mb-5 overflow-hidden">

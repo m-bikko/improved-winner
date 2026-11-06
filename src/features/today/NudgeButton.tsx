@@ -3,16 +3,18 @@ import { useEffect, useState } from 'react'
 import { Heart } from 'lucide-react'
 import { motion } from 'motion/react'
 import { haptic } from '@/lib/haptics'
-import { SPRING } from '@/ui/motion'
 import { useBurst } from '@/ui/Burst'
 import { NUDGE_COOLDOWN_MS, useLastNudge, useSendNudge } from './nudge'
 
 /**
- * «Думаю о тебе» - одна кнопка на главной.
+ * «Думаю о тебе» - строка-действие в карточке «мы двое».
  *
  * Без текста и без повода: сообщение целиком в самом факте. Написать
  * «скучаю» мешает не отсутствие чувства, а необходимость подобрать слова, -
  * кнопка убирает именно это.
+ *
+ * Стоит рядом с тем, кому адресована: строкой под именем второго, а не отдельным
+ * цветным блоком на всю ширину, который спорил со всем экраном.
  *
  * После нажатия она остывает полчаса и честно показывает, сколько осталось.
  * Настоящее ограничение стоит в базе: заблокированную кнопку обходят
@@ -40,7 +42,7 @@ export function NudgeButton() {
   const minutes = Math.ceil(left / 60_000)
 
   return (
-    <motion.button
+    <button
       type="button"
       onClick={(e) => {
         haptic('commit')
@@ -50,11 +52,9 @@ export function NudgeButton() {
         send.mutate(undefined, { onSuccess: () => burst(button, 'hearts') })
       }}
       disabled={cooling || send.isPending}
-      whileTap={cooling ? {} : { scale: 0.97 }}
-      transition={SPRING}
-      className={`relative flex min-h-14 items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-4 font-display
-                  text-[17px] font-bold transition-colors ${
-                    cooling ? 'bg-surface text-muted shadow-card' : 'bg-accent text-accent-ink'
+      className={`flex min-h-[3.25rem] w-full items-center gap-3 px-4 py-2 text-left text-[17px] transition-colors duration-200
+                  active:bg-raised active:duration-0 disabled:active:bg-transparent [--sep:4rem] ${
+                    cooling ? 'text-muted' : 'font-semibold text-tone-rose'
                   }`}
     >
       {/* Сердце «бьётся» один раз в момент отправки - ответ на нажатие,
@@ -64,13 +64,13 @@ export function NudgeButton() {
         initial={last.data ? { scale: 1.6 } : false}
         animate={{ scale: 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 12 }}
-        className="flex"
+        className="flex size-9 shrink-0 items-center justify-center"
       >
-        <Heart size={20} aria-hidden className={cooling ? '' : 'fill-current'} />
+        <Heart size={25} aria-hidden className={cooling ? '' : 'fill-love text-love'} />
       </motion.span>
       {/* Без имени: склонять ник по падежам - «думаю о Аминош» - хуже,
           чем не склонять вовсе, а правил тут не напасёшься */}
-      {cooling ? t('nudge.cooling', { n: minutes }) : t('nudge.send')}
-    </motion.button>
+      <span className="min-w-0 flex-1 truncate">{cooling ? t('nudge.cooling', { n: minutes }) : t('nudge.send')}</span>
+    </button>
   )
 }

@@ -33,7 +33,7 @@ export function VoicePage() {
     <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
       <Recorder pair={pair} />
       {notes.data.length === 0 ? (
-        <EmptyState icon={Mic} tone="violet" title={t('vc.emptyTitle')} hint={t('vc.emptyHint')} />
+        <EmptyState icon={Mic} title={t('vc.emptyTitle')} hint={t('vc.emptyHint')} />
       ) : (
         <ul className="flex flex-col gap-2.5">
           {notes.data.map((n) => (

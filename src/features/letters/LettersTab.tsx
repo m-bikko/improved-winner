@@ -74,7 +74,6 @@ export function LettersTab() {
           title={t('letter.emptyTitle')}
           hint={t('letter.emptyHint')}
           icon={Mail}
-          tone="teal"
         />
       ) : (
         <ul className="flex flex-col gap-3">

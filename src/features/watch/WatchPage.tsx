@@ -4,7 +4,6 @@ import { Eye, Heart, Lock, Play, Shuffle, Star, Trash2, Undo2 } from 'lucide-rea
 import { dynamicKey, useT } from '@/lib/i18n'
 import { formatDayLabel, todayLocal } from '@/lib/date'
 import { usePair, type Pair } from '@/features/profile/pair'
-import { Aurora } from '@/ui/Aurora'
 import { Avatar } from '@/ui/Avatar'
 import { Button } from '@/ui/Button'
 import { useBurst } from '@/ui/Burst'
@@ -82,7 +81,6 @@ export function WatchPage() {
       {shown.length === 0 ? (
         <EmptyState
           icon={tab === 'want' ? Heart : tab === 'watching' ? Play : Eye}
-          tone="sky"
           title={t(dynamicKey('w.empty', tab))}
           hint={tab === 'want' ? t('w.emptyHint') : undefined}
         />
@@ -123,8 +121,6 @@ function Tonight({ items, pair, onOpen }: { items: readonly WatchItem[]; pair: P
   }, [])
 
   const shown = pool.find((i) => i.id === shownId) ?? null
-  const a = toneVar(pair.myTone)
-  const b = toneVar(pair.partnerTone)
 
   const spin = () => {
     if (pool.length === 0) return
@@ -152,8 +148,7 @@ function Tonight({ items, pair, onOpen }: { items: readonly WatchItem[]; pair: P
   }
 
   return (
-    <section className="relative isolate overflow-hidden rounded-[28px] bg-surface p-5 shadow-card">
-      <Aurora colors={[a, b, 'var(--t-sky)']} />
+    <section className="relative isolate overflow-hidden rounded-3xl bg-surface p-5 shadow-card">
       <p className="font-display text-[22px] leading-tight font-extrabold tracking-tight">{t('w.tonight')}</p>
       <p className="mt-1 text-sm text-muted">
         {pool.length === 0

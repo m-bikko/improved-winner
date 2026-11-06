@@ -20,7 +20,7 @@ export const SPRING_SOFT: Transition = { type: 'spring', bounce: 0, visualDurati
 export const SPRING_FLICK: Transition = { type: 'spring', bounce: 0.18, visualDuration: 0.36 }
 
 /** Нажатие на карточку или плитку - заметно, но без «резинки». */
-export const PRESS = { scale: 0.97 } as const
+export const PRESS = { scale: 0.98 } as const
 
 /**
  * Куда придёт движение, если его отпустить, - как прокрутка по инерции.

@@ -147,7 +147,6 @@ export function WishlistPage() {
             category === null ? 'wish.emptyHintAll' : 'wish.emptyHintCategory',
           )}
           icon={category === null ? Gift : (CATEGORY_BY_ID[category]?.icon ?? Gift)}
-          tone="orange"
         />
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>

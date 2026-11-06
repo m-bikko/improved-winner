@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Check, Lock, MessagesSquare, Pencil } from 'lucide-react'
@@ -6,16 +6,14 @@ import { dynamicKey, useT } from '@/lib/i18n'
 import { fromLocalISO, monthName, todayLocal } from '@/lib/date'
 import { usePair, type Pair } from '@/features/profile/pair'
 import { useCreateTopic } from '@/features/topics/api'
-import { Aurora } from '@/ui/Aurora'
 import { ScaleInput } from '@/ui/ScaleInput'
 import { Avatar } from '@/ui/Avatar'
 import { Button } from '@/ui/Button'
 import { useBurst } from '@/ui/Burst'
 import { Card, SectionTitle } from '@/ui/Card'
 import { INPUT_CLASS } from '@/ui/Field'
-import { ShineBorder } from '@/ui/ShineBorder'
 import { ErrorState, Loading } from '@/ui/States'
-import { TONE_CLASS, toneVar } from '@/ui/tones'
+import { TONE_CLASS } from '@/ui/tones'
 import { PULSE_AREAS } from './areas'
 import { useSavePulse, usePulse, type PulseEntry } from './api'
 import { average, gaps, monthOf, revealedMonths } from './logic'
@@ -47,7 +45,7 @@ export function PulsePage() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-3 px-4 pt-1">
-      <Hero pair={pair} label={label} mine={mine !== null} partnerDone={partnerDone} revealed={mine !== null && theirs !== null} />
+      <Hero pair={pair} label={label} mine={mine !== null} partnerDone={partnerDone} />
 
       {mine === null || editing ? (
         <Form
@@ -85,24 +83,17 @@ function Hero({
   label,
   mine,
   partnerDone,
-  revealed,
 }: {
   pair: Pair
   label: string
   mine: boolean
   partnerDone: boolean
-  revealed: boolean
 }) {
   const t = useT()
-  const a = toneVar(pair.myTone)
-  const b = toneVar(pair.partnerTone)
   return (
     <section
-      className="relative isolate overflow-hidden rounded-[28px] bg-surface p-5 shadow-card"
-      style={{ '--pair-a': a, '--pair-b': b } as CSSProperties}
+      className="relative isolate overflow-hidden rounded-3xl bg-surface p-5 shadow-card"
     >
-      {revealed && <ShineBorder colors={[a, 'var(--c-accent)', b]} />}
-      <Aurora colors={[a, b, 'var(--t-violet)']} />
       <p className="text-[13px] font-semibold text-muted first-letter:uppercase">{label}</p>
       <p className="mt-1 font-display text-[22px] leading-tight font-extrabold tracking-tight">{t('pl.title')}</p>
       <p className="mt-1.5 text-sm text-muted">{t('pl.subtitle')}</p>

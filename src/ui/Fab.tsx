@@ -6,7 +6,7 @@ import { SPRING } from './motion'
 
 const CLASS =
   'fixed right-4 bottom-above-tabbar z-30 flex h-14 items-center justify-center gap-2 ' +
-  'rounded-full bg-accent text-accent-ink shadow-float'
+  'rounded-full bg-accent text-accent-ink shadow-float active:opacity-80'
 
 const MotionLink = motion.create(Link)
 
@@ -33,7 +33,7 @@ export function Fab(props: Common & ({ onClick: () => void } | { to: string })) 
   const { label, icon: Icon = Plus, extended = false } = props
   const body = (
     <>
-      <Icon size={24} strokeWidth={2.4} aria-hidden />
+      <Icon size={26} strokeWidth={2.2} aria-hidden />
       {extended && <span className="pr-1 text-base font-semibold">{label}</span>}
     </>
   )
