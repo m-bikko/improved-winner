@@ -716,7 +716,7 @@ export const en: Dict = {
   'dates.noTitle': 'Without a title there is nothing to remind you about',
   'dates.title': 'Date',
   'dates.what': 'What date is this',
-  'dates.placeholder': 'Aminosh’s birthday',
+  'dates.placeholder': 'For example, Mom’s birthday',
   'dates.when': 'When',
   'dates.whenHint': 'With the year: it is used to work out which anniversary this is',
   'dates.yearly': 'Repeats every year',

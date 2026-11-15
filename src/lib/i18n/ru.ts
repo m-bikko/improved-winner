@@ -722,7 +722,7 @@ export const ru = {
   'dates.noTitle': 'Без названия непонятно, о чём напоминать',
   'dates.title': 'Дата',
   'dates.what': 'Что за дата',
-  'dates.placeholder': 'День рождения Аминош',
+  'dates.placeholder': 'Например, день рождения мамы',
   'dates.when': 'Когда',
   'dates.whenHint': 'С годом: по нему считается, которая это годовщина',
   'dates.yearly': 'Повторяется каждый год',

@@ -3,7 +3,7 @@ title: profiles - профиль и цели
 type: entity
 tags: [database, profile, goals]
 created: 2026-09-03
-updated: 2026-11-06
+updated: 2026-11-15
 sources: [src/lib/nutrition.ts, src/features/profile/, supabase/migrations/20260911120000_language.sql]
 ---
 
@@ -79,9 +79,14 @@ sources: [src/lib/nutrition.ts, src/features/profile/, supabase/migrations/20260
 
 ## Создание строки
 
-Профиль создаёт `scripts/bootstrap-users.ts` вместе с аккаунтом. Триггер на
-`auth.users` намеренно не заводится: триггеры на этой таблице - общий ресурс
-проекта, и один сломанный ломает создание аккаунтов целиком.
+Профиль создаётся вместе с аккаунтом в `scripts/accounts-admin.ts`, который вызывают
+`pnpm couple` и `pnpm bootstrap`. Триггер на `auth.users` намеренно не заводится:
+триггеры на этой таблице - общий ресурс проекта, и один сломанный ломает создание
+аккаунтов целиком.
+
+**Часового пояса в интерфейсе нет.** Колонка `timezone` по умолчанию `Asia/Almaty`,
+а по ней база решает, когда слать напоминания. Для пары из другого города пояс задаёт
+`pnpm couple` из `.env` (`PARTNER_1_TIMEZONE`, `PARTNER_2_TIMEZONE`), см. [[new-couple-setup]].
 
 ## См. также
 

@@ -717,7 +717,7 @@ export const kk: Dict = {
   'dates.noTitle': 'Атауы болмаса, не туралы еске салу белгісіз',
   'dates.title': 'Күн',
   'dates.what': 'Қандай күн',
-  'dates.placeholder': 'Аминоштың туған күні',
+  'dates.placeholder': 'Мысалы, анамның туған күні',
   'dates.when': 'Қашан',
   'dates.whenHint': 'Жылымен: нешінші мерейтой екені сол бойынша саналады',
   'dates.yearly': 'Жыл сайын қайталанады',

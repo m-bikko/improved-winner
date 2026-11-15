@@ -10,18 +10,17 @@
  * Скрипт идемпотентен: повторный запуск не создаёт дублей, а приводит уже
  * существующие аккаунты к состоянию из .env (в том числе перезаписывает PIN).
  *
- * PIN-ы читаются из .env - LOVE_PIN_BIKOSH и LOVE_PIN_AMINOSH. В репозитории
- * их нет намеренно.
+ * PIN-ы читаются из .env - LOVE_PIN_BIKOSH (первый из пары) и LOVE_PIN_AMINOSH
+ * (второй), имена - из VITE_PUBLIC_PARTNER_1_NAME и VITE_PUBLIC_PARTNER_2_NAME.
+ * В репозитории их нет намеренно.
+ *
+ * Новую пару заводит `pnpm couple`: он делает то же самое, но сначала проверяет,
+ * что база действительно новая, и задаёт часовой пояс и язык.
  */
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '../src/types/db.ts'
-import { ACCOUNTS, PIN_LENGTH, type AccountId } from '../src/lib/accounts.ts'
+import { accountsFromVars, ensureAccount, listUsers, readPin } from './accounts-admin.ts'
 import { loadEnv, readVars } from './env.ts'
-
-const PIN_ENV_VAR: Record<AccountId, string> = {
-  bikosh: 'LOVE_PIN_BIKOSH',
-  aminosh: 'LOVE_PIN_AMINOSH',
-}
 
 async function main(): Promise<void> {
   const { supabaseUrl, secretKey } = loadEnv()
@@ -33,58 +32,13 @@ async function main(): Promise<void> {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 
-  const { data: existing, error: listError } = await admin.auth.admin.listUsers({ perPage: 1000 })
-  if (listError) throw new Error(`Не удалось получить список пользователей: ${listError.message}`)
+  const existing = await listUsers(admin)
 
-  for (const account of ACCOUNTS) {
-    const envVar = PIN_ENV_VAR[account.id]
-    const pin = vars[envVar]
-
-    if (!pin || !new RegExp(`^\\d{${PIN_LENGTH}}$`).test(pin)) {
-      throw new Error(
-        `В .env нет корректного ${envVar}: нужен PIN ровно из ${PIN_LENGTH} цифр. ` +
-          `Пример строки: ${envVar}="123456"`,
-      )
-    }
-
-    const found = existing.users.find((u) => u.email === account.email)
-    let userId: string
-
-    if (found) {
-      // Приводим к состоянию из .env - в том числе сбрасываем PIN, если он забыт
-      const { data, error } = await admin.auth.admin.updateUserById(found.id, {
-        password: pin,
-        user_metadata: { nickname: account.nickname },
-      })
-      if (error) throw new Error(`${account.nickname}: не удалось обновить - ${error.message}`)
-      userId = data.user.id
-      console.log(`  обновлён   ${account.nickname} <${account.email}>`)
-    } else {
-      // email_confirm: true обязателен - подтверждать адрес, которого не существует,
-      // пользователю будет нечем, а без подтверждения вход заблокирован
-      const { data, error } = await admin.auth.admin.createUser({
-        email: account.email,
-        password: pin,
-        email_confirm: true,
-        user_metadata: { nickname: account.nickname },
-      })
-      if (error) throw new Error(`${account.nickname}: не удалось создать - ${error.message}`)
-      userId = data.user.id
-      console.log(`  создан     ${account.nickname} <${account.email}>`)
-    }
-
-    const { error: memberError } = await admin
-      .from('app_members')
-      .upsert({ user_id: userId }, { onConflict: 'user_id' })
-    if (memberError) throw new Error(`${account.nickname}: app_members - ${memberError.message}`)
-
-    // Профиль создаётся здесь, а не триггером на auth.users: триггеры на этой
-    // таблице - общий ресурс проекта, и один сломанный ломает создание аккаунтов
-    // целиком. Остальные поля профиля пользователь заполнит сам на экране профиля.
-    const { error: profileError } = await admin
-      .from('profiles')
-      .upsert({ user_id: userId, nickname: account.nickname }, { onConflict: 'user_id' })
-    if (profileError) throw new Error(`${account.nickname}: profiles - ${profileError.message}`)
+  for (const account of accountsFromVars(vars)) {
+    const read = readPin(vars, account.id)
+    if ('error' in read) throw new Error(`В .env нет корректного PIN. ${read.error}`)
+    const action = await ensureAccount(admin, existing, account, read.pin)
+    console.log(`  ${action.padEnd(9)} ${account.nickname} <${account.email}>`)
   }
 
   console.log('\nГотово. Оба аккаунта на месте, членство и профили проставлены.')

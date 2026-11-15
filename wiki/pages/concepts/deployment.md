@@ -51,13 +51,18 @@ noindex` и `robots.txt`. Если это неприемлемо, включат
 |---|---|
 | `VITE_PUBLIC_SUPABASE_URL` | клиент, Vercel |
 | `VITE_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | клиент, Vercel |
+| `VITE_PUBLIC_APP_NAME`, `VITE_PUBLIC_APP_SHORT_NAME` | клиент, Vercel |
+| `VITE_PUBLIC_PARTNER_1_NAME`, `_2_NAME` | клиент и Vercel; локально их пишут в профили `pnpm couple` и `pnpm bootstrap` |
 | `VITE_PUBLIC_VAPID_KEY` | клиент и функция push, Vercel |
 | `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | функция push, Vercel |
 | `PUSH_SHARED_SECRET` | функция push на Vercel и Vault (через `pnpm secrets`) |
 | `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | функция push на Vercel; локально - Admin API |
 | `PUSH_ENDPOINT_URL`, `TELEGRAM_BOT_ID` | только локально, `pnpm secrets` кладёт их в Vault |
 | `POSTGRES_URL_NON_POOLING` | только локально, миграции |
-| `LOVE_PIN_*` | только локально, `pnpm bootstrap` |
+| `LOVE_PIN_*` | только локально, `pnpm couple` и `pnpm bootstrap` |
+| `PARTNER_1_TIMEZONE`, `PARTNER_1_LANGUAGE` и `PARTNER_2_*` | только локально, `pnpm couple` |
+
+Новая пара ставится по [[new-couple-setup]].
 
 ## См. также
 

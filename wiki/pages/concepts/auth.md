@@ -3,8 +3,8 @@ title: Аутентификация
 type: concept
 tags: [auth, security]
 created: 2026-09-03
-updated: 2026-09-03
-sources: [src/auth/, scripts/bootstrap-users.ts]
+updated: 2026-11-15
+sources: [src/auth/, src/lib/accounts.ts, scripts/bootstrap-users.ts, scripts/accounts-admin.ts]
 ---
 
 # Аутентификация
@@ -18,9 +18,12 @@ sources: [src/auth/, scripts/bootstrap-users.ts]
 а значит работающий `auth.uid()` и [[security|RLS]]. Альтернатива - своя таблица
 с PIN-ами и публичный ключ - оставила бы данные без защиты на уровне базы.
 
-Список аккаунтов захардкожен в `src/lib/accounts.ts`: их двое, они не меняются,
-а экрану входа не нужен запрос к базе, чтобы показать два имени. PIN-ов там нет
-и быть не должно - они живут в `.env`.
+Список аккаунтов живёт в `src/lib/accounts.ts`: их двое, а экрану входа не нужен
+запрос к базе, чтобы показать два имени. Имена задаёт сборка
+(`VITE_PUBLIC_PARTNER_1_NAME`, `_2_NAME`), как и [[app-name|название]]: одна кодовая база
+обслуживает разные пары, см. [[new-couple-setup]]. Адреса от имён не зависят и одинаковы
+в любой установке - это опознаватели живых аккаунтов. PIN-ов там нет и быть не должно -
+они живут в `.env`.
 
 ## Чего у этой схемы нет
 

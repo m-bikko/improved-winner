@@ -10,6 +10,10 @@ interface ImportMetaEnv {
   readonly VITE_PUBLIC_APP_NAME?: string
   /** Короткое название для подписи под иконкой. Пусто - совпадает с полным. */
   readonly VITE_PUBLIC_APP_SHORT_NAME?: string
+  /** Имя первого из пары на экране входа. Пусто - значение по умолчанию из lib/accounts. */
+  readonly VITE_PUBLIC_PARTNER_1_NAME?: string
+  /** Имя второго из пары на экране входа. */
+  readonly VITE_PUBLIC_PARTNER_2_NAME?: string
 }
 
 interface ImportMeta {

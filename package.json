@@ -15,6 +15,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "bootstrap": "tsx scripts/bootstrap-users.ts",
+    "couple": "tsx scripts/setup-couple.ts",
     "sql": "tsx scripts/sql.ts",
     "db:push": "tsx scripts/db.ts push",
     "db:types": "tsx scripts/db.ts types",
