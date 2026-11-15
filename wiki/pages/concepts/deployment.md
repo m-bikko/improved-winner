@@ -3,7 +3,7 @@ title: Деплой и окружения
 type: concept
 tags: [deployment, vercel, supabase, migrations]
 created: 2026-09-03
-updated: 2026-09-03
+updated: 2026-11-15
 sources: [vercel.json, scripts/db.ts]
 ---
 
@@ -42,8 +42,8 @@ must-revalidate`; хэшированные ассеты - `immutable`. Закэ�
 noindex` и `robots.txt`. Если это неприемлемо, включать Deployment Protection.
 
 **Переменные окружения.** В браузер попадает только то, что начинается с
-`VITE_`. Секретные ключи в переменных Vercel не нужны вовсе: серверного кода
-у приложения нет.
+`VITE_`. Серверный код у приложения один - функция отправки push `api/push.ts`,
+и секреты в переменных Vercel нужны только ей.
 
 ## Переменные
 
@@ -51,7 +51,11 @@ noindex` и `robots.txt`. Если это неприемлемо, включат
 |---|---|
 | `VITE_PUBLIC_SUPABASE_URL` | клиент, Vercel |
 | `VITE_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | клиент, Vercel |
-| `SUPABASE_SECRET_KEY` | только локально, Admin API |
+| `VITE_PUBLIC_VAPID_KEY` | клиент и функция push, Vercel |
+| `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | функция push, Vercel |
+| `PUSH_SHARED_SECRET` | функция push на Vercel и Vault (через `pnpm secrets`) |
+| `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | функция push на Vercel; локально - Admin API |
+| `PUSH_ENDPOINT_URL`, `TELEGRAM_BOT_ID` | только локально, `pnpm secrets` кладёт их в Vault |
 | `POSTGRES_URL_NON_POOLING` | только локально, миграции |
 | `LOVE_PIN_*` | только локально, `pnpm bootstrap` |
 
